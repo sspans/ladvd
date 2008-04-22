@@ -1,0 +1,11 @@
+
+CODE:
+- ipv6 support
+- mtu support 
+- duplex
+- lldp-med support (dmi)
+- chroot support
+
+RELEASE:
+- debian subdir
+

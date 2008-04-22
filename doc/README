@@ -1,0 +1,57 @@
+WHAT IS LADVD?
+--------------
+
+ladvd is a cdp / lldp sender for unix.
+
+ladvd uses cdp / lldp frames to inform switches about connected hosts,
+which simplifies ethernet switch management. It does this by creating
+the required payloads and descriptors on startup and then switching 
+to a non-privileged user for the remaining runtime.
+
+
+USAGE
+-----
+
+Basically you start ladvd like any unix daemon. 
+To get a complete list of supported options type
+
+  ladvd -h
+
+and see the manual for more information.
+
+
+SETUP
+-----
+
+Ladvd needs root privileges to initialize the required raw-sockets.
+It can run in `daemon' mode, logging to syslog, or in the foreground,
+logging to stderr.
+
+To install ladvd, first run the "configure" script. This will create a
+Makefile and config.h appropriate for your system. Then type
+"make". 
+
+Once built put a copy of ladvd in your search path on the local and
+remote systems (or use "make install"). That's it!
+
+
+BUG REPORTS
+-----------
+
+Please email your bug report to sten-ladvd@blinkenlights.nl.
+
+
+COPYRIGHT
+---------
+
+ladvd is written by Sten Spans, and may be used, modified and
+redistributed only under the terms of the GNU General Public License,
+found in the file COPYING in this distribution, or at 
+
+  http://www.fsf.org/licenses/gpl.html
+
+
+AVAILABILITY
+------------
+
+The main web site for ladvd is http://blinkenlights.nl/software/ladvd/

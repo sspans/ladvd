@@ -1,0 +1,11 @@
+To build and install ladvd:
+
+  $ ./configure
+  $ make
+  # make install
+
+You may set the installation directory and other parameters by options
+to ./configure.  To see them, use:
+
+  $ ./configure --help
+
