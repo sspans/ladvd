@@ -1,8 +1,8 @@
 
-#include <malloc.h>
+#include <stdint.h>
 
-#define VOIDP_DIFF(P, Q) ((ptrdiff_t)((char *)(P) - (char *)(Q)))
-#define VOIDP_OFFSET(P, O) ((void *)((char *)(P) + (ptrdiff_t)(O)))
+#define VOIDP_DIFF(P, Q) ((uintptr_t)((char *)(P) - (char *)(Q)))
+#define VOIDP_OFFSET(P, O) ((void *)((char *)(P) + (uintptr_t)(O)))
 
 
 #define PUSH(value, type, func) \
