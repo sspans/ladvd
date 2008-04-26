@@ -1,4 +1,4 @@
 #!/bin/sh
-svn up
+svn -q up
 svn2cl -o doc/ChangeLog
 autoreconf -fi
