@@ -46,7 +46,6 @@ AC_CHECK_LIB(net, libnet_init_packet,
 	AC_CHECK_LIB(net, libnet_init,
 	    [
 	    AC_DEFINE(LIBNET_API_VERSION, 110, [libnet API version])
-	    AC_MSG_NOTICE([libnet version: >= 1.1.0])
 	    ], [
 	    AC_MSG_ERROR([could not identify the version of libnet])
 	    ])
@@ -54,7 +53,9 @@ AC_CHECK_LIB(net, libnet_init_packet,
 
 # Checks for header files.
 AC_HEADER_STDC
-AC_CHECK_HEADERS([fcntl.h malloc.h sys/file.h syslog.h unistd.h], [], AC_MSG_ERROR([required header missing]))
+AC_CHECK_HEADERS([fcntl.h grp.h pwd.h stdarg.h stdint.h stdio.h
+		 syslog.h sys/file.h sys/utsname.h unistd.h ], 
+		 [], AC_MSG_ERROR([required header missing]))
 AC_CHECK_HEADERS([libnet.h], [], AC_MSG_ERROR([libnet headers missing]))
 
 # Checks for typedefs, structures, and compiler characteristics.
