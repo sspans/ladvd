@@ -2,12 +2,13 @@
  $Id$
 */
 
-#include <unistd.h>
-#include <syslog.h>
-#include <stdarg.h>
 #include <fcntl.h>
-#include <sys/file.h>
+#include <unistd.h>
 #include <pwd.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <syslog.h>
+#include <sys/file.h>
 #include <grp.h>
 #include "main.h"
 
@@ -85,9 +86,8 @@ int main(int argc, char *argv[]) {
 	exit(EXIT_FAILURE);
     }
 
-    sprintf(uts_str, "%s %s %s %s",
+    snprintf(uts_str, sizeof(struct utsname) + 10, "%s %s %s %s",
 	uts.sysname, uts.release, uts.version, uts.machine);
-
 
     // open pidfile
     if (do_fork == 1) {

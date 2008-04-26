@@ -8,25 +8,49 @@ AC_CONFIG_HEADER([src/config.h])
 
 # Checks for programs.
 AC_PROG_CC
-AC_ARG_VAR(HAVE_LIBNET_CONFIG)
-AC_CHECK_PROG(HAVE_LIBNET_CONFIG, libnet-config, yes)
-if test "$HAVE_LIBNET_CONFIG" = yes; then
-CPPFLAGS="$CPPFLAGS `libnet-config --defines`"
-else
-AC_MSG_ERROR([could not find the (required) libnet-config program])
+
+if test -n "$GCC"; then
+    CFLAGS="$CFLAGS -Wall"
+fi
+
+AC_ARG_ENABLE(debug,
+[  --enable-debug           Enable debugging options (bugreports and developers only)],
+	enable_debug="$enableval", enable_debug="no")
+
+if test "x$enable_debug" = "xyes"; then
+    CFLAGS="$CFLAGS -DDEBUG"
+fi
+
+AC_ARG_WITH(libnet_includes,
+	[  --with-libnet-includes=DIR     libnet include directory],
+	[with_libnet_includes="$withval"],[with_libnet_includes="no"])
+
+AC_ARG_WITH(libnet_libraries,
+	[  --with-libnet-libraries=DIR    libnet library directory],
+	[with_libnet_libraries="$withval"],[with_libnet_libraries="no"])
+
+if test "x$with_libnet_includes" != "xno"; then
+    CPPFLAGS="${CPPFLAGS} -I${with_libnet_includes}"
+fi  
+
+if test "x$with_libnet_libraries" != "xno"; then
+    LDFLAGS="${LDFLAGS} -L${with_libnet_libraries}"
 fi
 
 # Checks for libraries.
-AC_CHECK_LIB([net], [main], [], [AC_MSG_ERROR(could not find the (required) libnet library)])
-AC_CACHE_SAVE
-
+AC_CHECK_LIB(net, main, [], [AC_MSG_ERROR([cannot find libnet])])
 AC_CHECK_LIB(net, libnet_init_packet,
-[AC_DEFINE(LIBNET_API_VERSION, 100, [The API version of libnet.])
-AC_MSG_NOTICE([libnet version: < 1.1.0])],
-[AC_CHECK_LIB(net, libnet_init,
-[AC_DEFINE(LIBNET_API_VERSION, 110, [The API version of libnet.])
-AC_MSG_NOTICE([libnet version: >= 1.1.0])],
-[AC_MSG_ERROR([could not identify the version of libnet])])])
+    [
+	AC_MSG_ERROR([libnet version: < 1.1.0])
+    ], [
+	AC_CHECK_LIB(net, libnet_init,
+	    [
+	    AC_DEFINE(LIBNET_API_VERSION, 110, [libnet API version])
+	    AC_MSG_NOTICE([libnet version: >= 1.1.0])
+	    ], [
+	    AC_MSG_ERROR([could not identify the version of libnet])
+	    ])
+])
 
 # Checks for header files.
 AC_HEADER_STDC
@@ -42,7 +66,8 @@ AC_TYPE_UINT8_T
 
 # Checks for library functions.
 AC_FUNC_VPRINTF
-AC_CHECK_FUNCS([bzero strdup strerror uname])
+AC_CHECK_FUNCS([asprintf])
+AC_CHECK_FUNCS([bzero strdup strerror uname vsyslog], [], AC_MSG_ERROR([required function missing]))
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile])
