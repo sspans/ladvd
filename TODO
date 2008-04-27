@@ -3,9 +3,8 @@ CODE:
 - ipv6 support
 - mtu support 
 - duplex
+- improve capability selection
+- improve sysname handling (short/long/etc)
 - lldp-med support (dmi)
 - chroot support
-
-RELEASE:
-- debian subdir
 
