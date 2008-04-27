@@ -1,0 +1,6 @@
+ladvd (0.4.3-1) unstable; urgency=low
+
+  * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
+
+ -- Sten Spans <sten@bastard.snore.nl>  Sun, 27 Apr 2008 13:50:47 +0200
+
