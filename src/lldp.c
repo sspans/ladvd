@@ -35,8 +35,6 @@ size_t lldp_encode(struct lldp_packet *packet, void *data, size_t length) {
 	return 0;
     END_LLDP_TLV;
 
-    // port descr ?
-
     if (!(
 	START_LLDP_TLV(LLDP_SYSTEM_NAME_TLV) &&
 	PUSH_BYTES(packet->system_name, strlen(packet->system_name))
@@ -73,12 +71,6 @@ size_t lldp_encode(struct lldp_packet *packet, void *data, size_t length) {
 	END_LLDP_TLV;
     }
 
-    if (!(
-	START_LLDP_TLV(LLDP_END_TLV)
-    ))
-	return 0;
-    END_LLDP_TLV;
-
     if (packet->mtu != 0) {
 	if (!(
 	    START_LLDP_TLV(LLDP_PRIVATE_TLV) &&
@@ -89,6 +81,13 @@ size_t lldp_encode(struct lldp_packet *packet, void *data, size_t length) {
 	    return 0;
 	END_LLDP_TLV;
     }
+
+    // the end
+    if (!(
+	START_LLDP_TLV(LLDP_END_TLV)
+    ))
+	return 0;
+    END_LLDP_TLV;
 
     return VOIDP_DIFF(pos, data);
 }
