@@ -79,6 +79,17 @@ size_t lldp_encode(struct lldp_packet *packet, void *data, size_t length) {
 	return 0;
     END_LLDP_TLV;
 
+    if (packet->mtu != 0) {
+	if (!(
+	    START_LLDP_TLV(LLDP_PRIVATE_TLV) &&
+	    PUSH_BYTES(OUI_IEEE_8023_PRIVATE, sizeof(OUI_IEEE_8023_PRIVATE)) &&
+	    PUSH_UINT8(LLDP_PRIVATE_8023_SUBTYPE_MTU) &&
+	    PUSH_UINT16(packet->mtu)
+	))
+	    return 0;
+	END_LLDP_TLV;
+    }
+
     return VOIDP_DIFF(pos, data);
 }
 
@@ -92,7 +103,6 @@ int lldp_packet(struct session *session) {
     memcpy(packet->hwaddr, session->hwaddr, sizeof(packet->hwaddr));
     packet->port_id = session->dev;
     packet->ttl = 120;
-    // ifdescr ?
     packet->system_name = session->uts->nodename;
     packet->system_descr = session->uts_str;
 
@@ -102,6 +112,9 @@ int lldp_packet(struct session *session) {
 	packet->system_cap = LLDP_CAP_STATION_ONLY;
 
     packet->mgmt_addr4 = session->ipaddr4; 
+    // TODO: ipv6
+
+    packet->mtu = session->mtu; 
 
     session->lldp_data = malloc(BUFSIZ);
     bzero(session->lldp_data, BUFSIZ);

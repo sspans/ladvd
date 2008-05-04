@@ -11,7 +11,7 @@ struct session {
 
     char *dev;
     uint8_t hwaddr[6];
-    uint32_t mtu;
+    uint16_t mtu;
     // TODO: media
 
     uint32_t ipaddr4;

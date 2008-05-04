@@ -58,9 +58,9 @@ static uint8_t lldp_mac[] = { 0x01, 0x80, 0xc2, 0x00, 0x00, 0x0e };
 /*
  * Organizationally Unique Identifiers
  */
-#define OUI_IEEE_8021_PRIVATE 0x0080c2      /* IEEE 802.1 - Annex F */
-#define OUI_IEEE_8023_PRIVATE 0x00120f      /* IEEE 802.3 - Annex G */
-#define OUI_TIA		      0x0012bb	    /* TIA - ANSI/TIA-1057- 2006 */
+#define OUI_IEEE_8021_PRIVATE "\x00\x80\xc2"	/* IEEE 802.1 - Annex F */
+#define OUI_IEEE_8023_PRIVATE "\x00\x12\x0f"	/* IEEE 802.3 - Annex G */
+#define OUI_TIA		      "\x00\x12\xbb"	/* TIA - ANSI/TIA-1057- 2006 */
 
 /*
  * 802.3 TLV Subtypes
@@ -80,6 +80,6 @@ struct lldp_packet {
 	uint16_t system_cap;
 	uint32_t mgmt_addr4;
 	//v6
-	uint32_t mtu;
+	uint16_t mtu;
 };
 
