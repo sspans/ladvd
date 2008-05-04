@@ -74,7 +74,7 @@ size_t lldp_encode(struct lldp_packet *packet, void *data, size_t length) {
     if (packet->mtu != 0) {
 	if (!(
 	    START_LLDP_TLV(LLDP_PRIVATE_TLV) &&
-	    PUSH_BYTES(OUI_IEEE_8023_PRIVATE, sizeof(OUI_IEEE_8023_PRIVATE)) &&
+	    PUSH_BYTES(OUI_IEEE_8023_PRIVATE, sizeof(OUI_IEEE_8023_PRIVATE) -1) &&
 	    PUSH_UINT8(LLDP_PRIVATE_8023_SUBTYPE_MTU) &&
 	    PUSH_UINT16(packet->mtu)
 	))
@@ -110,7 +110,8 @@ int lldp_packet(struct session *session) {
     else
 	packet->system_cap = LLDP_CAP_STATION_ONLY;
 
-    packet->mgmt_addr4 = session->ipaddr4; 
+    if (session->ipaddr4 != -1)
+	packet->mgmt_addr4 = session->ipaddr4; 
     // TODO: ipv6
 
     packet->mtu = session->mtu; 
