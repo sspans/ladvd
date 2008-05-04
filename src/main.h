@@ -10,20 +10,20 @@ struct session {
     libnet_t *libnet;
 
     char *dev;
-    u_int8_t hwaddr[6];
-    u_int32_t mtu;
+    uint8_t hwaddr[6];
+    uint32_t mtu;
     // TODO: media
 
-    u_int32_t ipaddr4;
+    uint32_t ipaddr4;
     // TODO: ipv6
 
     struct utsname *uts;
     char *uts_str;
-    u_int8_t cap_router;
+    uint8_t cap_router;
 
-    u_int8_t *cdp_data;
+    uint8_t *cdp_data;
     size_t cdp_length;
-    u_int8_t *lldp_data;
+    uint8_t *lldp_data;
     size_t lldp_length;
     
     struct session *next;
