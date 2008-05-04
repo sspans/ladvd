@@ -54,7 +54,8 @@ AC_CHECK_LIB(net, libnet_init_packet,
 # Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS([fcntl.h grp.h pwd.h stdarg.h stdint.h stdio.h \
-		 syslog.h sys/file.h sys/utsname.h unistd.h ], 
+		 syslog.h sys/file.h sys/utsname.h unistd.h sys/ioctl.h \
+		 sys/socket.h net/if.h ], 
 		 [], AC_MSG_ERROR([required header missing]))
 AC_CHECK_HEADERS([libnet.h], [], AC_MSG_ERROR([libnet headers missing]))
 
