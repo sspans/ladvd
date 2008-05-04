@@ -99,19 +99,21 @@ size_t cdp_encode(struct cdp_packet *packet, void *data, size_t length) {
 	    return 0;
 	END_CDP_TLV;
 
-	/*if (packet->duplex && !(
+	/*
+	if (packet->duplex && !(
 	    START_CDP_TLV(CDP_TYPE_DUPLEX) &&
 	    PUSH_UINT8(*packet->duplex)
 	))
 	    return 0;
 	END_CDP_TLV;
-	
+	*/
+
 	if (packet->mtu && !(
 	    START_CDP_TLV(CDP_TYPE_MTU) &&
-	    PUSH_UINT32(*packet->mtu)
+	    PUSH_UINT32(packet->mtu)
 	))
 	    return 0;
-	END_CDP_TLV;*/
+	END_CDP_TLV;
 	
 	*(uint16_t *)checksum_pos = cdp_checksum(data, VOIDP_DIFF(pos, data));
 
@@ -131,6 +133,7 @@ int cdp_packet(struct session *session) {
     packet->ios_version = session->uts_str;
     packet->platform = session->uts->sysname;
     packet->port_id = session->dev;
+    packet->mtu = session->mtu;
 
     if (session->cap_router == 1)
     	packet->capabilities |= CDP_CAP_ROUTER;

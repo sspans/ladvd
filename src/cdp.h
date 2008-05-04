@@ -81,6 +81,6 @@ struct cdp_packet {
 	char *ios_version;
 	char *platform;
 	uint8_t *duplex;
-	uint32_t *mtu;
+	uint32_t mtu;
 };
 

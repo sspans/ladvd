@@ -139,11 +139,18 @@ int main(int argc, char *argv[]) {
 	session->ipaddr4 = ntohl(libnet_get_ipaddr4(session->libnet));
 
 	// TODO: ipv6
-	// TODO: mtu
+	// fetch interface details
+	if (ifinfo_get(session) == EXIT_FAILURE) {
+	    log_str(0, "Error fetching interface details");
+	    exit(EXIT_FAILURE);
+	}
+	
 
+	// copy uts information
 	session->uts = &uts;
 	session->uts_str = uts_str;
 
+	// TODO: this should be flexible
 	if (do_router == 1)
 	    session->cap_router = 1;
 	

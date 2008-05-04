@@ -11,7 +11,12 @@ struct session {
 
     char *dev;
     u_int8_t hwaddr[6];
+    u_int32_t mtu;
+    // TODO: media
+
     u_int32_t ipaddr4;
+    // TODO: ipv6
+
     struct utsname *uts;
     char *uts_str;
     u_int8_t cap_router;
@@ -25,6 +30,8 @@ struct session {
 };
 
 void log_str(int prio, const char *fmt, ...);
+
+int ifinfo_get(struct session *session);
 
 int cdp_packet(struct session *session);
 int cdp_send(struct session *session);
