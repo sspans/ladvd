@@ -114,7 +114,8 @@ int lldp_packet(struct session *session) {
 	packet->mgmt_addr4 = session->ipaddr4; 
     // TODO: ipv6
 
-    packet->mtu = session->mtu; 
+    if (session->mtu)
+	packet->mtu = session->mtu + 22; 
 
     session->lldp_data = malloc(BUFSIZ);
     bzero(session->lldp_data, BUFSIZ);
