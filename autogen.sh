@@ -1,4 +1,4 @@
 #!/bin/sh
 svn -q up
-svn2cl -o doc/ChangeLog
+svn2cl --stdout | sed -e 's! /! !g' > doc/ChangeLog
 autoreconf -fi
