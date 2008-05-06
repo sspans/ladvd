@@ -63,7 +63,7 @@ size_t lldp_encode(struct lldp_packet *packet, void *data, size_t length) {
 	    PUSH_UINT8(1 + sizeof(packet->mgmt_addr4)) &&
 	    PUSH_UINT8(LLDP_AFNUM_INET) &&
 	    PUSH_UINT32(packet->mgmt_addr4) &&
-	    PUSH_UINT8(0) &&
+	    PUSH_UINT8(1) &&
 	    PUSH_UINT32(0) &&
 	    PUSH_UINT8(0)
 	))
