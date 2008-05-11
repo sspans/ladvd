@@ -58,7 +58,7 @@ AC_CHECK_HEADERS([fcntl.h grp.h pwd.h stdarg.h stdint.h stdio.h \
 		 sys/socket.h net/if.h ], 
 		 [], AC_MSG_ERROR([required header missing]))
 AC_CHECK_HEADERS([libnet.h], [], AC_MSG_ERROR([libnet headers missing]))
-AC_CHECK_HEADERS([asm/types.h])
+AC_CHECK_HEADERS([asm/types.h linux/sockios.h])
 AC_CHECK_HEADERS([linux/ethtool.h], [], [],
 [#ifdef HAVE_ASM_TYPES_H
 # include <asm/types.h>
