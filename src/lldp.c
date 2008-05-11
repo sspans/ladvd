@@ -71,6 +71,19 @@ size_t lldp_encode(struct lldp_packet *packet, void *data, size_t length) {
 	END_LLDP_TLV;
     }
 
+    if (packet->autoneg != -1) {
+	if (!(
+	    START_LLDP_TLV(LLDP_PRIVATE_TLV) &&
+	    PUSH_BYTES(OUI_IEEE_8023_PRIVATE, sizeof(OUI_IEEE_8023_PRIVATE) -1) &&
+	    PUSH_UINT8(LLDP_PRIVATE_8023_SUBTYPE_MACPHY) &&
+	    PUSH_UINT8(packet->autoneg) &&
+	    PUSH_UINT16(0) &&
+	    PUSH_UINT16(0)
+	))
+	    return 0;
+	END_LLDP_TLV;
+    }
+
     if (packet->mtu != 0) {
 	if (!(
 	    START_LLDP_TLV(LLDP_PRIVATE_TLV) &&
@@ -116,6 +129,13 @@ int lldp_packet(struct session *session) {
 
     if (session->mtu)
 	packet->mtu = session->mtu + 22; 
+
+    if (session->autoneg_supported != -1) {
+	packet->autoneg = session->autoneg_supported + 
+	    (session->autoneg_enabled << 1);
+    } else {
+	packet->autoneg = -1;
+    }
 
     session->lldp_data = malloc(BUFSIZ);
     bzero(session->lldp_data, BUFSIZ);

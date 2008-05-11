@@ -80,6 +80,7 @@ struct lldp_packet {
 	uint16_t system_cap;
 	uint32_t mgmt_addr4;
 	//v6
+	int8_t autoneg;
 	uint16_t mtu;
 };
 
