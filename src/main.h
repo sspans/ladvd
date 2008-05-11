@@ -14,7 +14,8 @@ struct session {
     uint16_t mtu;
     uint16_t speed;
     int8_t duplex;
-    int8_t autoneg; 
+    int8_t autoneg_supported; 
+    int8_t autoneg_enabled; 
 
     uint32_t ipaddr4;
     // TODO: ipv6

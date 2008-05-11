@@ -26,7 +26,8 @@ int ifinfo_get(struct session *session) {
 
     fd = libnet_getfd(session->libnet);
     session->duplex = -1;
-    session->autoneg = -1;
+    session->autoneg_supported = -1;
+    session->autoneg_enabled = -1;
 
     // fetch interface mtu
     (void) memset(&ifr, 0, sizeof(ifr));
@@ -45,7 +46,13 @@ int ifinfo_get(struct session *session) {
     if (ioctl(fd, SIOCETHTOOL, &ifr) >= 0) {
 	session->duplex = (ecmd.duplex == DUPLEX_FULL) ? 1 : 0;
 	session->speed = ecmd.speed;
-	session->autoneg = (ecmd.autoneg == AUTONEG_ENABLE) ? 1 : 0;
+
+	if(ecmd.supported & SUPPORTED_Autoneg) {
+	    session->autoneg_supported = 1;
+	    session->autoneg_enabled = (ecmd.autoneg == AUTONEG_ENABLE) ? 1 : 0;
+	} else {
+	    session->autoneg_supported = 0;
+	}	
     }
 #endif /* HAVE_LINUX_ETHTOOL_H */
 
