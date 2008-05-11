@@ -99,14 +99,12 @@ size_t cdp_encode(struct cdp_packet *packet, void *data, size_t length) {
 	    return 0;
 	END_CDP_TLV;
 
-	/*
 	if (packet->duplex && !(
 	    START_CDP_TLV(CDP_TYPE_DUPLEX) &&
-	    PUSH_UINT8(*packet->duplex)
+	    PUSH_UINT8(packet->duplex)
 	))
 	    return 0;
 	END_CDP_TLV;
-	*/
 
 	if (packet->mtu && !(
 	    START_CDP_TLV(CDP_TYPE_MTU) &&
@@ -141,8 +139,8 @@ int cdp_packet(struct session *session) {
     if (session->ipaddr4 != -1)
     	packet->address4 = session->ipaddr4;
 
-    //if (session->duplex)
-    //	DUP(packet->duplex, cdp->duplex, uint8_t);
+    if (session->duplex != -1)
+    	packet->duplex = session->duplex;
 
     session->cdp_data = malloc(BUFSIZ);
     bzero(session->cdp_data, BUFSIZ);

@@ -80,7 +80,7 @@ struct cdp_packet {
 	uint32_t capabilities;
 	char *ios_version;
 	char *platform;
-	uint8_t *duplex;
+	uint8_t duplex;
 	uint16_t mtu;
 };
 
