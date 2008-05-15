@@ -142,7 +142,7 @@ int lldp_packet(struct session *session) {
 
     session->lldp_length = lldp_encode(packet, session->lldp_data, BUFSIZ);
     if (session->lldp_length == 0) {
-	log_str(1, "Generated lldp packet too large");
+	log_str(1, "generated lldp packet too large");
 	return(EXIT_FAILURE);
    } 
 
@@ -154,14 +154,14 @@ int lldp_send(struct session *session) {
     libnet_t *l = session->libnet;
 
     if (libnet_build_data(session->lldp_data, session->lldp_length, l, 0)==-1) {
-        log_str(0, "Can't build lldp frame data: %s", libnet_geterror(l));
+        log_str(0, "can't build lldp frame data: %s", libnet_geterror(l));
         goto fail;
     }
 
     if(libnet_build_ethernet(lldp_mac, session->hwaddr, 0x88cc,
 			     NULL, 0, l, 0) == -1) {
 
-	log_str(0, "Can't build lldp ethernet header: %s", libnet_geterror(l));
+	log_str(0, "can't build lldp ethernet header: %s", libnet_geterror(l));
 	goto fail;
     }
 
@@ -169,7 +169,7 @@ int lldp_send(struct session *session) {
      *  Write it to the wire.
      */
     if (libnet_write(l) == -1) {
-        log_str(0, "Network transmit error: %s", libnet_geterror(l));
+        log_str(0, "network transmit error: %s", libnet_geterror(l));
         goto fail;
     }
 
