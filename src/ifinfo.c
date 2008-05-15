@@ -72,7 +72,7 @@ int ifinfo_get(struct session *session) {
     strncpy(ifmr.ifm_name, session->dev, sizeof(ifmr.ifm_name) -1);
 
     if (ioctl(s, SIOCGIFMEDIA, (caddr_t)&ifmr) < 0) {
-	// media detection not supported
+	log_str(3, "media detection not supported on interface %s", session->dev);
 	return(EXIT_SUCCESS);
     }
 
@@ -98,16 +98,20 @@ int ifinfo_get(struct session *session) {
     }
 
     // autoneg
-    if(ifmr.ifm_current & IFM_AUTO) {
+    if(IFM_SUBTYPE(ifmr.ifm_current) == IFM_AUTO) {
+	log_str(3, "autoneg enabled on interface %s", session->dev);
 	session->autoneg_supported = 1;
 	session->autoneg_enabled = 1;
     } else {
+	log_str(3, "autoneg disabled on interface %s", session->dev);
 	session->autoneg_supported = 1;
 	session->autoneg_enabled = 0;
     }
 
-    if(ifmr.ifm_active & IFM_FDX) {
-	session->autoneg_supported = 1;
+    if((ifmr.ifm_active & IFM_FDX) == 0) {
+	session->duplex = 1;
+    } else if((ifmr.ifm_active & IFM_HDX) == 0) {
+	session->duplex = 0;
     }
 
     return(EXIT_SUCCESS);
