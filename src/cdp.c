@@ -147,7 +147,7 @@ int cdp_packet(struct session *session) {
 
     session->cdp_length = cdp_encode(packet, session->cdp_data, BUFSIZ);
     if (session->cdp_length == 0) {
-	log_str(0, "Generated cdp packet too large");
+	log_str(0, "generated cdp packet too large");
 	return(EXIT_FAILURE);
     }
 
@@ -159,13 +159,13 @@ int cdp_send(struct session *session) {
     libnet_t *l = session->libnet;
 
     if (libnet_build_data(session->cdp_data, session->cdp_length, l, 0) == -1) {
-        log_str(0, "Can't build cdp ethernet data: %s", libnet_geterror(l));
+        log_str(0, "can't build cdp ethernet data: %s", libnet_geterror(l));
         goto fail;
     }
 
     if (libnet_build_802_2snap(0xaa, 0xaa, 0x03, cdp_snap_oui, 
 			       0x2000, NULL, 0, l, 0) == -1) {
-        log_str(0, "Can't build cdp snap header: %s", libnet_geterror(l));
+        log_str(0, "can't build cdp snap header: %s", libnet_geterror(l));
 	goto fail;
     }
 
@@ -174,7 +174,7 @@ int cdp_send(struct session *session) {
 			LIBNET_802_2SNAP_H + session->cdp_length,
 			NULL, 0, l, 0) == -1) {
 
-	log_str(0, "Can't build cdp ethernet header: %s", libnet_geterror(l));
+	log_str(0, "can't build cdp ethernet header: %s", libnet_geterror(l));
 	goto fail;
     }
 
@@ -182,7 +182,7 @@ int cdp_send(struct session *session) {
      *  Write it to the wire.
      */
     if (libnet_write(l) == -1) {
-        log_str(0, "Network transmit error: %s", libnet_geterror(l));
+        log_str(0, "network transmit error: %s", libnet_geterror(l));
         goto fail;
     }
 

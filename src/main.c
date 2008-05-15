@@ -76,13 +76,13 @@ int main(int argc, char *argv[]) {
 
     // uts
     if (uname(&uts) == -1) {
-	log_str(0, "Can't fetch uname: %s", strerror(errno));
+	log_str(0, "can't fetch uname: %s", strerror(errno));
 	exit(EXIT_FAILURE);
     }
 
     uts_str = malloc(sizeof(struct utsname) + 10);
     if (uts_str == NULL) {
-	log_str(0, "Can't create uts_str: %s", strerror(errno));
+	log_str(0, "can't create uts_str: %s", strerror(errno));
 	exit(EXIT_FAILURE);
     }
 
@@ -130,7 +130,7 @@ int main(int argc, char *argv[]) {
 	// fetch ethernet hwaddr
 	hwaddr = libnet_get_hwaddr(session->libnet);
 	if (hwaddr == NULL) {
-	    log_str(0, "Can't fetch hardware address: %s", libnet_geterror(session->libnet));
+	    log_str(0, "can't fetch hardware address: %s", libnet_geterror(session->libnet));
 	    exit(EXIT_FAILURE);
 	}
 	memcpy(session->hwaddr, hwaddr->ether_addr_octet, 6 * sizeof(uint8_t));
@@ -141,7 +141,7 @@ int main(int argc, char *argv[]) {
 	// TODO: ipv6
 	// fetch interface details
 	if (ifinfo_get(session) == EXIT_FAILURE) {
-	    log_str(0, "Error fetching interface details");
+	    log_str(0, "error fetching interface details");
 	    exit(EXIT_FAILURE);
 	}
 	
@@ -160,7 +160,7 @@ int main(int argc, char *argv[]) {
 	    log_str(3, "building an cdp packet for %s", session->dev);
 	    cdp_packet(session);
 	    if (session->cdp_data == NULL) {
-		log_str(0, "Can't generate CDP packet");
+		log_str(0, "can't generate CDP packet");
 		exit(EXIT_FAILURE);
 	    }
 	    log_str(3, "generated an cdp packet (%d bytes)",
@@ -173,7 +173,7 @@ int main(int argc, char *argv[]) {
 	    log_str(3, "building an lldp packet for %s", session->dev);
 	    lldp_packet(session);
 	    if (session->lldp_data == NULL) {
-		log_str(0, "Can't generate LLDP packet");
+		log_str(0, "can't generate LLDP packet");
 		exit(EXIT_FAILURE);
 	    }
 	    log_str(3, "generated an lldp packet (%d bytes)",
@@ -192,7 +192,7 @@ int main(int argc, char *argv[]) {
     // fork
     if (do_fork == 1) {
 	if (daemon(0,0) == -1) {
-	    log_str(0, "Backgrounding failed: %s", strerror(errno));
+	    log_str(0, "backgrounding failed: %s", strerror(errno));
 	    exit(EXIT_FAILURE);
 	}
 	snprintf(pidstr, sizeof(pidstr), "%u\n", getpid());
@@ -205,17 +205,17 @@ int main(int argc, char *argv[]) {
 
     // setuid & setgid
     if(setgid(pwd->pw_gid) == -1){
-	log_str(0, "Unable to setgid: %s", strerror(errno));
+	log_str(0, "unable to setgid: %s", strerror(errno));
        	exit(EXIT_FAILURE);
     }
 
     if(setgroups(0, NULL) == -1){
-	log_str(0, "Unable to setgroups: %s", strerror(errno));
+	log_str(0, "unable to setgroups: %s", strerror(errno));
        	exit(EXIT_FAILURE);
     }
 
     if(setuid(pwd->pw_uid) == -1){
-   	log_str(0, "Unable to setuid: %s", strerror(errno));
+   	log_str(0, "unable to setuid: %s", strerror(errno));
        	exit(EXIT_FAILURE);
     }
 
