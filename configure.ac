@@ -62,6 +62,7 @@ AC_CHECK_HEADERS([net/if.h], [], [],
 [#ifdef HAVE_SYS_SOCKET_H
 # include <sys/socket.h>
 # endif
+])
 AC_CHECK_HEADERS([linux/ethtool.h], [], [],
 [#ifdef HAVE_ASM_TYPES_H
 # include <asm/types.h>
