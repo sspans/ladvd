@@ -1,7 +1,6 @@
 
 CODE:
 - ipv6 address support
-- speed duplex
 - improve capability selection
 - improve sysname handling (short/long/etc)
 - lldp-med support (dmi)
