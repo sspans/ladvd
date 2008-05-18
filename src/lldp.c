@@ -78,7 +78,7 @@ size_t lldp_encode(struct lldp_packet *packet, void *data, size_t length) {
 	    PUSH_UINT8(LLDP_PRIVATE_8023_SUBTYPE_MACPHY) &&
 	    PUSH_UINT8(packet->autoneg) &&
 	    PUSH_UINT16(0) &&
-	    PUSH_UINT16(0)
+	    PUSH_UINT16(packet->mau)
 	))
 	    return 0;
 	END_LLDP_TLV;
@@ -133,6 +133,7 @@ int lldp_packet(struct session *session) {
     if (session->autoneg_supported != -1) {
 	packet->autoneg = session->autoneg_supported + 
 	    (session->autoneg_enabled << 1);
+	packet->mau = session->mau;
     } else {
 	packet->autoneg = -1;
     }

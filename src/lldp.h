@@ -70,6 +70,51 @@ static uint8_t lldp_mac[] = { 0x01, 0x80, 0xc2, 0x00, 0x00, 0x0e };
 #define LLDP_PRIVATE_8023_SUBTYPE_LINKAGGR      3
 #define LLDP_PRIVATE_8023_SUBTYPE_MTU           4
 
+/*
+ * From RFC 3636 - dot3MauType
+ */
+#define         LLDP_MAU_TYPE_UNKNOWN           0
+#define         LLDP_MAU_TYPE_AUI               1
+#define         LLDP_MAU_TYPE_10BASE_5          2
+#define         LLDP_MAU_TYPE_FOIRL             3
+#define         LLDP_MAU_TYPE_10BASE_2          4
+#define         LLDP_MAU_TYPE_10BASE_T          5
+#define         LLDP_MAU_TYPE_10BASE_FP         6
+#define         LLDP_MAU_TYPE_10BASE_FB         7
+#define         LLDP_MAU_TYPE_10BASE_FL         8
+#define         LLDP_MAU_TYPE_10BROAD36         9
+#define         LLDP_MAU_TYPE_10BASE_T_HD       10
+#define         LLDP_MAU_TYPE_10BASE_T_FD       11
+#define         LLDP_MAU_TYPE_10BASE_FL_HD      12
+#define         LLDP_MAU_TYPE_10BASE_FL_FD      13
+#define         LLDP_MAU_TYPE_100BASE_T4        14
+#define         LLDP_MAU_TYPE_100BASE_TX_HD     15
+#define         LLDP_MAU_TYPE_100BASE_TX_FD     16
+#define         LLDP_MAU_TYPE_100BASE_FX_HD     17
+#define         LLDP_MAU_TYPE_100BASE_FX_FD     18
+#define         LLDP_MAU_TYPE_100BASE_T2_HD     19
+#define         LLDP_MAU_TYPE_100BASE_T2_FD     20
+#define         LLDP_MAU_TYPE_1000BASE_X_HD     21
+#define         LLDP_MAU_TYPE_1000BASE_X_FD     22
+#define         LLDP_MAU_TYPE_1000BASE_LX_HD    23
+#define         LLDP_MAU_TYPE_1000BASE_LX_FD    24
+#define         LLDP_MAU_TYPE_1000BASE_SX_HD    25
+#define         LLDP_MAU_TYPE_1000BASE_SX_FD    26
+#define         LLDP_MAU_TYPE_1000BASE_CX_HD    27
+#define         LLDP_MAU_TYPE_1000BASE_CX_FD    28
+#define         LLDP_MAU_TYPE_1000BASE_T_HD     29
+#define         LLDP_MAU_TYPE_1000BASE_T_FD     30
+#define         LLDP_MAU_TYPE_10GBASE_X         31
+#define         LLDP_MAU_TYPE_10GBASE_LX4       32
+#define         LLDP_MAU_TYPE_10GBASE_R         33
+#define         LLDP_MAU_TYPE_10GBASE_ER        34
+#define         LLDP_MAU_TYPE_10GBASE_LR        35
+#define         LLDP_MAU_TYPE_10GBASE_SR        36
+#define         LLDP_MAU_TYPE_10GBASE_W         37
+#define         LLDP_MAU_TYPE_10GBASE_EW        38
+#define         LLDP_MAU_TYPE_10GBASE_LW        39
+#define         LLDP_MAU_TYPE_10GBASE_SW        40
+
 
 struct lldp_packet {
 	uint8_t hwaddr[6];
@@ -81,6 +126,7 @@ struct lldp_packet {
 	uint32_t mgmt_addr4;
 	//v6
 	int8_t autoneg;
+	uint16_t mau;
 	uint16_t mtu;
 };
 

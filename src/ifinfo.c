@@ -3,6 +3,7 @@
 #include <sys/socket.h>
 #include <net/if.h>
 #include <main.h>
+#include <lldp.h>
 
 #if HAVE_ASM_TYPES_H
 # include <asm/types.h>
@@ -41,6 +42,7 @@ int ifinfo_get(struct session *session) {
     session->duplex = -1;
     session->autoneg_supported = -1;
     session->autoneg_enabled = -1;
+    session->mau = 0;
 
     bzero(&ifr, sizeof(ifr));
     strncpy(ifr.ifr_name, session->dev, sizeof(ifr.ifr_name) -1);
@@ -59,7 +61,7 @@ int ifinfo_get(struct session *session) {
     if (ioctl(s, SIOCETHTOOL, &ifr) >= 0) {
 	// duplex
 	session->duplex = (ecmd.duplex == DUPLEX_FULL) ? 1 : 0;
-	session->speed = ecmd.speed;
+	//session->speed = ecmd.speed;
 
 	// autoneg
 	if(ecmd.supported & SUPPORTED_Autoneg) {
@@ -140,6 +142,66 @@ int ifinfo_get(struct session *session) {
 	log_str(3, "half-duplex enabled on interface %s", session->dev);
 	session->duplex = 0;
     }
+
+    // mau
+    switch (IFM_SUBTYPE(ifmr.ifm_active)) {
+	case IFM_10_T:
+	    if (session->duplex == 1)
+		session->mau = LLDP_MAU_TYPE_10BASE_T_FD;
+	    else
+		session->mau = LLDP_MAU_TYPE_10BASE_T_HD;
+	case IFM_10_2:
+	    session->mau = LLDP_MAU_TYPE_10BASE_2;
+	case IFM_10_5:
+	    session->mau = LLDP_MAU_TYPE_10BASE_5;
+	case IFM_100_TX:
+	    if (session->duplex == 1)
+		session->mau = LLDP_MAU_TYPE_100BASE_TX_FD;
+	    else
+		session->mau = LLDP_MAU_TYPE_100BASE_TX_HD;
+	case IFM_100_FX:
+	    if (session->duplex == 1)
+		session->mau = LLDP_MAU_TYPE_100BASE_FX_FD;
+	    else
+		session->mau = LLDP_MAU_TYPE_100BASE_FX_HD;
+	case IFM_100_T4:
+	    session->mau = LLDP_MAU_TYPE_100BASE_T4;
+	case IFM_100_T2:
+	    if (session->duplex == 1)
+		session->mau = LLDP_MAU_TYPE_100BASE_T2_FD;
+	    else
+		session->mau = LLDP_MAU_TYPE_100BASE_T2_HD;
+	case IFM_1000_SX:
+	    if (session->duplex == 1)
+		session->mau = LLDP_MAU_TYPE_1000BASE_SX_FD;
+	    else
+		session->mau = LLDP_MAU_TYPE_1000BASE_SX_HD;
+	case IFM_10_FL: 
+	    if (session->duplex == 1)
+		session->mau = LLDP_MAU_TYPE_10BASE_FL_FD;
+	    else
+		session->mau = LLDP_MAU_TYPE_10BASE_FL_HD;
+	case IFM_1000_LX:
+	    if (session->duplex == 1)
+		session->mau = LLDP_MAU_TYPE_1000BASE_LX_FD;
+	    else
+		session->mau = LLDP_MAU_TYPE_1000BASE_LX_HD;
+	case IFM_1000_CX:
+	    if (session->duplex == 1)
+		session->mau = LLDP_MAU_TYPE_1000BASE_CX_FD;
+	    else
+		session->mau = LLDP_MAU_TYPE_1000BASE_CX_HD;
+	case IFM_1000_T:
+	    if (session->duplex == 1)
+		session->mau = LLDP_MAU_TYPE_1000BASE_T_FD;
+	    else
+		session->mau = LLDP_MAU_TYPE_1000BASE_T_HD;
+	case IFM_10G_LR:
+	    session->mau = LLDP_MAU_TYPE_10GBASE_LR;
+	case IFM_10G_SR:
+	    session->mau = LLDP_MAU_TYPE_10GBASE_SR;
+    }
+
 
     free(media_list);
     return(EXIT_SUCCESS);
