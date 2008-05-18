@@ -61,7 +61,6 @@ int ifinfo_get(struct session *session) {
     if (ioctl(s, SIOCETHTOOL, &ifr) >= 0) {
 	// duplex
 	session->duplex = (ecmd.duplex == DUPLEX_FULL) ? 1 : 0;
-	//session->speed = ecmd.speed;
 
 	// autoneg
 	if(ecmd.supported & SUPPORTED_Autoneg) {
