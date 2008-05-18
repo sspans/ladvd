@@ -21,7 +21,7 @@
 #endif /* HAVE_NET_IF_MEDIA_H */
 
 int ifinfo_get(struct session *session) {
-    int fd;
+    int s, af = AF_INET;
     struct ifreq ifr;
 
 #if HAVE_LINUX_ETHTOOL_H
@@ -30,9 +30,14 @@ int ifinfo_get(struct session *session) {
 
 #if HAVE_NET_IF_MEDIA_H
     struct ifmediareq ifmr;
+    int *media_list, i;
 #endif /* HAVE_HAVE_NET_IF_MEDIA_H */
 
-    fd = libnet_getfd(session->libnet);
+    if ((s = socket(af, SOCK_DGRAM, 0)) < 0) {
+	log_str(0, "opening socket failed on interface %s", session->dev);
+	return(EXIT_FAILURE);
+    }
+
     session->duplex = -1;
     session->autoneg_supported = -1;
     session->autoneg_enabled = -1;
@@ -41,7 +46,7 @@ int ifinfo_get(struct session *session) {
     strncpy(ifr.ifr_name, session->dev, sizeof(ifr.ifr_name) -1);
 
     // interface mtu
-    if (ioctl(fd, SIOCGIFMTU, (caddr_t)&ifr) < 0) {
+    if (ioctl(s, SIOCGIFMTU, (caddr_t)&ifr) < 0) {
 	log_str(0, "fetching %s mtu failed: %s", session->dev, strerror(errno));
     } else {
 	session->mtu = ifr.ifr_mtu;
@@ -51,7 +56,8 @@ int ifinfo_get(struct session *session) {
     ifr.ifr_data = (caddr_t)&ecmd;
     ecmd.cmd = ETHTOOL_GSET;
 
-    if (ioctl(fd, SIOCETHTOOL, &ifr) >= 0) {
+    if (ioctl(s, SIOCETHTOOL, &ifr) >= 0) {
+	// duplex
 	session->duplex = (ecmd.duplex == DUPLEX_FULL) ? 1 : 0;
 	session->speed = ecmd.speed;
 
@@ -81,11 +87,12 @@ int ifinfo_get(struct session *session) {
 	return(EXIT_FAILURE);
     }
 
-    ifmr.ifm_ulist = malloc(ifmr.ifm_count * sizeof(int));
-    if (ifmr.ifm_ulist == NULL) {
+    media_list = malloc(ifmr.ifm_count * sizeof(int));
+    if (media_list == NULL) {
 	log_str(0, "malloc failed for interface %s", session->dev);
 	return(EXIT_FAILURE);
     }
+    ifmr.ifm_ulist = media_list;
 
     if (ioctl(s, SIOCGIFMEDIA, (caddr_t)&ifmr) < 0) {
 	log_str(0, "media detection failed for interface %s", session->dev);
@@ -97,23 +104,44 @@ int ifinfo_get(struct session *session) {
 	return(EXIT_FAILURE);
     }
 
-    // autoneg
-    if(IFM_SUBTYPE(ifmr.ifm_current) == IFM_AUTO) {
-	log_str(3, "autoneg enabled on interface %s", session->dev);
-	session->autoneg_supported = 1;
-	session->autoneg_enabled = 1;
-    } else {
-	log_str(3, "autoneg disabled on interface %s", session->dev);
-	session->autoneg_supported = 1;
-	session->autoneg_enabled = 0;
+    if ((ifmr.ifm_status & IFM_ACTIVE) == 0) { 
+	log_str(0, "no link detected on interface %s", session->dev);
+	return(EXIT_SUCCESS);
     }
 
-    if((ifmr.ifm_active & IFM_FDX) == 0) {
+    // autoneg support
+    for (i = 0; i < ifmr.ifm_count; i++) {
+	if(IFM_SUBTYPE(ifmr.ifm_ulist[i]) == IFM_AUTO) {
+	    log_str(3, "autoneg supported on interface %s", session->dev);
+	    session->autoneg_supported = 1;
+	    break;
+	}
+    }
+
+    // autoneg enabled
+    if (session->autoneg_supported == 1) {
+	if(IFM_SUBTYPE(ifmr.ifm_current) == IFM_AUTO) {
+	    log_str(3, "autoneg enabled on interface %s", session->dev);
+	    session->autoneg_enabled = 1;
+	} else {
+	    log_str(3, "autoneg disabled on interface %s", session->dev);
+	    session->autoneg_enabled = 0;
+	}
+    } else {
+	log_str(3, "autoneg not supported on interface %s", session->dev);
+	session->autoneg_supported = 0;
+    }
+
+    // duplex
+    if((IFM_OPTIONS(ifmr.ifm_active) & IFM_FDX) != 0) {
+	log_str(3, "full-duplex enabled on interface %s", session->dev);
 	session->duplex = 1;
-    } else if((ifmr.ifm_active & IFM_HDX) == 0) {
+    } else {
+	log_str(3, "half-duplex enabled on interface %s", session->dev);
 	session->duplex = 0;
     }
 
+    free(media_list);
     return(EXIT_SUCCESS);
 #endif /* HAVE_NET_IF_MEDIA_H */
 
