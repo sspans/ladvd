@@ -157,13 +157,13 @@ int main(int argc, char *argv[]) {
 	// cdp packet
 	if (do_cdp == 1) {
 
-	    log_str(3, "building an cdp packet for %s", session->dev);
+	    log_str(3, "building a cdp packet for %s", session->dev);
 	    cdp_packet(session);
 	    if (session->cdp_data == NULL) {
 		log_str(0, "can't generate CDP packet");
 		exit(EXIT_FAILURE);
 	    }
-	    log_str(3, "generated an cdp packet (%d bytes)",
+	    log_str(3, "generated a cdp packet (%d bytes)",
 		    session->cdp_length);
 	}
 
