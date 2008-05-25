@@ -37,8 +37,13 @@ int main(int argc, char *argv[]) {
     do_cdp  = 0;
     do_lldp = 0;
 
-    while ((ch = getopt(argc, argv, "clfoC:u:hv")) != -1) {
+    while ((ch = getopt(argc, argv, "C:clfou:hv")) != -1) {
 	switch(ch) {
+	    case 'C':
+		cap = cap_parse(optarg);
+		if (cap == -1)
+		    usage(progname);
+		break;
 	    case 'c':
 		do_cdp = 1;
 		break;
@@ -50,11 +55,6 @@ int main(int argc, char *argv[]) {
 		break;
 	    case 'o':
 		do_once = 1;
-		break;
-	    case 'C':
-		cap = cap_parse(optarg);
-		if (cap == -1)
-		    usage(progname);
 		break;
 	    case 'u':
 		username = optarg;
@@ -284,15 +284,15 @@ int cap_parse(const char *optarg) {
 void usage(const char *fn) {
 
     fprintf(stderr, "%s version %s\n" 
-	"Usage: %s [-c] [-l] [-r] [-f] [-u %s ] INTERFACE INTERFACE\n"
+	"Usage: %s [-C <cap> ] [-c] [-l] [-f] [-u %s ] INTERFACE INTERFACE\n"
+	    "\t-C <capability> = System Capabilities\n"
+	    "\tB - Bridge, H - Host, R - Router\n"
+	    "\tS - Switch, W - WLAN Access Point\n"
 	    "\t-c = Send CDP Messages\n"
 	    "\t-l = Send LLDP Messages\n"
 	    "\t-f = Run in the foreground\n"
 	    "\t-o = Run Once\n"
 	    "\t-u <user> = Setuid User (defaults to %s)\n"
-	    "\t-C <capability> = System Capabilities\n"
-	    "\tB - Bridge, H - Host, R - Router\n"
-	    "\tS - Switch, W - WLAN Access Point\n"
 	    "\t-v = Increase logging verbosity\n"
 	    "\t-h = Print this message\n",
 	    PACKAGE_NAME, PACKAGE_VERSION, fn, USER, USER);
