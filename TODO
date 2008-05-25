@@ -2,7 +2,6 @@
 CODE:
 - ipv6 address support
 - be smart about link-state changes (kqueue, epoll, something ?)
-- improve sysname handling (short/long/etc)
 - lldp-med support (dmi)
 - chroot support
 

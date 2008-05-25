@@ -81,7 +81,7 @@ AC_TYPE_UINT8_T
 
 # Checks for library functions.
 AC_FUNC_VPRINTF
-AC_CHECK_FUNCS([bzero strdup strerror uname vsyslog], [], AC_MSG_ERROR([required function missing]))
+AC_CHECK_FUNCS([asprintf bzero snprintf strdup strerror uname vsyslog], [], AC_MSG_ERROR([required function missing]))
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile])
