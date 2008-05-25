@@ -1,6 +1,6 @@
+#include <libnet.h>
 #include "config.h"
 #include <sys/utsname.h>
-#include <libnet.h>
 
 #define USER	    "nobody"
 #define PIDFILE	    "/var/run/ladvd.pid"
