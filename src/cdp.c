@@ -133,8 +133,14 @@ int cdp_packet(struct session *session) {
     packet->port_id = session->dev;
     packet->mtu = session->mtu;
 
-    if (session->cap_router == 1)
+    if (session->cap & CAP_BRIDGE)
+    	packet->capabilities |= CDP_CAP_TRANSPARENT_BRIDGE;
+    if (session->cap & CAP_HOST)
+    	packet->capabilities |= CDP_CAP_HOST;
+    if (session->cap & CAP_ROUTER)
     	packet->capabilities |= CDP_CAP_ROUTER;
+    if (session->cap & CAP_SWITCH)
+    	packet->capabilities |= CDP_CAP_SWITCH;
 
     if (session->ipaddr4 != -1)
     	packet->address4 = session->ipaddr4;

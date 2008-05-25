@@ -118,10 +118,18 @@ int lldp_packet(struct session *session) {
     packet->system_name = session->uts->nodename;
     packet->system_descr = session->uts_str;
 
-    if (session->cap_router == 1)
-	packet->system_cap = LLDP_CAP_ROUTER;
-    else
+    if (session->cap & CAP_HOST) {
 	packet->system_cap = LLDP_CAP_STATION_ONLY;
+    } else {
+	if (session->cap & CAP_BRIDGE)
+	    packet->system_cap |= LLDP_CAP_BRIDGE;
+	if (session->cap & CAP_ROUTER)
+	    packet->system_cap |= LLDP_CAP_ROUTER;
+	if (session->cap & CAP_SWITCH)
+	    packet->system_cap |= LLDP_CAP_BRIDGE;
+	if (session->cap & CAP_WLAN)
+	    packet->system_cap |= LLDP_CAP_WLAN_AP;
+    }
 
     if (session->ipaddr4 != -1)
 	packet->mgmt_addr4 = session->ipaddr4; 

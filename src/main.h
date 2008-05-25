@@ -22,7 +22,7 @@ struct session {
 
     struct utsname *uts;
     char *uts_str;
-    uint8_t cap_router;
+    int8_t cap;
 
     uint8_t *cdp_data;
     size_t cdp_length;
@@ -31,6 +31,12 @@ struct session {
     
     struct session *next;
 };
+
+#define CAP_BRIDGE	(1 << 0)
+#define CAP_HOST	(1 << 1)
+#define CAP_ROUTER	(1 << 2)
+#define CAP_SWITCH	(1 << 3)
+#define CAP_WLAN	(1 << 4)
 
 void log_str(int prio, const char *fmt, ...);
 

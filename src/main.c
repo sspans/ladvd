@@ -14,12 +14,14 @@
 
 unsigned int loglevel = 0;
 unsigned int do_fork = 1;
+
+int cap_parse(const char *optarg);
 void usage(const char *fn);
 
 int main(int argc, char *argv[]) {
 
-    int ch, dev, do_cdp, do_lldp;
-    int fd = -1, do_once = 0, do_router = 0;
+    int ch, dev, cap, do_cdp, do_lldp;
+    int fd = -1, do_once = 0;
     char *progname = argv[0];
     char *username = USER;
     char *pidfile = PIDFILE;
@@ -35,7 +37,7 @@ int main(int argc, char *argv[]) {
     do_cdp  = 0;
     do_lldp = 0;
 
-    while ((ch = getopt(argc, argv, "clforu:hv")) != -1) {
+    while ((ch = getopt(argc, argv, "clfoC:u:hv")) != -1) {
 	switch(ch) {
 	    case 'c':
 		do_cdp = 1;
@@ -43,14 +45,16 @@ int main(int argc, char *argv[]) {
 	    case 'l':
 		do_lldp = 1;
 		break;
-	    case 'r':
-		do_router = 1;
-		break;
 	    case 'f':
 		do_fork = 0;
 		break;
 	    case 'o':
 		do_once = 1;
+		break;
+	    case 'C':
+		cap = cap_parse(optarg);
+		if (cap == -1)
+		    usage(progname);
 		break;
 	    case 'u':
 		username = optarg;
@@ -150,9 +154,8 @@ int main(int argc, char *argv[]) {
 	session->uts = &uts;
 	session->uts_str = uts_str;
 
-	// TODO: this should be flexible
-	if (do_router == 1)
-	    session->cap_router = 1;
+	// copy capabilities
+	session->cap = cap;
 	
 	// cdp packet
 	if (do_cdp == 1) {
@@ -246,17 +249,51 @@ int main(int argc, char *argv[]) {
     return (EXIT_SUCCESS);
 }
 
+int cap_parse(const char *optarg) {
+    int cap = 0, i;
+
+    for (i = 0; i < strlen(optarg); i++) {
+	switch(optarg[i]) {
+	    case 'b':
+	    case 'B':
+		cap |= CAP_BRIDGE;
+		break;
+	    case 'h':
+	    case 'H':
+		cap |= CAP_HOST;
+		break;
+	    case 'r':
+	    case 'R':
+		cap |= CAP_ROUTER;
+		break;
+	    case 's':
+	    case 'S':
+		cap |= CAP_SWITCH;
+		break;
+	    case 'w':
+	    case 'W':
+		cap |= CAP_WLAN;
+		break;
+	    default:
+		return(-1);
+	}
+    }
+    return(cap);
+}
+
 void usage(const char *fn) {
 
     fprintf(stderr, "%s version %s\n" 
 	"Usage: %s [-c] [-l] [-r] [-f] [-u %s ] INTERFACE INTERFACE\n"
 	    "\t-c = Send CDP Messages\n"
 	    "\t-l = Send LLDP Messages\n"
-	    "\t-r = Advertise Forwarding Capability\n"
 	    "\t-f = Run in the foreground\n"
 	    "\t-o = Run Once\n"
-	    "\t-u = Setuid User (defaults to %s)\n"
-	    "\t-v = increase logging verbosity\n"
+	    "\t-u <user> = Setuid User (defaults to %s)\n"
+	    "\t-C <capability> = System Capabilities\n"
+	    "\tB - Bridge, H - Host, R - Router\n"
+	    "\tS - Switch, W - WLAN Access Point\n"
+	    "\t-v = Increase logging verbosity\n"
 	    "\t-h = Print this message\n",
 	    PACKAGE_NAME, PACKAGE_VERSION, fn, USER, USER);
 
