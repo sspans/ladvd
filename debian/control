@@ -1,8 +1,8 @@
 Source: ladvd
 Section: unknown
 Priority: extra
-Maintainer: Sten Spans <sten@bastard.snore.nl>
-Build-Depends: debhelper (>= 5), autotools-dev, libnet-dev
+Maintainer: Sten Spans <sten@blinkenlights.nl>
+Build-Depends: debhelper (>= 5), autotools-dev, libnet-dev, libcap-dev
 Standards-Version: 3.7.2
 
 Package: ladvd
