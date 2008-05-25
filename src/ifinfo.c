@@ -60,6 +60,7 @@ int ifinfo_get(struct session *session) {
     ecmd.cmd = ETHTOOL_GSET;
 
     if (ioctl(s, SIOCETHTOOL, &ifr) >= 0) {
+	log_str(3, "ethtool ioctl succeeded on interface %s", session->dev);
 	// duplex
 	session->duplex = (ecmd.duplex == DUPLEX_FULL) ? 1 : 0;
 
@@ -70,6 +71,8 @@ int ifinfo_get(struct session *session) {
 	} else {
 	    session->autoneg_supported = 0;
 	}	
+    } else {
+	log_str(3, "ethtool ioctl failed on interface %s", session->dev);
     }
 
     return(EXIT_SUCCESS);
