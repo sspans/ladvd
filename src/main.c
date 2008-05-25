@@ -66,6 +66,11 @@ int main(int argc, char *argv[]) {
 		usage(progname);
 	}
     }
+
+    // default to CAP_HOST
+    if (cap == 0)
+	cap |= CAP_HOST;
+
     argc -= optind;
     argv += optind;
 
