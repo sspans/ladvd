@@ -13,12 +13,12 @@ switches. By default it will run as user "nobody" and daemonize.
 Either -c or -l and a list of interfaces are required for
 correct operation.
 .SH OPTIONS
+.IP "-C B|H|R|S|W"
+Specify capabilities: Bridge, Host, Router, Switch or WLAN AP. Combining multiple options is supported, except when using the Host capability in LLDP packets.
 .IP -c
 Send CDP messages.
 .IP -l
 Send LLDP messages.
-.IP -r
-Advertise forwarding (router) capability.
 .IP -f
 Run in the foreground and send logging to stderr.
 .IP -o
