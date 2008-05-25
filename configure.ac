@@ -8,6 +8,8 @@ AC_CONFIG_HEADER([src/config.h])
 
 # Checks for programs.
 AC_PROG_CC
+AC_GNU_SOURCE
+AC_PROG_INSTALL
 
 if test -n "$GCC"; then
     CFLAGS="$CFLAGS -Wall"
