@@ -65,7 +65,7 @@ int ifinfo_get(struct session *session) {
 	session->duplex = (ecmd.duplex == DUPLEX_FULL) ? 1 : 0;
 
 	// autoneg
-	if(ecmd.supported & SUPPORTED_Autoneg) {
+	if (ecmd.supported & SUPPORTED_Autoneg) {
 	    session->autoneg_supported = 1;
 	    session->autoneg_enabled = (ecmd.autoneg == AUTONEG_ENABLE) ? 1 : 0;
 	} else {
@@ -116,7 +116,7 @@ int ifinfo_get(struct session *session) {
 
     // autoneg support
     for (i = 0; i < ifmr.ifm_count; i++) {
-	if(IFM_SUBTYPE(ifmr.ifm_ulist[i]) == IFM_AUTO) {
+	if (IFM_SUBTYPE(ifmr.ifm_ulist[i]) == IFM_AUTO) {
 	    log_str(3, "autoneg supported on interface %s", session->dev);
 	    session->autoneg_supported = 1;
 	    break;
@@ -125,7 +125,7 @@ int ifinfo_get(struct session *session) {
 
     // autoneg enabled
     if (session->autoneg_supported == 1) {
-	if(IFM_SUBTYPE(ifmr.ifm_current) == IFM_AUTO) {
+	if (IFM_SUBTYPE(ifmr.ifm_current) == IFM_AUTO) {
 	    log_str(3, "autoneg enabled on interface %s", session->dev);
 	    session->autoneg_enabled = 1;
 	} else {
@@ -138,7 +138,7 @@ int ifinfo_get(struct session *session) {
     }
 
     // duplex
-    if((IFM_OPTIONS(ifmr.ifm_active) & IFM_FDX) != 0) {
+    if ((IFM_OPTIONS(ifmr.ifm_active) & IFM_FDX) != 0) {
 	log_str(3, "full-duplex enabled on interface %s", session->dev);
 	session->duplex = 1;
     } else {
