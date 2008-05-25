@@ -32,11 +32,11 @@ AC_ARG_WITH(libnet_libraries,
 	[with_libnet_libraries="$withval"],[with_libnet_libraries="no"])
 
 if test "x$with_libnet_includes" != "xno"; then
-    CPPFLAGS="${CPPFLAGS} -I${with_libnet_includes}"
+    AC_SUBST(NET_CFLAGS,"-I${with_libnet_includes}")
 fi  
 
 if test "x$with_libnet_libraries" != "xno"; then
-    LDFLAGS="${LDFLAGS} -L${with_libnet_libraries}"
+    AC_SUBST(NET_LIBS,"-L${with_libnet_libraries}")
 fi
 
 # Checks for libraries.
@@ -59,18 +59,35 @@ AC_CHECK_HEADERS([fcntl.h grp.h pwd.h stdarg.h stdint.h stdio.h syslog.h \
 		  sys/file.h sys/utsname.h unistd.h sys/ioctl.h sys/types.h \
 		  sys/socket.h ], 
 		 [], AC_MSG_ERROR([required header missing]))
+# libnet
 AC_CHECK_HEADERS([libnet.h], [], AC_MSG_ERROR([libnet headers missing]))
+
+# bsd ifmedia
 AC_CHECK_HEADERS([asm/types.h linux/sockios.h net/if_media.h])
 AC_CHECK_HEADERS([net/if.h], [], [],
 [#ifdef HAVE_SYS_SOCKET_H
 # include <sys/socket.h>
 # endif
 ])
+
+# ethtool
 AC_CHECK_HEADERS([linux/ethtool.h], [], [],
 [#ifdef HAVE_ASM_TYPES_H
 # include <asm/types.h>
 # endif
 ])
+
+# linux capabilities
+AC_CHECK_HEADERS([sys/prctl.h sys/capability.h])
+if test "$ac_cv_header_sys_capability_h" = "yes" ; then
+    AC_CHECK_LIB(cap, cap_init, ac_need_libcap=1)
+    if test "$ac_cv_lib_cap_cap_init" = "yes"; then
+	AC_DEFINE(USE_CAPABILITIES,1,
+	[define if capabilities should be used])
+	AC_SUBST(CAP_LIBS,"-lcap")
+	use_capabilities=yes
+    fi
+fi
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST

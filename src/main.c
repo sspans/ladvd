@@ -13,6 +13,11 @@
 #include <grp.h>
 #include <netdb.h>
 
+#ifdef USE_CAPABILITIES
+#include <sys/prctl.h>
+#include <sys/capability.h>
+#endif
+
 unsigned int loglevel = 0;
 unsigned int do_fork = 1;
 
@@ -28,12 +33,20 @@ int main(int argc, char *argv[]) {
     char *pidfile = PIDFILE;
     char pidstr[16];
     struct passwd *pwd;
+
+    // uname
     struct utsname uts;
     char *uts_str, *hostname;
     struct hostent *hp;
+    // sessions
     struct session *sessions = NULL, *session_prev = NULL, *session;
+    // libnet
     struct libnet_ether_addr *hwaddr;
     char errbuf[LIBNET_ERRBUF_SIZE];
+#ifdef USE_CAPABILITIES
+    // capabilities
+    cap_t caps;
+#endif
 
     /* set arguments */
     cap     = 0;
@@ -147,21 +160,11 @@ int main(int argc, char *argv[]) {
 	// fetch ethernet hwaddr
 	hwaddr = libnet_get_hwaddr(session->libnet);
 	if (hwaddr == NULL) {
-	    log_str(0, "can't fetch hardware address: %s", libnet_geterror(session->libnet));
+	    log_str(0, "can't fetch hardware address: %s",
+		       libnet_geterror(session->libnet));
 	    exit(EXIT_FAILURE);
 	}
 	memcpy(session->hwaddr, hwaddr->ether_addr_octet, 6 * sizeof(uint8_t));
-
-	// fetch ipv4 addr (unnumbered is acceptable)
-	session->ipaddr4 = ntohl(libnet_get_ipaddr4(session->libnet));
-
-	// TODO: ipv6
-	// fetch interface details
-	if (ifinfo_get(session) == EXIT_FAILURE) {
-	    log_str(0, "error fetching interface details");
-	    exit(EXIT_FAILURE);
-	}
-	
 
 	// copy uts information
 	session->uts = &uts;
@@ -171,32 +174,6 @@ int main(int argc, char *argv[]) {
 	// copy capabilities
 	session->cap = cap;
 	
-	// cdp packet
-	if (do_cdp == 1) {
-
-	    log_str(3, "building a cdp packet for %s", session->dev);
-	    cdp_packet(session);
-	    if (session->cdp_data == NULL) {
-		log_str(0, "can't generate CDP packet");
-		exit(EXIT_FAILURE);
-	    }
-	    log_str(3, "generated a cdp packet (%d bytes)",
-		    session->cdp_length);
-	}
-
-	// lldp packet
-	if (do_lldp == 1) {
-
-	    log_str(3, "building an lldp packet for %s", session->dev);
-	    lldp_packet(session);
-	    if (session->lldp_data == NULL) {
-		log_str(0, "can't generate LLDP packet");
-		exit(EXIT_FAILURE);
-	    }
-	    log_str(3, "generated an lldp packet (%d bytes)",
-		    session->lldp_length);
-	}
-
 	if (sessions == NULL)
 	    sessions = session;
 	else
@@ -216,41 +193,95 @@ int main(int argc, char *argv[]) {
 	write(fd, pidstr, strlen(pidstr));
     }
 
-
-    // TODO: chroot
-
+#ifdef USE_CAPABILITIES
+    // keep capabilities
+    if (prctl(PR_SET_KEEPCAPS,1) == -1) {
+	log_str(0, "unable to keep capabilities: %s", strerror(errno));
+       	exit(EXIT_FAILURE);
+    }
+#endif
 
     // setuid & setgid
-    if(setgid(pwd->pw_gid) == -1){
+    if (setgid(pwd->pw_gid) == -1){
 	log_str(0, "unable to setgid: %s", strerror(errno));
        	exit(EXIT_FAILURE);
     }
 
-    if(setgroups(0, NULL) == -1){
+    if (setgroups(0, NULL) == -1){
 	log_str(0, "unable to setgroups: %s", strerror(errno));
        	exit(EXIT_FAILURE);
     }
 
-    if(setuid(pwd->pw_uid) == -1){
+    if (setuid(pwd->pw_uid) == -1){
    	log_str(0, "unable to setuid: %s", strerror(errno));
        	exit(EXIT_FAILURE);
     }
 
+#ifdef USE_CAPABILITIES
+    // keep CAP_NET_ADMIN
+    caps = cap_from_text("cap_net_admin=ep");
+
+    if (caps == NULL) {
+	log_str(0, "unable to create capabilities: %s", strerror(errno));
+	exit(EXIT_FAILURE);
+    }
+
+    if (cap_set_proc(caps) == -1) {
+	log_str(0, "unable to set capabilities: %s", strerror(errno));
+	exit(EXIT_FAILURE);
+    }
+#endif
 
     while (1) {
 
 	for (session = sessions; session != NULL; session = session->next) {
 	    log_str(3, "starting loop with interface %s", session->dev); 
 
-	    if (do_cdp == 1)
+	    // fetch ipv4 addr (unnumbered is acceptable)
+	    session->ipaddr4 = ntohl(libnet_get_ipaddr4(session->libnet));
+
+	    // TODO: ipv6
+
+	    // fetch interface details
+	    log_str(0, "fetching interface details %s", session->dev);
+	    if (ifinfo_get(session) == EXIT_FAILURE) {
+		log_str(0, "error fetching interface details");
+		exit(EXIT_FAILURE);
+	    }
+	
+	    // cdp packet
+	    if (do_cdp == 1) {
+
+		log_str(3, "building a cdp packet for %s", session->dev);
+		cdp_packet(session);
+		if (session->cdp_data == NULL) {
+		    log_str(0, "can't generate CDP packet");
+		    exit(EXIT_FAILURE);
+		}
+		log_str(3, "generated a cdp packet (%d bytes)",
+			session->cdp_length);
+
 		log_str(3, "sending cdp packet (%d bytes)",
 			session->cdp_length); 
 		cdp_send(session); 
+	    }   
 
-	    if (do_lldp == 1)
+	    // lldp packet
+	    if (do_lldp == 1) {
+
+		log_str(3, "building an lldp packet for %s", session->dev);
+		lldp_packet(session);
+		if (session->lldp_data == NULL) {
+		    log_str(0, "can't generate LLDP packet");
+		    exit(EXIT_FAILURE);
+		}
+		log_str(3, "generated an lldp packet (%d bytes)",
+			session->lldp_length);
+
 		log_str(3, "sending lldp packet (%d bytes)",
 			session->lldp_length); 
 		lldp_send(session); 
+	    }
 	}
 
 	if (do_once == 1)
