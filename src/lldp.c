@@ -115,7 +115,7 @@ int lldp_packet(struct session *session) {
     memcpy(packet->hwaddr, session->hwaddr, sizeof(packet->hwaddr));
     packet->port_id = session->dev;
     packet->ttl = 120;
-    packet->system_name = session->uts->nodename;
+    packet->system_name = session->hostname;
     packet->system_descr = session->uts_str;
 
     if (session->cap & CAP_HOST) {

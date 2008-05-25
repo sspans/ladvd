@@ -1,10 +1,10 @@
 
+#include "main.h"
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <net/if.h>
-#include <main.h>
-#include <lldp.h>
+#include "lldp.h"
 
 #if HAVE_ASM_TYPES_H
 # include <asm/types.h>

@@ -1,10 +1,10 @@
+#include "config.h"
+#include <sys/utsname.h>
+#include <libnet.h>
+
 #define USER	    "nobody"
 #define PIDFILE	    "/var/run/ladvd.pid"
 #define SLEEPTIME   30
-
-#include <sys/utsname.h>
-#include <libnet.h>
-#include "config.h"
 
 struct session {
     libnet_t *libnet;
@@ -22,6 +22,7 @@ struct session {
 
     struct utsname *uts;
     char *uts_str;
+    char *hostname;
     int8_t cap;
 
     uint8_t *cdp_data;

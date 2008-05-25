@@ -2,6 +2,7 @@
  $Id$
 */
 
+#include "main.h"
 #include <fcntl.h>
 #include <unistd.h>
 #include <pwd.h>
@@ -10,7 +11,7 @@
 #include <syslog.h>
 #include <sys/file.h>
 #include <grp.h>
-#include "main.h"
+#include <netdb.h>
 
 unsigned int loglevel = 0;
 unsigned int do_fork = 1;
@@ -20,22 +21,25 @@ void usage(const char *fn);
 
 int main(int argc, char *argv[]) {
 
-    int ch, dev, cap, do_cdp, do_lldp;
-    int fd = -1, do_once = 0;
+    int ch, dev, cap, do_cdp, do_lldp, do_once;
+    int fd = -1;
     char *progname = argv[0];
     char *username = USER;
     char *pidfile = PIDFILE;
     char pidstr[16];
     struct passwd *pwd;
     struct utsname uts;
-    char *uts_str;
+    char *uts_str, *hostname;
+    struct hostent *hp;
     struct session *sessions = NULL, *session_prev = NULL, *session;
     struct libnet_ether_addr *hwaddr;
     char errbuf[LIBNET_ERRBUF_SIZE];
 
     /* set arguments */
+    cap     = 0;
     do_cdp  = 0;
     do_lldp = 0;
+    do_once = 0;
 
     while ((ch = getopt(argc, argv, "C:clfou:hv")) != -1) {
 	switch(ch) {
@@ -89,14 +93,18 @@ int main(int argc, char *argv[]) {
 	exit(EXIT_FAILURE);
     }
 
-    uts_str = malloc(sizeof(struct utsname) + 10);
+    asprintf(&uts_str, "%s %s %s %s",
+	uts.sysname, uts.release, uts.version, uts.machine);
     if (uts_str == NULL) {
 	log_str(0, "can't create uts_str: %s", strerror(errno));
 	exit(EXIT_FAILURE);
     }
 
-    snprintf(uts_str, sizeof(struct utsname) + 10, "%s %s %s %s",
-	uts.sysname, uts.release, uts.version, uts.machine);
+    if ((hp = gethostbyname(uts.nodename)) == NULL) {
+	log_str(0, "cant resolve hostname: %s", hstrerror(h_errno));
+	exit(EXIT_FAILURE);
+    }
+    hostname = hp->h_name;
 
     // open pidfile
     if (do_fork == 1) {
@@ -158,6 +166,7 @@ int main(int argc, char *argv[]) {
 	// copy uts information
 	session->uts = &uts;
 	session->uts_str = uts_str;
+	session->hostname = hostname;
 
 	// copy capabilities
 	session->cap = cap;
