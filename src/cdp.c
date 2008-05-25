@@ -127,7 +127,6 @@ int cdp_packet(struct session *session) {
     packet->version = 2;
     packet->ttl = 180;
     packet->device_id = session->hostname;
-    packet->capabilities = CDP_CAP_HOST;
     packet->ios_version = session->uts_str;
     packet->platform = session->uts->sysname;
     packet->port_id = session->dev;
