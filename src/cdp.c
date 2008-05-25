@@ -6,6 +6,9 @@
 #include "cdp.h"
 #include "tlv.h"
 
+static uint8_t cdp_mac[] = { 0x01, 0x00, 0x0c, 0xcc, 0xcc, 0xcc };
+static uint8_t cdp_snap_oui[] = { 0x00, 0x00, 0x0c };
+
 /*
  * Actually, this is the standard IP checksum algorithm.
  */

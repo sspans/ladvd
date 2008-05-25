@@ -6,6 +6,8 @@
 #include "lldp.h"
 #include "tlv.h"
 
+static uint8_t lldp_mac[] = { 0x01, 0x80, 0xc2, 0x00, 0x00, 0x0e };
+
 size_t lldp_encode(struct lldp_packet *packet, void *data, size_t length) {
     uint8_t *pos;
     uint8_t *tlv;
