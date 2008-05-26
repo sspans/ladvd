@@ -74,8 +74,6 @@ int ifinfo_get(struct session *session) {
     } else {
 	log_str(3, "ethtool ioctl failed on interface %s", session->dev);
     }
-
-    return(EXIT_SUCCESS);
 #endif /* HAVE_LINUX_ETHTOOL_H */
 
 #if HAVE_NET_IF_MEDIA_H
@@ -219,10 +217,9 @@ int ifinfo_get(struct session *session) {
 	    break;
     }
 
-
     free(media_list);
-    return(EXIT_SUCCESS);
 #endif /* HAVE_NET_IF_MEDIA_H */
 
+    close(s);
     return(EXIT_SUCCESS);
 }
