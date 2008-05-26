@@ -243,10 +243,9 @@ int main(int argc, char *argv[]) {
 	    // TODO: ipv6
 
 	    // fetch interface details
-	    log_str(0, "fetching interface details %s", session->dev);
+	    log_str(3, "fetching interface details %s", session->dev);
 	    if (ifinfo_get(session) == EXIT_FAILURE) {
 		log_str(0, "error fetching interface details");
-		exit(EXIT_FAILURE);
 	    }
 	
 	    // cdp packet
