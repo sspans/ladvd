@@ -124,8 +124,8 @@ size_t cdp_encode(struct cdp_packet *packet, void *data, size_t length) {
 	END_CDP_TLV;
 
 	if (packet->location != NULL && !(
-	    PUSH_UINT8(0) &&
 	    START_CDP_TLV(CDP_TYPE_LOCATION) &&
+	    PUSH_UINT8(0) &&
 	    PUSH_BYTES(packet->location, strlen(packet->location))
 	))
 	    return 0;
