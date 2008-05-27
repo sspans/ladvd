@@ -1,7 +1,12 @@
 
 CODE:
-- ipv6 address support
-- be smart about link-state changes (kqueue, epoll, something ?)
-- lldp-med support (dmi)
-- chroot support
+- IPv6 addres ioctl and TLV
+- custom ladvd user in debian packaging
+- try deleting pidfile on SIGTERM
+
+- LLDP Link Aggregation TLV
+- LLDP-MED Inventory Management TLV (dmi)
+- LLDP-MED LCI TLV (coord/civic)
+- SNMP support for LLDP (agentx)
+- SNMP support for CDP (CISCO-CDP-MIB agentx)
 
