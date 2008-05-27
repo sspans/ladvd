@@ -116,13 +116,6 @@ size_t cdp_encode(struct cdp_packet *packet, void *data, size_t length) {
 	    return 0;
 	END_CDP_TLV;
 
-	if (!(
-	    START_CDP_TLV(CDP_TYPE_SYSTEM_NAME) &&
-	    PUSH_BYTES(packet->system_name, strlen(packet->system_name))
-	))
-	    return 0;
-	END_CDP_TLV;
-
 	if (packet->location != NULL && !(
 	    START_CDP_TLV(CDP_TYPE_LOCATION) &&
 	    PUSH_UINT8(0) &&
@@ -130,7 +123,16 @@ size_t cdp_encode(struct cdp_packet *packet, void *data, size_t length) {
 	))
 	    return 0;
 	END_CDP_TLV;
-	
+
+	// workaround cisco crc bug (>0x80 in last uneven byte)
+	// by having system_name at the end
+	if (!(
+	    START_CDP_TLV(CDP_TYPE_SYSTEM_NAME) &&
+	    PUSH_BYTES(packet->system_name, strlen(packet->system_name))
+	))
+	    return 0;
+	END_CDP_TLV;
+
 	*(uint16_t *)checksum_pos = cdp_checksum(data, VOIDP_DIFF(pos, data));
 
 	return VOIDP_DIFF(pos, data);
