@@ -29,14 +29,14 @@ set -e
 case "$1" in
   start)
 	log_begin_msg "Starting $NAME: "
-	start-stop-daemon --start --quiet --pidfile $PIDFILE \
+	start-stop-daemon --start --quiet --oknodo --pidfile $PIDFILE \
 		--exec $DAEMON -- $DAEMON_OPTS
         log_end_msg $?
 	;;
   stop)
 	log_begin_msg "Stopping $NAME: "
-	start-stop-daemon --stop --quiet --pidfile $PIDFILE \
-		--exec $DAEMON || echo -n "... ladvd is not running"
+	start-stop-daemon --stop --quiet --oknodo --pidfile $PIDFILE \
+		--exec $DAEMON
 	log_end_msg $?
 	;;
   restart)
