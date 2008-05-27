@@ -38,6 +38,10 @@ int main(int argc, char *argv[]) {
     struct utsname uts;
     char *uts_str, *hostname;
     struct hostent *hp;
+
+    // location
+    char *location = NULL;
+
     // sessions
     struct session *sessions = NULL, *session_prev = NULL, *session;
     // libnet
@@ -54,13 +58,8 @@ int main(int argc, char *argv[]) {
     do_lldp = 0;
     do_once = 0;
 
-    while ((ch = getopt(argc, argv, "C:clfou:hv")) != -1) {
+    while ((ch = getopt(argc, argv, "clfou:hvC:L:")) != -1) {
 	switch(ch) {
-	    case 'C':
-		cap = cap_parse(optarg);
-		if (cap == -1)
-		    usage(progname);
-		break;
 	    case 'c':
 		do_cdp = 1;
 		break;
@@ -78,6 +77,14 @@ int main(int argc, char *argv[]) {
 		break;
 	    case 'v':
 		loglevel++;
+		break;
+	    case 'C':
+		cap = cap_parse(optarg);
+		if (cap == -1)
+		    usage(progname);
+		break;
+	    case 'L':
+		location = optarg;
 		break;
 	    default:
 		usage(progname);
@@ -173,7 +180,10 @@ int main(int argc, char *argv[]) {
 
 	// copy capabilities
 	session->cap = cap;
-	
+
+	// copy location
+	session->location = location;
+
 	if (sessions == NULL)
 	    sessions = session;
 	else
@@ -328,18 +338,19 @@ int cap_parse(const char *optarg) {
 void usage(const char *fn) {
 
     fprintf(stderr, "%s version %s\n" 
-	"Usage: %s [-C <cap> ] [-c] [-l] [-f] [-u %s ] INTERFACE INTERFACE\n"
-	    "\t-C <capability> = System Capabilities\n"
-	    "\tB - Bridge, H - Host, R - Router\n"
-	    "\tS - Switch, W - WLAN Access Point\n"
+	"Usage: %s [-c] [-l] [-f] INTERFACE INTERFACE\n"
 	    "\t-c = Send CDP Messages\n"
 	    "\t-l = Send LLDP Messages\n"
 	    "\t-f = Run in the foreground\n"
 	    "\t-o = Run Once\n"
 	    "\t-u <user> = Setuid User (defaults to %s)\n"
 	    "\t-v = Increase logging verbosity\n"
+	    "\t-C <capability> = System Capabilities\n"
+	    "\tB - Bridge, H - Host, R - Router\n"
+	    "\tS - Switch, W - WLAN Access Point\n"
+	    "\t-L <location> = System Location\n"
 	    "\t-h = Print this message\n",
-	    PACKAGE_NAME, PACKAGE_VERSION, fn, USER, USER);
+	    PACKAGE_NAME, PACKAGE_VERSION, fn, USER);
 
     exit(EXIT_FAILURE);
 }

@@ -80,5 +80,6 @@ struct cdp_packet {
 	uint8_t duplex;
 	uint16_t mtu;
 	char *system_name;
+	char *location;
 };
 

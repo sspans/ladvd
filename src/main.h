@@ -24,6 +24,7 @@ struct session {
     char *uts_str;
     char *hostname;
     int8_t cap;
+    char *location;
 
     uint8_t *cdp_data;
     size_t cdp_length;

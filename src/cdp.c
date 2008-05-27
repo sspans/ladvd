@@ -122,6 +122,13 @@ size_t cdp_encode(struct cdp_packet *packet, void *data, size_t length) {
 	))
 	    return 0;
 	END_CDP_TLV;
+
+	if (packet->location != NULL && !(
+	    START_CDP_TLV(CDP_TYPE_LOCATION) &&
+	    PUSH_BYTES(packet->location, strlen(packet->location))
+	))
+	    return 0;
+	END_CDP_TLV;
 	
 	*(uint16_t *)checksum_pos = cdp_checksum(data, VOIDP_DIFF(pos, data));
 
@@ -142,6 +149,7 @@ int cdp_packet(struct session *session) {
     packet->port_id = session->dev;
     packet->mtu = session->mtu;
     packet->system_name = session->hostname;
+    packet->location = session->location;
 
     if (session->cap & CAP_BRIDGE)
     	packet->capabilities |= CDP_CAP_TRANSPARENT_BRIDGE;
