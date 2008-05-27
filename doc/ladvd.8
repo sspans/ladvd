@@ -13,8 +13,6 @@ switches. By default it will run as user "nobody" and daemonize.
 Either -c or -l and a list of interfaces are required for
 correct operation.
 .SH OPTIONS
-.IP "-C B|H|R|S|W"
-Specify capabilities: Bridge, Host, Router, Switch or WLAN AP. Combining multiple options is supported, except when using the Host capability in LLDP packets.
 .IP -c
 Send CDP messages.
 .IP -l
@@ -27,5 +25,9 @@ Run only once, useful for quick troubleshooting.
 Switch to this user (defaults to nobody).
 .IP -v
 increase logging verbosity.
+.IP "-C B|H|R|S|W"
+Specify capabilities: Bridge, Host, Router, Switch or WLAN AP. Combining multiple options is supported, except when using the Host capability in LLDP packets.
+.IP "-L <location>"
+Specify the physical location of the server.
 .SH AUTHOR
 Sten Spans <sten@blinkenlights.nl>
