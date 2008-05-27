@@ -13,28 +13,28 @@ static uint8_t cdp_snap_oui[] = { 0x00, 0x00, 0x0c };
  * Actually, this is the standard IP checksum algorithm.
  */
 uint16_t cdp_checksum(const unsigned short *data, size_t length) {
-	register long sum = 0;
-	register const uint16_t *d = (const uint16_t *)data;
+    register uint32_t sum = 0;
+    register const uint16_t *d = (const uint16_t *)data;
 
-	while (length > 1) {
-		sum += *d++;
-		length -= 2;
-	}
-	if (length)
-		sum += htons(*(const uint8_t *)d);
+    while (length > 1) {
+	sum += *d++;
+	length -= 2;
+    }
+    if (length)
+	sum += htons(*(const uint8_t *)d);
 	
-	sum = (sum >> 16) + (sum & 0xffff);
-	sum += (sum >> 16);
-	return (uint16_t)~sum;
+    sum = (sum >> 16) + (sum & 0xffff);
+    sum += (sum >> 16);
+    return (uint16_t)~sum;
 }
 
 size_t cdp_encode(struct cdp_packet *packet, void *data, size_t length) {
 	uint8_t *pos;
 	void *checksum_pos;
 	uint8_t *tlv;
-	
+
 	pos = data;
-	
+
 	PUSH_UINT8(packet->version);
 	if (!PUSH_UINT8(packet->ttl))
 		return 0;
@@ -46,14 +46,14 @@ size_t cdp_encode(struct cdp_packet *packet, void *data, size_t length) {
 	checksum_pos = pos;
 	if (!PUSH_UINT16(0))
 		return 0;
-	
+
 	if (!(
 	    START_CDP_TLV(CDP_TYPE_DEVICE_ID) &&
 	    PUSH_BYTES(packet->device_id, strlen(packet->device_id))
 	))
 	    return 0;
 	END_CDP_TLV;
-	
+
 	if (packet->address4 != 0) {
 	    if (!(
 		START_CDP_TLV(CDP_TYPE_ADDRESS) &&
@@ -73,28 +73,28 @@ size_t cdp_encode(struct cdp_packet *packet, void *data, size_t length) {
 
 	    END_CDP_TLV;
 	}
-	
+
 	if (!(
 	    START_CDP_TLV(CDP_TYPE_PORT_ID) &&
 	    PUSH_BYTES(packet->port_id, strlen(packet->port_id))
 	))
 	    return 0;
 	END_CDP_TLV;
-	
+
 	if (!(
 	    START_CDP_TLV(CDP_TYPE_CAPABILITIES) &&
 	    PUSH_UINT32(packet->capabilities)
 	))
 	    return 0;
 	END_CDP_TLV;
-	
+
 	if (!(
 	    START_CDP_TLV(CDP_TYPE_IOS_VERSION) &&
 	    PUSH_BYTES(packet->ios_version, strlen(packet->ios_version))
 	))
 	    return 0;
 	END_CDP_TLV;
-	
+
 	if (!(
 	    START_CDP_TLV(CDP_TYPE_PLATFORM) &&
 	    PUSH_BYTES(packet->platform, strlen(packet->platform))
@@ -112,6 +112,13 @@ size_t cdp_encode(struct cdp_packet *packet, void *data, size_t length) {
 	if (packet->mtu && !(
 	    START_CDP_TLV(CDP_TYPE_MTU) &&
 	    PUSH_UINT32(packet->mtu)
+	))
+	    return 0;
+	END_CDP_TLV;
+
+	if (!(
+	    START_CDP_TLV(CDP_TYPE_SYSTEM_NAME) &&
+	    PUSH_BYTES(packet->system_name, strlen(packet->system_name))
 	))
 	    return 0;
 	END_CDP_TLV;
@@ -134,6 +141,7 @@ int cdp_packet(struct session *session) {
     packet->platform = session->uts->sysname;
     packet->port_id = session->dev;
     packet->mtu = session->mtu;
+    packet->system_name = session->hostname;
 
     if (session->cap & CAP_BRIDGE)
     	packet->capabilities |= CDP_CAP_TRANSPARENT_BRIDGE;

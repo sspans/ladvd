@@ -79,5 +79,6 @@ struct cdp_packet {
 	char *platform;
 	uint8_t duplex;
 	uint16_t mtu;
+	char *system_name;
 };
 
