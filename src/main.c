@@ -346,8 +346,8 @@ void usage(const char *fn) {
 	    "\t-u <user> = Setuid User (defaults to %s)\n"
 	    "\t-v = Increase logging verbosity\n"
 	    "\t-C <capability> = System Capabilities\n"
-	    "\tB - Bridge, H - Host, R - Router\n"
-	    "\tS - Switch, W - WLAN Access Point\n"
+	    "\t\tB - Bridge, H - Host, R - Router\n"
+	    "\t\tS - Switch, W - WLAN Access Point\n"
 	    "\t-L <location> = System Location\n"
 	    "\t-h = Print this message\n",
 	    PACKAGE_NAME, PACKAGE_VERSION, fn, USER);
