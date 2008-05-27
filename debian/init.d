@@ -36,7 +36,7 @@ case "$1" in
   stop)
 	log_begin_msg "Stopping $NAME: "
 	start-stop-daemon --stop --quiet --pidfile $PIDFILE \
-		--exec $DAEMON
+		--exec $DAEMON || echo -n "... ladvd is not running"
 	log_end_msg $?
 	;;
   restart)
