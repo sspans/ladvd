@@ -32,11 +32,11 @@ AC_ARG_WITH(libnet_libraries,
 	[with_libnet_libraries="$withval"],[with_libnet_libraries="no"])
 
 if test "x$with_libnet_includes" != "xno"; then
-    AC_SUBST(NET_CFLAGS,"-I${with_libnet_includes}")
+    CPPFLAGS="${CPPFLAGS} -I${with_libnet_includes}"
 fi  
 
 if test "x$with_libnet_libraries" != "xno"; then
-    AC_SUBST(NET_LIBS,"-L${with_libnet_libraries}")
+    LDFLAGS="${LDFLAGS} -L${with_libnet_libraries}"
 fi
 
 # Checks for libraries.
