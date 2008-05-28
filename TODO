@@ -1,5 +1,11 @@
 
 CODE:
+- add ifindex to session
+- look at "man netdevice"
+- look at "Documentation/networking/ifenslave.c"
+- support bonded interfaces, create additional or sub sessions
+- be smart about libnet transmit errors
+  especially when supporting bonding
 - IPv6 addres ioctl and TLV
 - custom ladvd user in debian packaging
 - try deleting pidfile on SIGTERM
