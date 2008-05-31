@@ -22,7 +22,7 @@
 # include <net/if_media.h>
 #endif /* HAVE_NET_IF_MEDIA_H */
 
-int ifinfo_get(struct session *session) {
+int netif_info(struct session *session) {
     int s, af = AF_INET;
     struct ifreq ifr;
 

@@ -43,7 +43,9 @@ struct session {
 
 void log_str(int prio, const char *fmt, ...);
 
-int ifinfo_get(struct session *session);
+void netif_list(int count);
+int netif_info(struct session *session);
+
 
 int cdp_packet(struct session *session);
 int cdp_send(struct session *session);
