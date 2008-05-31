@@ -48,9 +48,29 @@ int ifinfo_get(struct session *session) {
     bzero(&ifr, sizeof(ifr));
     strncpy(ifr.ifr_name, session->dev, sizeof(ifr.ifr_name) -1);
 
+    // ifindex
+    if (ioctl(s, SIOCGIFINDEX, (caddr_t)&ifr) < 0) {
+	log_str(0, "fetching %s ifindex ioctl failed: %s", 
+		    session->dev, strerror(errno));
+    } else {
+	session->ifindex = ifr.ifr_ifindex;
+    }
+
+    // hwaddr
+    // flags
+    if (ioctl(s, SIOCGIFFLAGS, (caddr_t)&ifr) < 0) {
+	log_str(0, "fetching %s flags ioctl failed: %s",
+		    session->dev, strerror(errno));
+    } else {
+	if (ifrq.ifr_flags & IFF_UP) {
+	}
+	// linux IFF_MASTER IFF_SLAVE
+    }
+
     // interface mtu
     if (ioctl(s, SIOCGIFMTU, (caddr_t)&ifr) < 0) {
-	log_str(0, "fetching %s mtu failed: %s", session->dev, strerror(errno));
+	log_str(0, "fetching %s mtu ioctl failed: %s",
+		    session->dev, strerror(errno));
     } else {
 	session->mtu = ifr.ifr_mtu;
     }

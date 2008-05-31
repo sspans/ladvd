@@ -10,6 +10,7 @@ struct session {
     libnet_t *libnet;
 
     char *dev;
+    uint8_t ifindex;
     uint8_t hwaddr[6];
     uint16_t mtu;
     int8_t duplex;
