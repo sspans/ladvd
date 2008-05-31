@@ -139,6 +139,11 @@ int main(int argc, char *argv[]) {
 			pidfile, strerror(errno));
 	    exit(EXIT_FAILURE);	
 	}
+	if (fchown(fd, pwd->pw_uid, -1) == -1) {
+	    log_str(0, "failed to chown pidfile %s: %s",
+			pidfile, strerror(errno));
+	    exit(EXIT_FAILURE);	
+	}
     }
 
     
