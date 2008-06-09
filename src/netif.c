@@ -1,9 +1,18 @@
+/*
+ *  $Id$
+ */
 
 #include "main.h"
 #include <sys/ioctl.h>
-#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/socket.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <net/if.h>
+#include <net/if_arp.h>
+#include <ifaddrs.h>
+#include <netinet/in.h>
+#include <unistd.h>
 #include "lldp.h"
 
 #if HAVE_ASM_TYPES_H
@@ -18,12 +27,274 @@
 # include <linux/ethtool.h>
 #endif /* HAVE_LINUX_ETHTOOL_H */
 
+#if HAVE_LINUX_IF_BRIDGE_H
+# include <linux/if_bridge.h>
+#endif /* HAVE_LINUX_IF_BRIDGE_H */
+
+#define SYSFS_VIRTUAL "/sys/devices/virtual/net"
+#define SYSFS_PATH_MAX  256
+
 #if HAVE_NET_IF_MEDIA_H
 # include <net/if_media.h>
 #endif /* HAVE_NET_IF_MEDIA_H */
 
-int netif_info(struct session *session) {
-    int s, af = AF_INET;
+
+struct session * netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo) {
+    int sockfd, af = AF_INET;
+    struct ifreq ifr;
+    struct if_nameindex *ifs = if_nameindex();
+    int i, j, m, count = 0;
+    int if_master;
+
+#if HAVE_LINUX_ETHTOOL_H
+    char path[SYSFS_PATH_MAX];
+    struct stat sb;
+    FILE *fp;
+
+    char line[1024];
+    char *slave, *nslave;
+
+    struct ethtool_drvinfo drvinfo;
+#endif /* HAVE_LINUX_ETHTOOL_H */
+
+    // sessions
+    struct session *sessions = NULL, *session_prev = NULL, *session;
+    struct session *subif = NULL, *csubif = NULL;
+
+    if (ifs == NULL) {
+	my_log(0,"could not run if_nameindex");
+	exit(EXIT_FAILURE);
+    }
+
+    sockfd = my_socket(af, SOCK_DGRAM, 0);
+
+    for (i=0; ifs[i].if_index != 0; i++) {
+
+	// reset if_master
+	if_master = 0;
+
+	// skip unlisted interfaces if specified
+	if (ifc > 0) {
+	    m = 0;
+
+	    for (j=0; j < ifc; j++) {
+		if (strcmp(ifs[i].if_name, ifl[j]) == 0) {
+		    m = 1;
+		    break;
+		}
+	    }
+	    if (m != 1)
+		continue;
+	}
+
+	// prepare ifr struct
+	bzero(&ifr, sizeof(ifr));
+	strncpy(ifr.ifr_name, ifs[i].if_name, sizeof(ifs[i].if_name) -1);
+
+
+	// skip interfaces that are down
+	my_ioctl(sockfd, SIOCGIFFLAGS, (caddr_t)&ifr);
+	if ((ifr.ifr_flags & IFF_UP) == 0)
+	    continue;
+
+
+	// skip non-ethernet interfaces
+
+#ifdef SIOCGIFHWADDR
+	my_ioctl(sockfd, SIOCGIFHWADDR, (caddr_t)&ifr);
+	if ((ifr.ifr_hwaddr.sa_family & ARPHRD_ETHER) == 0)
+	    continue;
+#endif /* SIOCGIFHWADDR */
+
+	// TODO: BSD ether detect
+
+
+	// detect virtual network interfaces
+#if HAVE_LINUX_ETHTOOL_H
+	sprintf(path, "%s/%s", SYSFS_VIRTUAL, ifs[i].if_name); 
+
+	if (stat(path, &sb) == 0) {
+
+	    // use ethtool to detect various drivers
+	    drvinfo.cmd = ETHTOOL_GDRVINFO;
+	    ifr.ifr_data = (caddr_t)&drvinfo;
+
+	    if (ioctl(sockfd, SIOCETHTOOL, &ifr) >= 0) {
+		// handle bonding / bridge
+		if (strcmp(drvinfo.driver, "bonding") == 0) {
+			if_master = MASTER_BONDING;
+			goto session;	
+		} else if (strcmp(drvinfo.driver, "bridge") == 0) {
+			if_master = MASTER_BRIDGE;
+			goto session;
+		// handle tun/tap
+		} else if (strcmp(drvinfo.driver, "tun") == 0) {
+		    goto session;	
+		}
+	    }
+	    // we don't want the rest
+	    continue;
+	}
+#endif /* HAVE_LINUX_ETHTOOL_H */
+
+	// TODO: BSD virtual detect
+
+
+    session:
+	// create session
+	session = my_malloc(sizeof(struct session));
+
+        // copy name, index and master
+	session->if_index = ifs[i].if_index;
+	session->if_name = my_strdup(ifs[i].if_name);
+	session->if_master = if_master;
+
+	// update linked list
+	if (sessions == NULL)
+	    sessions = session;
+	else
+	    session_prev->next = session;
+
+	session_prev = session;
+
+	// update counter
+	count++;
+    }
+
+    // handle master and subifs
+    for (session = sessions; session != NULL; session = session->next) {
+	if (session->if_master == 0)
+	    continue;
+
+	csubif = session;
+
+#if HAVE_LINUX_IF_BRIDGE_H
+	// bonding
+	if (session->if_master == MASTER_BONDING) {
+
+	    // check for lacp
+	    sprintf(path, "%s/%s/bonding/mode",
+		SYSFS_VIRTUAL, session->if_name); 
+	    if ((fp = fopen(path, "r")) != NULL) {
+		if (fscanf(fp, "802.3ad") != EOF)
+		    session->if_lacp = 1;
+		fclose(fp);
+	    }
+
+	    // handle slaves
+	    sprintf(path, "%s/%s/bonding/slaves",
+		SYSFS_VIRTUAL, session->if_name); 
+	    if ((fp = fopen(path, "r")) != NULL) {
+		if (fgets(line, sizeof(line), fp) != NULL) {
+		    // remove newline
+		    *strchr(line, '\n') = '\0';
+
+		    slave = line;
+		    m = 0;
+		    while (strlen(slave) > 0) {
+			nslave = strstr(line, " ");
+			if (nslave != NULL)
+			    *nslave = '\0';
+
+			subif = session_byname(sessions, slave);
+			if (subif != NULL) {
+			    subif->if_slave = 1;
+			    subif->if_lacp_ifindex = m++;
+			    csubif->subif = subif;
+			    csubif = subif;
+			}
+
+			if (nslave != NULL) {
+			    nslave++;
+			    slave = nslave;
+			} else {
+			    break;
+			}
+		    }
+		};
+
+		fclose(fp);
+	    }
+
+	// bridge
+	} else if (session->if_master == MASTER_BRIDGE) {
+	    sprintf(path, "%s/%s/%s",
+		SYSFS_VIRTUAL, session->if_name, SYSFS_BRIDGE_PORT_SUBDIR); 
+	}
+#endif /* HAVE_LINUX_IF_BRIDGE_H */
+    }
+
+    // handle errors
+    if ((ifc != 0) && (ifc != count)) {
+	for (j=0; j < ifc; j++) {
+	    session = session_byname(sessions, ifl[j]);
+	    if (session == NULL)
+		my_log(0, "interface %s is invalid", ifl[j]);
+	}
+
+	exit(EXIT_FAILURE);
+    } else if (count == 0) {
+	my_log(0, "no valid interface found");
+	exit(EXIT_FAILURE);
+    }
+
+    // cleanup
+    if_freenameindex(ifs);
+    close(sockfd);
+
+    return(sessions);
+};
+
+int netif_addr(struct session *session) {
+    struct ifaddrs *ifaddrs, *ifaddr;
+    struct sockaddr_in saddr4;
+    struct sockaddr_in6 saddr6;
+
+
+    if (getifaddrs(&ifaddrs) < 0) {
+	my_log(0, "address detection failed on %s: %s",
+		  session->if_name, strerror(errno));
+	return(EXIT_FAILURE);
+    }
+
+    for (ifaddr = ifaddrs; ifaddr != NULL; ifaddr = ifaddr->ifa_next) {
+	if (strcmp(session->if_name, ifaddr->ifa_name) != 0)
+	    continue;
+
+	if(ifaddr->ifa_addr->sa_family == AF_INET) {
+	    if (session->ipaddr4 != 0)
+		continue;
+
+	    // alignment
+	    bcopy(ifaddr->ifa_addr, &saddr4, sizeof(saddr4));
+
+	    bcopy(&saddr4.sin_addr, &session->ipaddr4,
+		  sizeof(saddr4.sin_addr));
+
+	} else if(ifaddr->ifa_addr->sa_family == AF_INET6) {
+	    if (!IN6_IS_ADDR_UNSPECIFIED(session->ipaddr6))
+		continue;
+
+	    // alignment
+	    bcopy(ifaddr->ifa_addr, &saddr6, sizeof(saddr6));
+
+	    // skip link-local
+	    if (IN6_IS_ADDR_LINKLOCAL(&saddr6.sin6_addr))
+		continue;
+
+	    bcopy(&saddr6.sin6_addr, &session->ipaddr6,
+		  sizeof(saddr6.sin6_addr));
+	}
+    }
+
+    // cleanup
+    freeifaddrs(ifaddrs);
+
+    return(EXIT_SUCCESS);
+}
+
+int netif_media(struct session *session) {
+    int sockfd, af = AF_INET;
     struct ifreq ifr;
 
 #if HAVE_LINUX_ETHTOOL_H
@@ -35,10 +306,7 @@ int netif_info(struct session *session) {
     int *media_list, i;
 #endif /* HAVE_HAVE_NET_IF_MEDIA_H */
 
-    if ((s = socket(af, SOCK_DGRAM, 0)) < 0) {
-	log_str(0, "opening socket failed on interface %s", session->dev);
-	return(EXIT_FAILURE);
-    }
+    sockfd = my_socket(af, SOCK_DGRAM, 0);
 
     session->duplex = -1;
     session->autoneg_supported = -1;
@@ -46,41 +314,19 @@ int netif_info(struct session *session) {
     session->mau = 0;
 
     bzero(&ifr, sizeof(ifr));
-    strncpy(ifr.ifr_name, session->dev, sizeof(ifr.ifr_name) -1);
+    strncpy(ifr.ifr_name, session->if_name, sizeof(ifr.ifr_name) -1);
 
-    // ifindex
-    if (ioctl(s, SIOCGIFINDEX, (caddr_t)&ifr) < 0) {
-	log_str(0, "fetching %s ifindex ioctl failed: %s", 
-		    session->dev, strerror(errno));
-    } else {
-	session->ifindex = ifr.ifr_ifindex;
-    }
-
-    // hwaddr
-    // flags
-    if (ioctl(s, SIOCGIFFLAGS, (caddr_t)&ifr) < 0) {
-	log_str(0, "fetching %s flags ioctl failed: %s",
-		    session->dev, strerror(errno));
-    } else {
-	if (ifrq.ifr_flags & IFF_UP) {
-	}
-	// linux IFF_MASTER IFF_SLAVE
-    }
+    // ether addr
 
     // interface mtu
-    if (ioctl(s, SIOCGIFMTU, (caddr_t)&ifr) < 0) {
-	log_str(0, "fetching %s mtu ioctl failed: %s",
-		    session->dev, strerror(errno));
-    } else {
-	session->mtu = ifr.ifr_mtu;
-    }
+    my_ioctl(sockfd, SIOCGIFMTU, (caddr_t)&ifr);
+    session->mtu = ifr.ifr_mtu;
 
 #if HAVE_LINUX_ETHTOOL_H
-    ifr.ifr_data = (caddr_t)&ecmd;
     ecmd.cmd = ETHTOOL_GSET;
+    ifr.ifr_data = (caddr_t)&ecmd;
 
-    if (ioctl(s, SIOCETHTOOL, &ifr) >= 0) {
-	log_str(3, "ethtool ioctl succeeded on interface %s", session->dev);
+    if (ioctl(sockfd, SIOCETHTOOL, &ifr) >= 0) {
 	// duplex
 	session->duplex = (ecmd.duplex == DUPLEX_FULL) ? 1 : 0;
 
@@ -92,50 +338,46 @@ int netif_info(struct session *session) {
 	    session->autoneg_supported = 0;
 	}	
     } else {
-	log_str(3, "ethtool ioctl failed on interface %s", session->dev);
+	my_log(3, "ethtool ioctl failed on interface %s", session->if_name);
     }
 #endif /* HAVE_LINUX_ETHTOOL_H */
 
 #if HAVE_NET_IF_MEDIA_H
     bzero(&ifmr, sizeof(ifmr));
-    strncpy(ifmr.ifm_name, session->dev, sizeof(ifmr.ifm_name) -1);
+    strncpy(ifmr.ifm_name, session->if_name, sizeof(ifmr.ifm_name) -1);
 
-    if (ioctl(s, SIOCGIFMEDIA, (caddr_t)&ifmr) < 0) {
-	log_str(3, "media detection not supported on interface %s", session->dev);
+    if (ioctl(sockfd, SIOCGIFMEDIA, (caddr_t)&ifmr) < 0) {
+	my_log(3, "media detection not supported on %s", session->if_name);
 	return(EXIT_SUCCESS);
     }
 
     if (ifmr.ifm_count == 0) {
-	log_str(0, "missing media types for interface %s", session->dev);
+	my_log(0, "missing media types for interface %s", session->if_name);
 	return(EXIT_FAILURE);
     }
 
-    media_list = malloc(ifmr.ifm_count * sizeof(int));
-    if (media_list == NULL) {
-	log_str(0, "malloc failed for interface %s", session->dev);
-	return(EXIT_FAILURE);
-    }
+    media_list = my_malloc(ifmr.ifm_count * sizeof(int));
     ifmr.ifm_ulist = media_list;
 
-    if (ioctl(s, SIOCGIFMEDIA, (caddr_t)&ifmr) < 0) {
-	log_str(0, "media detection failed for interface %s", session->dev);
+    if (ioctl(sockfd, SIOCGIFMEDIA, (caddr_t)&ifmr) < 0) {
+	my_log(0, "media detection failed for interface %s", session->if_name);
 	return(EXIT_FAILURE);
     }
 
     if (IFM_TYPE(ifmr.ifm_current) != IFM_ETHER) {
-	log_str(0, "non-ethernet interface %s found", session->dev);
+	my_log(0, "non-ethernet interface %s found", session->if_name);
 	return(EXIT_FAILURE);
     }
 
     if ((ifmr.ifm_status & IFM_ACTIVE) == 0) { 
-	log_str(0, "no link detected on interface %s", session->dev);
+	my_log(0, "no link detected on interface %s", session->if_name);
 	return(EXIT_SUCCESS);
     }
 
     // autoneg support
     for (i = 0; i < ifmr.ifm_count; i++) {
 	if (IFM_SUBTYPE(ifmr.ifm_ulist[i]) == IFM_AUTO) {
-	    log_str(3, "autoneg supported on interface %s", session->dev);
+	    my_log(3, "autoneg supported on interface %s", session->if_name);
 	    session->autoneg_supported = 1;
 	    break;
 	}
@@ -144,23 +386,23 @@ int netif_info(struct session *session) {
     // autoneg enabled
     if (session->autoneg_supported == 1) {
 	if (IFM_SUBTYPE(ifmr.ifm_current) == IFM_AUTO) {
-	    log_str(3, "autoneg enabled on interface %s", session->dev);
+	    my_log(3, "autoneg enabled on interface %s", session->if_name);
 	    session->autoneg_enabled = 1;
 	} else {
-	    log_str(3, "autoneg disabled on interface %s", session->dev);
+	    my_log(3, "autoneg disabled on interface %s", session->if_name);
 	    session->autoneg_enabled = 0;
 	}
     } else {
-	log_str(3, "autoneg not supported on interface %s", session->dev);
+	my_log(3, "autoneg not supported on interface %s", session->if_name);
 	session->autoneg_supported = 0;
     }
 
     // duplex
     if ((IFM_OPTIONS(ifmr.ifm_active) & IFM_FDX) != 0) {
-	log_str(3, "full-duplex enabled on interface %s", session->dev);
+	my_log(3, "full-duplex enabled on interface %s", session->if_name);
 	session->duplex = 1;
     } else {
-	log_str(3, "half-duplex enabled on interface %s", session->dev);
+	my_log(3, "half-duplex enabled on interface %s", session->if_name);
 	session->duplex = 0;
     }
 
@@ -240,6 +482,8 @@ int netif_info(struct session *session) {
     free(media_list);
 #endif /* HAVE_NET_IF_MEDIA_H */
 
-    close(s);
+    // cleanup
+    close(sockfd);
+
     return(EXIT_SUCCESS);
 }
