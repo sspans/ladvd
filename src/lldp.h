@@ -114,17 +114,29 @@
 #define         LLDP_MAU_TYPE_10GBASE_SW        40
 
 
+#define LLDP_AGGREGATION_CAPABILTIY     (1 <<  0)
+#define LLDP_AGGREGATION_STATUS         (1 <<  1)
+
+/*
+ * Interface numbering subtypes.
+ */
+#define LLDP_INTF_NUMB_IFX_SUBTYPE         2
+#define LLDP_INTF_NUMB_SYSPORT_SUBTYPE     3
+
+
 struct lldp_packet {
-	uint8_t hwaddr[6];
+	uint16_t ifindex;
 	char *port_id;
 	uint16_t ttl;
 	char *system_name;
 	char *system_descr;
 	uint16_t system_cap;
 	uint32_t mgmt_addr4;
-	//v6
+	uint32_t mgmt_addr6[4];
 	int8_t autoneg;
 	uint16_t mau;
+	uint8_t lacp;
+	uint16_t lacp_ifindex;
 	uint16_t mtu;
 };
 

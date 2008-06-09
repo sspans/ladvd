@@ -16,8 +16,8 @@ size_t lldp_encode(struct lldp_packet *packet, void *data, size_t length) {
 
     if (!(
 	START_LLDP_TLV(LLDP_CHASSIS_ID_TLV) &&
-	PUSH_UINT8(LLDP_CHASSIS_MAC_ADDR_SUBTYPE) &&
-	PUSH_BYTES(packet->hwaddr, sizeof(packet->hwaddr))
+	PUSH_UINT8(LLDP_CHASSIS_INTF_NAME_SUBTYPE) &&
+	PUSH_BYTES(packet->port_id, strlen(packet->port_id))
     ))
 	return 0;
     END_LLDP_TLV;
@@ -64,9 +64,23 @@ size_t lldp_encode(struct lldp_packet *packet, void *data, size_t length) {
 	    START_LLDP_TLV(LLDP_MGMT_ADDR_TLV) &&
 	    PUSH_UINT8(1 + sizeof(packet->mgmt_addr4)) &&
 	    PUSH_UINT8(LLDP_AFNUM_INET) &&
-	    PUSH_UINT32(packet->mgmt_addr4) &&
-	    PUSH_UINT8(1) &&
-	    PUSH_UINT32(0) &&
+	    PUSH(packet->mgmt_addr4, uint32_t,) &&
+	    PUSH_UINT8(LLDP_INTF_NUMB_IFX_SUBTYPE) &&
+	    PUSH_UINT32(packet->ifindex) &&
+	    PUSH_UINT8(0)
+	))
+	    return 0;
+	END_LLDP_TLV;
+    }
+
+    if (!IN6_IS_ADDR_UNSPECIFIED(packet->mgmt_addr6)) {
+	if (!(
+	    START_LLDP_TLV(LLDP_MGMT_ADDR_TLV) &&
+	    PUSH_UINT8(1 + sizeof(packet->mgmt_addr6)) &&
+	    PUSH_UINT8(LLDP_AFNUM_INET6) &&
+	    PUSH_BYTES(packet->mgmt_addr6, sizeof(packet->mgmt_addr6)) &&
+	    PUSH_UINT8(LLDP_INTF_NUMB_IFX_SUBTYPE) &&
+	    PUSH_UINT32(packet->ifindex) &&
 	    PUSH_UINT8(0)
 	))
 	    return 0;
@@ -81,6 +95,18 @@ size_t lldp_encode(struct lldp_packet *packet, void *data, size_t length) {
 	    PUSH_UINT8(packet->autoneg) &&
 	    PUSH_UINT16(0) &&
 	    PUSH_UINT16(packet->mau)
+	))
+	    return 0;
+	END_LLDP_TLV;
+    }
+
+    if (packet->lacp != 0) {
+	if (!(
+	    START_LLDP_TLV(LLDP_PRIVATE_TLV) &&
+	    PUSH_BYTES(OUI_IEEE_8023_PRIVATE, sizeof(OUI_IEEE_8023_PRIVATE) -1) &&
+	    PUSH_UINT8(LLDP_PRIVATE_8023_SUBTYPE_LINKAGGR) &&
+	    PUSH_UINT8(packet->lacp) &&
+	    PUSH_UINT32(packet->lacp_ifindex)
 	))
 	    return 0;
 	END_LLDP_TLV;
@@ -108,52 +134,63 @@ size_t lldp_encode(struct lldp_packet *packet, void *data, size_t length) {
 }
 
 
-int lldp_packet(struct session *session) {
-    struct lldp_packet *packet;
+int lldp_packet(struct session *csession, struct session *session,
+		struct sysinfo *sysinfo) {
+    struct lldp_packet packet;
 
-    packet = malloc(sizeof(struct lldp_packet));
-    bzero(packet, sizeof(struct lldp_packet));
+    // sysinfo
+    packet.ttl = LADVD_TTL;
+    packet.system_name = sysinfo->hostname;
+    packet.system_descr = sysinfo->uts_str;
 
-    memcpy(packet->hwaddr, session->hwaddr, sizeof(packet->hwaddr));
-    packet->port_id = session->dev;
-    packet->ttl = 120;
-    packet->system_name = session->hostname;
-    packet->system_descr = session->uts_str;
-
-    if (session->cap & CAP_HOST) {
-	packet->system_cap = LLDP_CAP_STATION_ONLY;
+    if (sysinfo->cap & CAP_HOST) {
+	packet.system_cap = LLDP_CAP_STATION_ONLY;
     } else {
-	if (session->cap & CAP_BRIDGE)
-	    packet->system_cap |= LLDP_CAP_BRIDGE;
-	if (session->cap & CAP_ROUTER)
-	    packet->system_cap |= LLDP_CAP_ROUTER;
-	if (session->cap & CAP_SWITCH)
-	    packet->system_cap |= LLDP_CAP_BRIDGE;
-	if (session->cap & CAP_WLAN)
-	    packet->system_cap |= LLDP_CAP_WLAN_AP;
+	if (sysinfo->cap & CAP_BRIDGE)
+	    packet.system_cap |= LLDP_CAP_BRIDGE;
+	if (sysinfo->cap & CAP_ROUTER)
+	    packet.system_cap |= LLDP_CAP_ROUTER;
+	if (sysinfo->cap & CAP_SWITCH)
+	    packet.system_cap |= LLDP_CAP_BRIDGE;
+	if (sysinfo->cap & CAP_WLAN)
+	    packet.system_cap |= LLDP_CAP_WLAN_AP;
     }
 
-    if (session->ipaddr4 != -1)
-	packet->mgmt_addr4 = session->ipaddr4; 
-    // TODO: ipv6
+    // master interface
+    if (session->ipaddr4 != 0)
+	packet.mgmt_addr4 = session->ipaddr4; 
+    if (!IN6_IS_ADDR_UNSPECIFIED(session->ipaddr6))
+	bcopy(session->ipaddr6, packet.mgmt_addr6, sizeof(session->ipaddr6)); 
 
-    if (session->mtu)
-	packet->mtu = session->mtu + 22; 
-
-    if (session->autoneg_supported != -1) {
-	packet->autoneg = session->autoneg_supported + 
-	    (session->autoneg_enabled << 1);
-	packet->mau = session->mau;
-    } else {
-	packet->autoneg = -1;
+    // lacp
+    if (session->if_lacp != 0) {
+	packet.lacp |= LLDP_AGGREGATION_CAPABILTIY;
+	packet.lacp |= LLDP_AGGREGATION_STATUS;
+	packet.lacp_ifindex = csession->if_lacp_ifindex;
     }
 
-    session->lldp_data = malloc(BUFSIZ);
-    bzero(session->lldp_data, BUFSIZ);
 
-    session->lldp_length = lldp_encode(packet, session->lldp_data, BUFSIZ);
-    if (session->lldp_length == 0) {
-	log_str(1, "generated lldp packet too large");
+    // physical
+    packet.ifindex = csession->if_index;
+    packet.port_id = csession->if_name;
+
+    if (csession->autoneg_supported != -1) {
+	packet.autoneg = csession->autoneg_supported + 
+	    (csession->autoneg_enabled << 1);
+	packet.mau = csession->mau;
+    } else {
+	packet.autoneg = -1;
+    }
+
+    if (csession->mtu)
+	packet.mtu = csession->mtu + 22; 
+
+    // clear
+    bzero(csession->lldp_data, BUFSIZ);
+
+    csession->lldp_length = lldp_encode(&packet, csession->lldp_data, BUFSIZ);
+    if (csession->lldp_length == 0) {
+	my_log(1, "generated lldp packet too large");
 	return(EXIT_FAILURE);
    } 
 
@@ -165,14 +202,14 @@ int lldp_send(struct session *session) {
     libnet_t *l = session->libnet;
 
     if (libnet_build_data(session->lldp_data, session->lldp_length, l, 0)==-1) {
-        log_str(0, "can't build lldp frame data: %s", libnet_geterror(l));
-        goto fail;
+	my_log(0, "can't build lldp frame data: %s", libnet_geterror(l));
+	goto fail;
     }
 
-    if(libnet_build_ethernet(lldp_mac, session->hwaddr, 0x88cc,
+    if(libnet_build_ethernet(lldp_mac, libnet_get_hwaddr(l), 0x88cc,
 			     NULL, 0, l, 0) == -1) {
 
-	log_str(0, "can't build lldp ethernet header: %s", libnet_geterror(l));
+	my_log(0, "can't build lldp ethernet header: %s", libnet_geterror(l));
 	goto fail;
     }
 
@@ -180,8 +217,8 @@ int lldp_send(struct session *session) {
      *  Write it to the wire.
      */
     if (libnet_write(l) == -1) {
-        log_str(0, "network transmit error: %s", libnet_geterror(l));
-        goto fail;
+	my_log(0, "network transmit error: %s", libnet_geterror(l));
+	goto fail;
     }
 
     libnet_clear_packet(l);
