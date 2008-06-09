@@ -1,5 +1,5 @@
 
-#include <stdint.h>
+#include <arpa/inet.h>
 
 #define VOIDP_DIFF(P, Q) ((uintptr_t)((char *)(P) - (char *)(Q)))
 #define VOIDP_OFFSET(P, O) ((void *)((char *)(P) + (uintptr_t)(O)))
