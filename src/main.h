@@ -1,17 +1,27 @@
-#include <libnet.h>
+
+#ifndef _main_h
+#define _main_h
+
 #include "config.h"
 #include <sys/utsname.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <stdint.h>
+#include <string.h>
+#include <errno.h>
+#include <libnet.h>
+#include "util.h"
 
-#define USER	    "nobody"
 #define PIDFILE	    "/var/run/ladvd.pid"
 #define SLEEPTIME   30
+#define LADVD_TTL   180
 
 struct session {
-    libnet_t *libnet;
+    int sockfd;
 
-    char *dev;
-    uint8_t ifindex;
-    uint8_t hwaddr[6];
+    uint8_t if_index;
+    char *if_name;
     uint16_t mtu;
     int8_t duplex;
     int8_t autoneg_supported; 
@@ -19,20 +29,30 @@ struct session {
     uint16_t mau;
 
     uint32_t ipaddr4;
-    // TODO: ipv6
+    uint32_t ipaddr6[4];
 
-    struct utsname *uts;
+    uint8_t if_master;
+    uint8_t if_slave;
+    uint8_t if_lacp;
+    uint8_t if_lacp_ifindex;
+
+    uint8_t cdp_data[BUFSIZ];
+    size_t cdp_length;
+    uint8_t lldp_data[BUFSIZ];
+    size_t lldp_length;
+
+    libnet_t *libnet;
+
+    struct session *subif;
+    struct session *next;
+};
+
+struct sysinfo {
+    struct utsname uts;
     char *uts_str;
     char *hostname;
-    int8_t cap;
     char *location;
-
-    uint8_t *cdp_data;
-    size_t cdp_length;
-    uint8_t *lldp_data;
-    size_t lldp_length;
-    
-    struct session *next;
+    int8_t cap;
 };
 
 #define CAP_BRIDGE	(1 << 0)
@@ -41,15 +61,17 @@ struct session {
 #define CAP_SWITCH	(1 << 3)
 #define CAP_WLAN	(1 << 4)
 
-void log_str(int prio, const char *fmt, ...);
+#define MASTER_BONDING	1
+#define MASTER_BRIDGE	2
 
-void netif_list(int count);
-int netif_info(struct session *session);
+struct session * netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo);
+int netif_addr(struct session *session);
+int netif_media(struct session *session);
 
-
-int cdp_packet(struct session *session);
+int cdp_packet(struct session *, struct session *, struct sysinfo *);
 int cdp_send(struct session *session);
 
-int lldp_packet(struct session *session);
+int lldp_packet(struct session *, struct session *, struct sysinfo *);
 int lldp_send(struct session *session);
 
+#endif /* _main_h */

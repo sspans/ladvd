@@ -3,13 +3,13 @@
 */
 
 #include "main.h"
-#include <fcntl.h>
 #include <unistd.h>
-#include <pwd.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <syslog.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <sys/file.h>
+#include <net/if.h>
+#include <fcntl.h>
+#include <pwd.h>
 #include <grp.h>
 #include <netdb.h>
 
@@ -18,7 +18,7 @@
 #include <sys/capability.h>
 #endif
 
-unsigned int loglevel = 0;
+extern unsigned int loglevel;
 unsigned int do_fork = 1;
 
 int cap_parse(const char *optarg);
@@ -26,37 +26,32 @@ void usage(const char *fn);
 
 int main(int argc, char *argv[]) {
 
-    int ch, dev, cap, do_cdp, do_lldp, do_once;
+    int ch, do_cdp, do_lldp, do_once;
     int fd = -1;
     char *progname = argv[0];
-    char *username = USER;
+    char *username = PACKAGE;
     char *pidfile = PIDFILE;
     char pidstr[16];
     struct passwd *pwd;
 
-    // uname
-    struct utsname uts;
-    char *uts_str, *hostname;
+    // sysinfo
+    struct sysinfo sysinfo;
     struct hostent *hp;
 
-    // location
-    char *location = NULL;
-
-    // sessions
-    struct session *sessions = NULL, *session_prev = NULL, *session;
-    // libnet
-    struct libnet_ether_addr *hwaddr;
+    // interfaces
+    struct session *sessions = NULL, *session, *csession;
     char errbuf[LIBNET_ERRBUF_SIZE];
+
 #ifdef USE_CAPABILITIES
     // capabilities
     cap_t caps;
 #endif
 
     /* set arguments */
-    cap     = 0;
     do_cdp  = 0;
     do_lldp = 0;
     do_once = 0;
+    bzero(&sysinfo, sizeof(struct sysinfo));
 
     while ((ch = getopt(argc, argv, "clfou:hvC:L:")) != -1) {
 	switch(ch) {
@@ -79,129 +74,96 @@ int main(int argc, char *argv[]) {
 		loglevel++;
 		break;
 	    case 'C':
-		cap = cap_parse(optarg);
-		if (cap == -1)
+		sysinfo.cap = cap_parse(optarg);
+		if (sysinfo.cap == -1)
 		    usage(progname);
 		break;
 	    case 'L':
-		location = optarg;
+		sysinfo.location = optarg;
 		break;
 	    default:
 		usage(progname);
 	}
     }
 
-    // default to CAP_HOST
-    if (cap == 0)
-	cap |= CAP_HOST;
-
     argc -= optind;
     argv += optind;
 
-    if (argc < 1 || (do_cdp == 0 && do_lldp == 0))
+    if (do_cdp == 0 && do_lldp == 0)
 	usage(progname);
 
+    // default to CAP_HOST
+    if (sysinfo.cap == 0)
+	sysinfo.cap |= CAP_HOST;
+
+    // fetch all interfaces
+    sessions = netif_fetch(argc, argv, &sysinfo);
+
+    // validate username
     if ((pwd = getpwnam(username)) == NULL) {
-	log_str(0, "User %s does not exist", username);
+	my_log(0, "User %s does not exist", username);
 	exit(EXIT_FAILURE);
     }
 
-
-    // uts
-    if (uname(&uts) == -1) {
-	log_str(0, "can't fetch uname: %s", strerror(errno));
+    // sysinfo.uts
+    if (uname(&sysinfo.uts) == -1) {
+	my_log(0, "can't fetch uname: %s", strerror(errno));
 	exit(EXIT_FAILURE);
     }
 
-    asprintf(&uts_str, "%s %s %s %s",
-	uts.sysname, uts.release, uts.version, uts.machine);
-    if (uts_str == NULL) {
-	log_str(0, "can't create uts_str: %s", strerror(errno));
+    asprintf(&sysinfo.uts_str, "%s %s %s %s",
+	sysinfo.uts.sysname, sysinfo.uts.release,
+	sysinfo.uts.version, sysinfo.uts.machine);
+    if (sysinfo.uts_str == NULL) {
+	my_log(0, "can't createsysinfo.uts_str: %s", strerror(errno));
 	exit(EXIT_FAILURE);
     }
 
-    if ((hp = gethostbyname(uts.nodename)) == NULL) {
-	log_str(0, "cant resolve hostname: %s", hstrerror(h_errno));
+    if ((hp = gethostbyname(sysinfo.uts.nodename)) == NULL) {
+	my_log(0, "cant resolve hostname: %s", hstrerror(h_errno));
 	exit(EXIT_FAILURE);
     }
-    hostname = hp->h_name;
+    sysinfo.hostname = hp->h_name;
 
     // open pidfile
     if (do_fork == 1) {
 	fd = open(pidfile, O_WRONLY|O_CREAT, 0666);
 	if (fd == -1) {
-	    log_str(0, "failed to open pidfile %s: %s",
+	    my_log(0, "failed to open pidfile %s: %s",
 			pidfile, strerror(errno));
 	    exit(EXIT_FAILURE);	
 	}
 	if (flock(fd, LOCK_EX|LOCK_NB) == -1) {
-	    log_str(0, "failed to lock pidfile %s: %s",
+	    my_log(0, "failed to lock pidfile %s: %s",
 			pidfile, strerror(errno));
 	    exit(EXIT_FAILURE);	
 	}
 	if (fchown(fd, pwd->pw_uid, -1) == -1) {
-	    log_str(0, "failed to chown pidfile %s: %s",
+	    my_log(0, "failed to chown pidfile %s: %s",
 			pidfile, strerror(errno));
 	    exit(EXIT_FAILURE);	
 	}
     }
 
-    
     // create sessions for all devices
-    for (dev = 0; dev < argc; dev++) {
-
-	if ( (session = (struct session *)malloc(sizeof(struct session)) ) == NULL) {
-	    log_str(0, "memory allocation for %s failed", argv[dev]);
-	    exit(EXIT_FAILURE);
-	}
-	bzero(session, sizeof(struct session));
-
-	// copy device name
-	if ((session->dev = strdup(argv[dev])) == NULL) {
-	    log_str(0, "memory allocation failed");
-	    exit(EXIT_FAILURE);
-	}
+    for (session = sessions; session != NULL; session = session->next) {
+	// skip masters
+	if (session->if_master > 0)
+	    continue;
 
 	// initialize libnet
-	session->libnet = libnet_init(LIBNET_LINK, session->dev, errbuf);
+	session->libnet = libnet_init(LIBNET_LINK, session->if_name, errbuf);
 	if (session->libnet == NULL) {
-	    log_str(0, "%s %s", session->dev, errbuf);
+	    my_log(0, "%s %s", session->if_name, errbuf);
 	    exit(EXIT_FAILURE);
 	}
-
-	// fetch ethernet hwaddr
-	hwaddr = libnet_get_hwaddr(session->libnet);
-	if (hwaddr == NULL) {
-	    log_str(0, "can't fetch hardware address: %s",
-		       libnet_geterror(session->libnet));
-	    exit(EXIT_FAILURE);
-	}
-	memcpy(session->hwaddr, hwaddr->ether_addr_octet, 6 * sizeof(uint8_t));
-
-	// copy uts information
-	session->uts = &uts;
-	session->uts_str = uts_str;
-	session->hostname = hostname;
-
-	// copy capabilities
-	session->cap = cap;
-
-	// copy location
-	session->location = location;
-
-	if (sessions == NULL)
-	    sessions = session;
-	else
-	    session_prev->next = session;
-
-	session_prev = session;
     }
 
 
     // fork
     if (do_fork == 1) {
 	if (daemon(0,0) == -1) {
-	    log_str(0, "backgrounding failed: %s", strerror(errno));
+	    my_log(0, "backgrounding failed: %s", strerror(errno));
 	    exit(EXIT_FAILURE);
 	}
 	snprintf(pidstr, sizeof(pidstr), "%u\n", getpid());
@@ -211,97 +173,117 @@ int main(int argc, char *argv[]) {
 #ifdef USE_CAPABILITIES
     // keep capabilities
     if (prctl(PR_SET_KEEPCAPS,1) == -1) {
-	log_str(0, "unable to keep capabilities: %s", strerror(errno));
+	my_log(0, "unable to keep capabilities: %s", strerror(errno));
        	exit(EXIT_FAILURE);
     }
 #endif
 
     // setuid & setgid
     if (setgid(pwd->pw_gid) == -1){
-	log_str(0, "unable to setgid: %s", strerror(errno));
+	my_log(0, "unable to setgid: %s", strerror(errno));
        	exit(EXIT_FAILURE);
     }
 
     if (setgroups(0, NULL) == -1){
-	log_str(0, "unable to setgroups: %s", strerror(errno));
+	my_log(0, "unable to setgroups: %s", strerror(errno));
        	exit(EXIT_FAILURE);
     }
 
     if (setuid(pwd->pw_uid) == -1){
-   	log_str(0, "unable to setuid: %s", strerror(errno));
+   	my_log(0, "unable to setuid: %s", strerror(errno));
        	exit(EXIT_FAILURE);
     }
+
 
 #ifdef USE_CAPABILITIES
     // keep CAP_NET_ADMIN
     caps = cap_from_text("cap_net_admin=ep");
 
     if (caps == NULL) {
-	log_str(0, "unable to create capabilities: %s", strerror(errno));
+	my_log(0, "unable to create capabilities: %s", strerror(errno));
 	exit(EXIT_FAILURE);
     }
 
     if (cap_set_proc(caps) == -1) {
-	log_str(0, "unable to set capabilities: %s", strerror(errno));
+	my_log(0, "unable to set capabilities: %s", strerror(errno));
 	exit(EXIT_FAILURE);
     }
+
+    cap_free(caps);
 #endif
 
-    while (1) {
-
+    while (sessions) {
 	for (session = sessions; session != NULL; session = session->next) {
-	    log_str(3, "starting loop with interface %s", session->dev); 
+	    // skip slaves
+	    if (session->if_slave == 1)
+		continue;
 
-	    // fetch ipv4 addr (unnumbered is acceptable)
-	    session->ipaddr4 = ntohl(libnet_get_ipaddr4(session->libnet));
-
-	    // TODO: ipv6
-
-	    // fetch interface details
-	    log_str(3, "fetching interface details %s", session->dev);
-	    if (ifinfo_get(session) == EXIT_FAILURE) {
-		log_str(0, "error fetching interface details");
+	    // skip masters without slaves
+	    if ((session->if_master > 0) && (session->subif == NULL)) {
+		my_log(3, "skipping interface %s", session->if_name); 
+		continue;
 	    }
-	
-	    // cdp packet
-	    if (do_cdp == 1) {
 
-		log_str(3, "building a cdp packet for %s", session->dev);
-		cdp_packet(session);
-		if (session->cdp_data == NULL) {
-		    log_str(0, "can't generate CDP packet");
-		    exit(EXIT_FAILURE);
+	    my_log(3, "starting loop with interface %s", session->if_name); 
+
+	    // fetch IPv4 / IPv6 addr if available
+	    my_log(3, "fetching IP addresses for %s", session->if_name); 
+	    netif_addr(session);
+
+	    // point csession to subif when session is master
+	    if (session->if_master > 0)
+		csession = session->subif;
+	    else
+		csession = session;
+
+	    while (csession != NULL) {
+		// fetch interface media status
+		my_log(3, "fetching %s media details", csession->if_name);
+		if (netif_media(csession) == EXIT_FAILURE) {
+		    my_log(0, "error fetching interface media details");
 		}
-		log_str(3, "generated a cdp packet (%d bytes)",
-			session->cdp_length);
 
-		log_str(3, "sending cdp packet (%d bytes)",
-			session->cdp_length); 
-		cdp_send(session); 
-	    }   
+		// cdp packet
+		if (do_cdp == 1) {
+		    my_log(3, "building a cdp packet for %s",
+				csession->if_name);
+		    cdp_packet(csession, session, &sysinfo);
 
-	    // lldp packet
-	    if (do_lldp == 1) {
+		    if (csession->cdp_length == 0) {
+			my_log(0, "can't generate CDP packet");
+			exit(EXIT_FAILURE);
+		    }
 
-		log_str(3, "building an lldp packet for %s", session->dev);
-		lldp_packet(session);
-		if (session->lldp_data == NULL) {
-		    log_str(0, "can't generate LLDP packet");
-		    exit(EXIT_FAILURE);
+		    my_log(3, "sending cdp packet (%d bytes)",
+				csession->cdp_length);
+		    cdp_send(csession); 
 		}
-		log_str(3, "generated an lldp packet (%d bytes)",
-			session->lldp_length);
 
-		log_str(3, "sending lldp packet (%d bytes)",
-			session->lldp_length); 
-		lldp_send(session); 
+		// lldp packet
+		if (do_lldp == 1) {
+		    my_log(3, "building a lldp packet for %s",
+				csession->if_name);
+		    lldp_packet(csession, session, &sysinfo);
+
+		    if (csession->lldp_length == 0) {
+			my_log(0, "can't generate LLDP packet");
+			exit(EXIT_FAILURE);
+		    }
+
+		    my_log(3, "sending lldp packet (%d bytes)",
+				csession->lldp_length);
+		    lldp_send(csession); 
+		}
+
+		if (session->if_master > 0)
+		    csession = csession->subif;
 	    }
 	}
 
 	if (do_once == 1)
 	    return (EXIT_SUCCESS);
 
-	log_str(3, "sleeping for %d seconds", SLEEPTIME);
+	my_log(3, "sleeping for %d seconds", SLEEPTIME);
 	sleep(SLEEPTIME);
     }
 
@@ -355,24 +337,8 @@ void usage(const char *fn) {
 	    "\t\tS - Switch, W - WLAN Access Point\n"
 	    "\t-L <location> = System Location\n"
 	    "\t-h = Print this message\n",
-	    PACKAGE_NAME, PACKAGE_VERSION, fn, USER);
+	    PACKAGE_NAME, PACKAGE_VERSION, fn, PACKAGE);
 
     exit(EXIT_FAILURE);
-}
-
-void log_str(int prio, const char *fmt, ...) {
-
-    va_list ap;
-    va_start(ap, fmt);
-
-    if (prio > loglevel)
-	return;
-
-    if (do_fork == 1) {
-	vsyslog(LOG_INFO, fmt, ap);
-    } else {
-	vfprintf(stderr, fmt, ap);
-	fprintf(stderr, "\n");
-    }
 }
 
