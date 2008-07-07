@@ -77,6 +77,14 @@ AC_CHECK_HEADERS([linux/ethtool.h], [], [],
 # endif
 ])
 
+# bridge
+AC_CHECK_HEADERS([linux/if_bridge.h])
+AC_CHECK_HEADERS([net/if_bridgevar.h])
+
+# bonding
+AC_CHECK_HEADERS([linux/if_bonding.h])
+AC_CHECK_HEADERS([net/if_lagg.h])
+
 # linux capabilities
 AC_CHECK_HEADERS([sys/prctl.h sys/capability.h])
 if test "$ac_cv_header_sys_capability_h" = "yes" ; then

@@ -12,6 +12,7 @@
 #include <net/if_arp.h>
 #include <ifaddrs.h>
 #include <netinet/in.h>
+#include <dirent.h>
 #include <unistd.h>
 #include "lldp.h"
 
@@ -39,27 +40,123 @@
 #endif /* HAVE_NET_IF_MEDIA_H */
 
 
+// handle aggregated interfaces
+void netif_bond(struct session *sessions, struct session *session) {
+
+    struct session *subif = NULL, *csubif = session;
+
+#if HAVE_LINUX_IF_BONDING_H
+    // handle linux bonding interfaces
+    char path[SYSFS_PATH_MAX];
+    FILE *fp;
+    char line[1024];
+    char *slave, *nslave;
+    int m;
+
+    // check for lacp
+    sprintf(path, "%s/%s/bonding/mode", SYSFS_VIRTUAL, session->if_name); 
+    if ((fp = fopen(path, "r")) != NULL) {
+	if (fscanf(fp, "802.3ad") != EOF)
+		session->if_lacp = 1;
+	fclose(fp);
+    }
+
+    // handle slaves
+    sprintf(path, "%s/%s/bonding/slaves", SYSFS_VIRTUAL, session->if_name); 
+    if ((fp = fopen(path, "r")) != NULL) {
+	if (fgets(line, sizeof(line), fp) != NULL) {
+	    // remove newline
+	    *strchr(line, '\n') = '\0';
+
+	    slave = line;
+	    m = 0;
+	    while (strlen(slave) > 0) {
+		nslave = strstr(line, " ");
+		if (nslave != NULL)
+		    *nslave = '\0';
+
+		subif = session_byname(sessions, slave);
+		if (subif != NULL) {
+		    subif->if_slave = 1;
+		    subif->if_lacp_ifindex = m++;
+		    csubif->subif = subif;
+		    csubif = subif;
+		}
+
+		if (nslave != NULL) {
+		    nslave++;
+		    slave = nslave;
+		} else {
+		    break;
+		}
+	    }
+	};
+
+	fclose(fp);
+    }
+
+#elif HAVE_NET_LAGG_H
+    // handle bsd lagg interfaces
+#endif
+
+}
+
+
+// handle bridge interfaces
+void netif_bridge(struct session *sessions, struct session *session) {
+
+    struct session *subif = NULL, *csubif = session;
+
+#if HAVE_LINUX_IF_BRIDGE_H 
+    // handle linux bridge interfaces
+    char path[SYSFS_PATH_MAX];
+    DIR  *dir;
+    struct dirent *dirent;
+
+    // handle slaves
+    sprintf(path, "%s/%s/%s",
+		SYSFS_VIRTUAL, session->if_name, SYSFS_BRIDGE_PORT_SUBDIR); 
+
+    if ((dir = opendir(path)) == NULL) {
+	my_log(0, "reading bridge %s subdir %s failed: %s",
+	    session->if_name, path, strerror(errno));
+	return;
+    }
+
+    while ((dirent = readdir(dir)) != NULL) {
+	subif = session_byname(sessions, dirent->d_name);
+	if (subif != NULL) {
+	    subif->if_slave = 1;
+	    csubif->subif = subif;
+	    csubif = subif;
+	}
+    }
+
+    closedir(dir);
+#elif HAVE_NET_IF_BRIDGEVAR_H
+    // handle bsd bridge interfaces
+#endif
+
+}
+
+
+// create sessions for a list of interfaces
 struct session * netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo) {
     int sockfd, af = AF_INET;
     struct ifreq ifr;
     struct if_nameindex *ifs = if_nameindex();
-    int i, j, m, count = 0;
+    int i, j, count = 0;
     int if_master;
 
 #if HAVE_LINUX_ETHTOOL_H
     char path[SYSFS_PATH_MAX];
     struct stat sb;
-    FILE *fp;
-
-    char line[1024];
-    char *slave, *nslave;
 
     struct ethtool_drvinfo drvinfo;
 #endif /* HAVE_LINUX_ETHTOOL_H */
 
     // sessions
     struct session *sessions = NULL, *session_prev = NULL, *session;
-    struct session *subif = NULL, *csubif = NULL;
 
     if (ifs == NULL) {
 	my_log(0,"could not run if_nameindex");
@@ -73,17 +170,17 @@ struct session * netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo) {
 	// reset if_master
 	if_master = 0;
 
-	// skip unlisted interfaces if specified
+	// skip unlisted interfaces if needed
 	if (ifc > 0) {
-	    m = 0;
 
 	    for (j=0; j < ifc; j++) {
 		if (strcmp(ifs[i].if_name, ifl[j]) == 0) {
-		    m = 1;
 		    break;
 		}
 	    }
-	    if (m != 1)
+	    
+	    // skip if no match is found
+	    if (j >= ifc)
 		continue;
 	}
 
@@ -161,67 +258,19 @@ struct session * netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo) {
 	count++;
     }
 
-    // handle master and subifs
+    // add slave subif lists to each master
     for (session = sessions; session != NULL; session = session->next) {
-	if (session->if_master == 0)
-	    continue;
 
-	csubif = session;
-
-#if HAVE_LINUX_IF_BRIDGE_H
-	// bonding
-	if (session->if_master == MASTER_BONDING) {
-
-	    // check for lacp
-	    sprintf(path, "%s/%s/bonding/mode",
-		SYSFS_VIRTUAL, session->if_name); 
-	    if ((fp = fopen(path, "r")) != NULL) {
-		if (fscanf(fp, "802.3ad") != EOF)
-		    session->if_lacp = 1;
-		fclose(fp);
-	    }
-
-	    // handle slaves
-	    sprintf(path, "%s/%s/bonding/slaves",
-		SYSFS_VIRTUAL, session->if_name); 
-	    if ((fp = fopen(path, "r")) != NULL) {
-		if (fgets(line, sizeof(line), fp) != NULL) {
-		    // remove newline
-		    *strchr(line, '\n') = '\0';
-
-		    slave = line;
-		    m = 0;
-		    while (strlen(slave) > 0) {
-			nslave = strstr(line, " ");
-			if (nslave != NULL)
-			    *nslave = '\0';
-
-			subif = session_byname(sessions, slave);
-			if (subif != NULL) {
-			    subif->if_slave = 1;
-			    subif->if_lacp_ifindex = m++;
-			    csubif->subif = subif;
-			    csubif = subif;
-			}
-
-			if (nslave != NULL) {
-			    nslave++;
-			    slave = nslave;
-			} else {
-			    break;
-			}
-		    }
-		};
-
-		fclose(fp);
-	    }
-
-	// bridge
-	} else if (session->if_master == MASTER_BRIDGE) {
-	    sprintf(path, "%s/%s/%s",
-		SYSFS_VIRTUAL, session->if_name, SYSFS_BRIDGE_PORT_SUBDIR); 
+	switch(session->if_master) {
+	    case MASTER_BONDING:
+		netif_bond(sessions, session);
+		break;
+	    case MASTER_BRIDGE:
+		netif_bridge(sessions, session);
+		break;
+	    default:
+		break;
 	}
-#endif /* HAVE_LINUX_IF_BRIDGE_H */
     }
 
     // handle errors
@@ -245,6 +294,8 @@ struct session * netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo) {
     return(sessions);
 };
 
+
+// perform address detection on non-slave interfaces
 int netif_addr(struct session *session) {
     struct ifaddrs *ifaddrs, *ifaddr;
     struct sockaddr_in saddr4;
@@ -293,6 +344,8 @@ int netif_addr(struct session *session) {
     return(EXIT_SUCCESS);
 }
 
+
+// perform media detection on physical interfaces
 int netif_media(struct session *session) {
     int sockfd, af = AF_INET;
     struct ifreq ifr;
@@ -487,3 +540,5 @@ int netif_media(struct session *session) {
 
     return(EXIT_SUCCESS);
 }
+
+
