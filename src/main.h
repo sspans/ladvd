@@ -10,7 +10,6 @@
 #include <stdint.h>
 #include <string.h>
 #include <errno.h>
-#include <libnet.h>
 #include "util.h"
 
 #define PIDFILE	    "/var/run/ladvd.pid"
@@ -41,7 +40,7 @@ struct session {
     uint8_t lldp_data[BUFSIZ];
     size_t lldp_length;
 
-    libnet_t *libnet;
+    socket socket;
 
     struct session *subif;
     struct session *next;

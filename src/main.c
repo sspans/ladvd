@@ -145,16 +145,17 @@ int main(int argc, char *argv[]) {
 	}
     }
 
-    // create sessions for all devices
+    // open raw sockets on all physical devices
     for (session = sessions; session != NULL; session = session->next) {
+
 	// skip masters
 	if (session->if_master > 0)
 	    continue;
 
-	// initialize libnet
-	session->libnet = libnet_init(LIBNET_LINK, session->if_name, errbuf);
-	if (session->libnet == NULL) {
-	    my_log(0, "%s %s", session->if_name, errbuf);
+	session->socket = my_rsocket(session->if_name);
+
+	if (session->socket == NULL) {
+	    my_log(0, "opening socket on %s failed", session->if_name);
 	    exit(EXIT_FAILURE);
 	}
     }
