@@ -17,8 +17,6 @@
 #define LADVD_TTL   180
 
 struct session {
-    int sockfd;
-
     uint8_t if_index;
     char *if_name;
     uint16_t mtu;
@@ -40,7 +38,7 @@ struct session {
     uint8_t lldp_msg[BUFSIZ];
     size_t lldp_len;
 
-    socket socket;
+    int sockfd;
 
     struct session *subif;
     struct session *next;

@@ -200,7 +200,7 @@ int cdp_packet(struct session *csession, struct session *session,
 int cdp_send(struct session *session) {
 
     // write it to the wire.
-    if (my_rsendto(session->socket, session->cdp_msg, session->cdp_len) == -1) {
+    if (my_rsendto(session->sockfd, session->cdp_msg, session->cdp_len) == -1) {
 	my_log(0, "network transmit error on %s", session->if_name);
 	return (EXIT_FAILURE);
     }

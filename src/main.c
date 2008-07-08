@@ -152,9 +152,9 @@ int main(int argc, char *argv[]) {
 	if (session->if_master > 0)
 	    continue;
 
-	session->socket = my_rsocket(session->if_name);
+	session->sockfd = my_rsocket(session->if_name);
 
-	if (session->socket == NULL) {
+	if (session->sockfd < 0) {
 	    my_log(0, "opening socket on %s failed", session->if_name);
 	    exit(EXIT_FAILURE);
 	}
