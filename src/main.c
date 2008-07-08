@@ -40,7 +40,6 @@ int main(int argc, char *argv[]) {
 
     // interfaces
     struct session *sessions = NULL, *session, *csession;
-    char errbuf[LIBNET_ERRBUF_SIZE];
 
 #ifdef USE_CAPABILITIES
     // capabilities
@@ -250,13 +249,13 @@ int main(int argc, char *argv[]) {
 				csession->if_name);
 		    cdp_packet(csession, session, &sysinfo);
 
-		    if (csession->cdp_length == 0) {
+		    if (csession->cdp_len == 0) {
 			my_log(0, "can't generate CDP packet");
 			exit(EXIT_FAILURE);
 		    }
 
 		    my_log(3, "sending cdp packet (%d bytes)",
-				csession->cdp_length);
+				csession->cdp_len);
 		    cdp_send(csession); 
 		}
 
@@ -266,13 +265,13 @@ int main(int argc, char *argv[]) {
 				csession->if_name);
 		    lldp_packet(csession, session, &sysinfo);
 
-		    if (csession->lldp_length == 0) {
+		    if (csession->lldp_len == 0) {
 			my_log(0, "can't generate LLDP packet");
 			exit(EXIT_FAILURE);
 		    }
 
 		    my_log(3, "sending lldp packet (%d bytes)",
-				csession->lldp_length);
+				csession->lldp_len);
 		    lldp_send(csession); 
 		}
 
