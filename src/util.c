@@ -10,6 +10,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <arpa/inet.h>
+#include <net/ethernet.h>
 
 unsigned int loglevel = 0;
 extern int do_fork;
@@ -89,7 +90,7 @@ int my_rsendto(int socket, const void *msg, size_t len) {
     size_t count = 0;
 
 #ifdef PF_PACKET
-    count = sendto(socket, msg, len);
+    count = sendto(socket, msg, len, 0);
 #elif HAVE_NET_BPF_H
     count = write(socket, msg, len);
 #endif
