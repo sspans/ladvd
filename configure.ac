@@ -23,44 +23,12 @@ if test "x$enable_debug" = "xyes"; then
     CFLAGS="$CFLAGS -DDEBUG"
 fi
 
-AC_ARG_WITH(libnet_includes,
-	[  --with-libnet-includes=DIR     libnet include directory],
-	[with_libnet_includes="$withval"],[with_libnet_includes="no"])
-
-AC_ARG_WITH(libnet_libraries,
-	[  --with-libnet-libraries=DIR    libnet library directory],
-	[with_libnet_libraries="$withval"],[with_libnet_libraries="no"])
-
-if test "x$with_libnet_includes" != "xno"; then
-    CPPFLAGS="${CPPFLAGS} -I${with_libnet_includes}"
-fi  
-
-if test "x$with_libnet_libraries" != "xno"; then
-    LDFLAGS="${LDFLAGS} -L${with_libnet_libraries}"
-fi
-
-# Checks for libraries.
-AC_CHECK_LIB(net, main, [], [AC_MSG_ERROR([cannot find libnet])])
-AC_CHECK_LIB(net, libnet_init_packet,
-    [
-	AC_MSG_ERROR([libnet version: < 1.1.0])
-    ], [
-	AC_CHECK_LIB(net, libnet_init,
-	    [
-	    AC_DEFINE(LIBNET_API_VERSION, 110, [libnet API version])
-	    ], [
-	    AC_MSG_ERROR([could not identify the version of libnet])
-	    ])
-])
-
 # Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS([fcntl.h grp.h pwd.h stdarg.h stdint.h stdio.h syslog.h \
 		  sys/file.h sys/utsname.h unistd.h sys/ioctl.h sys/types.h \
 		  sys/socket.h ], 
 		 [], AC_MSG_ERROR([required header missing]))
-# libnet
-AC_CHECK_HEADERS([libnet.h], [], AC_MSG_ERROR([libnet headers missing]))
 
 # bsd ifmedia
 AC_CHECK_HEADERS([asm/types.h linux/sockios.h net/if_media.h])
