@@ -29,10 +29,7 @@ logging to stderr.
 
 To install ladvd, first run the "configure" script. This will create a
 Makefile and config.h appropriate for your system. Then type
-"make". 
-
-Once built put a copy of ladvd in your search path on the local and
-remote systems (or use "make install"). That's it!
+"make" and "make install". 
 
 
 BUG REPORTS
