@@ -188,6 +188,11 @@ int lldp_packet(struct session *csession, struct session *session,
     // clear
     bzero(csession->lldp_data, BUFSIZ);
 
+    if(libnet_build_ethernet(lldp_mac, libnet_get_hwaddr(l), 0x88cc,
+			     NULL, 0, l, 0) == -1) {
+	my_log(0, "can't build lldp ethernet header: %s", libnet_geterror(l));
+    }
+
     csession->lldp_length = lldp_encode(&packet, csession->lldp_data, BUFSIZ);
     if (csession->lldp_length == 0) {
 	my_log(1, "generated lldp packet too large");
@@ -199,33 +204,12 @@ int lldp_packet(struct session *csession, struct session *session,
 
 int lldp_send(struct session *session) {
 
-    libnet_t *l = session->libnet;
-
-    if (libnet_build_data(session->lldp_data, session->lldp_length, l, 0)==-1) {
-	my_log(0, "can't build lldp frame data: %s", libnet_geterror(l));
-	goto fail;
+    // write it to the wire.
+    if (my_rsend(session->socket, session->lldp_data) == -1) {
+	my_log(0, "network transmit error on %s", session->if_name);
+	return (EXIT_FAILURE);
     }
 
-    if(libnet_build_ethernet(lldp_mac, libnet_get_hwaddr(l), 0x88cc,
-			     NULL, 0, l, 0) == -1) {
-
-	my_log(0, "can't build lldp ethernet header: %s", libnet_geterror(l));
-	goto fail;
-    }
-
-    /*
-     *  Write it to the wire.
-     */
-    if (libnet_write(l) == -1) {
-	my_log(0, "network transmit error: %s", libnet_geterror(l));
-	goto fail;
-    }
-
-    libnet_clear_packet(l);
     return (EXIT_SUCCESS);
-
-    fail:
-    libnet_clear_packet(l);
-    return (EXIT_FAILURE);
 }
 
