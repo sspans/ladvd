@@ -171,7 +171,7 @@ int cdp_packet(struct session *csession, struct session *session,
     if (csession->duplex != -1)
     	packet.duplex = csession->duplex;
 
-    bzero(csession->cdp_data, BUFSIZ);
+    bzero(csession->cdp_msg, BUFSIZ);
 
    if (libnet_build_802_2snap(0xaa, 0xaa, 0x03, cdp_snap_oui, 
 			      0x2000, NULL, 0, l, 0) == -1) {
@@ -181,15 +181,15 @@ int cdp_packet(struct session *csession, struct session *session,
 
    /* length is 802.2 SNAP header + CDP's length */
    if(libnet_build_802_3(cdp_mac, libnet_get_hwaddr(l),
-			 LIBNET_802_2SNAP_H + session->cdp_length,
+			 LIBNET_802_2SNAP_H + session->cdp_len,
 			 NULL, 0, l, 0) == -1) {
 
 	my_log(0, "can't build cdp ethernet header: %s", libnet_geterror(l));
 	goto fail;
     }
 
-    csession->cdp_length = cdp_encode(&packet, csession->cdp_data, BUFSIZ);
-    if (csession->cdp_length == 0) {
+    csession->cdp_len = cdp_encode(&packet, csession->cdp_msg, BUFSIZ);
+    if (csession->cdp_len == 0) {
 	my_log(0, "generated cdp packet too large");
 	return(EXIT_FAILURE);
     }
@@ -200,7 +200,7 @@ int cdp_packet(struct session *csession, struct session *session,
 int cdp_send(struct session *session) {
 
     // write it to the wire.
-    if (my_rsend(session->socket, session->cdp_data) == -1) {
+    if (my_rsendto(session->socket, session->cdp_msg, session->cdp_len) == -1) {
 	my_log(0, "network transmit error on %s", session->if_name);
 	return (EXIT_FAILURE);
     }

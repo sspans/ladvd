@@ -35,10 +35,10 @@ struct session {
     uint8_t if_lacp;
     uint8_t if_lacp_ifindex;
 
-    uint8_t cdp_data[BUFSIZ];
-    size_t cdp_length;
-    uint8_t lldp_data[BUFSIZ];
-    size_t lldp_length;
+    uint8_t cdp_msg[BUFSIZ];
+    size_t cdp_len;
+    uint8_t lldp_msg[BUFSIZ];
+    size_t lldp_len;
 
     socket socket;
 

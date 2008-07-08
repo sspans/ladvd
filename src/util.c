@@ -70,6 +70,35 @@ int my_socket(int af, int type, int proto) {
     return(s);
 }
 
+int my_rsocket(const char *if_name) {
+
+    int socket;
+
+#ifdef PF_PACKET
+    socket = my_socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
+#elif HAVE_NET_BPF_H
+    socket = open("/dev/bpf", O_WRONLY);
+#endif
+
+    return(socket);
+}
+
+int my_rsendto(int socket, const void *msg, size_t len) {
+
+    size_t count = 0;
+
+#ifdef PF_PACKET
+    count = sendto(socket, msg, len);
+#elif HAVE_NET_BPF_H
+    count = write(socket, msg, len);
+#endif
+
+    if (count != len)
+	my_log(0, "only %d bytes written: %s", count, strerror(errno));
+    
+    return(count);
+}
+
 struct session *session_byname(struct session *sessions, char *name) {
     struct session *session;
 
