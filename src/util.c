@@ -9,6 +9,7 @@
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <arpa/inet.h>
 
 unsigned int loglevel = 0;
 extern int do_fork;
