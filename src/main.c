@@ -247,9 +247,8 @@ int main(int argc, char *argv[]) {
 		if (do_cdp == 1) {
 		    my_log(3, "building a cdp packet for %s",
 				csession->if_name);
-		    cdp_packet(csession, session, &sysinfo);
 
-		    if (csession->cdp_len == 0) {
+		    if (cdp_packet(csession, session, &sysinfo) == 0) {
 			my_log(0, "can't generate CDP packet");
 			exit(EXIT_FAILURE);
 		    }
@@ -263,9 +262,8 @@ int main(int argc, char *argv[]) {
 		if (do_lldp == 1) {
 		    my_log(3, "building a lldp packet for %s",
 				csession->if_name);
-		    lldp_packet(csession, session, &sysinfo);
 
-		    if (csession->lldp_len == 0) {
+		    if (lldp_packet(csession, session, &sysinfo) == 0) {
 			my_log(0, "can't generate LLDP packet");
 			exit(EXIT_FAILURE);
 		    }
