@@ -66,20 +66,3 @@ struct cdp_predef cdp_predefs[] = {
 	{ 0x02, 8, "\xaa\xaa\x03\x00\x00\x00\x80\xdd" },
 };
 
-
-struct cdp_packet {
-	uint8_t version;
-	uint8_t ttl;
-	uint16_t checksum;
-	char *device_id;
-	uint32_t address4;
-	char *port_id;
-	uint32_t capabilities;
-	char *ios_version;
-	char *platform;
-	uint8_t duplex;
-	uint16_t mtu;
-	char *system_name;
-	char *location;
-};
-
