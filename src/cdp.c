@@ -40,9 +40,10 @@ int cdp_packet(struct session *csession, struct session *session,
 
     pos = csession->cdp_msg;
 
-    // zero
+    // clear
     bzero(csession->cdp_msg, length);
     csession->cdp_len = 0;
+
 
     // ethernet header
     if (!(
@@ -52,6 +53,7 @@ int cdp_packet(struct session *csession, struct session *session,
     ))
 	return 0;
 
+
     // snap header
     if (!(
 	PUSH_UINT8(0xaa) && PUSH_UINT8(0xaa) && PUSH_UINT8(0x03) &&
@@ -59,18 +61,22 @@ int cdp_packet(struct session *csession, struct session *session,
     ))
 	return 0;
 
+
     // save the cdp start position
     cdp_pos = pos;
+
 
     // version
     PUSH_UINT8(cdp_version);
     if (!PUSH_UINT8(LADVD_TTL))
 	return 0;
 
+
     // save the current position, then leave enough space for the checksum.
     checksum_pos = pos;
     if (!PUSH_UINT16(0))
 	return 0;
+
 
     // device id
     if (!(
@@ -80,6 +86,7 @@ int cdp_packet(struct session *csession, struct session *session,
 	return 0;
     END_CDP_TLV;
 
+
     // version
     if (!(
 	START_CDP_TLV(CDP_TYPE_IOS_VERSION) &&
@@ -87,6 +94,7 @@ int cdp_packet(struct session *csession, struct session *session,
     ))
 	return 0;
     END_CDP_TLV;
+
 
     // platform
     if (!(
@@ -96,6 +104,7 @@ int cdp_packet(struct session *csession, struct session *session,
 	return 0;
     END_CDP_TLV;
 
+
     // port id
     if (!(
 	START_CDP_TLV(CDP_TYPE_PORT_ID) &&
@@ -103,6 +112,7 @@ int cdp_packet(struct session *csession, struct session *session,
     ))
 	return 0;
     END_CDP_TLV;
+
 
     // capabilities
     if (sysinfo->cap & CAP_BRIDGE)
@@ -120,6 +130,7 @@ int cdp_packet(struct session *csession, struct session *session,
     ))
 	return 0;
     END_CDP_TLV;
+
 
     // ipv4 management addr 
     if (session->ipaddr4 != 0) {
@@ -141,7 +152,10 @@ int cdp_packet(struct session *csession, struct session *session,
 
 	END_CDP_TLV;
     }
+
+
     // TODO: IPv6
+
 
     // mtu
     if (csession->mtu && !(
@@ -151,6 +165,7 @@ int cdp_packet(struct session *csession, struct session *session,
 	return 0;
     END_CDP_TLV;
 
+
     // duplex
     if ((csession->duplex != -1) && !(
 	START_CDP_TLV(CDP_TYPE_DUPLEX) &&
@@ -158,6 +173,7 @@ int cdp_packet(struct session *csession, struct session *session,
     ))
 	return 0;
     END_CDP_TLV;
+
 
     // location
     if (sysinfo->location != NULL && !(
@@ -167,6 +183,7 @@ int cdp_packet(struct session *csession, struct session *session,
     ))
 	return 0;
     END_CDP_TLV;
+
 
     // workaround cisco crc bug (>0x80 in last uneven byte)
     // by having system_name tlv at the end
