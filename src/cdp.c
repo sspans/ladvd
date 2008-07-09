@@ -194,9 +194,10 @@ int cdp_packet(struct session *csession, struct session *session,
 	return 0;
     END_CDP_TLV;
 
+    // checksum
     *(uint16_t *)checksum_pos = cdp_checksum(cdp_pos, VOIDP_DIFF(pos, cdp_pos));
-    csession->cdp_len = VOIDP_DIFF(pos, csession->cdp_msg);
 
+    csession->cdp_len = VOIDP_DIFF(pos, csession->cdp_msg);
     return(csession->cdp_len);
 }
 
