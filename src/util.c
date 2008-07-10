@@ -12,6 +12,10 @@
 #include <arpa/inet.h>
 #include <net/ethernet.h>
 
+#ifdef PF_PACKET
+#include <netpacket/packet.h>
+#endif
+
 unsigned int loglevel = 0;
 extern int do_fork;
 
