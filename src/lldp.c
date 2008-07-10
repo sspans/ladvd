@@ -3,6 +3,7 @@
 */
 
 #include "main.h"
+#include "util.h"
 #include "lldp.h"
 #include "tlv.h"
 
