@@ -10,7 +10,6 @@
 #include <stdint.h>
 #include <string.h>
 #include <errno.h>
-#include "util.h"
 
 #define PIDFILE	    "/var/run/ladvd.pid"
 #define SLEEPTIME   30
