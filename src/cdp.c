@@ -35,7 +35,7 @@ int cdp_packet(struct session *csession, struct session *session,
 	       struct sysinfo *sysinfo) {
 
     size_t length = BUFSIZ;
-    void *cdp_pos, *checksum_pos;
+    void *cdp_pos, *checksum_pos, *etherlen_pos;
     uint8_t *pos, *tlv;
     uint8_t capabilities = 0;
 
@@ -50,7 +50,7 @@ int cdp_packet(struct session *csession, struct session *session,
     if (!(
 	PUSH_BYTES(cdp_dst, sizeof(cdp_dst)) &&
 	PUSH_BYTES(cdp_src, sizeof(cdp_src)) &&
-	PUSH_UINT16(0)
+	(etherlen_pos = pos) && PUSH_UINT16(0)
     ))
 	return 0;
 
@@ -195,10 +195,15 @@ int cdp_packet(struct session *csession, struct session *session,
 	return 0;
     END_CDP_TLV;
 
-    // checksum
+    // cdp checksum
     *(uint16_t *)checksum_pos = cdp_checksum(cdp_pos, VOIDP_DIFF(pos, cdp_pos));
 
+    // packet length
     csession->cdp_len = VOIDP_DIFF(pos, csession->cdp_msg);
+
+    // ethernet length field
+    *(uint16_t *)etherlen_pos = htons(csession->cdp_len);
+
     return(csession->cdp_len);
 }
 

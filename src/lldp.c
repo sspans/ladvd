@@ -185,7 +185,9 @@ int lldp_packet(struct session *csession, struct session *session,
 	return 0;
     END_LLDP_TLV;
 
+    // packet length
     csession->lldp_len = VOIDP_DIFF(pos, csession->lldp_msg);
+
     return(csession->lldp_len);
 }
 
