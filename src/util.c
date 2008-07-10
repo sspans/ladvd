@@ -85,14 +85,22 @@ int my_rsocket(const char *if_name) {
     return(socket);
 }
 
-int my_rsend(int socket, const void *msg, size_t len) {
+int my_rsend(struct session *session, const void *msg, size_t len) {
 
     size_t count = 0;
 
 #ifdef PF_PACKET
-    count = send(socket, msg, len, 0);
+    struct sockaddr_ll sa;
+    bzero(&sa, sizeof (sa));
+
+    sa.sll_family = AF_PACKET;
+    sa.sll_ifindex = session->if_index;
+    sa.sll_protocol = htons(ETH_P_ALL);
+
+    count = sendto(session->sockfd, msg, len, 0,
+		   (struct sockaddr *)&sa, sizeof (sa));
 #elif HAVE_NET_BPF_H
-    count = write(socket, msg, len);
+    count = write(session->sockfd, msg, len);
 #endif
 
     if (count != len)

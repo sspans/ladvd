@@ -192,7 +192,7 @@ int lldp_packet(struct session *csession, struct session *session,
 int lldp_send(struct session *session) {
 
     // write it to the wire.
-    if (my_rsend(session->sockfd, session->lldp_msg, session->lldp_len) == -1) {
+    if (my_rsend(session, session->lldp_msg, session->lldp_len) == -1) {
 	my_log(0, "network transmit error on %s", session->if_name);
 	return (EXIT_FAILURE);
     }
