@@ -28,7 +28,6 @@ int lldp_packet(struct session *csession, struct session *session,
     if (!(
 	PUSH_BYTES(lldp_dst, sizeof(lldp_dst)) &&
 	PUSH_BYTES(lldp_src, sizeof(lldp_src)) &&
-	PUSH_UINT16(0) &&
 	PUSH_BYTES(lldp_ether, sizeof(lldp_ether))
     ))
 	return 0;
