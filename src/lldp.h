@@ -56,6 +56,7 @@
 /*
  * Organizationally Unique Identifiers
  */
+#define OUI_LEN		      3
 #define OUI_IEEE_8021_PRIVATE "\x00\x80\xc2"	/* IEEE 802.1 - Annex F */
 #define OUI_IEEE_8023_PRIVATE "\x00\x12\x0f"	/* IEEE 802.3 - Annex G */
 #define OUI_TIA		      "\x00\x12\xbb"	/* TIA - ANSI/TIA-1057- 2006 */

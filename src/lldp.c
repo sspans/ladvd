@@ -139,7 +139,7 @@ int lldp_packet(struct session *csession, struct session *session,
     if (csession->autoneg_supported != -1) {
 	if (!(
 	    START_LLDP_TLV(LLDP_PRIVATE_TLV) &&
-	    PUSH_BYTES(OUI_IEEE_8023_PRIVATE, sizeof(OUI_IEEE_8023_PRIVATE) -1) &&
+	    PUSH_BYTES(OUI_IEEE_8023_PRIVATE, OUI_LEN) &&
 	    PUSH_UINT8(LLDP_PRIVATE_8023_SUBTYPE_MACPHY) &&
 	    PUSH_UINT8(csession->autoneg_supported +
 		       (csession->autoneg_enabled << 1)) &&
@@ -155,7 +155,7 @@ int lldp_packet(struct session *csession, struct session *session,
     if (session->if_lacp != 0) {
 	if (!(
 	    START_LLDP_TLV(LLDP_PRIVATE_TLV) &&
-	    PUSH_BYTES(OUI_IEEE_8023_PRIVATE, sizeof(OUI_IEEE_8023_PRIVATE) -1) &&
+	    PUSH_BYTES(OUI_IEEE_8023_PRIVATE, OUI_LEN) &&
 	    PUSH_UINT8(LLDP_PRIVATE_8023_SUBTYPE_LINKAGGR) &&
 	    PUSH_UINT8(LLDP_AGGREGATION_CAPABILTIY|LLDP_AGGREGATION_STATUS) &&
 	    PUSH_UINT32(csession->if_lacp_ifindex)
@@ -169,7 +169,7 @@ int lldp_packet(struct session *csession, struct session *session,
     if (csession->mtu != 0) {
 	if (!(
 	    START_LLDP_TLV(LLDP_PRIVATE_TLV) &&
-	    PUSH_BYTES(OUI_IEEE_8023_PRIVATE, sizeof(OUI_IEEE_8023_PRIVATE) -1) &&
+	    PUSH_BYTES(OUI_IEEE_8023_PRIVATE, OUI_LEN) &&
 	    PUSH_UINT8(LLDP_PRIVATE_8023_SUBTYPE_MTU) &&
 	    PUSH_UINT16(csession->mtu + 22)
 	))
