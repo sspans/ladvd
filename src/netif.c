@@ -3,6 +3,9 @@
  */
 
 #include "main.h"
+#include "util.h"
+#include "lldp.h"
+
 #include <sys/ioctl.h>
 #include <sys/param.h>
 #include <sys/socket.h>
@@ -14,7 +17,6 @@
 #include <netinet/in.h>
 #include <dirent.h>
 #include <unistd.h>
-#include "lldp.h"
 
 #if HAVE_ASM_TYPES_H
 # include <asm/types.h>
