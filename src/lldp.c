@@ -8,29 +8,30 @@
 #include "tlv.h"
 
 static uint8_t lldp_dst[] = { 0x01, 0x80, 0xc2, 0x00, 0x00, 0x0e };
-static uint8_t lldp_src[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 static uint8_t lldp_ether[] = { 0x88, 0xcc };
 
 int lldp_packet(struct session *csession, struct session *session,
 		struct sysinfo *sysinfo) {
 
-    size_t length = BUFSIZ;
+    struct packet *lldp_msg;
+    size_t length;
     uint8_t *pos, *tlv;
     uint8_t capabilities = 0;
 
-    pos = csession->lldp_msg;
-
     // clear
-    bzero(csession->lldp_msg, length);
+    bzero(&csession->lldp_msg, sizeof(csession->lldp_msg));
+    csession->lldp_len = 0;
+
+
+    lldp_msg = &csession->lldp_msg;
+    pos = lldp_msg->data;
+    length = sizeof(lldp_msg->data);
 
 
     // ethernet header
-    if (!(
-	PUSH_BYTES(lldp_dst, sizeof(lldp_dst)) &&
-	PUSH_BYTES(lldp_src, sizeof(lldp_src)) &&
-	PUSH_BYTES(lldp_ether, sizeof(lldp_ether))
-    ))
-	return 0;
+    bcopy(lldp_dst, lldp_msg->dst, sizeof(lldp_dst));
+    bcopy(csession->if_hwaddr, lldp_msg->src, sizeof(csession->if_hwaddr));
+    bcopy(lldp_ether, lldp_msg->type, sizeof(lldp_ether));
 
 
     // chassis id
@@ -186,7 +187,7 @@ int lldp_packet(struct session *csession, struct session *session,
     END_LLDP_TLV;
 
     // packet length
-    csession->lldp_len = VOIDP_DIFF(pos, csession->lldp_msg);
+    csession->lldp_len = VOIDP_DIFF(pos, &csession->lldp_msg);
 
     return(csession->lldp_len);
 }
@@ -194,7 +195,7 @@ int lldp_packet(struct session *csession, struct session *session,
 int lldp_send(struct session *session) {
 
     // write it to the wire.
-    if (my_rsend(session, session->lldp_msg, session->lldp_len) == -1) {
+    if (my_rsend(session, &session->lldp_msg, session->lldp_len) == -1) {
 	my_log(0, "network transmit error on %s", session->if_name);
 	return (EXIT_FAILURE);
     }

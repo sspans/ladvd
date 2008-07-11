@@ -15,9 +15,20 @@
 #define SLEEPTIME   30
 #define LADVD_TTL   180
 
+struct packet {
+    uint8_t dst[6];
+    uint8_t src[6];
+    union {
+	uint8_t type[2];
+	uint8_t length[2];
+    };
+    uint8_t data[1024];
+};
+
 struct session {
     uint8_t if_index;
     char *if_name;
+    uint8_t if_hwaddr[6];
     uint16_t mtu;
     int8_t duplex;
     int8_t autoneg_supported; 
@@ -32,9 +43,9 @@ struct session {
     uint8_t if_lacp;
     uint8_t if_lacp_ifindex;
 
-    uint8_t cdp_msg[BUFSIZ];
+    struct packet cdp_msg;
     size_t cdp_len;
-    uint8_t lldp_msg[BUFSIZ];
+    struct packet lldp_msg;
     size_t lldp_len;
 
     int sockfd;

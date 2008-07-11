@@ -7,15 +7,14 @@
 #include "cdp.h"
 #include "tlv.h"
 
-static uint8_t cdp_version = 0;
+static uint8_t cdp_version = 2;
 static uint8_t cdp_dst[] = { 0x01, 0x00, 0x0c, 0xcc, 0xcc, 0xcc };
-static uint8_t cdp_src[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 static uint8_t cdp_snap[] = { 0x00, 0x00, 0x0c, 0x20, 0x00 };
 
 /*
  * Actually, this is the standard IP checksum algorithm.
  */
-uint16_t cdp_checksum(const unsigned short *data, size_t length) {
+uint16_t cdp_checksum(void *data, size_t length) {
     register uint32_t sum = 0;
     register const uint16_t *d = (const uint16_t *)data;
 
@@ -34,25 +33,25 @@ uint16_t cdp_checksum(const unsigned short *data, size_t length) {
 int cdp_packet(struct session *csession, struct session *session,
 	       struct sysinfo *sysinfo) {
 
-    size_t length = BUFSIZ;
-    void *cdp_pos, *checksum_pos, *etherlen_pos;
+    struct packet *cdp_msg;
+    size_t length;
+    void *checksum_pos;
     uint8_t *pos, *tlv;
     uint8_t capabilities = 0;
 
-    pos = csession->cdp_msg;
-
     // clear
-    bzero(csession->cdp_msg, length);
+    bzero(&csession->cdp_msg, sizeof(csession->cdp_msg));
     csession->cdp_len = 0;
 
 
+    cdp_msg = &csession->cdp_msg;
+    pos = cdp_msg->data;
+    length = sizeof(cdp_msg->data);
+
+
     // ethernet header
-    if (!(
-	PUSH_BYTES(cdp_dst, sizeof(cdp_dst)) &&
-	PUSH_BYTES(cdp_src, sizeof(cdp_src)) &&
-	(etherlen_pos = pos) && PUSH_UINT16(0)
-    ))
-	return 0;
+    bcopy(cdp_dst, cdp_msg->dst, sizeof(cdp_dst));
+    bcopy(csession->if_hwaddr, cdp_msg->src, sizeof(csession->if_hwaddr));
 
 
     // snap header
@@ -61,10 +60,6 @@ int cdp_packet(struct session *csession, struct session *session,
 	PUSH_BYTES(cdp_snap, sizeof(cdp_snap))
     ))
 	return 0;
-
-
-    // save the cdp start position
-    cdp_pos = pos;
 
 
     // version
@@ -196,13 +191,14 @@ int cdp_packet(struct session *csession, struct session *session,
     END_CDP_TLV;
 
     // cdp checksum
-    *(uint16_t *)checksum_pos = cdp_checksum(cdp_pos, VOIDP_DIFF(pos, cdp_pos));
+    *(uint16_t *)checksum_pos = cdp_checksum(&cdp_msg->data,
+					VOIDP_DIFF(pos, cdp_msg->data));
 
     // packet length
-    csession->cdp_len = VOIDP_DIFF(pos, csession->cdp_msg);
+    csession->cdp_len = VOIDP_DIFF(pos, &csession->cdp_msg);
 
     // ethernet length field
-    *(uint16_t *)etherlen_pos = htons(csession->cdp_len);
+    *(uint16_t *)cdp_msg->length = htons(VOIDP_DIFF(pos, cdp_msg->data));
 
     return(csession->cdp_len);
 }
@@ -210,7 +206,7 @@ int cdp_packet(struct session *csession, struct session *session,
 int cdp_send(struct session *session) {
 
     // write it to the wire.
-    if (my_rsend(session, session->cdp_msg, session->cdp_len) == -1) {
+    if (my_rsend(session, &session->cdp_msg, session->cdp_len) == -1) {
 	my_log(0, "network transmit error on %s", session->if_name);
 	return (EXIT_FAILURE);
     }
