@@ -1,16 +1,13 @@
 
 CODE:
-- add ifindex to session
-- look at "man netdevice"
-- look at "Documentation/networking/ifenslave.c"
-- support bonded interfaces, create additional or sub sessions
-- be smart about libnet transmit errors
-  especially when supporting bonding
-- IPv6 addres ioctl and TLV
+- bsd bpf support
+- bsd lagg support
+- bsd bridge support
+- IPv6 TLV cdp
 - custom ladvd user in debian packaging
 - try deleting pidfile on SIGTERM
+- fix cdp checksum
 
-- LLDP Link Aggregation TLV
 - LLDP-MED Inventory Management TLV (dmi)
 - LLDP-MED LCI TLV (coord/civic)
 - SNMP support for LLDP (agentx)
