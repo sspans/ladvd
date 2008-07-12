@@ -41,6 +41,14 @@
 # include <net/if_media.h>
 #endif /* HAVE_NET_IF_MEDIA_H */
 
+#ifdef AF_PACKET
+# include <netpacket/packet.h>
+#endif
+
+#ifdef AF_LINK
+# include <net/if_dl.h>
+#endif
+
 
 // handle aggregated interfaces
 void netif_bond(struct session *sessions, struct session *session) {
@@ -302,7 +310,12 @@ int netif_addr(struct session *session) {
     struct ifaddrs *ifaddrs, *ifaddr;
     struct sockaddr_in saddr4;
     struct sockaddr_in6 saddr6;
-
+#ifdef AF_PACKET
+    struct sockaddr_ll saddrll;
+#endif
+#ifdef AF_LINK
+    struct sockaddr_dl saddrdl;
+#endif
 
     if (getifaddrs(&ifaddrs) < 0) {
 	my_log(0, "address detection failed on %s: %s",
@@ -337,6 +350,24 @@ int netif_addr(struct session *session) {
 
 	    bcopy(&saddr6.sin6_addr, &session->ipaddr6,
 		  sizeof(saddr6.sin6_addr));
+#ifdef AF_PACKET
+	} else if(ifaddr->ifa_addr->sa_family == AF_PACKET) {
+
+	    // alignment
+	    bcopy(ifaddr->ifa_addr, &saddrll, sizeof(saddrll));
+
+	    bcopy(&saddrll.sll_addr, &session->if_hwaddr,
+		  sizeof(session->if_hwaddr));
+#endif
+#ifdef AF_LINK
+	} else if(ifaddr->ifa_addr->sa_family == AF_LINK) {
+
+	    // alignment
+	    bcopy(ifaddr->ifa_addr, &saddrdl, sizeof(saddrdl));
+
+	    bcopy(LLADDR(saddrdl), &session->if_hwaddr,
+		  sizeof(session->if_hwaddr));
+#endif
 	}
     }
 
