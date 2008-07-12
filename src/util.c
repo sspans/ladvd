@@ -75,7 +75,7 @@ int my_socket(int af, int type, int proto) {
 
 int my_rsocket(const char *if_name) {
 
-    int socket;
+    int socket = -1;
 
 #ifdef PF_PACKET
     socket = my_socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
