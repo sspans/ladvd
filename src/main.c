@@ -280,6 +280,8 @@ int main(int argc, char *argv[]) {
 
 		if (session->if_master > 0)
 		    csession = csession->subif;
+		else
+		    csession = NULL;
 	    }
 	}
 
