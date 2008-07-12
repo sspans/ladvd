@@ -47,6 +47,7 @@ AC_CHECK_HEADERS([linux/ethtool.h], [], [],
 
 # ethernet
 AC_CHECK_HEADERS([net/ethernet.h])
+AC_CHECK_HEADERS([netinet/if_arp.h])
 AC_CHECK_HEADERS([netinet/if_ether.h])
 
 # bridge
