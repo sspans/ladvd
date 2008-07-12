@@ -49,11 +49,6 @@ int cdp_packet(struct session *csession, struct session *session,
     length = sizeof(cdp_msg->data);
 
 
-    // ethernet header
-    bcopy(cdp_dst, cdp_msg->dst, sizeof(cdp_dst));
-    bcopy(csession->if_hwaddr, cdp_msg->src, sizeof(csession->if_hwaddr));
-
-
     // snap header
     if (!(
 	PUSH_UINT8(0xaa) && PUSH_UINT8(0xaa) && PUSH_UINT8(0x03) &&
@@ -190,15 +185,18 @@ int cdp_packet(struct session *csession, struct session *session,
 	return 0;
     END_CDP_TLV;
 
+
     // cdp checksum
     *(uint16_t *)checksum_pos = cdp_checksum(&cdp_msg->data,
 					VOIDP_DIFF(pos, cdp_msg->data));
 
+    // ethernet header
+    bcopy(cdp_dst, cdp_msg->dst, ETHER_ADDR_LEN);
+    bcopy(csession->if_hwaddr, cdp_msg->src, ETHER_ADDR_LEN);
+    *(uint16_t *)cdp_msg->length = htons(VOIDP_DIFF(pos, cdp_msg->data));
+
     // packet length
     csession->cdp_len = VOIDP_DIFF(pos, &csession->cdp_msg);
-
-    // ethernet length field
-    *(uint16_t *)cdp_msg->length = htons(VOIDP_DIFF(pos, cdp_msg->data));
 
     return(csession->cdp_len);
 }

@@ -28,12 +28,6 @@ int lldp_packet(struct session *csession, struct session *session,
     length = sizeof(lldp_msg->data);
 
 
-    // ethernet header
-    bcopy(lldp_dst, lldp_msg->dst, sizeof(lldp_dst));
-    bcopy(csession->if_hwaddr, lldp_msg->src, sizeof(csession->if_hwaddr));
-    bcopy(lldp_ether, lldp_msg->type, sizeof(lldp_ether));
-
-
     // chassis id
     if (!(
 	START_LLDP_TLV(LLDP_CHASSIS_ID_TLV) &&
@@ -185,6 +179,12 @@ int lldp_packet(struct session *csession, struct session *session,
     ))
 	return 0;
     END_LLDP_TLV;
+
+
+    // ethernet header
+    bcopy(lldp_dst, lldp_msg->dst, ETHER_ADDR_LEN);
+    bcopy(csession->if_hwaddr, lldp_msg->src, ETHER_ADDR_LEN);
+    bcopy(lldp_ether, lldp_msg->type, ETHER_TYPE_LEN);
 
     // packet length
     csession->lldp_len = VOIDP_DIFF(pos, &csession->lldp_msg);

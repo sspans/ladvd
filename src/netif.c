@@ -359,8 +359,7 @@ int netif_addrs(struct session *sessions) {
 	    // alignment
 	    bcopy(ifaddr->ifa_addr, &saddrll, sizeof(saddrll));
 
-	    bcopy(&saddrll.sll_addr, &session->if_hwaddr,
-		  sizeof(session->if_hwaddr));
+	    bcopy(&saddrll.sll_addr, &session->if_hwaddr, ETHER_ADDR_LEN);
 #endif
 #ifdef AF_LINK
 	} else if(ifaddr->ifa_addr->sa_family == AF_LINK) {
@@ -368,8 +367,7 @@ int netif_addrs(struct session *sessions) {
 	    // alignment
 	    bcopy(ifaddr->ifa_addr, &saddrdl, sizeof(saddrdl));
 
-	    bcopy(LLADDR(saddrdl), &session->if_hwaddr,
-		  sizeof(session->if_hwaddr));
+	    bcopy(LLADDR(saddrdl), &session->if_hwaddr, ETHER_ADDR_LEN);
 #endif
 	}
     }
@@ -576,5 +574,4 @@ int netif_media(struct session *session) {
 
     return(EXIT_SUCCESS);
 }
-
 

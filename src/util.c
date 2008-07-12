@@ -10,7 +10,6 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <arpa/inet.h>
-#include <net/ethernet.h>
 
 #ifdef PF_PACKET
 #include <netpacket/packet.h>

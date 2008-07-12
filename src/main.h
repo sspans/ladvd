@@ -11,16 +11,23 @@
 #include <string.h>
 #include <errno.h>
 
+#if HAVE_NET_ETHERNET_H
+#include <net/ethernet.h>
+#endif
+#if HAVE_NETINET_IF_ETHER_H
+#include <netinet/if_ether.h>
+#endif
+
 #define PIDFILE	    "/var/run/ladvd.pid"
 #define SLEEPTIME   30
 #define LADVD_TTL   180
 
 struct packet {
-    uint8_t dst[6];
-    uint8_t src[6];
+    uint8_t dst[ETHER_ADDR_LEN];
+    uint8_t src[ETHER_ADDR_LEN];
     union {
-	uint8_t type[2];
-	uint8_t length[2];
+	uint8_t type[ETHER_TYPE_LEN];
+	uint8_t length[ETHER_TYPE_LEN];
     };
     uint8_t data[1024];
 };
@@ -28,7 +35,7 @@ struct packet {
 struct session {
     uint8_t if_index;
     char *if_name;
-    uint8_t if_hwaddr[6];
+    uint8_t if_hwaddr[ETHER_ADDR_LEN];
     uint16_t mtu;
     int8_t duplex;
     int8_t autoneg_supported; 
