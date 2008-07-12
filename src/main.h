@@ -72,7 +72,7 @@ struct sysinfo {
 #define MASTER_BRIDGE	2
 
 struct session * netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo);
-int netif_addr(struct session *session);
+int netif_addrs(struct session *sessions);
 int netif_media(struct session *session);
 
 int cdp_packet(struct session *, struct session *, struct sysinfo *);

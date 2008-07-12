@@ -214,6 +214,14 @@ int main(int argc, char *argv[]) {
 #endif
 
     while (sessions) {
+
+	// fetch IPv4 / IPv6 / MAC addrs
+	my_log(3, "fetching addresses for all sessions"); 
+	if (netif_addrs(sessions) == EXIT_FAILURE) {
+	    my_log(0, "unable fetch interface addresses");
+	    exit(EXIT_FAILURE);
+	};
+
 	for (session = sessions; session != NULL; session = session->next) {
 	    // skip slaves
 	    if (session->if_slave == 1)
@@ -226,10 +234,6 @@ int main(int argc, char *argv[]) {
 	    }
 
 	    my_log(3, "starting loop with interface %s", session->if_name); 
-
-	    // fetch IPv4 / IPv6 addr if available
-	    my_log(3, "fetching IP addresses for %s", session->if_name); 
-	    netif_addr(session);
 
 	    // point csession to subif when session is master
 	    if (session->if_master > 0)

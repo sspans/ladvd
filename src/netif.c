@@ -305,9 +305,11 @@ struct session * netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo) {
 };
 
 
-// perform address detection on non-slave interfaces
-int netif_addr(struct session *session) {
+// perform address detection for all sessions
+int netif_addrs(struct session *sessions) {
     struct ifaddrs *ifaddrs, *ifaddr;
+    struct session *session;
+
     struct sockaddr_in saddr4;
     struct sockaddr_in6 saddr6;
 #ifdef AF_PACKET
@@ -318,13 +320,14 @@ int netif_addr(struct session *session) {
 #endif
 
     if (getifaddrs(&ifaddrs) < 0) {
-	my_log(0, "address detection failed on %s: %s",
-		  session->if_name, strerror(errno));
+	my_log(0, "address detection failed: %s", strerror(errno));
 	return(EXIT_FAILURE);
     }
 
     for (ifaddr = ifaddrs; ifaddr != NULL; ifaddr = ifaddr->ifa_next) {
-	if (strcmp(session->if_name, ifaddr->ifa_name) != 0)
+	// fetch the session for this ifaddr
+	session = session_byname(sessions, ifaddr->ifa_name);
+	if (session == NULL)
 	    continue;
 
 	if(ifaddr->ifa_addr->sa_family == AF_INET) {
