@@ -216,7 +216,7 @@ int main(int argc, char *argv[]) {
     while (sessions) {
 
 	// fetch IPv4 / IPv6 / MAC addrs
-	my_log(3, "fetching addresses for all sessions"); 
+	my_log(3, "fetching addresses for all interfaces"); 
 	if (netif_addrs(sessions) == EXIT_FAILURE) {
 	    my_log(0, "unable fetch interface addresses");
 	    exit(EXIT_FAILURE);
