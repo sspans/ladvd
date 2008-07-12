@@ -11,10 +11,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <net/if.h>
-#include <net/if_arp.h>
 #include <ifaddrs.h>
-#include <netinet/in.h>
 #include <dirent.h>
 #include <unistd.h>
 
@@ -34,9 +31,6 @@
 # include <linux/if_bridge.h>
 #endif /* HAVE_LINUX_IF_BRIDGE_H */
 
-#define SYSFS_VIRTUAL "/sys/devices/virtual/net"
-#define SYSFS_PATH_MAX  256
-
 #if HAVE_NET_IF_MEDIA_H
 # include <net/if_media.h>
 #endif /* HAVE_NET_IF_MEDIA_H */
@@ -48,6 +42,9 @@
 #ifdef AF_LINK
 # include <net/if_dl.h>
 #endif
+
+#define SYSFS_VIRTUAL "/sys/devices/virtual/net"
+#define SYSFS_PATH_MAX  256
 
 
 // handle aggregated interfaces

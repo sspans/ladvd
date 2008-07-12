@@ -7,8 +7,6 @@
 #include <stdio.h>
 #include <syslog.h>
 #include <sys/ioctl.h>
-#include <sys/socket.h>
-#include <sys/types.h>
 #include <arpa/inet.h>
 
 #ifdef PF_PACKET

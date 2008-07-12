@@ -3,19 +3,24 @@
 #define _main_h
 
 #include "config.h"
-#include <sys/utsname.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
 #include <errno.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/utsname.h>
 
 #if HAVE_NET_ETHERNET_H
 #include <net/ethernet.h>
 #endif
-#if HAVE_NET_IF_ARP_H
-#include <net/if_arp.h>
+#if HAVE_NET_IF_H
+#include <net/if.h>
+#endif
+#if HAVE_NETINET_IN_H
+#include <netinet/in.h>
 #endif
 #if HAVE_NETINET_IF_ETHER_H
 #include <netinet/if_ether.h>
