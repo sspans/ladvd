@@ -33,9 +33,9 @@ AC_CHECK_HEADERS([fcntl.h grp.h pwd.h stdarg.h stdint.h stdio.h syslog.h \
 # bsd ifmedia
 AC_CHECK_HEADERS([asm/types.h linux/sockios.h net/if_media.h])
 AC_CHECK_HEADERS([net/if.h], [], [],
-[#ifdef HAVE_SYS_SOCKET_H
-# include <sys/socket.h>
-# endif
+[
+#include <sys/types.h>
+#include <sys/socket.h>
 ])
 
 # ethtool
@@ -47,7 +47,6 @@ AC_CHECK_HEADERS([linux/ethtool.h], [], [],
 
 # ethernet
 AC_CHECK_HEADERS([net/ethernet.h])
-AC_CHECK_HEADERS([net/if.h])
 AC_CHECK_HEADERS([netinet/in.h])
 AC_CHECK_HEADERS([netinet/if_ether.h])
 
