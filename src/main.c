@@ -6,10 +6,7 @@
 #include "util.h"
 #include <unistd.h>
 #include <sys/file.h>
-#include <sys/types.h>
-#include <sys/socket.h>
 #include <sys/stat.h>
-#include <net/if.h>
 #include <fcntl.h>
 #include <pwd.h>
 #include <grp.h>
