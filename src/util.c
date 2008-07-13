@@ -9,6 +9,8 @@
 #include <sys/ioctl.h>
 #include <sys/time.h>
 #include <arpa/inet.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 #ifdef HAVE_NETPACKET_PACKET_H
 #include <netpacket/packet.h>
