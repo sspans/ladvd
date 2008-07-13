@@ -150,10 +150,17 @@ void netif_bridge(struct session *sessions, struct session *session) {
 // create sessions for a list of interfaces
 struct session * netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo) {
     int sockfd, af = AF_INET;
+    struct ifaddrs *ifaddrs, *ifaddr;
     struct ifreq ifr;
-    struct if_nameindex *ifs = if_nameindex();
-    int i, j, count = 0;
+    int j, count = 0;
     int if_master;
+
+#ifdef AF_PACKET
+    struct sockaddr_ll saddrll;
+#endif
+#ifdef AF_LINK
+    struct sockaddr_dl saddrdl;
+#endif
 
 #if HAVE_LINUX_ETHTOOL_H
     char path[SYSFS_PATH_MAX];
@@ -169,23 +176,34 @@ struct session * netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo) {
     // sessions
     struct session *sessions = NULL, *session_prev = NULL, *session;
 
-    if (ifs == NULL) {
-	my_log(0,"could not run if_nameindex");
+    if (getifaddrs(&ifaddrs) < 0) {
+	my_log(0, "address detection failed: %s", strerror(errno));
 	exit(EXIT_FAILURE);
     }
 
     sockfd = my_socket(af, SOCK_DGRAM, 0);
 
-    for (i=0; ifs[i].if_index != 0; i++) {
+    for (ifaddr = ifaddrs; ifaddr != NULL; ifaddr = ifaddr->ifa_next) {
+
+	// only handle datalink addresses
+#ifdef AF_PACKET
+	if(ifaddr->ifa_addr->sa_family != AF_PACKET)
+	    continue;
+#endif
+#ifdef AF_LINK
+	if(ifaddr->ifa_addr->sa_family != AF_LINK) 
+	    continue;
+#endif
 
 	// reset if_master
 	if_master = 0;
 
+	// TODO: be clever about subifs
 	// skip unlisted interfaces if needed
 	if (ifc > 0) {
 
 	    for (j=0; j < ifc; j++) {
-		if (strcmp(ifs[i].if_name, ifl[j]) == 0) {
+		if (strcmp(ifaddr->ifa_name, ifl[j]) == 0) {
 		    break;
 		}
 	    }
@@ -197,7 +215,7 @@ struct session * netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo) {
 
 	// prepare ifr struct
 	bzero(&ifr, sizeof(ifr));
-	strncpy(ifr.ifr_name, ifs[i].if_name, sizeof(ifs[i].if_name) -1);
+	strncpy(ifr.ifr_name, ifaddr->ifa_name, sizeof(ifaddr->ifa_name) -1);
 
 
 	// skip interfaces that are down
@@ -207,25 +225,21 @@ struct session * netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo) {
 
 
 	// skip non-ethernet interfaces
-#ifdef SIOCGIFHWADDR
-	my_ioctl(sockfd, SIOCGIFHWADDR, (caddr_t)&ifr);
-	if ((ifr.ifr_hwaddr.sa_family & ARPHRD_ETHER) == 0)
+#ifdef AF_PACKET
+	bcopy(ifaddr->ifa_addr, &saddrll, sizeof(saddrll));
+	if (saddrll.sll_hatype != ARPHRD_ETHER)
 	    continue;
-#endif /* SIOCGIFHWADDR */
-
-#if HAVE_NET_IF_MEDIA_H
-	bzero(&ifmr, sizeof(ifmr));
-	strncpy(ifmr.ifm_name, ifs[i].if_name, sizeof(ifmr.ifm_name) -1);
-
-	my_ioctl(sockfd, SIOCGIFMEDIA, (caddr_t)&ifmr);
-	if (IFM_TYPE(ifmr.ifm_current) != IFM_ETHER)
+#endif
+#ifdef AF_LINK
+	bcopy(ifaddr->ifa_addr, &saddrdl, sizeof(saddrdl));
+	if (saddrdl.sdl_type != IFT_ETHER)
 	    continue;
-#endif /* HAVE_HAVE_NET_IF_MEDIA_H */
+#endif
 
 
 	// detect virtual network interfaces
 #if HAVE_LINUX_ETHTOOL_H
-	sprintf(path, "%s/%s", SYSFS_VIRTUAL, ifs[i].if_name); 
+	sprintf(path, "%s/%s", SYSFS_VIRTUAL, ifaddr->ifa_name); 
 
 	if (stat(path, &sb) == 0) {
 
@@ -259,8 +273,13 @@ struct session * netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo) {
 	session = my_malloc(sizeof(struct session));
 
         // copy name, index and master
-	session->if_index = ifs[i].if_index;
-	session->if_name = my_strdup(ifs[i].if_name);
+#ifdef AF_PACKET
+	session->if_index = saddrll.sll_ifindex;
+#endif
+#ifdef AF_LINK
+	session->if_index = saddrdl.sdl_index;
+#endif
+	session->if_name = my_strdup(ifaddr->ifa_name);
 	session->if_master = if_master;
 
 	// update linked list
@@ -290,22 +309,22 @@ struct session * netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo) {
 	}
     }
 
-    // handle errors
-    if ((ifc != 0) && (ifc != count)) {
+    // validate detected interfaces
+    if (ifc != 0) {
 	for (j=0; j < ifc; j++) {
 	    session = session_byname(sessions, ifl[j]);
 	    if (session == NULL)
 		my_log(0, "interface %s is invalid", ifl[j]);
 	}
-
-	exit(EXIT_FAILURE);
+	if (j != ifc)
+	    exit(EXIT_FAILURE);
     } else if (count == 0) {
 	my_log(0, "no valid interface found");
 	exit(EXIT_FAILURE);
     }
 
     // cleanup
-    if_freenameindex(ifs);
+    freeifaddrs(ifaddrs);
     close(sockfd);
 
     return(sessions);
