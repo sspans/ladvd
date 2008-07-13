@@ -271,7 +271,7 @@ struct session * netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo) {
 
 #ifdef HAVE_NET_IF_VLAN_VAR_H
 	// skip vlan interfaces
-	if (ioctl(s, SIOCGETVLAN, (caddr_t)&ifr) != -1)
+	if (ioctl(sockfd, SIOCGETVLAN, (caddr_t)&ifr) != -1)
 	    continue;
 #endif /* HAVE_NET_IF_VLAN_VAR_H */
 
