@@ -173,10 +173,6 @@ struct session * netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo) {
     struct ethtool_drvinfo drvinfo;
 #endif /* HAVE_LINUX_ETHTOOL_H */
 
-#if HAVE_NET_IF_MEDIA_H
-    struct ifmediareq ifmr;
-#endif /* HAVE_HAVE_NET_IF_MEDIA_H */
-
     // sessions
     struct session *sessions = NULL, *session_prev = NULL, *session;
 
