@@ -68,6 +68,9 @@ AC_CHECK_HEADERS([linux/if_bonding.h], [], [],
 ])
 AC_CHECK_HEADERS([net/if_lagg.h])
 
+# vlan
+AC_CHECK_HEADERS([net/if_vlan_var.h])
+
 # raw
 AC_CHECK_HEADERS([netpacket/packet.h])
 AC_CHECK_HEADERS([net/bpf.h])

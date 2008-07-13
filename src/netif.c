@@ -47,6 +47,10 @@
 #include <net/if_types.h>
 #endif /* HAVE_NET_IF_TYPES_H */
 
+#ifdef HAVE_NET_IF_VLAN_VAR_H
+#include <net/if_vlan_var.h>
+#endif /* HAVE_NET_IF_VLAN_VAR_H */
+
 #define SYSFS_VIRTUAL "/sys/devices/virtual/net"
 #define SYSFS_PATH_MAX  256
 
@@ -265,7 +269,11 @@ struct session * netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo) {
 	}
 #endif /* HAVE_LINUX_ETHTOOL_H */
 
-	// TODO: BSD virtual detect
+#ifdef HAVE_NET_IF_VLAN_VAR_H
+	// skip vlan interfaces
+	if (ioctl(s, SIOCGETVLAN, (caddr_t)&ifr) != -1)
+	    continue;
+#endif /* HAVE_NET_IF_VLAN_VAR_H */
 
 
     session:
