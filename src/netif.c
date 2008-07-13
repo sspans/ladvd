@@ -364,7 +364,7 @@ int netif_addrs(struct session *sessions) {
 	    // alignment
 	    bcopy(ifaddr->ifa_addr, &saddrdl, sizeof(saddrdl));
 
-	    bcopy(LLADDR(saddrdl), &session->if_hwaddr, ETHER_ADDR_LEN);
+	    bcopy(LLADDR(&saddrdl), &session->if_hwaddr, ETHER_ADDR_LEN);
 #endif
 	}
     }
