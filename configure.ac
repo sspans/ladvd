@@ -70,9 +70,11 @@ AC_CHECK_HEADERS([net/if_lagg.h])
 
 # vlan
 AC_CHECK_HEADERS([net/if_vlan_var.h], [], [],
+[
 #include <net/if.h>
 #include <net/ethernet.h>
 ])
+
 # raw
 AC_CHECK_HEADERS([netpacket/packet.h])
 AC_CHECK_HEADERS([net/bpf.h])
