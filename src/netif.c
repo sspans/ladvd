@@ -103,7 +103,7 @@ void netif_bond(struct session *sessions, struct session *session) {
     }
 
 #elif HAVE_NET_LAGG_H
-    // handle bsd lagg interfaces
+    // TODO: handle bsd lagg interfaces
 #endif
 
 }
@@ -141,7 +141,7 @@ void netif_bridge(struct session *sessions, struct session *session) {
 
     closedir(dir);
 #elif HAVE_NET_IF_BRIDGEVAR_H
-    // handle bsd bridge interfaces
+    // TODO: handle bsd bridge interfaces
 #endif
 
 }
@@ -161,6 +161,10 @@ struct session * netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo) {
 
     struct ethtool_drvinfo drvinfo;
 #endif /* HAVE_LINUX_ETHTOOL_H */
+
+#if HAVE_NET_IF_MEDIA_H
+    struct ifmediareq ifmr;
+#endif /* HAVE_HAVE_NET_IF_MEDIA_H */
 
     // sessions
     struct session *sessions = NULL, *session_prev = NULL, *session;
@@ -203,14 +207,20 @@ struct session * netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo) {
 
 
 	// skip non-ethernet interfaces
-
 #ifdef SIOCGIFHWADDR
 	my_ioctl(sockfd, SIOCGIFHWADDR, (caddr_t)&ifr);
 	if ((ifr.ifr_hwaddr.sa_family & ARPHRD_ETHER) == 0)
 	    continue;
 #endif /* SIOCGIFHWADDR */
 
-	// TODO: BSD ether detect
+#if HAVE_NET_IF_MEDIA_H
+	bzero(&ifmr, sizeof(ifmr));
+	strncpy(ifmr.ifm_name, ifs[i].if_name, sizeof(ifmr.ifm_name) -1);
+
+	my_ioctl(sockfd, SIOCGIFMEDIA, (caddr_t)&ifmr);
+	if (IFM_TYPE(ifmr.ifm_current) != IFM_ETHER)
+	    continue;
+#endif /* HAVE_HAVE_NET_IF_MEDIA_H */
 
 
 	// detect virtual network interfaces
