@@ -48,14 +48,23 @@ AC_CHECK_HEADERS([linux/ethtool.h], [], [],
 # ethernet
 AC_CHECK_HEADERS([net/ethernet.h])
 AC_CHECK_HEADERS([netinet/in.h])
-AC_CHECK_HEADERS([netinet/if_ether.h])
+AC_CHECK_HEADERS([netinet/if_ether.h], [], [],
+[
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <net/if.h>
+#include <netinet/in.h>
+])
 
 # bridge
 AC_CHECK_HEADERS([linux/if_bridge.h])
 AC_CHECK_HEADERS([net/if_bridgevar.h])
 
 # bonding
-AC_CHECK_HEADERS([linux/if_bonding.h])
+AC_CHECK_HEADERS([linux/if_bonding.h], [], [],
+[
+#include <net/if.h>
+])
 AC_CHECK_HEADERS([net/if_lagg.h])
 
 # raw
