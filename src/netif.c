@@ -16,32 +16,32 @@
 #include <unistd.h>
 
 #if HAVE_ASM_TYPES_H
-# include <asm/types.h>
+#include <asm/types.h>
 #endif /* HAVE_ASM_TYPES_H */
 
 #if HAVE_LINUX_SOCKIOS_H
-# include <linux/sockios.h>
+#include <linux/sockios.h>
 #endif /* HAVE_LINUX_SOCKIOS_H */
 
 #if HAVE_LINUX_ETHTOOL_H
-# include <linux/ethtool.h>
+#include <linux/ethtool.h>
 #endif /* HAVE_LINUX_ETHTOOL_H */
 
 #if HAVE_LINUX_IF_BRIDGE_H
-# include <linux/if_bridge.h>
+#include <linux/if_bridge.h>
 #endif /* HAVE_LINUX_IF_BRIDGE_H */
 
 #if HAVE_NET_IF_MEDIA_H
-# include <net/if_media.h>
+#include <net/if_media.h>
 #endif /* HAVE_NET_IF_MEDIA_H */
 
-#ifdef AF_PACKET
-# include <netpacket/packet.h>
-#endif
+#ifdef HAVE_NETPACKET_PACKET_H
+#include <netpacket/packet.h>
+#endif /* HAVE_NETPACKET_PACKET_H */
 
-#ifdef AF_LINK
-# include <net/if_dl.h>
-#endif
+#ifdef HAVE_NET_IF_DL_H
+#include <net/if_dl.h>
+#endif /* HAVE_NET_IF_DL_H */
 
 #define SYSFS_VIRTUAL "/sys/devices/virtual/net"
 #define SYSFS_PATH_MAX  256

@@ -7,11 +7,15 @@
 #include <stdio.h>
 #include <syslog.h>
 #include <sys/ioctl.h>
+#include <sys/time.h>
 #include <arpa/inet.h>
 
-#ifdef PF_PACKET
+#ifdef HAVE_NETPACKET_PACKET_H
 #include <netpacket/packet.h>
-#endif
+#endif /* HAVE_NETPACKET_PACKET_H */
+#ifdef HAVE_NET_BPF_H
+#include <net/bpf.h>
+#endif /* HAVE_NET_BPF_H */
 
 unsigned int loglevel = 0;
 extern int do_fork;
@@ -77,7 +81,7 @@ int my_rsocket(const char *if_name) {
 
     int socket = -1;
 
-#ifdef PF_PACKET
+#ifdef HAVE_NETPACKET_PACKET_H
     socket = my_socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
 #elif HAVE_NET_BPF_H
     socket = open("/dev/bpf", O_WRONLY);
@@ -90,7 +94,7 @@ int my_rsend(struct session *session, const void *msg, size_t len) {
 
     size_t count = 0;
 
-#ifdef PF_PACKET
+#ifdef HAVE_NETPACKET_PACKET_H
     struct sockaddr_ll sa;
     bzero(&sa, sizeof (sa));
 

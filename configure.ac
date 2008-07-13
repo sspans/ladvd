@@ -27,7 +27,7 @@ fi
 AC_HEADER_STDC
 AC_CHECK_HEADERS([fcntl.h grp.h pwd.h stdarg.h stdint.h stdio.h syslog.h \
 		  sys/file.h sys/utsname.h unistd.h sys/ioctl.h sys/types.h \
-		  sys/socket.h ], 
+		  sys/socket.h sys/time.h], 
 		 [], AC_MSG_ERROR([required header missing]))
 
 # bsd ifmedia
@@ -57,6 +57,11 @@ AC_CHECK_HEADERS([net/if_bridgevar.h])
 # bonding
 AC_CHECK_HEADERS([linux/if_bonding.h])
 AC_CHECK_HEADERS([net/if_lagg.h])
+
+# raw
+AC_CHECK_HEADERS([netpacket/packet.h])
+AC_CHECK_HEADERS([net/bpf.h])
+AC_CHECK_HEADERS([net/if_dl.h])
 
 # linux capabilities
 AC_CHECK_HEADERS([sys/prctl.h sys/capability.h])
