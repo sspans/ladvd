@@ -338,7 +338,7 @@ int netif_addrs(struct session *sessions) {
 		  sizeof(saddr4.sin_addr));
 
 	} else if(ifaddr->ifa_addr->sa_family == AF_INET6) {
-	    if (!IN6_IS_ADDR_UNSPECIFIED(session->ipaddr6))
+	    if (!IN6_IS_ADDR_UNSPECIFIED((struct in6_addr *)session->ipaddr6))
 		continue;
 
 	    // alignment

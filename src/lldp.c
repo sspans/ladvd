@@ -115,7 +115,7 @@ int lldp_packet(struct session *csession, struct session *session,
 
 
     // ipv6 management addr
-    if (!IN6_IS_ADDR_UNSPECIFIED(session->ipaddr6)) {
+    if (!IN6_IS_ADDR_UNSPECIFIED((struct in6_addr *)session->ipaddr6)) {
 	if (!(
 	    START_LLDP_TLV(LLDP_MGMT_ADDR_TLV) &&
 	    PUSH_UINT8(1 + sizeof(session->ipaddr6)) &&
