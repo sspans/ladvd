@@ -43,6 +43,10 @@
 #include <net/if_dl.h>
 #endif /* HAVE_NET_IF_DL_H */
 
+#ifdef HAVE_NET_IF_TYPES_H
+#include <net/if_types.h>
+#endif /* HAVE_NET_IF_TYPES_H */
+
 #define SYSFS_VIRTUAL "/sys/devices/virtual/net"
 #define SYSFS_PATH_MAX  256
 

@@ -55,6 +55,7 @@ AC_CHECK_HEADERS([netinet/if_ether.h], [], [],
 #include <net/if.h>
 #include <netinet/in.h>
 ])
+AC_CHECK_HEADERS([net/if_types.h])
 
 # bridge
 AC_CHECK_HEADERS([linux/if_bridge.h])
