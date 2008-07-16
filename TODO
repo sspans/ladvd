@@ -1,12 +1,10 @@
 
 CODE:
+- fix cdp checksum
 - bsd bpf support
 - bsd lagg support
 - bsd bridge support
 - IPv6 TLV cdp
-- custom ladvd user in debian packaging
-- try deleting pidfile on SIGTERM
-- fix cdp checksum
 
 - LLDP-MED Inventory Management TLV (dmi)
 - LLDP-MED LCI TLV (coord/civic)
