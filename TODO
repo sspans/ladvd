@@ -1,6 +1,5 @@
 
 CODE:
-- fix cdp checksum
 - bsd bpf support
 - bsd lagg support
 - bsd bridge support
