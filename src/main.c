@@ -11,6 +11,7 @@
 #include <pwd.h>
 #include <grp.h>
 #include <netdb.h>
+#include <signal.h>
 
 #ifdef USE_CAPABILITIES
 #include <sys/prctl.h>
@@ -22,6 +23,7 @@ unsigned int do_fork = 1;
 
 int cap_parse(const char *optarg);
 void usage(const char *fn);
+void cleanup();
 
 int main(int argc, char *argv[]) {
 
@@ -32,6 +34,7 @@ int main(int argc, char *argv[]) {
     char *pidfile = PIDFILE;
     char pidstr[16];
     struct passwd *pwd;
+    struct sigaction cleanup_action;
 
     // sysinfo
     struct sysinfo sysinfo;
@@ -141,6 +144,13 @@ int main(int argc, char *argv[]) {
 			pidfile, strerror(errno));
 	    exit(EXIT_FAILURE);	
 	}
+
+	/* cleanup pidfile when shutting down */
+	cleanup_action.sa_handler = cleanup;
+	cleanup_action.sa_flags = 0;
+	sigemptyset(&cleanup_action.sa_mask);
+
+	sigaction (SIGTERM, &cleanup_action, NULL);
     }
 
     // open raw sockets on all physical devices
@@ -345,3 +355,11 @@ void usage(const char *fn) {
     exit(EXIT_FAILURE);
 }
 
+void cleanup() {
+    if (unlink(PIDFILE) < 0) {
+	exit(EXIT_SUCCESS);
+    } else {
+	my_log("pidfile cleanup failed: %s", strerror(errno));
+	exit(EXIT_FAILURE);
+    }
+}
