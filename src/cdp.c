@@ -35,7 +35,7 @@ int cdp_packet(struct session *csession, struct session *session,
 
     struct packet *cdp_msg;
     size_t length;
-    void *checksum_pos;
+    void *cdp_pos, *checksum_pos;
     uint8_t *pos, *tlv;
     uint8_t capabilities = 0;
 
@@ -56,6 +56,8 @@ int cdp_packet(struct session *csession, struct session *session,
     ))
 	return 0;
 
+    // save start of the cdp data
+    cdp_pos = pos;
 
     // version
     PUSH_UINT8(cdp_version);
@@ -187,8 +189,8 @@ int cdp_packet(struct session *csession, struct session *session,
 
 
     // cdp checksum
-    *(uint16_t *)checksum_pos = cdp_checksum(&cdp_msg->data,
-					VOIDP_DIFF(pos, cdp_msg->data));
+    *(uint16_t *)checksum_pos = cdp_checksum(cdp_pos,
+					VOIDP_DIFF(pos, cdp_pos));
 
     // ethernet header
     bcopy(cdp_dst, cdp_msg->dst, ETHER_ADDR_LEN);
