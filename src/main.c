@@ -359,7 +359,7 @@ void cleanup() {
     if (unlink(PIDFILE) < 0) {
 	exit(EXIT_SUCCESS);
     } else {
-	my_log("pidfile cleanup failed: %s", strerror(errno));
+	my_log(0, "pidfile cleanup failed: %s", strerror(errno));
 	exit(EXIT_FAILURE);
     }
 }
