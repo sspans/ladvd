@@ -3,7 +3,6 @@ CODE:
 - bsd bpf support
 - bsd lagg support
 - bsd bridge support
-- IPv6 TLV cdp
 
 - LLDP-MED Inventory Management TLV (dmi)
 - LLDP-MED LCI TLV (coord/civic)

@@ -342,25 +342,13 @@ struct session * netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo) {
 // update interface names for all sessions
 int netif_names(struct session *sessions) {
     struct session *session;
-    struct if_nameindex *ifs = if_nameindex();
-    int i;
 
-    if (ifs == NULL) {
-	my_log(0,"could not run if_nameindex");
-	return(EXIT_FAILURE);
+    for (session = sessions; session != NULL; session = session->next) {
+	if (if_indextoname(session->if_index, session->if_name) == NULL) {
+	    my_log(0,"could not fetch interface name");
+	    return(EXIT_FAILURE);
+	}
     }
-
-    for (i=0; ifs[i].if_index != 0; i++) {
-	// fetch the session for this if_index
-	session = session_byindex(sessions, ifs[i].if_index);
-	if (session == NULL)
-	    continue;
-	
-	strncpy(session->if_name, ifs[i].if_name, IFNAMSIZ);
-    }
-
-    // cleanup
-    if_freenameindex(ifs);
 
     return(EXIT_SUCCESS);
 }

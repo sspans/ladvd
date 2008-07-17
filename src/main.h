@@ -42,7 +42,7 @@ struct packet {
 
 struct session {
     uint8_t if_index;
-    char if_name[IFNAMSIZ+1];
+    char if_name[IFNAMSIZ];
     uint8_t if_hwaddr[ETHER_ADDR_LEN];
     uint16_t mtu;
     int8_t duplex;
@@ -87,6 +87,7 @@ struct sysinfo {
 #define MASTER_BRIDGE	2
 
 struct session * netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo);
+int netif_names(struct session *sessions);
 int netif_addrs(struct session *sessions);
 int netif_media(struct session *session);
 
