@@ -63,6 +63,6 @@ struct cdp_predef cdp_predefs[] = {
 	/* CDP_ADDR_PROTO_IPV4      */
 	{ 0x01, 1, "\xcc" },
 	/* CDP_ADDR_PROTO_IPV6      */
-	{ 0x02, 8, "\xaa\xaa\x03\x00\x00\x00\x80\xdd" },
+	{ 0x02, 8, "\xaa\xaa\x03\x00\x00\x00\x86\xdd" },
 };
 

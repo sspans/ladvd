@@ -38,6 +38,7 @@ int cdp_packet(struct session *csession, struct session *session,
     void *cdp_pos, *checksum_pos;
     uint8_t *pos, *tlv;
     uint8_t capabilities = 0;
+    uint8_t addr_count = 0;
 
     // clear
     bzero(&csession->cdp_msg, sizeof(csession->cdp_msg));
@@ -125,23 +126,42 @@ int cdp_packet(struct session *csession, struct session *session,
     END_CDP_TLV;
 
 
-    // ipv4 management addr 
-    if (session->ipaddr4 != 0) {
+    // management addrs
+    if (session->ipaddr4 != 0)
+	addr_count++;
+    if (!IN6_IS_ADDR_UNSPECIFIED((struct in6_addr *)session->ipaddr6)) 
+	addr_count++;
+
+    if (addr_count > 0) {
 	if (!(
 	    START_CDP_TLV(CDP_TYPE_ADDRESS) &&
-	    PUSH_UINT32(1)
+	    PUSH_UINT32(addr_count)
 	))
 	    return 0;
 
-	if (!(
-	    PUSH_UINT8(cdp_predefs[CDP_ADDR_PROTO_IPV4].protocol_type) &&
-	    PUSH_UINT8(cdp_predefs[CDP_ADDR_PROTO_IPV4].protocol_length) &&
-	    PUSH_BYTES(cdp_predefs[CDP_ADDR_PROTO_IPV4].protocol,
-		   cdp_predefs[CDP_ADDR_PROTO_IPV4].protocol_length) &&
-	    PUSH_UINT16(sizeof(session->ipaddr4)) &&
-	    PUSH(session->ipaddr4, uint32_t,)
-	))
-	    return 0;
+	if (session->ipaddr4 != 0) {
+	    if (!(
+		PUSH_UINT8(cdp_predefs[CDP_ADDR_PROTO_IPV4].protocol_type) &&
+		PUSH_UINT8(cdp_predefs[CDP_ADDR_PROTO_IPV4].protocol_length) &&
+		PUSH_BYTES(cdp_predefs[CDP_ADDR_PROTO_IPV4].protocol,
+			   cdp_predefs[CDP_ADDR_PROTO_IPV4].protocol_length) &&
+		PUSH_UINT16(sizeof(session->ipaddr4)) &&
+		PUSH(session->ipaddr4, uint32_t,)
+	    ))
+		return 0;
+	}
+
+	if (!IN6_IS_ADDR_UNSPECIFIED((struct in6_addr *)session->ipaddr6)) {
+	    if (!(
+		PUSH_UINT8(cdp_predefs[CDP_ADDR_PROTO_IPV6].protocol_type) &&
+		PUSH_UINT8(cdp_predefs[CDP_ADDR_PROTO_IPV6].protocol_length) &&
+		PUSH_BYTES(cdp_predefs[CDP_ADDR_PROTO_IPV6].protocol,
+			   cdp_predefs[CDP_ADDR_PROTO_IPV6].protocol_length) &&
+		PUSH_UINT16(sizeof(session->ipaddr6)) &&
+		PUSH_BYTES(session->ipaddr6, sizeof(session->ipaddr6))
+	    ))
+		return 0;
+	}
 
 	END_CDP_TLV;
     }
