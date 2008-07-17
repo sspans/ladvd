@@ -466,9 +466,11 @@ int netif_media(struct session *session) {
 
 	// autoneg
 	if (ecmd.supported & SUPPORTED_Autoneg) {
+	    my_log(3, "autoneg supported on %s", session->if_name);
 	    session->autoneg_supported = 1;
 	    session->autoneg_enabled = (ecmd.autoneg == AUTONEG_ENABLE) ? 1 : 0;
 	} else {
+	    my_log(3, "autoneg not supported on %s", session->if_name);
 	    session->autoneg_supported = 0;
 	}	
     } else {
@@ -511,7 +513,7 @@ int netif_media(struct session *session) {
     // autoneg support
     for (i = 0; i < ifmr.ifm_count; i++) {
 	if (IFM_SUBTYPE(ifmr.ifm_ulist[i]) == IFM_AUTO) {
-	    my_log(3, "autoneg supported on interface %s", session->if_name);
+	    my_log(3, "autoneg supported on %s", session->if_name);
 	    session->autoneg_supported = 1;
 	    break;
 	}
@@ -520,7 +522,7 @@ int netif_media(struct session *session) {
     // autoneg enabled
     if (session->autoneg_supported == 1) {
 	if (IFM_SUBTYPE(ifmr.ifm_current) == IFM_AUTO) {
-	    my_log(3, "autoneg enabled on interface %s", session->if_name);
+	    my_log(3, "autoneg enabled on %s", session->if_name);
 	    session->autoneg_enabled = 1;
 	} else {
 	    my_log(3, "autoneg disabled on interface %s", session->if_name);
