@@ -261,7 +261,7 @@ int main(int argc, char *argv[]) {
 
 		// cdp packet
 		if (do_cdp == 1) {
-		    my_log(3, "building a cdp packet for %s",
+		    my_log(3, "building cdp packet for %s",
 				csession->if_name);
 
 		    if (cdp_packet(csession, session, &sysinfo) == 0) {
@@ -281,7 +281,7 @@ int main(int argc, char *argv[]) {
 
 		// lldp packet
 		if (do_lldp == 1) {
-		    my_log(3, "building a lldp packet for %s",
+		    my_log(3, "building lldp packet for %s",
 				csession->if_name);
 
 		    if (lldp_packet(csession, session, &sysinfo) == 0) {
