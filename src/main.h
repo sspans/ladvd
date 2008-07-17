@@ -63,8 +63,6 @@ struct session {
     struct packet lldp_msg;
     size_t lldp_len;
 
-    int sockfd;
-
     struct session *subif;
     struct session *next;
 };
@@ -92,9 +90,6 @@ int netif_addrs(struct session *sessions);
 int netif_media(struct session *session);
 
 int cdp_packet(struct session *, struct session *, struct sysinfo *);
-int cdp_send(struct session *session);
-
 int lldp_packet(struct session *, struct session *, struct sysinfo *);
-int lldp_send(struct session *session);
 
 #endif /* _main_h */

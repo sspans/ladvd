@@ -223,14 +223,3 @@ int cdp_packet(struct session *csession, struct session *session,
     return(csession->cdp_len);
 }
 
-int cdp_send(struct session *session) {
-
-    // write it to the wire.
-    if (my_rsend(session, &session->cdp_msg, session->cdp_len) == -1) {
-	my_log(0, "network transmit error on %s", session->if_name);
-	return (EXIT_FAILURE);
-    }
-
-    return (EXIT_SUCCESS);
-}
-

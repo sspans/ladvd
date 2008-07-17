@@ -79,20 +79,26 @@ int my_socket(int af, int type, int proto) {
     return(s);
 }
 
-int my_rsocket(const char *if_name) {
+int my_rsocket() {
 
     int socket = -1;
 
 #ifdef HAVE_NETPACKET_PACKET_H
     socket = my_socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
 #elif HAVE_NET_BPF_H
-    socket = open("/dev/bpf", O_WRONLY);
+    int n = 0;
+    char device[sizeof "/dev/bpf0000000000"];
+
+    do {
+	(void)snprintf(device, sizeof(device), "/dev/bpf%d", n++);
+	socket = open(device, O_WRONLY);
+    } while (socket < 0 && errno == EBUSY);
 #endif
 
     return(socket);
 }
 
-int my_rsend(struct session *session, const void *msg, size_t len) {
+int my_rsend(int s, struct session *session, const void *msg, size_t len) {
 
     size_t count = 0;
 
@@ -104,10 +110,19 @@ int my_rsend(struct session *session, const void *msg, size_t len) {
     sa.sll_ifindex = session->if_index;
     sa.sll_protocol = htons(ETH_P_ALL);
 
-    count = sendto(session->sockfd, msg, len, 0,
-		   (struct sockaddr *)&sa, sizeof (sa));
+    count = sendto(s, msg, len, 0, (struct sockaddr *)&sa, sizeof (sa));
 #elif HAVE_NET_BPF_H
-    count = write(session->sockfd, msg, len);
+    struct ifreq ifr;
+
+    // prepare ifr struct
+    bzero(&ifr, sizeof(ifr));
+    strncpy(ifr.ifr_name, ifa_name, IFNAMSIZ);
+
+    if (ioctl(l->fd, BIOCSETIF, (caddr_t)&ifr) < 0) {
+	my_log(0, "ioctl failed: %s", strerror(errno));
+	return(-1);
+    }
+    count = write(s, msg, len);
 #endif
 
     if (count != len)

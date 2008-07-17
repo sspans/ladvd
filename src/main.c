@@ -40,6 +40,9 @@ int main(int argc, char *argv[]) {
     struct sysinfo sysinfo;
     struct hostent *hp;
 
+    // socket
+    int sockfd;
+
     // interfaces
     struct session *sessions = NULL, *session, *csession;
 
@@ -153,19 +156,12 @@ int main(int argc, char *argv[]) {
 	sigaction (SIGTERM, &cleanup_action, NULL);
     }
 
-    // open raw sockets on all physical devices
-    for (session = sessions; session != NULL; session = session->next) {
+    // open a raw socket
+    sockfd = my_rsocket();
 
-	// skip masters
-	if (session->if_master > 0)
-	    continue;
-
-	session->sockfd = my_rsocket(session->if_name);
-
-	if (session->sockfd < 0) {
-	    my_log(0, "opening socket on %s failed", session->if_name);
-	    exit(EXIT_FAILURE);
-	}
+    if (sockfd < 0) {
+	my_log(0, "opening raw socket failed");
+	exit(EXIT_FAILURE);
     }
 
 
@@ -273,9 +269,14 @@ int main(int argc, char *argv[]) {
 			exit(EXIT_FAILURE);
 		    }
 
+		    // write it to the wire.
 		    my_log(3, "sending cdp packet (%d bytes)",
 				csession->cdp_len);
-		    cdp_send(csession); 
+		    if (my_rsend(sockfd, csession, &csession->cdp_msg,
+			         csession->cdp_len) != csession->cdp_len) {
+			my_log(0, "network transmit error on %s",
+				  csession->if_name);
+		    }
 		}
 
 		// lldp packet
@@ -288,9 +289,14 @@ int main(int argc, char *argv[]) {
 			exit(EXIT_FAILURE);
 		    }
 
+		    // write it to the wire.
 		    my_log(3, "sending lldp packet (%d bytes)",
 				csession->lldp_len);
-		    lldp_send(csession); 
+		    if (my_rsend(sockfd, csession, &csession->lldp_msg,
+			         csession->lldp_len) != csession->lldp_len) {
+			my_log(0, "network transmit error on %s",
+				  csession->if_name);
+		    }
 		}
 
 		if (session->if_master > 0)
