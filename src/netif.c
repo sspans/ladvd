@@ -287,7 +287,7 @@ struct session * netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo) {
 #ifdef AF_LINK
 	session->if_index = saddrdl.sdl_index;
 #endif
-	session->if_name = my_strdup(ifaddr->ifa_name);
+	strncpy(session->if_name, ifaddr->ifa_name, IFNAMSIZ);
 	session->if_master = if_master;
 
 	// update linked list
@@ -337,6 +337,33 @@ struct session * netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo) {
 
     return(sessions);
 };
+
+
+// update interface names for all sessions
+int netif_names(struct session *sessions) {
+    struct session *session;
+    struct if_nameindex *ifs = if_nameindex();
+    int i;
+
+    if (ifs == NULL) {
+	my_log(0,"could not run if_nameindex");
+	return(EXIT_FAILURE);
+    }
+
+    for (i=0; ifs[i].if_index != 0; i++) {
+	// fetch the session for this if_index
+	session = session_byindex(sessions, ifs[i].if_index);
+	if (session == NULL)
+	    continue;
+	
+	strncpy(session->if_name, ifs[i].if_name, IFNAMSIZ);
+    }
+
+    // cleanup
+    if_freenameindex(ifs);
+
+    return(EXIT_SUCCESS);
+}
 
 
 // perform address detection for all sessions
@@ -435,9 +462,7 @@ int netif_media(struct session *session) {
     session->mau = 0;
 
     bzero(&ifr, sizeof(ifr));
-    strncpy(ifr.ifr_name, session->if_name, sizeof(ifr.ifr_name) -1);
-
-    // ether addr
+    strncpy(ifr.ifr_name, session->if_name, IFNAMSIZ);
 
     // interface mtu
     my_ioctl(sockfd, SIOCGIFMTU, (caddr_t)&ifr);
@@ -465,7 +490,7 @@ int netif_media(struct session *session) {
 
 #if HAVE_NET_IF_MEDIA_H
     bzero(&ifmr, sizeof(ifmr));
-    strncpy(ifmr.ifm_name, session->if_name, sizeof(ifmr.ifm_name) -1);
+    strncpy(ifmr.ifm_name, session->if_name, IFNAMSIZ -1);
 
     if (ioctl(sockfd, SIOCGIFMEDIA, (caddr_t)&ifmr) < 0) {
 	my_log(3, "media detection not supported on %s", session->if_name);

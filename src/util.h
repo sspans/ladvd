@@ -11,6 +11,7 @@ int my_socket(int af, int type, int proto);
 int my_rsocket(const char *if_name);
 int my_rsend(struct session *session, const void *msg, size_t len);
 
+struct session *session_byindex(struct session *sessions, uint8_t index);
 struct session *session_byname(struct session *sessions, char *name);
 
 #endif /* _util_h */

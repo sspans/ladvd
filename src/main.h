@@ -42,7 +42,7 @@ struct packet {
 
 struct session {
     uint8_t if_index;
-    char *if_name;
+    char if_name[IFNAMSIZ+1];
     uint8_t if_hwaddr[ETHER_ADDR_LEN];
     uint16_t mtu;
     int8_t duplex;

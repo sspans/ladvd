@@ -223,6 +223,13 @@ int main(int argc, char *argv[]) {
 
     while (sessions) {
 
+	// fetch names
+	my_log(3, "fetching names for all interfaces"); 
+	if (netif_names(sessions) == EXIT_FAILURE) {
+	    my_log(0, "unable fetch interface names");
+	    exit(EXIT_FAILURE);
+	};
+
 	// fetch IPv4 / IPv6 / MAC addrs
 	my_log(3, "fetching addresses for all interfaces"); 
 	if (netif_addrs(sessions) == EXIT_FAILURE) {

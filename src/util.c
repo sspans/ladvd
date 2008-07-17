@@ -116,6 +116,16 @@ int my_rsend(struct session *session, const void *msg, size_t len) {
     return(count);
 }
 
+struct session *session_byindex(struct session *sessions, uint8_t index) {
+    struct session *session;
+
+    for (session = sessions; session != NULL; session = session->next) {
+	if (session->if_index == index)
+	    break;
+    }
+    return(session);
+}
+
 struct session *session_byname(struct session *sessions, char *name) {
     struct session *session;
 
