@@ -116,9 +116,9 @@ int my_rsend(int s, struct session *session, const void *msg, size_t len) {
 
     // prepare ifr struct
     bzero(&ifr, sizeof(ifr));
-    strncpy(ifr.ifr_name, ifa_name, IFNAMSIZ);
+    strncpy(ifr.ifr_name, session->if_name, IFNAMSIZ);
 
-    if (ioctl(l->fd, BIOCSETIF, (caddr_t)&ifr) < 0) {
+    if (ioctl(s, BIOCSETIF, (caddr_t)&ifr) < 0) {
 	my_log(0, "ioctl failed: %s", strerror(errno));
 	return(-1);
     }
