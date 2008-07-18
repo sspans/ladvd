@@ -58,11 +58,6 @@ struct session {
     uint8_t if_lacp;
     uint8_t if_lacp_ifindex;
 
-    struct packet cdp_msg;
-    size_t cdp_len;
-    struct packet lldp_msg;
-    size_t lldp_len;
-
     struct session *subif;
     struct session *next;
 };
@@ -89,7 +84,11 @@ int netif_names(struct session *sessions);
 int netif_addrs(struct session *sessions);
 int netif_media(struct session *session);
 
-int cdp_packet(struct session *, struct session *, struct sysinfo *);
-int lldp_packet(struct session *, struct session *, struct sysinfo *);
+int cdp_packet(struct packet *,
+	       struct session *, struct session *,
+	       struct sysinfo *);
+int lldp_packet(struct packet *,
+		struct session *, struct session *,
+		struct sysinfo *);
 
 #endif /* _main_h */

@@ -43,6 +43,10 @@ int main(int argc, char *argv[]) {
     // socket
     int sockfd;
 
+    // packet
+    struct packet packet;
+    size_t len;
+
     // interfaces
     struct session *sessions = NULL, *session, *csession;
 
@@ -262,18 +266,19 @@ int main(int argc, char *argv[]) {
 		// cdp packet
 		if (do_cdp == 1) {
 		    my_log(3, "building cdp packet for %s",
-				csession->if_name);
+			      csession->if_name);
 
-		    if (cdp_packet(csession, session, &sysinfo) == 0) {
-			my_log(0, "can't generate CDP packet");
+		    len = cdp_packet(&packet, csession, session, &sysinfo);
+		    if (len == 0) {
+			my_log(0, "can't generate CDP packet for %s",
+				  csession->if_name);
 			exit(EXIT_FAILURE);
 		    }
 
 		    // write it to the wire.
-		    my_log(3, "sending cdp packet (%d bytes)",
-				csession->cdp_len);
-		    if (my_rsend(sockfd, csession, &csession->cdp_msg,
-			         csession->cdp_len) != csession->cdp_len) {
+		    my_log(3, "sending cdp packet (%d bytes) on %s",
+				len, csession->if_name);
+		    if (my_rsend(sockfd, csession, &packet, len) != len) {
 			my_log(0, "network transmit error on %s",
 				  csession->if_name);
 		    }
@@ -284,16 +289,17 @@ int main(int argc, char *argv[]) {
 		    my_log(3, "building lldp packet for %s",
 				csession->if_name);
 
-		    if (lldp_packet(csession, session, &sysinfo) == 0) {
-			my_log(0, "can't generate LLDP packet");
+		    len = lldp_packet(&packet, csession, session, &sysinfo);
+		    if (len == 0) {
+			my_log(0, "can't generate LLDP packet for %s",
+				  csession->if_name);
 			exit(EXIT_FAILURE);
 		    }
 
 		    // write it to the wire.
-		    my_log(3, "sending lldp packet (%d bytes)",
-				csession->lldp_len);
-		    if (my_rsend(sockfd, csession, &csession->lldp_msg,
-			         csession->lldp_len) != csession->lldp_len) {
+		    my_log(3, "sending lldp packet (%d bytes) on %s",
+				len, csession->if_name);
+		    if (my_rsend(sockfd, csession, &packet, len) != len) {
 			my_log(0, "network transmit error on %s",
 				  csession->if_name);
 		    }

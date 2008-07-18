@@ -10,22 +10,18 @@
 static uint8_t lldp_dst[] = { 0x01, 0x80, 0xc2, 0x00, 0x00, 0x0e };
 static uint8_t lldp_ether[] = { 0x88, 0xcc };
 
-int lldp_packet(struct session *csession, struct session *session,
+int lldp_packet(struct packet *packet,
+		struct session *csession, struct session *session,
 		struct sysinfo *sysinfo) {
 
-    struct packet *lldp_msg;
     size_t length;
     uint8_t *pos, *tlv;
     uint8_t capabilities = 0;
 
-    // clear
-    bzero(&csession->lldp_msg, sizeof(csession->lldp_msg));
-    csession->lldp_len = 0;
-
-
-    lldp_msg = &csession->lldp_msg;
-    pos = lldp_msg->data;
-    length = sizeof(lldp_msg->data);
+    // init
+    bzero(&packet, sizeof(packet));
+    pos = packet->data;
+    length = sizeof(packet->data);
 
 
     // chassis id
@@ -182,13 +178,11 @@ int lldp_packet(struct session *csession, struct session *session,
 
 
     // ethernet header
-    bcopy(lldp_dst, lldp_msg->dst, ETHER_ADDR_LEN);
-    bcopy(csession->if_hwaddr, lldp_msg->src, ETHER_ADDR_LEN);
-    bcopy(lldp_ether, lldp_msg->type, ETHER_TYPE_LEN);
+    bcopy(lldp_dst, packet->dst, ETHER_ADDR_LEN);
+    bcopy(csession->if_hwaddr, packet->src, ETHER_ADDR_LEN);
+    bcopy(lldp_ether, packet->type, ETHER_TYPE_LEN);
 
     // packet length
-    csession->lldp_len = VOIDP_DIFF(pos, &csession->lldp_msg);
-
-    return(csession->lldp_len);
+    return(VOIDP_DIFF(pos, &packet));
 }
 

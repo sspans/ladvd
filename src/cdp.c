@@ -30,24 +30,21 @@ uint16_t cdp_checksum(void *data, size_t length) {
     return (uint16_t)~sum;
 }
 
-int cdp_packet(struct session *csession, struct session *session,
+int cdp_packet(struct packet *packet,
+	       struct session *csession, struct session *session,
 	       struct sysinfo *sysinfo) {
 
-    struct packet *cdp_msg;
     size_t length;
-    void *cdp_pos, *checksum_pos;
     uint8_t *pos, *tlv;
     uint8_t capabilities = 0;
+
+    void *cdp_pos, *checksum_pos;
     uint8_t addr_count = 0;
 
-    // clear
-    bzero(&csession->cdp_msg, sizeof(csession->cdp_msg));
-    csession->cdp_len = 0;
-
-
-    cdp_msg = &csession->cdp_msg;
-    pos = cdp_msg->data;
-    length = sizeof(cdp_msg->data);
+    // init
+    bzero(&packet, sizeof(packet));
+    pos = packet->data;
+    length = sizeof(packet->data);
 
 
     // snap header
@@ -213,13 +210,11 @@ int cdp_packet(struct session *csession, struct session *session,
 					VOIDP_DIFF(pos, cdp_pos));
 
     // ethernet header
-    bcopy(cdp_dst, cdp_msg->dst, ETHER_ADDR_LEN);
-    bcopy(csession->if_hwaddr, cdp_msg->src, ETHER_ADDR_LEN);
-    *(uint16_t *)cdp_msg->length = htons(VOIDP_DIFF(pos, cdp_msg->data));
+    bcopy(cdp_dst, packet->dst, ETHER_ADDR_LEN);
+    bcopy(csession->if_hwaddr, packet->src, ETHER_ADDR_LEN);
+    *(uint16_t *)packet->length = htons(VOIDP_DIFF(pos, packet->data));
 
     // packet length
-    csession->cdp_len = VOIDP_DIFF(pos, &csession->cdp_msg);
-
-    return(csession->cdp_len);
+    return(VOIDP_DIFF(pos, &packet));
 }
 
