@@ -19,7 +19,7 @@ int lldp_packet(struct packet *packet,
     uint8_t capabilities = 0;
 
     // init
-    bzero(&packet, sizeof(packet));
+    bzero(packet, sizeof(packet));
     pos = packet->data;
     length = sizeof(packet->data);
 
