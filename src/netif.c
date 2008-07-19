@@ -219,7 +219,7 @@ struct session * netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo) {
 
 	// prepare ifr struct
 	bzero(&ifr, sizeof(ifr));
-	strncpy(ifr.ifr_name, ifaddr->ifa_name, sizeof(ifaddr->ifa_name) -1);
+	strncpy(ifr.ifr_name, ifaddr->ifa_name, IFNAMSIZ);
 
 
 	// skip interfaces that are down
