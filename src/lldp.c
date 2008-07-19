@@ -183,6 +183,6 @@ int lldp_packet(struct packet *packet,
     bcopy(lldp_ether, packet->type, ETHER_TYPE_LEN);
 
     // packet length
-    return(VOIDP_DIFF(pos, &packet));
+    return(VOIDP_DIFF(pos, packet));
 }
 

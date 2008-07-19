@@ -215,6 +215,6 @@ int cdp_packet(struct packet *packet,
     *(uint16_t *)packet->length = htons(VOIDP_DIFF(pos, packet->data));
 
     // packet length
-    return(VOIDP_DIFF(pos, &packet));
+    return(VOIDP_DIFF(pos, packet));
 }
 
