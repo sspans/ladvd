@@ -1,8 +1,8 @@
 
 CODE:
-- bsd bpf support
 - bsd lagg support
 - bsd bridge support
+- be smarter about specified + subifs
 
 - LLDP-MED Inventory Management TLV (dmi)
 - LLDP-MED LCI TLV (coord/civic)

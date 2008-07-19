@@ -57,16 +57,18 @@ AC_CHECK_HEADERS([netinet/if_ether.h], [], [],
 ])
 AC_CHECK_HEADERS([net/if_types.h])
 
-# bridge
-AC_CHECK_HEADERS([linux/if_bridge.h])
-AC_CHECK_HEADERS([net/if_bridgevar.h])
-
-# bonding
-AC_CHECK_HEADERS([linux/if_bonding.h], [], [],
+# bridge / bonding
+AC_CHECK_HEADERS([linux/if_bridge.h linux/if_bonding.h], [], [],
 [
 #include <linux/netdevice.h>
 ])
-AC_CHECK_HEADERS([net/if_lagg.h])
+AC_CHECK_HEADERS([net/if_bridgevar.h net/if_lagg.h], [], [],
+[
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <net/if.h>
+#include <netinet/in.h>
+])
 
 # vlan
 AC_CHECK_HEADERS([net/if_vlan_var.h], [], [],
