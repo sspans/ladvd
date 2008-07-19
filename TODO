@@ -3,6 +3,8 @@ CODE:
 - bsd lagg support
 - bsd bridge support
 - be smarter about specified + subifs
+- rebuild sessions every 30 seconds
+- test on sparc
 
 - LLDP-MED Inventory Management TLV (dmi)
 - LLDP-MED LCI TLV (coord/civic)
