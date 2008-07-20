@@ -324,10 +324,10 @@ int netif_type(int sockfd, struct ifaddrs *ifaddr, struct ifreq *ifr) {
 
 	// bonding
 #ifdef HAVE_NET_IF_LAGG_H
-	if (ioctl(sockfd, SIOCGLAGG, (caddr_t)&ifr) == 0)
+	if (ioctl(sockfd, SIOCGLAGG, (caddr_t)ifr) >= 0)
 	    return(NETIF_BONDING);
 #elif HAVE_NET_IF_TRUNK_H
-	if (ioctl(sockfd, SIOCGTRUNK, (caddr_t)&ifr) == 0)
+	if (ioctl(sockfd, SIOCGTRUNK, (caddr_t)ifr) == 0)
 	    return(NETIF_BONDING);
 #endif
 
