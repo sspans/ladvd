@@ -451,21 +451,6 @@ void netif_bond(int sockfd,
 }
 
 
-// update interface names for all sessions
-int netif_names(struct session *sessions) {
-    struct session *session;
-
-    for (session = sessions; session != NULL; session = session->next) {
-	if (if_indextoname(session->index, session->name) == NULL) {
-	    my_log(0,"could not fetch interface name");
-	    return(EXIT_FAILURE);
-	}
-    }
-
-    return(EXIT_SUCCESS);
-}
-
-
 // handle bridge interfaces
 void netif_bridge(int sockfd,
 		  struct session *sessions, struct session *session) {
@@ -553,6 +538,21 @@ void netif_bridge(int sockfd,
     return;
 #endif
 
+}
+
+
+// update interface names for all sessions
+int netif_names(struct session *sessions) {
+    struct session *session;
+
+    for (session = sessions; session != NULL; session = session->next) {
+	if (if_indextoname(session->index, session->name) == NULL) {
+	    my_log(0,"could not fetch interface name");
+	    return(EXIT_FAILURE);
+	}
+    }
+
+    return(EXIT_SUCCESS);
 }
 
 
