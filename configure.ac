@@ -62,7 +62,8 @@ AC_CHECK_HEADERS([linux/if_bridge.h linux/if_bonding.h], [], [],
 [
 #include <linux/netdevice.h>
 ])
-AC_CHECK_HEADERS([net/if_bridgevar.h net/if_lagg.h], [], [],
+AC_CHECK_HEADERS([net/if_bridge.h net/if_bridgevar.h
+		  net/if_lagg.h net/if_trunk.h], [], [],
 [
 #include <sys/types.h>
 #include <sys/socket.h>
