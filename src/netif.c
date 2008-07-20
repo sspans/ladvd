@@ -27,10 +27,6 @@
 #include <linux/ethtool.h>
 #endif /* HAVE_LINUX_ETHTOOL_H */
 
-#if HAVE_LINUX_IF_BRIDGE_H
-#include <linux/if_bridge.h>
-#endif /* HAVE_LINUX_IF_BRIDGE_H */
-
 #if HAVE_NET_IF_MEDIA_H
 #include <net/if_media.h>
 #endif /* HAVE_NET_IF_MEDIA_H */
@@ -47,9 +43,24 @@
 #include <net/if_types.h>
 #endif /* HAVE_NET_IF_TYPES_H */
 
-#ifdef HAVE_NET_IF_VLAN_VAR_H
-#include <net/if_vlan_var.h>
-#endif /* HAVE_NET_IF_VLAN_VAR_H */
+#ifdef HAVE_NET_IF_LAGG_H
+#include <net/if_lagg.h>
+#endif /* HAVE_NET_IF_LAGG_H */
+
+#if HAVE_LINUX_IF_BRIDGE_H
+#include <linux/if_bridge.h>
+#endif /* HAVE_LINUX_IF_BRIDGE_H */
+
+#if HAVE_NET_IF_BRIDGEVAR_H
+#include <net/if_bridgevar.h>
+#endif /* HAVE_NET_IF_BRIDGEVAR_H */
+
+#ifdef HAVE_NET80211_IEEE80211_H
+#include <net80211/ieee80211.h>
+#endif /* HAVE_NET80211_IEEE80211_H */
+#ifdef HAVE_NET80211_IEEE80211_IOCTL_H
+#include <net80211/ieee80211_ioctl.h>
+#endif /* HAVE_NET80211_IEEE80211_IOCTL_H */
 
 #define SYSFS_VIRTUAL "/sys/devices/virtual/net"
 #define SYSFS_PATH_MAX  256
@@ -59,20 +70,20 @@
 void netif_bond(struct session *sessions, struct session *session) {
 
     struct session *subif = NULL, *csubif = session;
+    int i;
 
-#if HAVE_LINUX_IF_BONDING_H
+#ifdef HAVE_LINUX_IF_BONDING_H
     // handle linux bonding interfaces
     char path[SYSFS_PATH_MAX];
     FILE *fp;
     char line[1024];
     char *slave, *nslave;
-    int m;
 
     // check for lacp
     sprintf(path, "%s/%s/bonding/mode", SYSFS_VIRTUAL, session->if_name); 
     if ((fp = fopen(path, "r")) != NULL) {
 	if (fscanf(fp, "802.3ad") != EOF)
-		session->if_lacp = 1;
+	    session->if_lacp = 1;
 	fclose(fp);
     }
 
@@ -84,7 +95,7 @@ void netif_bond(struct session *sessions, struct session *session) {
 	    *strchr(line, '\n') = '\0';
 
 	    slave = line;
-	    m = 0;
+	    i = 0;
 	    while (strlen(slave) > 0) {
 		nslave = strstr(line, " ");
 		if (nslave != NULL)
@@ -92,8 +103,9 @@ void netif_bond(struct session *sessions, struct session *session) {
 
 		subif = session_byname(sessions, slave);
 		if (subif != NULL) {
+		    my_log(3, "found slave %s", subif->if_name);
 		    subif->if_slave = 1;
-		    subif->if_lacp_ifindex = m++;
+		    subif->if_lacp_ifindex = i++;
 		    csubif->subif = subif;
 		    csubif = subif;
 		}
@@ -110,9 +122,41 @@ void netif_bond(struct session *sessions, struct session *session) {
 	fclose(fp);
     }
 
-#elif HAVE_NET_LAGG_H
-    // TODO: handle bsd lagg interfaces
-#endif
+    return;
+#endif /* HAVE_LINUX_IF_BONDING_H */
+
+#ifdef HAVE_NET_IF_LAGG_H
+    int sockfd, af = AF_INET;
+    struct lagg_reqport rpbuf[LAGG_MAX_PORTS];
+    struct lagg_reqall ra;
+
+    sockfd = my_socket(af, SOCK_DGRAM, 0);
+
+    bzero(&ra, sizeof(ra));
+
+    strncpy(ra.ra_ifname, session->if_name, sizeof(ra.ra_ifname));
+    ra.ra_size = sizeof(rpbuf);
+    ra.ra_port = rpbuf;
+
+    my_ioctl(sockfd, SIOCGLAGG, &ra);
+    
+    if (ra.ra_proto == LAGG_PROTO_LACP)
+	session->if_lacp = 1;
+
+    for (i = 0; i < ra.ra_ports; i++) {
+	subif = session_byname(sessions, rpbuf[i].rp_portname);
+
+	if (subif != NULL) {
+	    my_log(3, "found slave %s", subif->if_name);
+	    subif->if_slave = 1;
+	    subif->if_lacp_ifindex = i++;
+	    csubif->subif = subif;
+	    csubif = subif;
+	}
+    }
+
+    return;
+#endif /* HAVE_NET_IF_LAGG_H */
 
 }
 
@@ -148,8 +192,54 @@ void netif_bridge(struct session *sessions, struct session *session) {
     }
 
     closedir(dir);
+    return;
+
 #elif HAVE_NET_IF_BRIDGEVAR_H
-    // TODO: handle bsd bridge interfaces
+    int sockfd, af = AF_INET;
+    struct ifbifconf bifc;
+    struct ifbreq *req;
+    struct ifdrv ifd;
+    char *inbuf = NULL, *ninbuf;
+    int i, len = 8192;
+
+    sockfd = my_socket(af, SOCK_DGRAM, 0);
+
+    bzero(&ifd, sizeof(ifd));
+
+    strncpy(ifd.ifd_name, session->if_name, sizeof(ifd.ifd_name));
+    ifd.ifd_cmd = BRDGGIFS;
+    ifd.ifd_len = sizeof(bifc);
+    ifd.ifd_data = &bifc;
+
+    for (;;) {
+	ninbuf = realloc(inbuf, len);
+
+	if (ninbuf == NULL) {
+	    my_log(1, "unable to allocate interface buffer");
+	    return;
+	}
+
+	bifc.ifbic_len = len;
+	bifc.ifbic_buf = inbuf = ninbuf;
+
+	my_ioctl(sockfd, SIOCGDRVSPEC, &ifd);
+	if ((bifc.ifbic_len + sizeof(*req)) < len)
+	    break;
+	len *= 2;
+    }
+
+    for (i = 0; i < bifc.ifbic_len / sizeof(*req); i++) {
+	req = bifc.ifbic_req + i;
+
+	subif = session_byname(sessions, req->ifbr_ifsname);
+	if (subif != NULL) {
+	    subif->if_slave = 1;
+	    csubif->subif = subif;
+	    csubif = subif;
+	}
+    }
+
+    return;
 #endif
 
 }
@@ -168,14 +258,20 @@ struct session * netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo) {
 #endif
 #ifdef AF_LINK
     struct sockaddr_dl saddrdl;
+    struct if_data *if_data;
 #endif
 
-#if HAVE_LINUX_ETHTOOL_H
+#ifdef HAVE_LINUX_ETHTOOL_H
     char path[SYSFS_PATH_MAX];
     struct stat sb;
 
     struct ethtool_drvinfo drvinfo;
 #endif /* HAVE_LINUX_ETHTOOL_H */
+
+#ifdef HAVE_NET80211_IEEE80211_IOCTL_H
+    struct ieee80211req ireq;
+    u_int8_t i_data[32];
+#endif
 
     // sessions
     struct session *sessions = NULL, *session_prev = NULL, *session;
@@ -191,11 +287,11 @@ struct session * netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo) {
 
 	// only handle datalink addresses
 #ifdef AF_PACKET
-	if(ifaddr->ifa_addr->sa_family != AF_PACKET)
+	if (ifaddr->ifa_addr->sa_family != AF_PACKET)
 	    continue;
 #endif
 #ifdef AF_LINK
-	if(ifaddr->ifa_addr->sa_family != AF_LINK) 
+	if (ifaddr->ifa_addr->sa_family != AF_LINK) 
 	    continue;
 #endif
 
@@ -224,20 +320,25 @@ struct session * netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo) {
 
 	// skip interfaces that are down
 	my_ioctl(sockfd, SIOCGIFFLAGS, (caddr_t)&ifr);
-	if ((ifr.ifr_flags & IFF_UP) == 0)
+	if ((ifr.ifr_flags & IFF_UP) == 0) {
+	    my_log(3, "skipping interface %s", ifaddr->ifa_name);
 	    continue;
-
+	}
 
 	// skip non-ethernet interfaces
 #ifdef AF_PACKET
 	bcopy(ifaddr->ifa_addr, &saddrll, sizeof(saddrll));
-	if (saddrll.sll_hatype != ARPHRD_ETHER)
+	if (saddrll.sll_hatype != ARPHRD_ETHER) {
+	    my_log(3, "skipping interface %s", ifaddr->ifa_name);
 	    continue;
+	}
 #endif
 #ifdef AF_LINK
 	bcopy(ifaddr->ifa_addr, &saddrdl, sizeof(saddrdl));
-	if (saddrdl.sdl_type != IFT_ETHER)
+	if (saddrdl.sdl_type != IFT_ETHER) {
+	    my_log(3, "skipping interface %s", ifaddr->ifa_name);
 	    continue;
+	}
 #endif
 
 
@@ -254,26 +355,74 @@ struct session * netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo) {
 	    if (ioctl(sockfd, SIOCETHTOOL, &ifr) >= 0) {
 		// handle bonding / bridge
 		if (strcmp(drvinfo.driver, "bonding") == 0) {
-			if_master = MASTER_BONDING;
-			goto session;	
+		    my_log(2, "found bond interface %s", ifaddr->ifa_name);
+		    if_master = MASTER_BONDING;
+		    goto session;
 		} else if (strcmp(drvinfo.driver, "bridge") == 0) {
-			if_master = MASTER_BRIDGE;
-			goto session;
+		    my_log(2, "found bridge interface %s", ifaddr->ifa_name);
+		    if_master = MASTER_BRIDGE;
+		    goto session;
 		// handle tun/tap
 		} else if (strcmp(drvinfo.driver, "tun") == 0) {
-		    goto session;	
+		    my_log(2, "found tap interface %s", ifaddr->ifa_name);
+		    goto session;
 		}
 	    }
+
 	    // we don't want the rest
+	    my_log(3, "skipping interface %s", ifaddr->ifa_name);
 	    continue;
 	}
 #endif /* HAVE_LINUX_ETHTOOL_H */
 
-#ifdef HAVE_NET_IF_VLAN_VAR_H
-	// skip vlan interfaces
-	if (ioctl(sockfd, SIOCGETVLAN, (caddr_t)&ifr) != -1)
+
+	// detect virtual network interfaces
+#ifdef AF_LINK
+	if (ifaddr->ifa_addr->sa_family == AF_LINK) {
+	    if_data = ifaddr->ifa_data;
+
+	    if (if_data->ifi_type == IFT_ETHER) {
+
+#ifdef HAVE_NET80211_IEEE80211_IOCTL_H
+		// skip wireless interfaces
+		bzero(&ireq, sizeof(ireq));
+		strncpy(ireq.i_name, ifaddr->ifa_name, sizeof(ireq.i_name));
+		ireq.i_data = &i_data;
+
+		ireq.i_type = IEEE80211_IOC_SSID;
+		ireq.i_val = -1;
+
+		if (ioctl(sockfd, SIOCG80211, &ireq) == 0) {
+		    my_log(3, "skipping wireless interface %s",
+			      ifaddr->ifa_name);
+		    continue;
+		}
+#endif /* HAVE_NET80211_IEEE80211_IOCTL_H */
+
+#ifdef HAVE_NET_IF_LAGG_H
+		// bonding
+		if (ioctl(sockfd, SIOCGLAGG, (caddr_t)&ifr) == 0) {
+		    my_log(2, "found bond interface %s", ifaddr->ifa_name);
+		    if_master = MASTER_BONDING;
+		    goto session;
+		}
+#endif /* HAVE_NET_IF_LAGG_H */
+
+		my_log(2, "found interface %s", ifaddr->ifa_name);
+		goto session;
+
+	    // bridge
+	    } else if (if_data->ifi_type == IFT_BRIDGE) {
+		my_log(2, "found bridge interface %s", ifaddr->ifa_name);
+		if_master = MASTER_BRIDGE;
+		goto session;
+	    }
+
+	    // we don't want the rest
+	    my_log(3, "skipping interface %s", ifaddr->ifa_name);
 	    continue;
-#endif /* HAVE_NET_IF_VLAN_VAR_H */
+	}
+#endif /* AF_LINK */
 
 
     session:
@@ -379,7 +528,7 @@ int netif_addrs(struct session *sessions) {
 	if (session == NULL)
 	    continue;
 
-	if(ifaddr->ifa_addr->sa_family == AF_INET) {
+	if (ifaddr->ifa_addr->sa_family == AF_INET) {
 	    if (session->ipaddr4 != 0)
 		continue;
 
@@ -389,7 +538,7 @@ int netif_addrs(struct session *sessions) {
 	    bcopy(&saddr4.sin_addr, &session->ipaddr4,
 		  sizeof(saddr4.sin_addr));
 
-	} else if(ifaddr->ifa_addr->sa_family == AF_INET6) {
+	} else if (ifaddr->ifa_addr->sa_family == AF_INET6) {
 	    if (!IN6_IS_ADDR_UNSPECIFIED((struct in6_addr *)session->ipaddr6))
 		continue;
 
@@ -403,7 +552,7 @@ int netif_addrs(struct session *sessions) {
 	    bcopy(&saddr6.sin6_addr, &session->ipaddr6,
 		  sizeof(saddr6.sin6_addr));
 #ifdef AF_PACKET
-	} else if(ifaddr->ifa_addr->sa_family == AF_PACKET) {
+	} else if (ifaddr->ifa_addr->sa_family == AF_PACKET) {
 
 	    // alignment
 	    bcopy(ifaddr->ifa_addr, &saddrll, sizeof(saddrll));
@@ -411,7 +560,7 @@ int netif_addrs(struct session *sessions) {
 	    bcopy(&saddrll.sll_addr, &session->if_hwaddr, ETHER_ADDR_LEN);
 #endif
 #ifdef AF_LINK
-	} else if(ifaddr->ifa_addr->sa_family == AF_LINK) {
+	} else if (ifaddr->ifa_addr->sa_family == AF_LINK) {
 
 	    // alignment
 	    bcopy(ifaddr->ifa_addr, &saddrdl, sizeof(saddrdl));
@@ -480,7 +629,7 @@ int netif_media(struct session *session) {
 
 #if HAVE_NET_IF_MEDIA_H
     bzero(&ifmr, sizeof(ifmr));
-    strncpy(ifmr.ifm_name, session->if_name, IFNAMSIZ -1);
+    strncpy(ifmr.ifm_name, session->if_name, IFNAMSIZ);
 
     if (ioctl(sockfd, SIOCGIFMEDIA, (caddr_t)&ifmr) < 0) {
 	my_log(3, "media detection not supported on %s", session->if_name);
