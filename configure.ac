@@ -71,20 +71,17 @@ AC_CHECK_HEADERS([net/if_bridgevar.h net/if_lagg.h], [], [],
 #include <net/ethernet.h>
 ])
 
-# vlan
-AC_CHECK_HEADERS([net/if_vlan_var.h], [], [],
-[
-#include <net/if.h>
-#include <net/ethernet.h>
-])
-
 # wireless
 AC_CHECK_HEADERS([net80211/ieee80211.h])
 AC_CHECK_HEADERS([net80211/ieee80211_ioctl.h], [],[],
 [
+#include <sys/param.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <net/if.h>
+
 #include <net80211/ieee80211.h>
 ])
-
 
 # raw
 AC_CHECK_HEADERS([netpacket/packet.h])
