@@ -100,7 +100,7 @@ int lldp_packet(struct packet *packet,
 	    START_LLDP_TLV(LLDP_MGMT_ADDR_TLV) &&
 	    PUSH_UINT8(1 + sizeof(session->ipaddr4)) &&
 	    PUSH_UINT8(LLDP_AFNUM_INET) &&
-	    PUSH(session->ipaddr4, uint32_t,) &&
+	    PUSH_BYTES(&session->ipaddr4, sizeof(session->ipaddr4)) &&
 	    PUSH_UINT8(LLDP_INTF_NUMB_IFX_SUBTYPE) &&
 	    PUSH_UINT32(csession->index) &&
 	    PUSH_UINT8(0)

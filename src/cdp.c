@@ -143,7 +143,7 @@ int cdp_packet(struct packet *packet,
 		PUSH_BYTES(cdp_predefs[CDP_ADDR_PROTO_IPV4].protocol,
 			   cdp_predefs[CDP_ADDR_PROTO_IPV4].protocol_length) &&
 		PUSH_UINT16(sizeof(session->ipaddr4)) &&
-		PUSH(session->ipaddr4, uint32_t,)
+		PUSH_BYTES(&session->ipaddr4, sizeof(session->ipaddr4))
 	    ))
 		return 0;
 	}
