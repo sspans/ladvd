@@ -43,9 +43,15 @@
 #include <net/if_types.h>
 #endif /* HAVE_NET_IF_TYPES_H */
 
+
 #ifdef HAVE_NET_IF_LAGG_H
 #include <net/if_lagg.h>
 #endif /* HAVE_NET_IF_LAGG_H */
+
+#ifdef HAVE_NET_IF_TRUNK_H
+#include <net/if_trunk.h>
+#endif /* HAVE_NET_IF_TRUNK_H */
+
 
 #if HAVE_LINUX_IF_BRIDGE_H
 #include <linux/if_bridge.h>
@@ -54,6 +60,11 @@
 #if HAVE_NET_IF_BRIDGEVAR_H
 #include <net/if_bridgevar.h>
 #endif /* HAVE_NET_IF_BRIDGEVAR_H */
+
+#if HAVE_NET_IF_BRIDGE_H
+#include <net/if_bridge.h>
+#endif /* HAVE_NET_IF_BRIDGE_H */
+
 
 #ifdef HAVE_NET80211_IEEE80211_H
 #include <net80211/ieee80211.h>
@@ -125,10 +136,16 @@ void netif_bond(struct session *sessions, struct session *session) {
     return;
 #endif /* HAVE_LINUX_IF_BONDING_H */
 
-#ifdef HAVE_NET_IF_LAGG_H
+#if defined(HAVE_NET_IF_LAGG_H) || defined(HAVE_NET_IF_TRUNK_H)
     int sockfd, af = AF_INET;
+
+#ifdef HAVE_NET_IF_LAGG_H
     struct lagg_reqport rpbuf[LAGG_MAX_PORTS];
     struct lagg_reqall ra;
+#elif HAVE_NET_IF_TRUNK_H
+    struct trunk_reqport rpbuf[TRUNK_MAX_PORTS];
+    struct trunk_reqall ra;
+#endif
 
     sockfd = my_socket(af, SOCK_DGRAM, 0);
 
@@ -138,11 +155,20 @@ void netif_bond(struct session *sessions, struct session *session) {
     ra.ra_size = sizeof(rpbuf);
     ra.ra_port = rpbuf;
 
+#ifdef HAVE_NET_IF_LAGG_H
     my_ioctl(sockfd, SIOCGLAGG, &ra);
-    
+
     if (ra.ra_proto == LAGG_PROTO_LACP)
 	session->if_lacp = 1;
+#elif HAVE_NET_IF_TRUNK_H
+    my_ioctl(sockfd, SIOCGTRUNK, &ra);
 
+    
+    if ((ra.ra_proto == TRUNK_PROTO_ROUNDROBIN) ||
+	(ra.ra_proto == TRUNK_PROTO_LOADBALANCE))
+	session->if_lacp = 1;
+#endif
+    
     for (i = 0; i < ra.ra_ports; i++) {
 	subif = session_byname(sessions, rpbuf[i].rp_portname);
 
@@ -193,16 +219,17 @@ void netif_bridge(struct session *sessions, struct session *session) {
 
     closedir(dir);
     return;
+#endif /* HAVE_LINUX_IF_BRIDGE_H */
 
-#elif HAVE_NET_IF_BRIDGEVAR_H
+#if defined(HAVE_NET_IF_BRIDGEVAR_H) || defined(HAVE_NET_IF_BRIDGE_H)
     int sockfd, af = AF_INET;
     struct ifbifconf bifc;
     struct ifbreq *req;
-    struct ifdrv ifd;
     char *inbuf = NULL, *ninbuf;
     int i, len = 8192;
 
-    sockfd = my_socket(af, SOCK_DGRAM, 0);
+#ifdef HAVE_NET_IF_BRIDGEVAR_H
+    struct ifdrv ifd;
 
     bzero(&ifd, sizeof(ifd));
 
@@ -210,6 +237,9 @@ void netif_bridge(struct session *sessions, struct session *session) {
     ifd.ifd_cmd = BRDGGIFS;
     ifd.ifd_len = sizeof(bifc);
     ifd.ifd_data = &bifc;
+#endif /* HAVE_NET_IF_BRIDGEVAR_H */
+
+    sockfd = my_socket(af, SOCK_DGRAM, 0);
 
     for (;;) {
 	ninbuf = realloc(inbuf, len);
@@ -222,7 +252,11 @@ void netif_bridge(struct session *sessions, struct session *session) {
 	bifc.ifbic_len = len;
 	bifc.ifbic_buf = inbuf = ninbuf;
 
+#ifdef HAVE_NET_IF_BRIDGEVAR_H
 	my_ioctl(sockfd, SIOCGDRVSPEC, &ifd);
+#elif HAVE_NET_IF_BRIDGE_H
+	my_ioctl(sockfd, SIOCBRDGIFS, &bifc);
+#endif
 	if ((bifc.ifbic_len + sizeof(*req)) < len)
 	    break;
 	len *= 2;
@@ -269,8 +303,12 @@ struct session * netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo) {
 #endif /* HAVE_LINUX_ETHTOOL_H */
 
 #ifdef HAVE_NET80211_IEEE80211_IOCTL_H
+#ifdef SIOCG80211
     struct ieee80211req ireq;
     u_int8_t i_data[32];
+#elif defined(SIOCG80211NWID)
+    struct ieee80211_nwid nwid;
+#endif
 #endif
 
     // sessions
@@ -385,6 +423,7 @@ struct session * netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo) {
 
 #ifdef HAVE_NET80211_IEEE80211_IOCTL_H
 		// skip wireless interfaces
+#ifdef SIOCG80211
 		bzero(&ireq, sizeof(ireq));
 		strncpy(ireq.i_name, ifaddr->ifa_name, sizeof(ireq.i_name));
 		ireq.i_data = &i_data;
@@ -397,16 +436,31 @@ struct session * netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo) {
 			      ifaddr->ifa_name);
 		    continue;
 		}
+#elif defined(SIOCG80211NWID)
+		ifr.ifr_data = (caddr_t)&nwid;
+
+		if (ioctl(sockfd, SIOCG80211NWID, (caddr_t)&ifr) == 0) {
+		    my_log(3, "skipping wireless interface %s",
+			      ifaddr->ifa_name);
+		    continue;
+		}
+#endif
 #endif /* HAVE_NET80211_IEEE80211_IOCTL_H */
 
-#ifdef HAVE_NET_IF_LAGG_H
 		// bonding
+#ifdef HAVE_NET_IF_LAGG_H
 		if (ioctl(sockfd, SIOCGLAGG, (caddr_t)&ifr) == 0) {
 		    my_log(2, "found bond interface %s", ifaddr->ifa_name);
 		    if_master = MASTER_BONDING;
 		    goto session;
 		}
-#endif /* HAVE_NET_IF_LAGG_H */
+#elif HAVE_NET_IF_TRUNK_H
+		if (ioctl(sockfd, SIOCGTRUNK, (caddr_t)&ifr) == 0) {
+		    my_log(2, "found bond interface %s", ifaddr->ifa_name);
+		    if_master = MASTER_BONDING;
+		    goto session;
+		}
+#endif
 
 		my_log(2, "found interface %s", ifaddr->ifa_name);
 		goto session;
