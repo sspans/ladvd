@@ -298,9 +298,9 @@ int netif_type(int sockfd, struct ifaddrs *ifaddr, struct ifreq *ifr) {
 
     // use ethtool to detect various drivers
     drvinfo.cmd = ETHTOOL_GDRVINFO;
-    ifr.ifr_data = (caddr_t)&drvinfo;
+    ifr->ifr_data = (caddr_t)&drvinfo;
 
-    if (ioctl(sockfd, SIOCETHTOOL, &ifr) >= 0) {
+    if (ioctl(sockfd, SIOCETHTOOL, ifr) >= 0) {
 	// handle bonding
 	if (strcmp(drvinfo.driver, "bonding") == 0) {
 	    return(NETIF_BONDING);
