@@ -357,7 +357,11 @@ struct session * netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo) {
 
 
 	// skip interfaces that are down
-	my_ioctl(sockfd, SIOCGIFFLAGS, (caddr_t)&ifr);
+	if (ioctl(sockfd, SIOCGIFFLAGS, (caddr_t)&ifr) < 0) {
+	    my_log(3, "skipping interface %s", ifaddr->ifa_name);
+	    continue;
+	}
+
 	if ((ifr.ifr_flags & IFF_UP) == 0) {
 	    my_log(3, "skipping interface %s", ifaddr->ifa_name);
 	    continue;
