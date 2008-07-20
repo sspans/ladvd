@@ -77,207 +77,8 @@
 #define SYSFS_PATH_MAX  256
 
 
-// handle aggregated interfaces
-void netif_bond(struct session *sessions, struct session *session) {
-
-    struct session *subif = NULL, *csubif = session;
-    int i;
-
-#ifdef HAVE_LINUX_IF_BONDING_H
-    // handle linux bonding interfaces
-    char path[SYSFS_PATH_MAX];
-    FILE *fp;
-    char line[1024];
-    char *slave, *nslave;
-
-    // check for lacp
-    sprintf(path, "%s/%s/bonding/mode", SYSFS_VIRTUAL, session->if_name); 
-    if ((fp = fopen(path, "r")) != NULL) {
-	if (fscanf(fp, "802.3ad") != EOF)
-	    session->if_lacp = 1;
-	fclose(fp);
-    }
-
-    // handle slaves
-    sprintf(path, "%s/%s/bonding/slaves", SYSFS_VIRTUAL, session->if_name); 
-    if ((fp = fopen(path, "r")) != NULL) {
-	if (fgets(line, sizeof(line), fp) != NULL) {
-	    // remove newline
-	    *strchr(line, '\n') = '\0';
-
-	    slave = line;
-	    i = 0;
-	    while (strlen(slave) > 0) {
-		nslave = strstr(line, " ");
-		if (nslave != NULL)
-		    *nslave = '\0';
-
-		subif = session_byname(sessions, slave);
-		if (subif != NULL) {
-		    my_log(3, "found slave %s", subif->if_name);
-		    subif->if_slave = 1;
-		    subif->if_lacp_ifindex = i++;
-		    csubif->subif = subif;
-		    csubif = subif;
-		}
-
-		if (nslave != NULL) {
-		    nslave++;
-		    slave = nslave;
-		} else {
-		    break;
-		}
-	    }
-	};
-
-	fclose(fp);
-    }
-
-    return;
-#endif /* HAVE_LINUX_IF_BONDING_H */
-
-#if defined(HAVE_NET_IF_LAGG_H) || defined(HAVE_NET_IF_TRUNK_H)
-    int sockfd, af = AF_INET;
-
-#ifdef HAVE_NET_IF_LAGG_H
-    struct lagg_reqport rpbuf[LAGG_MAX_PORTS];
-    struct lagg_reqall ra;
-#elif HAVE_NET_IF_TRUNK_H
-    struct trunk_reqport rpbuf[TRUNK_MAX_PORTS];
-    struct trunk_reqall ra;
-#endif
-
-    sockfd = my_socket(af, SOCK_DGRAM, 0);
-
-    bzero(&ra, sizeof(ra));
-
-    strncpy(ra.ra_ifname, session->if_name, sizeof(ra.ra_ifname));
-    ra.ra_size = sizeof(rpbuf);
-    ra.ra_port = rpbuf;
-
-#ifdef HAVE_NET_IF_LAGG_H
-    my_ioctl(sockfd, SIOCGLAGG, &ra);
-
-    if (ra.ra_proto == LAGG_PROTO_LACP)
-	session->if_lacp = 1;
-#elif HAVE_NET_IF_TRUNK_H
-    my_ioctl(sockfd, SIOCGTRUNK, &ra);
-
-    
-    if ((ra.ra_proto == TRUNK_PROTO_ROUNDROBIN) ||
-	(ra.ra_proto == TRUNK_PROTO_LOADBALANCE))
-	session->if_lacp = 1;
-#endif
-    
-    for (i = 0; i < ra.ra_ports; i++) {
-	subif = session_byname(sessions, rpbuf[i].rp_portname);
-
-	if (subif != NULL) {
-	    my_log(3, "found slave %s", subif->if_name);
-	    subif->if_slave = 1;
-	    subif->if_lacp_ifindex = i++;
-	    csubif->subif = subif;
-	    csubif = subif;
-	}
-    }
-
-    return;
-#endif /* HAVE_NET_IF_LAGG_H */
-
-}
-
-
-// handle bridge interfaces
-void netif_bridge(struct session *sessions, struct session *session) {
-
-    struct session *subif = NULL, *csubif = session;
-
-#if HAVE_LINUX_IF_BRIDGE_H 
-    // handle linux bridge interfaces
-    char path[SYSFS_PATH_MAX];
-    DIR  *dir;
-    struct dirent *dirent;
-
-    // handle slaves
-    sprintf(path, "%s/%s/%s",
-		SYSFS_VIRTUAL, session->if_name, SYSFS_BRIDGE_PORT_SUBDIR); 
-
-    if ((dir = opendir(path)) == NULL) {
-	my_log(0, "reading bridge %s subdir %s failed: %s",
-	    session->if_name, path, strerror(errno));
-	return;
-    }
-
-    while ((dirent = readdir(dir)) != NULL) {
-	subif = session_byname(sessions, dirent->d_name);
-	if (subif != NULL) {
-	    subif->if_slave = 1;
-	    csubif->subif = subif;
-	    csubif = subif;
-	}
-    }
-
-    closedir(dir);
-    return;
-#endif /* HAVE_LINUX_IF_BRIDGE_H */
-
-#if defined(HAVE_NET_IF_BRIDGEVAR_H) || defined(HAVE_NET_IF_BRIDGE_H)
-    int sockfd, af = AF_INET;
-    struct ifbifconf bifc;
-    struct ifbreq *req;
-    char *inbuf = NULL, *ninbuf;
-    int i, len = 8192;
-
-#ifdef HAVE_NET_IF_BRIDGEVAR_H
-    struct ifdrv ifd;
-
-    bzero(&ifd, sizeof(ifd));
-
-    strncpy(ifd.ifd_name, session->if_name, sizeof(ifd.ifd_name));
-    ifd.ifd_cmd = BRDGGIFS;
-    ifd.ifd_len = sizeof(bifc);
-    ifd.ifd_data = &bifc;
-#endif /* HAVE_NET_IF_BRIDGEVAR_H */
-
-    sockfd = my_socket(af, SOCK_DGRAM, 0);
-
-    for (;;) {
-	ninbuf = realloc(inbuf, len);
-
-	if (ninbuf == NULL) {
-	    my_log(1, "unable to allocate interface buffer");
-	    return;
-	}
-
-	bifc.ifbic_len = len;
-	bifc.ifbic_buf = inbuf = ninbuf;
-
-#ifdef HAVE_NET_IF_BRIDGEVAR_H
-	my_ioctl(sockfd, SIOCGDRVSPEC, &ifd);
-#elif HAVE_NET_IF_BRIDGE_H
-	my_ioctl(sockfd, SIOCBRDGIFS, &bifc);
-#endif
-	if ((bifc.ifbic_len + sizeof(*req)) < len)
-	    break;
-	len *= 2;
-    }
-
-    for (i = 0; i < bifc.ifbic_len / sizeof(*req); i++) {
-	req = bifc.ifbic_req + i;
-
-	subif = session_byname(sessions, req->ifbr_ifsname);
-	if (subif != NULL) {
-	    subif->if_slave = 1;
-	    csubif->subif = subif;
-	    csubif = subif;
-	}
-    }
-
-    return;
-#endif
-
-}
-
+void netif_bond(int sockfd, struct session *, struct session *);
+void netif_bridge(int sockfd, struct session *, struct session *);
 
 // create sessions for a list of interfaces
 struct session * netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo) {
@@ -514,10 +315,10 @@ struct session * netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo) {
 
 	switch(session->if_master) {
 	    case MASTER_BONDING:
-		netif_bond(sessions, session);
+		netif_bond(sockfd, sessions, session);
 		break;
 	    case MASTER_BRIDGE:
-		netif_bridge(sessions, session);
+		netif_bridge(sockfd, sessions, session);
 		break;
 	    default:
 		break;
@@ -546,6 +347,113 @@ struct session * netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo) {
 };
 
 
+// handle aggregated interfaces
+void netif_bond(int sockfd,
+		struct session *sessions, struct session *session) {
+
+    struct session *subif = NULL, *csubif = session;
+    int i;
+
+#ifdef HAVE_LINUX_IF_BONDING_H
+    // handle linux bonding interfaces
+    char path[SYSFS_PATH_MAX];
+    FILE *fp;
+    char line[1024];
+    char *slave, *nslave;
+
+    // check for lacp
+    sprintf(path, "%s/%s/bonding/mode", SYSFS_VIRTUAL, session->if_name); 
+    if ((fp = fopen(path, "r")) != NULL) {
+	if (fscanf(fp, "802.3ad") != EOF)
+	    session->if_lacp = 1;
+	fclose(fp);
+    }
+
+    // handle slaves
+    sprintf(path, "%s/%s/bonding/slaves", SYSFS_VIRTUAL, session->if_name); 
+    if ((fp = fopen(path, "r")) != NULL) {
+	if (fgets(line, sizeof(line), fp) != NULL) {
+	    // remove newline
+	    *strchr(line, '\n') = '\0';
+
+	    slave = line;
+	    i = 0;
+	    while (strlen(slave) > 0) {
+		nslave = strstr(line, " ");
+		if (nslave != NULL)
+		    *nslave = '\0';
+
+		subif = session_byname(sessions, slave);
+		if (subif != NULL) {
+		    my_log(3, "found slave %s", subif->if_name);
+		    subif->if_slave = 1;
+		    subif->if_lacp_ifindex = i++;
+		    csubif->subif = subif;
+		    csubif = subif;
+		}
+
+		if (nslave != NULL) {
+		    nslave++;
+		    slave = nslave;
+		} else {
+		    break;
+		}
+	    }
+	};
+
+	fclose(fp);
+    }
+
+    return;
+#endif /* HAVE_LINUX_IF_BONDING_H */
+
+#if defined(HAVE_NET_IF_LAGG_H) || defined(HAVE_NET_IF_TRUNK_H)
+#ifdef HAVE_NET_IF_LAGG_H
+    struct lagg_reqport rpbuf[LAGG_MAX_PORTS];
+    struct lagg_reqall ra;
+#elif HAVE_NET_IF_TRUNK_H
+    struct trunk_reqport rpbuf[TRUNK_MAX_PORTS];
+    struct trunk_reqall ra;
+#endif
+
+    bzero(&ra, sizeof(ra));
+
+    strncpy(ra.ra_ifname, session->if_name, sizeof(ra.ra_ifname));
+    ra.ra_size = sizeof(rpbuf);
+    ra.ra_port = rpbuf;
+
+#ifdef HAVE_NET_IF_LAGG_H
+    my_ioctl(sockfd, SIOCGLAGG, &ra);
+
+    if (ra.ra_proto == LAGG_PROTO_LACP)
+	session->if_lacp = 1;
+#elif HAVE_NET_IF_TRUNK_H
+    my_ioctl(sockfd, SIOCGTRUNK, &ra);
+
+    
+    if ((ra.ra_proto == TRUNK_PROTO_ROUNDROBIN) ||
+	(ra.ra_proto == TRUNK_PROTO_LOADBALANCE))
+	session->if_lacp = 1;
+#endif
+    
+    for (i = 0; i < ra.ra_ports; i++) {
+	subif = session_byname(sessions, rpbuf[i].rp_portname);
+
+	if (subif != NULL) {
+	    my_log(3, "found slave %s", subif->if_name);
+	    subif->if_slave = 1;
+	    subif->if_lacp_ifindex = i++;
+	    csubif->subif = subif;
+	    csubif = subif;
+	}
+    }
+
+    return;
+#endif /* HAVE_NET_IF_LAGG_H */
+
+}
+
+
 // update interface names for all sessions
 int netif_names(struct session *sessions) {
     struct session *session;
@@ -558,6 +466,96 @@ int netif_names(struct session *sessions) {
     }
 
     return(EXIT_SUCCESS);
+}
+
+
+// handle bridge interfaces
+void netif_bridge(int sockfd,
+		  struct session *sessions, struct session *session) {
+
+    struct session *subif = NULL, *csubif = session;
+
+#if HAVE_LINUX_IF_BRIDGE_H 
+    // handle linux bridge interfaces
+    char path[SYSFS_PATH_MAX];
+    DIR  *dir;
+    struct dirent *dirent;
+
+    // handle slaves
+    sprintf(path, "%s/%s/%s",
+		SYSFS_VIRTUAL, session->if_name, SYSFS_BRIDGE_PORT_SUBDIR); 
+
+    if ((dir = opendir(path)) == NULL) {
+	my_log(0, "reading bridge %s subdir %s failed: %s",
+	    session->if_name, path, strerror(errno));
+	return;
+    }
+
+    while ((dirent = readdir(dir)) != NULL) {
+	subif = session_byname(sessions, dirent->d_name);
+	if (subif != NULL) {
+	    subif->if_slave = 1;
+	    csubif->subif = subif;
+	    csubif = subif;
+	}
+    }
+
+    closedir(dir);
+    return;
+#endif /* HAVE_LINUX_IF_BRIDGE_H */
+
+#if defined(HAVE_NET_IF_BRIDGEVAR_H) || defined(HAVE_NET_IF_BRIDGE_H)
+    struct ifbifconf bifc;
+    struct ifbreq *req;
+    char *inbuf = NULL, *ninbuf;
+    int i, len = 8192;
+
+#ifdef HAVE_NET_IF_BRIDGEVAR_H
+    struct ifdrv ifd;
+
+    bzero(&ifd, sizeof(ifd));
+
+    strncpy(ifd.ifd_name, session->if_name, sizeof(ifd.ifd_name));
+    ifd.ifd_cmd = BRDGGIFS;
+    ifd.ifd_len = sizeof(bifc);
+    ifd.ifd_data = &bifc;
+#endif /* HAVE_NET_IF_BRIDGEVAR_H */
+
+    for (;;) {
+	ninbuf = realloc(inbuf, len);
+
+	if (ninbuf == NULL) {
+	    my_log(1, "unable to allocate interface buffer");
+	    return;
+	}
+
+	bifc.ifbic_len = len;
+	bifc.ifbic_buf = inbuf = ninbuf;
+
+#ifdef HAVE_NET_IF_BRIDGEVAR_H
+	my_ioctl(sockfd, SIOCGDRVSPEC, &ifd);
+#elif HAVE_NET_IF_BRIDGE_H
+	my_ioctl(sockfd, SIOCBRDGIFS, &bifc);
+#endif
+	if ((bifc.ifbic_len + sizeof(*req)) < len)
+	    break;
+	len *= 2;
+    }
+
+    for (i = 0; i < bifc.ifbic_len / sizeof(*req); i++) {
+	req = bifc.ifbic_req + i;
+
+	subif = session_byname(sessions, req->ifbr_ifsname);
+	if (subif != NULL) {
+	    subif->if_slave = 1;
+	    csubif->subif = subif;
+	    csubif = subif;
+	}
+    }
+
+    return;
+#endif
+
 }
 
 

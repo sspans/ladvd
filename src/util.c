@@ -62,7 +62,7 @@ char * my_strdup(const char *str) {
 int my_ioctl(int fd, int request, void *arg) {
     int n;
 
-    if ((n = ioctl(fd, request, arg)) == -1) {
+    if ((n = ioctl(fd, request, arg)) < 0) {
 	my_log(0, "ioctl error: %s", strerror(errno));
 	exit(EXIT_FAILURE);
     }
