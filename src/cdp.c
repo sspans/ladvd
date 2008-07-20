@@ -99,7 +99,7 @@ int cdp_packet(struct packet *packet,
     // port id
     if (!(
 	START_CDP_TLV(CDP_TYPE_PORT_ID) &&
-	PUSH_BYTES(csession->if_name, strlen(csession->if_name))
+	PUSH_BYTES(csession->name, strlen(csession->name))
     ))
 	return 0;
     END_CDP_TLV;
@@ -211,7 +211,7 @@ int cdp_packet(struct packet *packet,
 
     // ethernet header
     bcopy(cdp_dst, packet->dst, ETHER_ADDR_LEN);
-    bcopy(csession->if_hwaddr, packet->src, ETHER_ADDR_LEN);
+    bcopy(csession->hwaddr, packet->src, ETHER_ADDR_LEN);
     *(uint16_t *)packet->length = htons(VOIDP_DIFF(pos, packet->data));
 
     // packet length

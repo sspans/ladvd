@@ -41,9 +41,9 @@ struct packet {
 };
 
 struct session {
-    uint8_t if_index;
-    char if_name[IFNAMSIZ];
-    uint8_t if_hwaddr[ETHER_ADDR_LEN];
+    uint8_t index;
+    char name[IFNAMSIZ];
+    uint8_t hwaddr[ETHER_ADDR_LEN];
     uint16_t mtu;
     int8_t duplex;
     int8_t autoneg_supported; 
@@ -53,10 +53,10 @@ struct session {
     uint32_t ipaddr4;
     uint32_t ipaddr6[4];
 
-    uint8_t if_master;
-    uint8_t if_slave;
-    uint8_t if_lacp;
-    uint8_t if_lacp_ifindex;
+    uint8_t type;
+    uint8_t slave;
+    uint8_t lacp;
+    uint8_t lacp_index;
 
     struct session *subif;
     struct session *next;
@@ -76,8 +76,10 @@ struct sysinfo {
 #define CAP_SWITCH	(1 << 3)
 #define CAP_WLAN	(1 << 4)
 
-#define MASTER_BONDING	1
-#define MASTER_BRIDGE	2
+#define NETIF_INVALID	-1
+#define NETIF_REGULAR	0
+#define NETIF_BONDING	1
+#define NETIF_BRIDGE	2
 
 struct session * netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo);
 int netif_names(struct session *sessions);

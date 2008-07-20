@@ -77,8 +77,11 @@
 #define SYSFS_PATH_MAX  256
 
 
+int netif_wireless(int sockfd, struct ifaddrs *ifaddr, struct ifreq *);
+int netif_type(int sockfd, struct ifaddrs *ifaddr, struct ifreq *);
 void netif_bond(int sockfd, struct session *, struct session *);
 void netif_bridge(int sockfd, struct session *, struct session *);
+
 
 // create sessions for a list of interfaces
 struct session * netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo) {
@@ -86,30 +89,13 @@ struct session * netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo) {
     struct ifaddrs *ifaddrs, *ifaddr;
     struct ifreq ifr;
     int j, count = 0;
-    int if_master;
+    int type;
 
 #ifdef AF_PACKET
     struct sockaddr_ll saddrll;
 #endif
 #ifdef AF_LINK
     struct sockaddr_dl saddrdl;
-    struct if_data *if_data;
-#endif
-
-#ifdef HAVE_LINUX_ETHTOOL_H
-    char path[SYSFS_PATH_MAX];
-    struct stat sb;
-
-    struct ethtool_drvinfo drvinfo;
-#endif /* HAVE_LINUX_ETHTOOL_H */
-
-#ifdef HAVE_NET80211_IEEE80211_IOCTL_H
-#ifdef SIOCG80211
-    struct ieee80211req ireq;
-    u_int8_t i_data[32];
-#elif defined(SIOCG80211NWID)
-    struct ieee80211_nwid nwid;
-#endif
 #endif
 
     // sessions
@@ -134,8 +120,8 @@ struct session * netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo) {
 	    continue;
 #endif
 
-	// reset if_master
-	if_master = 0;
+	// reset type
+	type = 0;
 
 	// TODO: be clever about subifs
 	// skip unlisted interfaces if needed
@@ -158,15 +144,12 @@ struct session * netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo) {
 
 
 	// skip interfaces that are down
-	if (ioctl(sockfd, SIOCGIFFLAGS, (caddr_t)&ifr) < 0) {
+	if (ioctl(sockfd, SIOCGIFFLAGS, (caddr_t)&ifr) < 0 || 
+	    (ifr.ifr_flags & IFF_UP) == 0) {
 	    my_log(3, "skipping interface %s", ifaddr->ifa_name);
 	    continue;
 	}
 
-	if ((ifr.ifr_flags & IFF_UP) == 0) {
-	    my_log(3, "skipping interface %s", ifaddr->ifa_name);
-	    continue;
-	}
 
 	// skip non-ethernet interfaces
 #ifdef AF_PACKET
@@ -184,119 +167,39 @@ struct session * netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo) {
 	}
 #endif
 
+	// skip wireless interfaces
+	if (netif_wireless(sockfd, ifaddr, &ifr) == 0) {
+	    my_log(3, "skipping wireless interface %s", ifaddr->ifa_name);
+	    continue;
+	}
 
-	// detect virtual network interfaces
-#if HAVE_LINUX_ETHTOOL_H
-	sprintf(path, "%s/%s", SYSFS_VIRTUAL, ifaddr->ifa_name); 
+	// detect interface type
+	type = netif_type(sockfd, ifaddr, &ifr);
 
-	if (stat(path, &sb) == 0) {
-
-	    // use ethtool to detect various drivers
-	    drvinfo.cmd = ETHTOOL_GDRVINFO;
-	    ifr.ifr_data = (caddr_t)&drvinfo;
-
-	    if (ioctl(sockfd, SIOCETHTOOL, &ifr) >= 0) {
-		// handle bonding / bridge
-		if (strcmp(drvinfo.driver, "bonding") == 0) {
-		    my_log(2, "found bond interface %s", ifaddr->ifa_name);
-		    if_master = MASTER_BONDING;
-		    goto session;
-		} else if (strcmp(drvinfo.driver, "bridge") == 0) {
-		    my_log(2, "found bridge interface %s", ifaddr->ifa_name);
-		    if_master = MASTER_BRIDGE;
-		    goto session;
-		// handle tun/tap
-		} else if (strcmp(drvinfo.driver, "tun") == 0) {
-		    my_log(2, "found tap interface %s", ifaddr->ifa_name);
-		    goto session;
-		}
-	    }
-
-	    // we don't want the rest
+	if (type == NETIF_REGULAR) 
+	    my_log(2, "found interface %s", ifaddr->ifa_name);
+	else if (type == NETIF_BONDING)
+	    my_log(2, "found bond interface %s", ifaddr->ifa_name);
+	else if (type == NETIF_BRIDGE)
+	    my_log(2, "found bridge interface %s", ifaddr->ifa_name);
+	else if (type == NETIF_INVALID) {
 	    my_log(3, "skipping interface %s", ifaddr->ifa_name);
 	    continue;
 	}
-#endif /* HAVE_LINUX_ETHTOOL_H */
 
 
-	// detect virtual network interfaces
-#ifdef AF_LINK
-	if (ifaddr->ifa_addr->sa_family == AF_LINK) {
-	    if_data = ifaddr->ifa_data;
-
-	    if (if_data->ifi_type == IFT_ETHER) {
-
-#ifdef HAVE_NET80211_IEEE80211_IOCTL_H
-		// skip wireless interfaces
-#ifdef SIOCG80211
-		bzero(&ireq, sizeof(ireq));
-		strncpy(ireq.i_name, ifaddr->ifa_name, sizeof(ireq.i_name));
-		ireq.i_data = &i_data;
-
-		ireq.i_type = IEEE80211_IOC_SSID;
-		ireq.i_val = -1;
-
-		if (ioctl(sockfd, SIOCG80211, &ireq) == 0) {
-		    my_log(3, "skipping wireless interface %s",
-			      ifaddr->ifa_name);
-		    continue;
-		}
-#elif defined(SIOCG80211NWID)
-		ifr.ifr_data = (caddr_t)&nwid;
-
-		if (ioctl(sockfd, SIOCG80211NWID, (caddr_t)&ifr) == 0) {
-		    my_log(3, "skipping wireless interface %s",
-			      ifaddr->ifa_name);
-		    continue;
-		}
-#endif
-#endif /* HAVE_NET80211_IEEE80211_IOCTL_H */
-
-		// bonding
-#ifdef HAVE_NET_IF_LAGG_H
-		if (ioctl(sockfd, SIOCGLAGG, (caddr_t)&ifr) == 0) {
-		    my_log(2, "found bond interface %s", ifaddr->ifa_name);
-		    if_master = MASTER_BONDING;
-		    goto session;
-		}
-#elif HAVE_NET_IF_TRUNK_H
-		if (ioctl(sockfd, SIOCGTRUNK, (caddr_t)&ifr) == 0) {
-		    my_log(2, "found bond interface %s", ifaddr->ifa_name);
-		    if_master = MASTER_BONDING;
-		    goto session;
-		}
-#endif
-
-		my_log(2, "found interface %s", ifaddr->ifa_name);
-		goto session;
-
-	    // bridge
-	    } else if (if_data->ifi_type == IFT_BRIDGE) {
-		my_log(2, "found bridge interface %s", ifaddr->ifa_name);
-		if_master = MASTER_BRIDGE;
-		goto session;
-	    }
-
-	    // we don't want the rest
-	    my_log(3, "skipping interface %s", ifaddr->ifa_name);
-	    continue;
-	}
-#endif /* AF_LINK */
-
-
-    session:
 	// create session
 	session = my_malloc(sizeof(struct session));
 
-        // copy name, index and master
+        // copy name, index and type
 #ifdef AF_PACKET
-	session->if_index = saddrll.sll_ifindex;
+	session->index = saddrll.sll_ifindex;
 #endif
 #ifdef AF_LINK
-	session->if_index = saddrdl.sdl_index;
+	session->index = saddrdl.sdl_index;
 #endif
-	strncpy(session->if_name, ifaddr->ifa_name, IFNAMSIZ);
-	session->if_master = if_master;
+	strncpy(session->name, ifaddr->ifa_name, IFNAMSIZ);
+	session->type = type;
 
 	// update linked list
 	if (sessions == NULL)
@@ -313,11 +216,11 @@ struct session * netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo) {
     // add slave subif lists to each master
     for (session = sessions; session != NULL; session = session->next) {
 
-	switch(session->if_master) {
-	    case MASTER_BONDING:
+	switch(session->type) {
+	    case NETIF_BONDING:
 		netif_bond(sockfd, sessions, session);
 		break;
-	    case MASTER_BRIDGE:
+	    case NETIF_BRIDGE:
 		netif_bridge(sockfd, sessions, session);
 		break;
 	    default:
@@ -347,6 +250,101 @@ struct session * netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo) {
 };
 
 
+// detect wireless interfaces
+int netif_wireless(int sockfd, struct ifaddrs *ifaddr, struct ifreq *ifr) {
+
+#ifdef HAVE_NET80211_IEEE80211_IOCTL_H
+#ifdef SIOCG80211
+    struct ieee80211req ireq;
+    u_int8_t i_data[32];
+#elif defined(SIOCG80211NWID)
+    struct ieee80211_nwid nwid;
+#endif
+#endif
+
+#ifdef HAVE_NET80211_IEEE80211_IOCTL_H
+#ifdef SIOCG80211
+    bzero(&ireq, sizeof(ireq));
+    strncpy(ireq.i_name, ifaddr->ifa_name, sizeof(ireq.i_name));
+    ireq.i_data = &i_data;
+
+    ireq.i_type = IEEE80211_IOC_SSID;
+    ireq.i_val = -1;
+
+    return(ioctl(sockfd, SIOCG80211, &ireq));
+#elif defined(SIOCG80211NWID)
+    ifr->ifr_data = (caddr_t)&nwid;
+
+    return(ioctl(sockfd, SIOCG80211NWID, (caddr_t)ifr));
+#endif
+#endif /* HAVE_NET80211_IEEE80211_IOCTL_H */
+}
+
+
+// detect interface type
+int netif_type(int sockfd, struct ifaddrs *ifaddr, struct ifreq *ifr) {
+
+#if HAVE_LINUX_ETHTOOL_H
+    char path[SYSFS_PATH_MAX];
+    struct stat sb;
+
+    struct ethtool_drvinfo drvinfo;
+
+    sprintf(path, "%s/%s", SYSFS_VIRTUAL, ifaddr->ifa_name); 
+
+    // accept physical devices
+    if (stat(path, &sb) != 0)
+	return(NETIF_REGULAR);
+
+    // use ethtool to detect various drivers
+    drvinfo.cmd = ETHTOOL_GDRVINFO;
+    ifr.ifr_data = (caddr_t)&drvinfo;
+
+    if (ioctl(sockfd, SIOCETHTOOL, &ifr) >= 0) {
+	// handle bonding
+	if (strcmp(drvinfo.driver, "bonding") == 0) {
+	    return(NETIF_BONDING);
+	// handle bridge
+	} else if (strcmp(drvinfo.driver, "bridge") == 0) {
+	    return(NETIF_BRIDGE);
+	// handle tun/tap
+	} else if (strcmp(drvinfo.driver, "tun") == 0) {
+	    return(NETIF_REGULAR);
+	}
+    }
+
+    // we don't want the rest
+    return(NETIF_INVALID);
+#endif /* HAVE_LINUX_ETHTOOL_H */
+
+#ifdef AF_LINK
+    struct if_data *if_data = ifaddr->ifa_data;
+
+    if (if_data->ifi_type == IFT_ETHER) {
+
+	// bonding
+#ifdef HAVE_NET_IF_LAGG_H
+	if (ioctl(sockfd, SIOCGLAGG, (caddr_t)&ifr) == 0)
+	    return(NETIF_BONDING);
+#elif HAVE_NET_IF_TRUNK_H
+	if (ioctl(sockfd, SIOCGTRUNK, (caddr_t)&ifr) == 0)
+	    return(NETIF_BONDING);
+#endif
+
+	// accept regular devices
+	return(NETIF_REGULAR);
+
+    // bridge
+    } else if (if_data->ifi_type == IFT_BRIDGE) {
+	return(NETIF_BRIDGE);
+    }
+
+    // we don't want the rest
+    return(NETIF_INVALID);
+#endif /* AF_LINK */
+}
+
+
 // handle aggregated interfaces
 void netif_bond(int sockfd,
 		struct session *sessions, struct session *session) {
@@ -362,15 +360,15 @@ void netif_bond(int sockfd,
     char *slave, *nslave;
 
     // check for lacp
-    sprintf(path, "%s/%s/bonding/mode", SYSFS_VIRTUAL, session->if_name); 
+    sprintf(path, "%s/%s/bonding/mode", SYSFS_VIRTUAL, session->name); 
     if ((fp = fopen(path, "r")) != NULL) {
 	if (fscanf(fp, "802.3ad") != EOF)
-	    session->if_lacp = 1;
+	    session->lacp = 1;
 	fclose(fp);
     }
 
     // handle slaves
-    sprintf(path, "%s/%s/bonding/slaves", SYSFS_VIRTUAL, session->if_name); 
+    sprintf(path, "%s/%s/bonding/slaves", SYSFS_VIRTUAL, session->name); 
     if ((fp = fopen(path, "r")) != NULL) {
 	if (fgets(line, sizeof(line), fp) != NULL) {
 	    // remove newline
@@ -385,9 +383,9 @@ void netif_bond(int sockfd,
 
 		subif = session_byname(sessions, slave);
 		if (subif != NULL) {
-		    my_log(3, "found slave %s", subif->if_name);
-		    subif->if_slave = 1;
-		    subif->if_lacp_ifindex = i++;
+		    my_log(3, "found slave %s", subif->name);
+		    subif->slave = 1;
+		    subif->lacp_index = i++;
 		    csubif->subif = subif;
 		    csubif = subif;
 		}
@@ -418,7 +416,7 @@ void netif_bond(int sockfd,
 
     bzero(&ra, sizeof(ra));
 
-    strncpy(ra.ra_ifname, session->if_name, sizeof(ra.ra_ifname));
+    strncpy(ra.ra_ifname, session->name, sizeof(ra.ra_ifname));
     ra.ra_size = sizeof(rpbuf);
     ra.ra_port = rpbuf;
 
@@ -426,23 +424,23 @@ void netif_bond(int sockfd,
     my_ioctl(sockfd, SIOCGLAGG, &ra);
 
     if (ra.ra_proto == LAGG_PROTO_LACP)
-	session->if_lacp = 1;
+	session->lacp = 1;
 #elif HAVE_NET_IF_TRUNK_H
     my_ioctl(sockfd, SIOCGTRUNK, &ra);
 
     
     if ((ra.ra_proto == TRUNK_PROTO_ROUNDROBIN) ||
 	(ra.ra_proto == TRUNK_PROTO_LOADBALANCE))
-	session->if_lacp = 1;
+	session->lacp = 1;
 #endif
     
     for (i = 0; i < ra.ra_ports; i++) {
 	subif = session_byname(sessions, rpbuf[i].rp_portname);
 
 	if (subif != NULL) {
-	    my_log(3, "found slave %s", subif->if_name);
-	    subif->if_slave = 1;
-	    subif->if_lacp_ifindex = i++;
+	    my_log(3, "found slave %s", subif->name);
+	    subif->slave = 1;
+	    subif->lacp_index = i++;
 	    csubif->subif = subif;
 	    csubif = subif;
 	}
@@ -450,7 +448,6 @@ void netif_bond(int sockfd,
 
     return;
 #endif /* HAVE_NET_IF_LAGG_H */
-
 }
 
 
@@ -459,7 +456,7 @@ int netif_names(struct session *sessions) {
     struct session *session;
 
     for (session = sessions; session != NULL; session = session->next) {
-	if (if_indextoname(session->if_index, session->if_name) == NULL) {
+	if (if_indextoname(session->index, session->name) == NULL) {
 	    my_log(0,"could not fetch interface name");
 	    return(EXIT_FAILURE);
 	}
@@ -483,18 +480,18 @@ void netif_bridge(int sockfd,
 
     // handle slaves
     sprintf(path, "%s/%s/%s",
-		SYSFS_VIRTUAL, session->if_name, SYSFS_BRIDGE_PORT_SUBDIR); 
+		SYSFS_VIRTUAL, session->name, SYSFS_BRIDGE_PORT_SUBDIR); 
 
     if ((dir = opendir(path)) == NULL) {
 	my_log(0, "reading bridge %s subdir %s failed: %s",
-	    session->if_name, path, strerror(errno));
+	    session->name, path, strerror(errno));
 	return;
     }
 
     while ((dirent = readdir(dir)) != NULL) {
 	subif = session_byname(sessions, dirent->d_name);
 	if (subif != NULL) {
-	    subif->if_slave = 1;
+	    subif->slave = 1;
 	    csubif->subif = subif;
 	    csubif = subif;
 	}
@@ -515,7 +512,7 @@ void netif_bridge(int sockfd,
 
     bzero(&ifd, sizeof(ifd));
 
-    strncpy(ifd.ifd_name, session->if_name, sizeof(ifd.ifd_name));
+    strncpy(ifd.ifd_name, session->name, sizeof(ifd.ifd_name));
     ifd.ifd_cmd = BRDGGIFS;
     ifd.ifd_len = sizeof(bifc);
     ifd.ifd_data = &bifc;
@@ -547,7 +544,7 @@ void netif_bridge(int sockfd,
 
 	subif = session_byname(sessions, req->ifbr_ifsname);
 	if (subif != NULL) {
-	    subif->if_slave = 1;
+	    subif->slave = 1;
 	    csubif->subif = subif;
 	    csubif = subif;
 	}
@@ -613,7 +610,7 @@ int netif_addrs(struct session *sessions) {
 	    // alignment
 	    bcopy(ifaddr->ifa_addr, &saddrll, sizeof(saddrll));
 
-	    bcopy(&saddrll.sll_addr, &session->if_hwaddr, ETHER_ADDR_LEN);
+	    bcopy(&saddrll.sll_addr, &session->hwaddr, ETHER_ADDR_LEN);
 #endif
 #ifdef AF_LINK
 	} else if (ifaddr->ifa_addr->sa_family == AF_LINK) {
@@ -621,7 +618,7 @@ int netif_addrs(struct session *sessions) {
 	    // alignment
 	    bcopy(ifaddr->ifa_addr, &saddrdl, sizeof(saddrdl));
 
-	    bcopy(LLADDR(&saddrdl), &session->if_hwaddr, ETHER_ADDR_LEN);
+	    bcopy(LLADDR(&saddrdl), &session->hwaddr, ETHER_ADDR_LEN);
 #endif
 	}
     }
@@ -655,7 +652,7 @@ int netif_media(struct session *session) {
     session->mau = 0;
 
     bzero(&ifr, sizeof(ifr));
-    strncpy(ifr.ifr_name, session->if_name, IFNAMSIZ);
+    strncpy(ifr.ifr_name, session->name, IFNAMSIZ);
 
     // interface mtu
     my_ioctl(sockfd, SIOCGIFMTU, (caddr_t)&ifr);
@@ -671,29 +668,29 @@ int netif_media(struct session *session) {
 
 	// autoneg
 	if (ecmd.supported & SUPPORTED_Autoneg) {
-	    my_log(3, "autoneg supported on %s", session->if_name);
+	    my_log(3, "autoneg supported on %s", session->name);
 	    session->autoneg_supported = 1;
 	    session->autoneg_enabled = (ecmd.autoneg == AUTONEG_ENABLE) ? 1 : 0;
 	} else {
-	    my_log(3, "autoneg not supported on %s", session->if_name);
+	    my_log(3, "autoneg not supported on %s", session->name);
 	    session->autoneg_supported = 0;
 	}	
     } else {
-	my_log(3, "ethtool ioctl failed on interface %s", session->if_name);
+	my_log(3, "ethtool ioctl failed on interface %s", session->name);
     }
 #endif /* HAVE_LINUX_ETHTOOL_H */
 
 #if HAVE_NET_IF_MEDIA_H
     bzero(&ifmr, sizeof(ifmr));
-    strncpy(ifmr.ifm_name, session->if_name, IFNAMSIZ);
+    strncpy(ifmr.ifm_name, session->name, IFNAMSIZ);
 
     if (ioctl(sockfd, SIOCGIFMEDIA, (caddr_t)&ifmr) < 0) {
-	my_log(3, "media detection not supported on %s", session->if_name);
+	my_log(3, "media detection not supported on %s", session->name);
 	return(EXIT_SUCCESS);
     }
 
     if (ifmr.ifm_count == 0) {
-	my_log(0, "missing media types for interface %s", session->if_name);
+	my_log(0, "missing media types for interface %s", session->name);
 	return(EXIT_FAILURE);
     }
 
@@ -701,24 +698,24 @@ int netif_media(struct session *session) {
     ifmr.ifm_ulist = media_list;
 
     if (ioctl(sockfd, SIOCGIFMEDIA, (caddr_t)&ifmr) < 0) {
-	my_log(0, "media detection failed for interface %s", session->if_name);
+	my_log(0, "media detection failed for interface %s", session->name);
 	return(EXIT_FAILURE);
     }
 
     if (IFM_TYPE(ifmr.ifm_current) != IFM_ETHER) {
-	my_log(0, "non-ethernet interface %s found", session->if_name);
+	my_log(0, "non-ethernet interface %s found", session->name);
 	return(EXIT_FAILURE);
     }
 
     if ((ifmr.ifm_status & IFM_ACTIVE) == 0) { 
-	my_log(0, "no link detected on interface %s", session->if_name);
+	my_log(0, "no link detected on interface %s", session->name);
 	return(EXIT_SUCCESS);
     }
 
     // autoneg support
     for (i = 0; i < ifmr.ifm_count; i++) {
 	if (IFM_SUBTYPE(ifmr.ifm_ulist[i]) == IFM_AUTO) {
-	    my_log(3, "autoneg supported on %s", session->if_name);
+	    my_log(3, "autoneg supported on %s", session->name);
 	    session->autoneg_supported = 1;
 	    break;
 	}
@@ -727,23 +724,23 @@ int netif_media(struct session *session) {
     // autoneg enabled
     if (session->autoneg_supported == 1) {
 	if (IFM_SUBTYPE(ifmr.ifm_current) == IFM_AUTO) {
-	    my_log(3, "autoneg enabled on %s", session->if_name);
+	    my_log(3, "autoneg enabled on %s", session->name);
 	    session->autoneg_enabled = 1;
 	} else {
-	    my_log(3, "autoneg disabled on interface %s", session->if_name);
+	    my_log(3, "autoneg disabled on interface %s", session->name);
 	    session->autoneg_enabled = 0;
 	}
     } else {
-	my_log(3, "autoneg not supported on interface %s", session->if_name);
+	my_log(3, "autoneg not supported on interface %s", session->name);
 	session->autoneg_supported = 0;
     }
 
     // duplex
     if ((IFM_OPTIONS(ifmr.ifm_active) & IFM_FDX) != 0) {
-	my_log(3, "full-duplex enabled on interface %s", session->if_name);
+	my_log(3, "full-duplex enabled on interface %s", session->name);
 	session->duplex = 1;
     } else {
-	my_log(3, "half-duplex enabled on interface %s", session->if_name);
+	my_log(3, "half-duplex enabled on interface %s", session->name);
 	session->duplex = 0;
     }
 

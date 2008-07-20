@@ -239,26 +239,26 @@ int main(int argc, char *argv[]) {
 
 	for (session = sessions; session != NULL; session = session->next) {
 	    // skip slaves
-	    if (session->if_slave == 1)
+	    if (session->slave == 1)
 		continue;
 
 	    // skip masters without slaves
-	    if ((session->if_master > 0) && (session->subif == NULL)) {
-		my_log(3, "skipping interface %s", session->if_name); 
+	    if ((session->type > 0) && (session->subif == NULL)) {
+		my_log(3, "skipping interface %s", session->name); 
 		continue;
 	    }
 
-	    my_log(3, "starting loop with interface %s", session->if_name); 
+	    my_log(3, "starting loop with interface %s", session->name); 
 
 	    // point csession to subif when session is master
-	    if (session->if_master > 0)
+	    if (session->type > 0)
 		csession = session->subif;
 	    else
 		csession = session;
 
 	    while (csession != NULL) {
 		// fetch interface media status
-		my_log(3, "fetching %s media details", csession->if_name);
+		my_log(3, "fetching %s media details", csession->name);
 		if (netif_media(csession) == EXIT_FAILURE) {
 		    my_log(0, "error fetching interface media details");
 		}
@@ -266,46 +266,45 @@ int main(int argc, char *argv[]) {
 		// cdp packet
 		if (do_cdp == 1) {
 		    my_log(3, "building cdp packet for %s",
-			      csession->if_name);
+			      csession->name);
 
 		    len = cdp_packet(&packet, csession, session, &sysinfo);
 		    if (len == 0) {
 			my_log(0, "can't generate CDP packet for %s",
-				  csession->if_name);
+				  csession->name);
 			exit(EXIT_FAILURE);
 		    }
 
 		    // write it to the wire.
 		    my_log(3, "sending cdp packet (%d bytes) on %s",
-				len, csession->if_name);
+				len, csession->name);
 		    if (my_rsend(sockfd, csession, &packet, len) != len) {
 			my_log(0, "network transmit error on %s",
-				  csession->if_name);
+				  csession->name);
 		    }
 		}
 
 		// lldp packet
 		if (do_lldp == 1) {
-		    my_log(3, "building lldp packet for %s",
-				csession->if_name);
+		    my_log(3, "building lldp packet for %s", csession->name);
 
 		    len = lldp_packet(&packet, csession, session, &sysinfo);
 		    if (len == 0) {
 			my_log(0, "can't generate LLDP packet for %s",
-				  csession->if_name);
+				  csession->name);
 			exit(EXIT_FAILURE);
 		    }
 
 		    // write it to the wire.
 		    my_log(3, "sending lldp packet (%d bytes) on %s",
-				len, csession->if_name);
+				len, csession->name);
 		    if (my_rsend(sockfd, csession, &packet, len) != len) {
 			my_log(0, "network transmit error on %s",
-				  csession->if_name);
+				  csession->name);
 		    }
 		}
 
-		if (session->if_master > 0)
+		if (session->type > 0)
 		    csession = csession->subif;
 		else
 		    csession = NULL;

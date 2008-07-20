@@ -28,7 +28,7 @@ int lldp_packet(struct packet *packet,
     if (!(
 	START_LLDP_TLV(LLDP_CHASSIS_ID_TLV) &&
 	PUSH_UINT8(LLDP_CHASSIS_INTF_NAME_SUBTYPE) &&
-	PUSH_BYTES(csession->if_name, strlen(csession->if_name))
+	PUSH_BYTES(csession->name, strlen(csession->name))
     ))
 	return 0;
     END_LLDP_TLV;
@@ -38,7 +38,7 @@ int lldp_packet(struct packet *packet,
     if (!(
 	START_LLDP_TLV(LLDP_PORT_ID_TLV) &&
 	PUSH_UINT8(LLDP_PORT_INTF_NAME_SUBTYPE) &&
-	PUSH_BYTES(csession->if_name, strlen(csession->if_name))
+	PUSH_BYTES(csession->name, strlen(csession->name))
     ))
 	return 0;
     END_LLDP_TLV;
@@ -102,7 +102,7 @@ int lldp_packet(struct packet *packet,
 	    PUSH_UINT8(LLDP_AFNUM_INET) &&
 	    PUSH(session->ipaddr4, uint32_t,) &&
 	    PUSH_UINT8(LLDP_INTF_NUMB_IFX_SUBTYPE) &&
-	    PUSH_UINT32(csession->if_index) &&
+	    PUSH_UINT32(csession->index) &&
 	    PUSH_UINT8(0)
 	))
 	    return 0;
@@ -118,7 +118,7 @@ int lldp_packet(struct packet *packet,
 	    PUSH_UINT8(LLDP_AFNUM_INET6) &&
 	    PUSH_BYTES(session->ipaddr6, sizeof(session->ipaddr6)) &&
 	    PUSH_UINT8(LLDP_INTF_NUMB_IFX_SUBTYPE) &&
-	    PUSH_UINT32(csession->if_index) &&
+	    PUSH_UINT32(csession->index) &&
 	    PUSH_UINT8(0)
 	))
 	    return 0;
@@ -143,13 +143,13 @@ int lldp_packet(struct packet *packet,
 
 
     // lacp
-    if (session->if_lacp != 0) {
+    if (session->lacp != 0) {
 	if (!(
 	    START_LLDP_TLV(LLDP_PRIVATE_TLV) &&
 	    PUSH_BYTES(OUI_IEEE_8023_PRIVATE, OUI_LEN) &&
 	    PUSH_UINT8(LLDP_PRIVATE_8023_SUBTYPE_LINKAGGR) &&
 	    PUSH_UINT8(LLDP_AGGREGATION_CAPABILTIY|LLDP_AGGREGATION_STATUS) &&
-	    PUSH_UINT32(csession->if_lacp_ifindex)
+	    PUSH_UINT32(csession->lacp_index)
 	))
 	    return 0;
 	END_LLDP_TLV;
@@ -179,7 +179,7 @@ int lldp_packet(struct packet *packet,
 
     // ethernet header
     bcopy(lldp_dst, packet->dst, ETHER_ADDR_LEN);
-    bcopy(csession->if_hwaddr, packet->src, ETHER_ADDR_LEN);
+    bcopy(csession->hwaddr, packet->src, ETHER_ADDR_LEN);
     bcopy(lldp_ether, packet->type, ETHER_TYPE_LEN);
 
     // packet length

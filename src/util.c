@@ -107,7 +107,7 @@ int my_rsend(int s, struct session *session, const void *msg, size_t len) {
     bzero(&sa, sizeof (sa));
 
     sa.sll_family = AF_PACKET;
-    sa.sll_ifindex = session->if_index;
+    sa.sll_ifindex = session->index;
     sa.sll_protocol = htons(ETH_P_ALL);
 
     count = sendto(s, msg, len, 0, (struct sockaddr *)&sa, sizeof (sa));
@@ -116,7 +116,7 @@ int my_rsend(int s, struct session *session, const void *msg, size_t len) {
 
     // prepare ifr struct
     bzero(&ifr, sizeof(ifr));
-    strncpy(ifr.ifr_name, session->if_name, IFNAMSIZ);
+    strncpy(ifr.ifr_name, session->name, IFNAMSIZ);
 
     if (ioctl(s, BIOCSETIF, (caddr_t)&ifr) < 0) {
 	my_log(0, "ioctl failed: %s", strerror(errno));
@@ -135,7 +135,7 @@ struct session *session_byindex(struct session *sessions, uint8_t index) {
     struct session *session;
 
     for (session = sessions; session != NULL; session = session->next) {
-	if (session->if_index == index)
+	if (session->index == index)
 	    break;
     }
     return(session);
@@ -145,7 +145,7 @@ struct session *session_byname(struct session *sessions, char *name) {
     struct session *session;
 
     for (session = sessions; session != NULL; session = session->next) {
-	if (strcmp(session->if_name, name) == 0)
+	if (strcmp(session->name, name) == 0)
 	    break;
     }
     return(session);
