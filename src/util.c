@@ -59,16 +59,6 @@ char * my_strdup(const char *str) {
     return(cstr);
 }
 
-int my_ioctl(int fd, int request, void *arg) {
-    int n;
-
-    if ((n = ioctl(fd, request, arg)) < 0) {
-	my_log(0, "ioctl error: %s", strerror(errno));
-	exit(EXIT_FAILURE);
-    }
-    return(n);      /* streamio of I_LIST returns value */
-}
-
 int my_socket(int af, int type, int proto) {
     int s;
 

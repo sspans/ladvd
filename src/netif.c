@@ -421,16 +421,14 @@ void netif_bond(int sockfd,
     ra.ra_port = rpbuf;
 
 #ifdef HAVE_NET_IF_LAGG_H
-    my_ioctl(sockfd, SIOCGLAGG, &ra);
-
-    if (ra.ra_proto == LAGG_PROTO_LACP)
-	session->lacp = 1;
+    if (ioctl(sockfd, SIOCGLAGG, &ra) >= 0)
+	if (ra.ra_proto == LAGG_PROTO_LACP)
+	    session->lacp = 1;
 #elif HAVE_NET_IF_TRUNK_H
-    my_ioctl(sockfd, SIOCGTRUNK, &ra);
-
-    if ((ra.ra_proto == TRUNK_PROTO_ROUNDROBIN) ||
-	(ra.ra_proto == TRUNK_PROTO_LOADBALANCE))
-	session->lacp = 1;
+    if (ioctl(sockfd, SIOCGTRUNK, &ra) >= 0)
+	if ((ra.ra_proto == TRUNK_PROTO_ROUNDROBIN) ||
+	    (ra.ra_proto == TRUNK_PROTO_LOADBALANCE))
+	    session->lacp = 1;
 #endif
     
     for (i = 0; i < ra.ra_ports; i++) {
@@ -514,9 +512,11 @@ void netif_bridge(int sockfd,
 	bifc.ifbic_buf = inbuf = ninbuf;
 
 #ifdef HAVE_NET_IF_BRIDGEVAR_H
-	my_ioctl(sockfd, SIOCGDRVSPEC, &ifd);
+	if (ioctl(sockfd, SIOCGDRVSPEC, &ifd) < 0)
+	    return;
 #elif HAVE_NET_IF_BRIDGE_H
-	my_ioctl(sockfd, SIOCBRDGIFS, &bifc);
+	if (ioctl(sockfd, SIOCBRDGIFS, &bifc) < 0)
+	    return;
 #endif
 	if ((bifc.ifbic_len + sizeof(*req)) < len)
 	    break;
