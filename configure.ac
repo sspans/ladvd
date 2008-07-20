@@ -68,6 +68,7 @@ AC_CHECK_HEADERS([net/if_bridgevar.h net/if_lagg.h], [], [],
 #include <sys/socket.h>
 #include <net/if.h>
 #include <netinet/in.h>
+#include <net/ethernet.h>
 ])
 
 # vlan
