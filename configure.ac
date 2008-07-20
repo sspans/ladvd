@@ -78,7 +78,11 @@ AC_CHECK_HEADERS([net/if_vlan_var.h], [], [],
 ])
 
 # wireless
-AC_CHECK_HEADERS([net80211/ieee80211.h net80211/ieee80211_ioctl.h])
+AC_CHECK_HEADERS([net80211/ieee80211.h])
+AC_CHECK_HEADERS([net80211/ieee80211_ioctl.h], [],[],
+[
+#include <net80211/ieee80211.h>
+])
 
 
 # raw
