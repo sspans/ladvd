@@ -45,7 +45,7 @@ void * my_malloc(size_t size) {
 	my_log(0, "malloc failed: %s", strerror(errno));
 	exit(EXIT_FAILURE);
     }
-    bzero(ptr, size);
+    memset(ptr, 0, size);
     return(ptr);
 }
 
@@ -94,7 +94,7 @@ int my_rsend(int s, struct session *session, const void *msg, size_t len) {
 
 #ifdef HAVE_NETPACKET_PACKET_H
     struct sockaddr_ll sa;
-    bzero(&sa, sizeof (sa));
+    memset(&sa, 0, sizeof (sa));
 
     sa.sll_family = AF_PACKET;
     sa.sll_ifindex = session->index;
@@ -105,7 +105,7 @@ int my_rsend(int s, struct session *session, const void *msg, size_t len) {
     struct ifreq ifr;
 
     // prepare ifr struct
-    bzero(&ifr, sizeof(ifr));
+    memset(&ifr, 0, sizeof(ifr));
     strncpy(ifr.ifr_name, session->name, IFNAMSIZ);
 
     if (ioctl(s, BIOCSETIF, (caddr_t)&ifr) < 0) {

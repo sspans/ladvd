@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
     do_cdp  = 0;
     do_lldp = 0;
     do_once = 0;
-    bzero(&sysinfo, sizeof(struct sysinfo));
+    memset(&sysinfo, 0, sizeof(struct sysinfo));
 
     while ((ch = getopt(argc, argv, "clfou:hvC:L:")) != -1) {
 	switch(ch) {

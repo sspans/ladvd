@@ -139,7 +139,7 @@ struct session * netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo) {
 	}
 
 	// prepare ifr struct
-	bzero(&ifr, sizeof(ifr));
+	memset(&ifr, 0, sizeof(ifr));
 	strncpy(ifr.ifr_name, ifaddr->ifa_name, IFNAMSIZ);
 
 
@@ -264,7 +264,7 @@ int netif_wireless(int sockfd, struct ifaddrs *ifaddr, struct ifreq *ifr) {
 
 #ifdef HAVE_NET80211_IEEE80211_IOCTL_H
 #ifdef SIOCG80211
-    bzero(&ireq, sizeof(ireq));
+    memset(&ireq, 0, sizeof(ireq));
     strncpy(ireq.i_name, ifaddr->ifa_name, sizeof(ireq.i_name));
     ireq.i_data = &i_data;
 
@@ -415,7 +415,7 @@ void netif_bond(int sockfd,
     struct trunk_reqall ra;
 #endif
 
-    bzero(&ra, sizeof(ra));
+    memset(&ra, 0, sizeof(ra));
 
     strncpy(ra.ra_ifname, session->name, sizeof(ra.ra_ifname));
     ra.ra_size = sizeof(rpbuf);
@@ -493,7 +493,7 @@ void netif_bridge(int sockfd,
 #ifdef HAVE_NET_IF_BRIDGEVAR_H
     struct ifdrv ifd;
 
-    bzero(&ifd, sizeof(ifd));
+    memset(&ifd, 0, sizeof(ifd));
 
     strncpy(ifd.ifd_name, session->name, sizeof(ifd.ifd_name));
     ifd.ifd_cmd = BRDGGIFS;
@@ -651,7 +651,7 @@ int netif_media(struct session *session) {
     session->autoneg_enabled = -1;
     session->mau = 0;
 
-    bzero(&ifr, sizeof(ifr));
+    memset(&ifr, 0, sizeof(ifr));
     strncpy(ifr.ifr_name, session->name, IFNAMSIZ);
 
     // interface mtu
@@ -683,7 +683,7 @@ int netif_media(struct session *session) {
 #endif /* HAVE_LINUX_ETHTOOL_H */
 
 #if HAVE_NET_IF_MEDIA_H
-    bzero(&ifmr, sizeof(ifmr));
+    memset(&ifmr, 0, sizeof(ifmr));
     strncpy(ifmr.ifm_name, session->name, IFNAMSIZ);
 
     if (ioctl(sockfd, SIOCGIFMEDIA, (caddr_t)&ifmr) < 0) {
