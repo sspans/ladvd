@@ -428,7 +428,6 @@ void netif_bond(int sockfd,
 #elif HAVE_NET_IF_TRUNK_H
     my_ioctl(sockfd, SIOCGTRUNK, &ra);
 
-    
     if ((ra.ra_proto == TRUNK_PROTO_ROUNDROBIN) ||
 	(ra.ra_proto == TRUNK_PROTO_LOADBALANCE))
 	session->lacp = 1;
