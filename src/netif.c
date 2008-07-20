@@ -657,6 +657,8 @@ int netif_media(struct session *session) {
     // interface mtu
     if (ioctl(sockfd, SIOCGIFMTU, (caddr_t)&ifr) >= 0)
 	session->mtu = ifr.ifr_mtu;
+    else
+	my_log(3, "mtu detection failed on interface %s", session->name);
 
 #if HAVE_LINUX_ETHTOOL_H
     ecmd.cmd = ETHTOOL_GSET;
