@@ -69,7 +69,12 @@ AC_CHECK_HEADERS([net/if_bridge.h net/if_bridgevar.h \
 #include <sys/socket.h>
 #include <net/if.h>
 #include <netinet/in.h>
+#ifdef HAVE_NET_ETHERNET_H
 #include <net/ethernet.h>
+#endif /* HAVE_NET_ETHERNET_H */
+#ifdef HAVE_NETINET_IF_ETHER_H
+#include <netinet/if_ether.h>
+#endif /* HAVE_NETINET_IF_ETHER_H */
 ])
 
 # wireless
