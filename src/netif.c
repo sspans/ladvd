@@ -655,8 +655,8 @@ int netif_media(struct session *session) {
     strncpy(ifr.ifr_name, session->name, IFNAMSIZ);
 
     // interface mtu
-    my_ioctl(sockfd, SIOCGIFMTU, (caddr_t)&ifr);
-    session->mtu = ifr.ifr_mtu;
+    if (ioctl(sockfd, SIOCGIFMTU, (caddr_t)&ifr) >= 0)
+	session->mtu = ifr.ifr_mtu;
 
 #if HAVE_LINUX_ETHTOOL_H
     ecmd.cmd = ETHTOOL_GSET;
