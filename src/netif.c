@@ -278,6 +278,7 @@ int netif_wireless(int sockfd, struct ifaddrs *ifaddr, struct ifreq *ifr) {
     return(ioctl(sockfd, SIOCG80211NWID, (caddr_t)ifr));
 #endif
 #endif /* HAVE_NET80211_IEEE80211_IOCTL_H */
+    return(1);
 }
 
 
