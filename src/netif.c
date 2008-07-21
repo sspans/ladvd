@@ -153,14 +153,14 @@ struct session * netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo) {
 
 	// skip non-ethernet interfaces
 #ifdef AF_PACKET
-	bcopy(ifaddr->ifa_addr, &saddrll, sizeof(saddrll));
+	memcpy(&saddrll, ifaddr->ifa_addr, sizeof(saddrll));
 	if (saddrll.sll_hatype != ARPHRD_ETHER) {
 	    my_log(3, "skipping interface %s", ifaddr->ifa_name);
 	    continue;
 	}
 #endif
 #ifdef AF_LINK
-	bcopy(ifaddr->ifa_addr, &saddrdl, sizeof(saddrdl));
+	memcpy(&saddrdl, ifaddr->ifa_addr, sizeof(saddrdl));
 	if (saddrdl.sdl_type != IFT_ETHER) {
 	    my_log(3, "skipping interface %s", ifaddr->ifa_name);
 	    continue;
@@ -586,9 +586,9 @@ int netif_addrs(struct session *sessions) {
 		continue;
 
 	    // alignment
-	    bcopy(ifaddr->ifa_addr, &saddr4, sizeof(saddr4));
+	    memcpy(&saddr4, ifaddr->ifa_addr, sizeof(saddr4));
 
-	    bcopy(&saddr4.sin_addr, &session->ipaddr4,
+	    memcpy(&session->ipaddr4, &saddr4.sin_addr,
 		  sizeof(saddr4.sin_addr));
 
 	} else if (ifaddr->ifa_addr->sa_family == AF_INET6) {
@@ -596,29 +596,29 @@ int netif_addrs(struct session *sessions) {
 		continue;
 
 	    // alignment
-	    bcopy(ifaddr->ifa_addr, &saddr6, sizeof(saddr6));
+	    memcpy(&saddr6, ifaddr->ifa_addr, sizeof(saddr6));
 
 	    // skip link-local
 	    if (IN6_IS_ADDR_LINKLOCAL(&saddr6.sin6_addr))
 		continue;
 
-	    bcopy(&saddr6.sin6_addr, &session->ipaddr6,
+	    memcpy(&session->ipaddr6, &saddr6.sin6_addr,
 		  sizeof(saddr6.sin6_addr));
 #ifdef AF_PACKET
 	} else if (ifaddr->ifa_addr->sa_family == AF_PACKET) {
 
 	    // alignment
-	    bcopy(ifaddr->ifa_addr, &saddrll, sizeof(saddrll));
+	    memcpy(&saddrll, ifaddr->ifa_addr, sizeof(saddrll));
 
-	    bcopy(&saddrll.sll_addr, &session->hwaddr, ETHER_ADDR_LEN);
+	    memcpy(&session->hwaddr, &saddrll.sll_addr, ETHER_ADDR_LEN);
 #endif
 #ifdef AF_LINK
 	} else if (ifaddr->ifa_addr->sa_family == AF_LINK) {
 
 	    // alignment
-	    bcopy(ifaddr->ifa_addr, &saddrdl, sizeof(saddrdl));
+	    memcpy(&saddrdl, ifaddr->ifa_addr, sizeof(saddrdl));
 
-	    bcopy(LLADDR(&saddrdl), &session->hwaddr, ETHER_ADDR_LEN);
+	    memcpy(&session->hwaddr, LLADDR(&saddrdl), ETHER_ADDR_LEN);
 #endif
 	}
     }

@@ -210,8 +210,8 @@ int cdp_packet(struct packet *packet,
 					VOIDP_DIFF(pos, cdp_pos));
 
     // ethernet header
-    bcopy(cdp_dst, packet->dst, ETHER_ADDR_LEN);
-    bcopy(csession->hwaddr, packet->src, ETHER_ADDR_LEN);
+    memcpy(packet->dst, cdp_dst, ETHER_ADDR_LEN);
+    memcpy(packet->src, csession->hwaddr, ETHER_ADDR_LEN);
     *(uint16_t *)packet->length = htons(VOIDP_DIFF(pos, packet->data));
 
     // packet length

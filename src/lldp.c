@@ -178,9 +178,9 @@ int lldp_packet(struct packet *packet,
 
 
     // ethernet header
-    bcopy(lldp_dst, packet->dst, ETHER_ADDR_LEN);
-    bcopy(csession->hwaddr, packet->src, ETHER_ADDR_LEN);
-    bcopy(lldp_ether, packet->type, ETHER_TYPE_LEN);
+    memcpy(packet->dst, lldp_dst, ETHER_ADDR_LEN);
+    memcpy(packet->src, csession->hwaddr, ETHER_ADDR_LEN);
+    memcpy(packet->type, lldp_ether, ETHER_TYPE_LEN);
 
     // packet length
     return(VOIDP_DIFF(pos, packet));
