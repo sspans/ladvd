@@ -116,6 +116,16 @@ if test "$ac_cv_header_sys_capability_h" = "yes" ; then
     fi
 fi
 
+# daemon user
+AC_ARG_WITH([user],
+	    [AS_HELP_STRING([--with-user=USER],[user to switch to])],
+	    [user="$withval"],[])
+
+AS_IF([test -n "$user"],
+    [AC_DEFINE_UNQUOTED(PACKAGE_USER,"$user",[user to switch to])],
+    [AC_DEFINE(PACKAGE_USER,PACKAGE_NAME,[user to switch to])]
+)
+
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 AC_TYPE_SIZE_T

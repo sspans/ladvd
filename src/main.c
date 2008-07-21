@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
     int ch, do_cdp, do_lldp, do_once;
     int fd = -1;
     char *progname = argv[0];
-    char *username = PACKAGE;
+    char *username = PACKAGE_USER;
     char *pidfile = PIDFILE;
     char pidstr[16];
     struct passwd *pwd;
