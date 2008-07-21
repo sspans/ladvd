@@ -519,6 +519,8 @@ void netif_bridge(int sockfd,
 	ninbuf = realloc(inbuf, len);
 
 	if (ninbuf == NULL) {
+	    if (inbuf != NULL)
+		free(inbuf)
 	    my_log(1, "unable to allocate interface buffer");
 	    return;
 	}
@@ -527,12 +529,14 @@ void netif_bridge(int sockfd,
 	bifc.ifbic_buf = inbuf = ninbuf;
 
 #ifdef HAVE_NET_IF_BRIDGEVAR_H
-	if (ioctl(sockfd, SIOCGDRVSPEC, &ifd) < 0)
-	    return;
+	if (ioctl(sockfd, SIOCGDRVSPEC, &ifd) < 0) {
 #elif HAVE_NET_IF_BRIDGE_H
-	if (ioctl(sockfd, SIOCBRDGIFS, &bifc) < 0)
-	    return;
+	if (ioctl(sockfd, SIOCBRDGIFS, &bifc) < 0) {
 #endif
+	    free(inbuf);
+	    return;
+	}
+
 	if ((bifc.ifbic_len + sizeof(*req)) < len)
 	    break;
 	len *= 2;
@@ -548,6 +552,9 @@ void netif_bridge(int sockfd,
 	    csubif = subif;
 	}
     }
+
+    // cleanup
+    free(inbuf);
 
     return;
 #endif
