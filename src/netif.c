@@ -66,6 +66,10 @@
 #endif /* HAVE_NET_IF_BRIDGE_H */
 
 
+#ifdef HAVE_LINUX_WIRELESS_H
+#include <linux/wireless.h>
+#endif /* HAVE_LINUX_WIRELESS_H */
+
 #ifdef HAVE_NET80211_IEEE80211_H
 #include <net80211/ieee80211.h>
 #endif /* HAVE_NET80211_IEEE80211_H */
@@ -253,17 +257,20 @@ struct session * netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo) {
 // detect wireless interfaces
 int netif_wireless(int sockfd, struct ifaddrs *ifaddr, struct ifreq *ifr) {
 
-#ifdef HAVE_NET80211_IEEE80211_IOCTL_H
-#ifdef SIOCG80211
-    struct ieee80211req ireq;
-    u_int8_t i_data[32];
-#elif defined(SIOCG80211NWID)
-    struct ieee80211_nwid nwid;
-#endif
+#ifdef HAVE_LINUX_WIRELESS_H
+    struct iwreq iwreq;
+
+    memset(&iwreq, 0, sizeof(iwreq));
+    strncpy(iwreq.ifr_name, ifaddr->ifa_name, IFNAMSIZ);
+
+    return(ioctl(sockfd, SIOCGIWNAME, &iwreq));
 #endif
 
 #ifdef HAVE_NET80211_IEEE80211_IOCTL_H
 #ifdef SIOCG80211
+    struct ieee80211req ireq;
+    u_int8_t i_data[32];
+
     memset(&ireq, 0, sizeof(ireq));
     strncpy(ireq.i_name, ifaddr->ifa_name, sizeof(ireq.i_name));
     ireq.i_data = &i_data;
@@ -273,12 +280,16 @@ int netif_wireless(int sockfd, struct ifaddrs *ifaddr, struct ifreq *ifr) {
 
     return(ioctl(sockfd, SIOCG80211, &ireq));
 #elif defined(SIOCG80211NWID)
+    struct ieee80211_nwid nwid;
+
     ifr->ifr_data = (caddr_t)&nwid;
 
     return(ioctl(sockfd, SIOCG80211NWID, (caddr_t)ifr));
 #endif
 #endif /* HAVE_NET80211_IEEE80211_IOCTL_H */
-    return(1);
+
+    // default
+    return(-1);
 }
 
 
@@ -343,6 +354,9 @@ int netif_type(int sockfd, struct ifaddrs *ifaddr, struct ifreq *ifr) {
     // we don't want the rest
     return(NETIF_INVALID);
 #endif /* AF_LINK */
+
+    // default
+    return(NETIF_REGULAR);
 }
 
 
