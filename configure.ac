@@ -40,9 +40,10 @@ AC_CHECK_HEADERS([net/if.h], [], [],
 
 # ethtool
 AC_CHECK_HEADERS([linux/ethtool.h], [], [],
-[#ifdef HAVE_ASM_TYPES_H
-# include <asm/types.h>
-# endif
+[
+#ifdef HAVE_ASM_TYPES_H
+#include <asm/types.h>
+#endif
 ])
 
 # ethernet
@@ -80,7 +81,12 @@ AC_CHECK_HEADERS([net/if_bridge.h net/if_bridgevar.h \
 # wireless
 AC_CHECK_HEADERS([linux/wireless.h], [],[],
 [
+#ifdef HAVE_ASM_TYPES_H
+#include <asm/types.h>
+#endif
 #include <sys/types.h>
+#include <sys/socket.h>
+#include <net/if.h>
 ])
 AC_CHECK_HEADERS([net80211/ieee80211.h])
 AC_CHECK_HEADERS([net80211/ieee80211_ioctl.h], [],[],
