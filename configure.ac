@@ -78,7 +78,10 @@ AC_CHECK_HEADERS([net/if_bridge.h net/if_bridgevar.h \
 ])
 
 # wireless
-AC_CHECK_HEADERS([linux/wireless.h])
+AC_CHECK_HEADERS([linux/wireless.h], [],[],
+[
+#include <sys/types.h>
+])
 AC_CHECK_HEADERS([net80211/ieee80211.h])
 AC_CHECK_HEADERS([net80211/ieee80211_ioctl.h], [],[],
 [
@@ -116,7 +119,7 @@ AC_TYPE_UINT8_T
 
 # Checks for library functions.
 AC_FUNC_VPRINTF
-AC_CHECK_FUNCS([asprintf memset memcpy snprintf strdup strerror uname vsyslog], [], AC_MSG_ERROR([required function missing]))
+AC_CHECK_FUNCS([asprintf memcpy memset snprintf strdup strerror uname vsyslog], [], AC_MSG_ERROR([required function missing]))
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile])
