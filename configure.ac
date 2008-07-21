@@ -126,6 +126,17 @@ AS_IF([test -n "$user"],
     [AC_DEFINE(PACKAGE_USER,PACKAGE_NAME,[user to switch to])]
 )
 
+# pidfile
+AC_ARG_WITH([pid_dir],
+	    [AS_HELP_STRING([--with-pid-dir=PATH],[location of the pid file])],
+	    [pid_dir="$withval"],[])
+
+AS_IF([test -n "$pid_dir"],
+    [AC_DEFINE_UNQUOTED(PACKAGE_PID_DIR,"$pid_dir",[location of pid file])],
+    [AC_DEFINE(PACKAGE_PID_DIR,"/var/run",[location of pid file])]
+)
+AC_DEFINE(PACKAGE_PID_FILE, PACKAGE_PID_DIR "/" PACKAGE_NAME ".pid", [pid file])
+
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 AC_TYPE_SIZE_T

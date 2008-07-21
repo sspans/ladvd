@@ -26,7 +26,6 @@
 #include <netinet/if_ether.h>
 #endif
 
-#define PIDFILE	    "/var/run/ladvd.pid"
 #define SLEEPTIME   30
 #define LADVD_TTL   180
 

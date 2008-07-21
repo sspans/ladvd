@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
     int fd = -1;
     char *progname = argv[0];
     char *username = PACKAGE_USER;
-    char *pidfile = PIDFILE;
+    char *pidfile = PACKAGE_PID_FILE;
     char pidstr[16];
     struct passwd *pwd;
     struct sigaction cleanup_action;
