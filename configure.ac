@@ -78,6 +78,7 @@ AC_CHECK_HEADERS([net/if_bridge.h net/if_bridgevar.h \
 ])
 
 # wireless
+AC_CHECK_HEADERS([linux/wireless.h])
 AC_CHECK_HEADERS([net80211/ieee80211.h])
 AC_CHECK_HEADERS([net80211/ieee80211_ioctl.h], [],[],
 [
