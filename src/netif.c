@@ -317,6 +317,7 @@ int netif_type(int sockfd, struct ifaddrs *ifaddr, struct ifreq *ifr) {
 
     struct ethtool_drvinfo drvinfo;
 
+    memset(&drvinfo, 0, sizeof(drvinfo));
     sprintf(path, "%s/%s", SYSFS_VIRTUAL, ifaddr->ifa_name); 
 
     // accept physical devices
