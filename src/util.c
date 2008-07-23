@@ -86,7 +86,7 @@ int my_rsocket() {
 
     do {
 	if (asprintf(&dev, "/dev/bpf%d", n++) == -1) {
-	    my_log("failed to allocate buffer");
+	    my_log(0, "failed to allocate buffer");
 	    return(-1);
 	}
 	socket = open(dev, O_WRONLY);
