@@ -342,7 +342,7 @@ void usage(const char *fn) {
 	    "\t-u <user> = Setuid User (defaults to %s)\n"
 	    "\t-L <location> = System Location\n"
 	    "\t-v = Increase logging verbosity\n"
-	    "\t-d = Dump packets to stdout\n",
+	    "\t-d = Dump packets to stdout\n"
 	    "\t-h = Print this message\n",
 	    PACKAGE_NAME, PACKAGE_VERSION, fn, PACKAGE_USER);
 
