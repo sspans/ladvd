@@ -683,6 +683,7 @@ int netif_media(struct session *session) {
 	my_log(3, "mtu detection failed on interface %s", session->name);
 
 #if HAVE_LINUX_ETHTOOL_H
+    memset(&ecmd, 0, sizeof(ecmd));
     ecmd.cmd = ETHTOOL_GSET;
     ifr.ifr_data = (caddr_t)&ecmd;
 
