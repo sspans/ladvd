@@ -52,6 +52,7 @@ struct session {
     uint32_t ipaddr4;
     uint32_t ipaddr6[4];
 
+    uint8_t argv;
     uint8_t type;
     uint8_t slave;
     uint8_t lacp;
@@ -80,8 +81,7 @@ struct sysinfo {
 #define NETIF_BONDING	1
 #define NETIF_BRIDGE	2
 
-struct session * netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo);
-int netif_names(struct session *sessions);
+uint16_t netif_list(int ifc, char *ifl[], struct sysinfo *, struct session **);
 int netif_addrs(struct session *sessions);
 int netif_media(struct session *session);
 

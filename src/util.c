@@ -21,6 +21,7 @@
 
 unsigned int loglevel = 0;
 extern int do_fork;
+extern int do_debug;
 
 void my_log(int prio, const char *fmt, ...) {
 
@@ -73,15 +74,22 @@ int my_rsocket() {
 
     int socket = -1;
 
+    // return stdout on debug
+    if (do_debug == 1)
+	return(1);
+
 #ifdef HAVE_NETPACKET_PACKET_H
     socket = my_socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
 #elif HAVE_NET_BPF_H
     int n = 0;
-    char device[sizeof "/dev/bpf0000000000"];
+    char *dev;
 
     do {
-	(void)snprintf(device, sizeof(device), "/dev/bpf%d", n++);
-	socket = open(device, O_WRONLY);
+	if (asprintf(&dev, "/dev/bpf%d", n++) == -1) {
+	    my_log("failed to allocate buffer");
+	    return(-1);
+	}
+	socket = open(dev, O_WRONLY);
     } while (socket < 0 && errno == EBUSY);
 #endif
 
@@ -91,6 +99,10 @@ int my_rsocket() {
 int my_rsend(int s, struct session *session, const void *msg, size_t len) {
 
     size_t count = 0;
+
+    // debug
+    if (do_debug == 1)
+	return(write(s, msg, len));
 
 #ifdef HAVE_NETPACKET_PACKET_H
     struct sockaddr_ll sa;

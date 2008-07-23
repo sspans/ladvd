@@ -20,8 +20,8 @@
 
 extern unsigned int loglevel;
 unsigned int do_fork = 1;
+unsigned int do_debug = 0;
 
-int cap_parse(const char *optarg);
 void usage(const char *fn);
 void cleanup();
 
@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
     char *username = PACKAGE_USER;
     char *pidfile = PACKAGE_PID_FILE;
     char pidstr[16];
-    struct passwd *pwd;
+    struct passwd *pwd = NULL;
     struct sigaction cleanup_action;
 
     // sysinfo
@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
     do_once = 0;
     memset(&sysinfo, 0, sizeof(struct sysinfo));
 
-    while ((ch = getopt(argc, argv, "clfou:hvC:L:")) != -1) {
+    while ((ch = getopt(argc, argv, "cdfhlou:vL:")) != -1) {
 	switch(ch) {
 	    case 'c':
 		do_cdp = 1;
@@ -72,6 +72,10 @@ int main(int argc, char *argv[]) {
 	    case 'f':
 		do_fork = 0;
 		break;
+	    case 'd':
+		do_debug = 1;
+		do_fork = 0;
+		break;
 	    case 'o':
 		do_once = 1;
 		break;
@@ -80,11 +84,6 @@ int main(int argc, char *argv[]) {
 		break;
 	    case 'v':
 		loglevel++;
-		break;
-	    case 'C':
-		sysinfo.cap = cap_parse(optarg);
-		if (sysinfo.cap == -1)
-		    usage(progname);
 		break;
 	    case 'L':
 		sysinfo.location = optarg;
@@ -100,15 +99,17 @@ int main(int argc, char *argv[]) {
     if (do_cdp == 0 && do_lldp == 0)
 	usage(progname);
 
-    // default to CAP_HOST
-    if (sysinfo.cap == 0)
-	sysinfo.cap |= CAP_HOST;
+    // validate interfaces
+    if (netif_list(argc, argv, &sysinfo, &sessions) == 0) {
+	my_log(0, "unable fetch interfaces");
+	exit(EXIT_FAILURE);
+    }
 
-    // fetch all interfaces
-    sessions = netif_fetch(argc, argv, &sysinfo);
+    // default to CAP_HOST
+    sysinfo.cap |= CAP_HOST;
 
     // validate username
-    if ((pwd = getpwnam(username)) == NULL) {
+    if ((do_debug == 0) && (pwd = getpwnam(username)) == NULL) {
 	my_log(0, "User %s does not exist", username);
 	exit(EXIT_FAILURE);
     }
@@ -168,6 +169,9 @@ int main(int argc, char *argv[]) {
 	exit(EXIT_FAILURE);
     }
 
+    // debug
+    if (do_debug == 1)
+	goto loop;
 
     // fork
     if (do_fork == 1) {
@@ -221,25 +225,31 @@ int main(int argc, char *argv[]) {
     cap_free(caps);
 #endif
 
-    while (sessions) {
 
-	// fetch names
-	my_log(3, "fetching names for all interfaces"); 
-	if (netif_names(sessions) == EXIT_FAILURE) {
-	    my_log(0, "unable fetch interface names");
+loop: 
+    while (sockfd) {
+
+	// create sessions
+	my_log(3, "fetching all interfaces"); 
+	if (netif_list(argc, argv, &sysinfo, &sessions) == 0) {
+	    my_log(0, "unable fetch interfaces");
 	    exit(EXIT_FAILURE);
-	};
+	}
 
 	// fetch IPv4 / IPv6 / MAC addrs
 	my_log(3, "fetching addresses for all interfaces"); 
 	if (netif_addrs(sessions) == EXIT_FAILURE) {
 	    my_log(0, "unable fetch interface addresses");
 	    exit(EXIT_FAILURE);
-	};
+	}
 
 	for (session = sessions; session != NULL; session = session->next) {
-	    // skip slaves
-	    if (session->slave == 1)
+	    // skip autodetected slaves
+	    if ((argc == 0) && (session->slave == 1))
+		continue;
+
+	    // skip unlisted interfaces
+	    if ((argc > 0) && (session->argv == 0))
 		continue;
 
 	    // skip masters without slaves
@@ -321,38 +331,6 @@ int main(int argc, char *argv[]) {
     return (EXIT_SUCCESS);
 }
 
-int cap_parse(const char *optarg) {
-    int cap = 0, i;
-
-    for (i = 0; i < strlen(optarg); i++) {
-	switch(optarg[i]) {
-	    case 'b':
-	    case 'B':
-		cap |= CAP_BRIDGE;
-		break;
-	    case 'h':
-	    case 'H':
-		cap |= CAP_HOST;
-		break;
-	    case 'r':
-	    case 'R':
-		cap |= CAP_ROUTER;
-		break;
-	    case 's':
-	    case 'S':
-		cap |= CAP_SWITCH;
-		break;
-	    case 'w':
-	    case 'W':
-		cap |= CAP_WLAN;
-		break;
-	    default:
-		return(-1);
-	}
-    }
-    return(cap);
-}
-
 void usage(const char *fn) {
 
     fprintf(stderr, "%s version %s\n" 
@@ -362,19 +340,17 @@ void usage(const char *fn) {
 	    "\t-f = Run in the foreground\n"
 	    "\t-o = Run Once\n"
 	    "\t-u <user> = Setuid User (defaults to %s)\n"
-	    "\t-v = Increase logging verbosity\n"
-	    "\t-C <capability> = System Capabilities\n"
-	    "\t\tB - Bridge, H - Host, R - Router\n"
-	    "\t\tS - Switch, W - WLAN Access Point\n"
 	    "\t-L <location> = System Location\n"
+	    "\t-v = Increase logging verbosity\n"
+	    "\t-d = Dump packets to stdout\n",
 	    "\t-h = Print this message\n",
-	    PACKAGE_NAME, PACKAGE_VERSION, fn, PACKAGE);
+	    PACKAGE_NAME, PACKAGE_VERSION, fn, PACKAGE_USER);
 
     exit(EXIT_FAILURE);
 }
 
 void cleanup() {
-    if (unlink(PIDFILE) < 0) {
+    if (unlink(PACKAGE_PID_FILE) < 0) {
 	exit(EXIT_SUCCESS);
     } else {
 	my_log(0, "pidfile cleanup failed: %s", strerror(errno));

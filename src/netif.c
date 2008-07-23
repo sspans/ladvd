@@ -80,6 +80,11 @@
 #define SYSFS_VIRTUAL "/sys/devices/virtual/net"
 #define SYSFS_PATH_MAX  256
 
+#ifdef AF_PACKET
+#define NETIF_AF    AF_PACKET
+#elif defined(AF_LINK)
+#define NETIF_AF    AF_LINK
+#endif
 
 int netif_wireless(int sockfd, struct ifaddrs *ifaddr, struct ifreq *);
 int netif_type(int sockfd, struct ifaddrs *ifaddr, struct ifreq *);
@@ -88,9 +93,11 @@ void netif_bridge(int sockfd, struct session *, struct session *);
 
 
 // create sessions for a list of interfaces
-struct session * netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo) {
+uint16_t netif_list(int ifc, char *ifl[], struct sysinfo *sysinfo,
+		    struct session **msessions) {
+
     int sockfd, af = AF_INET;
-    struct ifaddrs *ifaddrs, *ifaddr;
+    struct ifaddrs *ifaddrs, *ifaddr = NULL;
     struct ifreq ifr;
     int j, count = 0;
     int type;
@@ -103,56 +110,45 @@ struct session * netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo) {
 #endif
 
     // sessions
-    struct session *sessions = NULL, *session_prev = NULL, *session;
+    struct session *sessions = NULL, *session_prev = NULL, *session = NULL;
+
+    sockfd = my_socket(af, SOCK_DGRAM, 0);
 
     if (getifaddrs(&ifaddrs) < 0) {
 	my_log(0, "address detection failed: %s", strerror(errno));
 	exit(EXIT_FAILURE);
     }
 
-    sockfd = my_socket(af, SOCK_DGRAM, 0);
+    for (ifaddr = ifaddrs; ifaddr != NULL; ifaddr = ifaddr->ifa_next) {
+	// only handle datalink addresses
+	if (ifaddr->ifa_addr->sa_family == NETIF_AF)
+	    count++;
+    }
+
+    // allocate memory
+    sessions = realloc(*msessions, sizeof(struct session) * count);
+    if (sessions == NULL) {
+	my_log(3, "grrr realloc");
+	return(0);
+    }
+    *msessions = sessions;
+
+    // zero
+    memset(sessions, 0, sizeof(struct session) * count);
+    count = 0;
 
     for (ifaddr = ifaddrs; ifaddr != NULL; ifaddr = ifaddr->ifa_next) {
 
 	// only handle datalink addresses
-#ifdef AF_PACKET
-	if (ifaddr->ifa_addr->sa_family != AF_PACKET)
+	if (ifaddr->ifa_addr->sa_family != NETIF_AF)
 	    continue;
-#endif
-#ifdef AF_LINK
-	if (ifaddr->ifa_addr->sa_family != AF_LINK) 
-	    continue;
-#endif
 
 	// reset type
 	type = 0;
 
-	// TODO: be clever about subifs
-	// skip unlisted interfaces if needed
-	if (ifc > 0) {
-
-	    for (j=0; j < ifc; j++) {
-		if (strcmp(ifaddr->ifa_name, ifl[j]) == 0) {
-		    break;
-		}
-	    }
-	    
-	    // skip if no match is found
-	    if (j >= ifc)
-		continue;
-	}
-
 	// prepare ifr struct
 	memset(&ifr, 0, sizeof(ifr));
 	strncpy(ifr.ifr_name, ifaddr->ifa_name, IFNAMSIZ);
-
-
-	// skip interfaces that are down
-	if (ioctl(sockfd, SIOCGIFFLAGS, (caddr_t)&ifr) < 0 || 
-	    (ifr.ifr_flags & IFF_UP) == 0) {
-	    my_log(3, "skipping interface %s", ifaddr->ifa_name);
-	    continue;
-	}
 
 
 	// skip non-ethernet interfaces
@@ -174,27 +170,42 @@ struct session * netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo) {
 	// skip wireless interfaces
 	if (netif_wireless(sockfd, ifaddr, &ifr) == 0) {
 	    my_log(3, "skipping wireless interface %s", ifaddr->ifa_name);
+	    sysinfo->cap |= CAP_WLAN; 
 	    continue;
 	}
 
 	// detect interface type
 	type = netif_type(sockfd, ifaddr, &ifr);
 
-	if (type == NETIF_REGULAR) 
-	    my_log(2, "found interface %s", ifaddr->ifa_name);
-	else if (type == NETIF_BONDING)
+	if (type == NETIF_REGULAR) { 
+	    my_log(2, "found ethernet interface %s", ifaddr->ifa_name);
+	} else if (type == NETIF_BONDING) {
 	    my_log(2, "found bond interface %s", ifaddr->ifa_name);
-	else if (type == NETIF_BRIDGE)
+	} else if (type == NETIF_BRIDGE) {
 	    my_log(2, "found bridge interface %s", ifaddr->ifa_name);
-	else if (type == NETIF_INVALID) {
+	    sysinfo->cap |= CAP_BRIDGE; 
+	} else if (type == NETIF_INVALID) {
 	    my_log(3, "skipping interface %s", ifaddr->ifa_name);
 	    continue;
 	}
 
 
-	// create session
-	session = my_malloc(sizeof(struct session));
+	// skip interfaces that are down
+	if (ioctl(sockfd, SIOCGIFFLAGS, (caddr_t)&ifr) < 0 || 
+	    (ifr.ifr_flags & IFF_UP) == 0) {
+	    my_log(3, "skipping interface %s (down)", ifaddr->ifa_name);
+	    continue;
+	}
 
+
+	my_log(3, "adding interface %s", ifaddr->ifa_name);
+
+	// create session
+	if (session == NULL)
+	    session = sessions;
+	else
+	    session = (struct session *)session + 1;
+	
         // copy name, index and type
 #ifdef AF_PACKET
 	session->index = saddrll.sll_ifindex;
@@ -206,11 +217,8 @@ struct session * netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo) {
 	session->type = type;
 
 	// update linked list
-	if (sessions == NULL)
-	    sessions = session;
-	else
+	if (session_prev != NULL)
 	    session_prev->next = session;
-
 	session_prev = session;
 
 	// update counter
@@ -233,24 +241,31 @@ struct session * netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo) {
     }
 
     // validate detected interfaces
-    if (ifc != 0) {
+    if (ifc > 0) {
+	count = 0;
+
 	for (j=0; j < ifc; j++) {
 	    session = session_byname(sessions, ifl[j]);
-	    if (session == NULL)
+	    if (session == NULL) {
 		my_log(0, "interface %s is invalid", ifl[j]);
+	    } else {
+		session->argv = 1;
+		count++;
+	    }
 	}
-	if (j != ifc)
-	    exit(EXIT_FAILURE);
+	if (count != ifc)
+	    return(0);
+
     } else if (count == 0) {
 	my_log(0, "no valid interface found");
-	exit(EXIT_FAILURE);
+	return(0);
     }
 
     // cleanup
     freeifaddrs(ifaddrs);
     close(sockfd);
 
-    return(sessions);
+    return(count);
 };
 
 
@@ -520,7 +535,7 @@ void netif_bridge(int sockfd,
 
 	if (ninbuf == NULL) {
 	    if (inbuf != NULL)
-		free(inbuf)
+		free(inbuf);
 	    my_log(1, "unable to allocate interface buffer");
 	    return;
 	}
@@ -559,21 +574,6 @@ void netif_bridge(int sockfd,
     return;
 #endif
 
-}
-
-
-// update interface names for all sessions
-int netif_names(struct session *sessions) {
-    struct session *session;
-
-    for (session = sessions; session != NULL; session = session->next) {
-	if (if_indextoname(session->index, session->name) == NULL) {
-	    my_log(0,"could not fetch interface name");
-	    return(EXIT_FAILURE);
-	}
-    }
-
-    return(EXIT_SUCCESS);
 }
 
 

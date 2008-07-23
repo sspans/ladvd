@@ -1,7 +1,7 @@
 
 CODE:
-- be smarter about specified + subifs
-- rebuild sessions every 30 seconds
+- check for forwarding (bsd, linux)
+- pcap packet format for -d
 
 - LLDP-MED Inventory Management TLV (dmi)
 - LLDP-MED LCI TLV (coord/civic)

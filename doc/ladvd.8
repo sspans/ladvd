@@ -23,11 +23,11 @@ Run in the foreground and send logging to stderr.
 Run only once, useful for quick troubleshooting.
 .IP "-u user"
 Switch to this user (defaults to nobody).
-.IP -v
-increase logging verbosity.
-.IP "-C B|H|R|S|W"
-Specify capabilities: Bridge, Host, Router, Switch or WLAN AP. Combining multiple options is supported, except when using the Host capability in LLDP packets.
 .IP "-L <location>"
 Specify the physical location of the server.
+.IP -v
+Increase logging verbosity.
+.IP -d
+Dump packets to stdout.
 .SH AUTHOR
 Sten Spans <sten@blinkenlights.nl>
