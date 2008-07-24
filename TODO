@@ -1,7 +1,10 @@
 
 CODE:
+- lldp doc lezen
+- add startup message
 - check for forwarding (bsd, linux)
 - pcap packet format for -d
+- investigate netlink/other interface notifications
 
 - LLDP-MED Inventory Management TLV (dmi)
 - LLDP-MED LCI TLV (coord/civic)
