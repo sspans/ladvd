@@ -2,6 +2,7 @@
 CODE:
 - lldp doc lezen
 - check for forwarding (bsd, linux)
+- check cap_host
 - pcap packet format for -d
 - investigate netlink/other interface notifications
 

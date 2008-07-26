@@ -72,7 +72,7 @@ int lldp_packet(struct packet *packet,
 
 
     // capabilities
-    if (sysinfo->cap & CAP_HOST) {
+    if (sysinfo->cap == CAP_HOST) {
 	capabilities = LLDP_CAP_STATION_ONLY;
     } else {
 	if (sysinfo->cap & CAP_BRIDGE)
