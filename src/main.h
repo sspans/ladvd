@@ -82,7 +82,6 @@ struct sysinfo {
 #define NETIF_BRIDGE	2
 
 uint16_t netif_list(int ifc, char *ifl[], struct sysinfo *, struct session **);
-int netif_addrs(struct session *sessions);
 int netif_media(struct session *session);
 
 int cdp_packet(struct packet *,

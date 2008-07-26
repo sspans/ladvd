@@ -1,7 +1,6 @@
 
 CODE:
 - lldp doc lezen
-- merge netif_addr into netif_list
 - check for forwarding (bsd, linux)
 - pcap packet format for -d
 - investigate netlink/other interface notifications

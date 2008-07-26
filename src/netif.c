@@ -90,6 +90,7 @@ int netif_wireless(int sockfd, struct ifaddrs *ifaddr, struct ifreq *);
 int netif_type(int sockfd, struct ifaddrs *ifaddr, struct ifreq *);
 void netif_bond(int sockfd, struct session *, struct session *);
 void netif_bridge(int sockfd, struct session *, struct session *);
+int netif_addrs(struct ifaddrs *, struct session *);
 
 
 // create sessions for a list of interfaces
@@ -116,7 +117,8 @@ uint16_t netif_list(int ifc, char *ifl[], struct sysinfo *sysinfo,
 
     if (getifaddrs(&ifaddrs) < 0) {
 	my_log(0, "address detection failed: %s", strerror(errno));
-	exit(EXIT_FAILURE);
+	close(sockfd);
+	return(0);
     }
 
     for (ifaddr = ifaddrs; ifaddr != NULL; ifaddr = ifaddr->ifa_next) {
@@ -128,8 +130,8 @@ uint16_t netif_list(int ifc, char *ifl[], struct sysinfo *sysinfo,
     // allocate memory
     sessions = realloc(*msessions, sizeof(struct session) * count);
     if (sessions == NULL) {
-	my_log(3, "grrr realloc");
-	return(0);
+	my_log(3, "unable to allocate sessions");
+	goto cleanup;
     }
     *msessions = sessions;
 
@@ -240,6 +242,14 @@ uint16_t netif_list(int ifc, char *ifl[], struct sysinfo *sysinfo,
 	}
     }
 
+    // add addresses to sessions
+    my_log(3, "fetching addresses for all interfaces");
+    if (netif_addrs(ifaddrs, sessions) == EXIT_FAILURE) {
+	my_log(0, "unable fetch interface addresses");
+	count = 0;
+	goto cleanup;
+    }
+
     // validate detected interfaces
     if (ifc > 0) {
 	count = 0;
@@ -254,14 +264,14 @@ uint16_t netif_list(int ifc, char *ifl[], struct sysinfo *sysinfo,
 	    }
 	}
 	if (count != ifc)
-	    return(0);
+	    count = 0;
 
     } else if (count == 0) {
 	my_log(0, "no valid interface found");
-	return(0);
     }
 
     // cleanup
+cleanup:
     freeifaddrs(ifaddrs);
     close(sockfd);
 
@@ -579,8 +589,8 @@ void netif_bridge(int sockfd,
 
 
 // perform address detection for all sessions
-int netif_addrs(struct session *sessions) {
-    struct ifaddrs *ifaddrs, *ifaddr;
+int netif_addrs(struct ifaddrs *ifaddrs, struct session *sessions) {
+    struct ifaddrs *ifaddr;
     struct session *session;
 
     struct sockaddr_in saddr4;
@@ -591,11 +601,6 @@ int netif_addrs(struct session *sessions) {
 #ifdef AF_LINK
     struct sockaddr_dl saddrdl;
 #endif
-
-    if (getifaddrs(&ifaddrs) < 0) {
-	my_log(0, "address detection failed: %s", strerror(errno));
-	return(EXIT_FAILURE);
-    }
 
     for (ifaddr = ifaddrs; ifaddr != NULL; ifaddr = ifaddr->ifa_next) {
 	// fetch the session for this ifaddr
@@ -644,9 +649,6 @@ int netif_addrs(struct session *sessions) {
 #endif
 	}
     }
-
-    // cleanup
-    freeifaddrs(ifaddrs);
 
     return(EXIT_SUCCESS);
 }

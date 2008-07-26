@@ -236,14 +236,8 @@ loop:
 	my_log(3, "fetching all interfaces"); 
 	if (netif_list(argc, argv, &sysinfo, &sessions) == 0) {
 	    my_log(0, "unable fetch interfaces");
-	    exit(EXIT_FAILURE);
-	}
-
-	// fetch IPv4 / IPv6 / MAC addrs
-	my_log(3, "fetching addresses for all interfaces"); 
-	if (netif_addrs(sessions) == EXIT_FAILURE) {
-	    my_log(0, "unable fetch interface addresses");
-	    exit(EXIT_FAILURE);
+	    sleep(SLEEPTIME);
+	    continue;
 	}
 
 	for (session = sessions; session != NULL; session = session->next) {
