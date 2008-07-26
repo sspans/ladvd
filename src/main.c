@@ -227,6 +227,9 @@ int main(int argc, char *argv[]) {
 
 
 loop: 
+    // startup message
+    my_log(0, PACKAGE_STRING " running");
+
     while (sockfd) {
 
 	// create sessions
