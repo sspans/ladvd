@@ -105,7 +105,7 @@ uint16_t netif_list(int ifc, char *ifl[], struct sysinfo *sysinfo,
     struct ifaddrs *ifaddrs, *ifaddr = NULL;
     struct ifreq ifr;
     int j, count = 0;
-    int type;
+    int type, enabled;
 
 #ifdef AF_PACKET
     struct sockaddr_ll saddrll;
@@ -151,6 +151,7 @@ uint16_t netif_list(int ifc, char *ifl[], struct sysinfo *sysinfo,
 
 	// reset type
 	type = 0;
+	enabled = 0;
 
 	// prepare ifr struct
 	memset(&ifr, 0, sizeof(ifr));
@@ -173,10 +174,15 @@ uint16_t netif_list(int ifc, char *ifl[], struct sysinfo *sysinfo,
 	}
 #endif
 
+	// check for interfaces that are down
+	if (ioctl(sockfd, SIOCGIFFLAGS, (caddr_t)&ifr) >= 0)
+	    enabled = (ifr.ifr_flags & IFF_UP) ? 1 : 0;
+
 	// skip wireless interfaces
 	if (netif_wireless(sockfd, ifaddr, &ifr) == 0) {
 	    my_log(3, "skipping wireless interface %s", ifaddr->ifa_name);
 	    sysinfo->cap |= CAP_WLAN; 
+	    sysinfo->cap_active |= (enabled == 1) ? CAP_WLAN : 0;
 	    continue;
 	}
 
@@ -190,6 +196,7 @@ uint16_t netif_list(int ifc, char *ifl[], struct sysinfo *sysinfo,
 	} else if (type == NETIF_BRIDGE) {
 	    my_log(2, "found bridge interface %s", ifaddr->ifa_name);
 	    sysinfo->cap |= CAP_BRIDGE; 
+	    sysinfo->cap_active |= (enabled == 1) ? CAP_BRIDGE : 0;
 	} else if (type == NETIF_INVALID) {
 	    my_log(3, "skipping interface %s", ifaddr->ifa_name);
 	    continue;
@@ -197,8 +204,7 @@ uint16_t netif_list(int ifc, char *ifl[], struct sysinfo *sysinfo,
 
 
 	// skip interfaces that are down
-	if (ioctl(sockfd, SIOCGIFFLAGS, (caddr_t)&ifr) < 0 || 
-	    (ifr.ifr_flags & IFF_UP) == 0) {
+	if (enabled == 0) {
 	    my_log(3, "skipping interface %s (down)", ifaddr->ifa_name);
 	    continue;
 	}
@@ -236,9 +242,11 @@ uint16_t netif_list(int ifc, char *ifl[], struct sysinfo *sysinfo,
 
 	switch(netif->type) {
 	    case NETIF_BONDING:
+		my_log(3, "detecting %s subifs", netif->name);
 		netif_bond(sockfd, netifs, netif);
 		break;
 	    case NETIF_BRIDGE:
+		my_log(3, "detecting %s subifs", netif->name);
 		netif_bridge(sockfd, netifs, netif);
 		break;
 	    default:
@@ -255,8 +263,10 @@ uint16_t netif_list(int ifc, char *ifl[], struct sysinfo *sysinfo,
     }
 
     // check for forwarding
-    if (netif_forwarding() == 1)
+    if (netif_forwarding() == 1) {
 	sysinfo->cap |= CAP_ROUTER; 
+	sysinfo->cap_active |= CAP_ROUTER; 
+    };
 
     // use the first mac as chassis id
     memcpy(&sysinfo->hwaddr, &netifs->hwaddr, ETHER_ADDR_LEN);

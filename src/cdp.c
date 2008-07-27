@@ -35,7 +35,7 @@ int cdp_packet(struct packet *packet, struct netif *netif,
 
     size_t length;
     uint8_t *pos, *tlv;
-    uint8_t capabilities = 0;
+    uint8_t cap = 0;
 
     void *cdp_pos, *checksum_pos;
     uint8_t addr_count = 0;
@@ -112,18 +112,14 @@ int cdp_packet(struct packet *packet, struct netif *netif,
 
 
     // capabilities
-    if (sysinfo->cap & CAP_BRIDGE)
-    	capabilities |= CDP_CAP_TRANSPARENT_BRIDGE;
-    if (sysinfo->cap & CAP_HOST)
-    	capabilities |= CDP_CAP_HOST;
-    if (sysinfo->cap & CAP_ROUTER)
-    	capabilities |= CDP_CAP_ROUTER;
-    if (sysinfo->cap & CAP_SWITCH)
-    	capabilities |= CDP_CAP_SWITCH;
+    cap |= (sysinfo->cap & CAP_BRIDGE) ? CDP_CAP_TRANSPARENT_BRIDGE : 0;
+    cap |= (sysinfo->cap & CAP_HOST) ? CDP_CAP_HOST : 0;
+    cap |= (sysinfo->cap & CAP_ROUTER) ? CDP_CAP_ROUTER : 0;
+    cap |= (sysinfo->cap & CAP_SWITCH) ? CDP_CAP_SWITCH : 0;
 
     if (!(
 	START_CDP_TLV(CDP_TYPE_CAPABILITIES) &&
-	PUSH_UINT32(capabilities)
+	PUSH_UINT32(cap)
     ))
 	return 0;
     END_CDP_TLV;

@@ -15,7 +15,7 @@ int lldp_packet(struct packet *packet, struct netif *netif,
 
     size_t length;
     uint8_t *pos, *tlv;
-    uint8_t capabilities = 0;
+    uint8_t cap = 0, cap_active = 0;
     struct netif *master;
 
     // init
@@ -79,22 +79,24 @@ int lldp_packet(struct packet *packet, struct netif *netif,
 
     // capabilities
     if (sysinfo->cap == CAP_HOST) {
-	capabilities = LLDP_CAP_STATION_ONLY;
+	cap = cap_active = LLDP_CAP_STATION_ONLY;
     } else {
-	if (sysinfo->cap & CAP_BRIDGE)
-	    capabilities |= LLDP_CAP_BRIDGE;
-	if (sysinfo->cap & CAP_ROUTER)
-	    capabilities |= LLDP_CAP_ROUTER;
-	if (sysinfo->cap & CAP_SWITCH)
-	    capabilities |= LLDP_CAP_BRIDGE;
-	if (sysinfo->cap & CAP_WLAN)
-	    capabilities |= LLDP_CAP_WLAN_AP;
+	cap |= (sysinfo->cap & CAP_BRIDGE) ? LLDP_CAP_BRIDGE : 0;
+	cap_active |= (sysinfo->cap_active & CAP_BRIDGE) ? LLDP_CAP_BRIDGE : 0;
+
+	cap |= (sysinfo->cap & CAP_ROUTER) ? LLDP_CAP_ROUTER : 0;
+	cap_active |= (sysinfo->cap_active & CAP_ROUTER) ? LLDP_CAP_ROUTER : 0;
+
+	cap |= (sysinfo->cap & CAP_SWITCH) ? LLDP_CAP_BRIDGE : 0;
+	cap_active |= (sysinfo->cap_active & CAP_SWITCH) ? LLDP_CAP_BRIDGE : 0;
+
+	cap |= (sysinfo->cap & CAP_WLAN) ? LLDP_CAP_WLAN_AP : 0;
+	cap_active |= (sysinfo->cap_active & CAP_WLAN) ? LLDP_CAP_WLAN_AP : 0;
     }
 
     if (!(
 	START_LLDP_TLV(LLDP_SYSTEM_CAP_TLV) &&
-	PUSH_UINT16(capabilities) &&
-	PUSH_UINT16(capabilities)
+	PUSH_UINT16(cap) && PUSH_UINT16(cap_active)
     ))
 	return 0;
     END_LLDP_TLV;

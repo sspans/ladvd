@@ -69,6 +69,7 @@ struct sysinfo {
     char *hostname;
     char *location;
     int8_t cap;
+    int8_t cap_active;
     uint8_t hwaddr[ETHER_ADDR_LEN];
 };
 

@@ -106,7 +106,8 @@ int main(int argc, char *argv[]) {
     }
 
     // default to CAP_HOST
-    sysinfo.cap |= CAP_HOST;
+    sysinfo.cap = CAP_HOST;
+    sysinfo.cap_active = CAP_HOST;
 
     // validate username
     if ((do_debug == 0) && (pwd = getpwnam(username)) == NULL) {
