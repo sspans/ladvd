@@ -1,8 +1,13 @@
+/*
+ * rewritten versions of some NET::CDP macro's (libcdp/src/encoding.c)
+ * VOIDP_DIFF: fixed types
+ * PUSH, END_TLV: use memcpy to make them strict alignment compatible
+ * added support for LLDP tlv's (7/9 bits)
+ */
 
 #include <arpa/inet.h>
 
 #define VOIDP_DIFF(P, Q) ((uintptr_t)((char *)(P) - (char *)(Q)))
-#define VOIDP_OFFSET(P, O) ((void *)((char *)(P) + (uintptr_t)(O)))
 
 union {
     uint8_t uint8;
