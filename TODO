@@ -1,6 +1,5 @@
 
 CODE:
-- lldp doc lezen
 - investigate netlink/other interface notifications
 - pcap packet format for -d
 
