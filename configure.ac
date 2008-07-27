@@ -105,7 +105,7 @@ AC_CHECK_HEADERS([net/bpf.h])
 AC_CHECK_HEADERS([net/if_dl.h])
 
 #sysctl
-AC_CHECK_HEADERS([sys/sysctl.h], [],[],
+AC_CHECK_HEADERS([sys/sysctl.h], [], AC_MSG_ERROR([required header missing],
 [
 #include <sys/param.h>
 ])
