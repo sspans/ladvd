@@ -104,6 +104,12 @@ AC_CHECK_HEADERS([netpacket/packet.h])
 AC_CHECK_HEADERS([net/bpf.h])
 AC_CHECK_HEADERS([net/if_dl.h])
 
+#sysctl
+AC_CHECK_HEADERS([sys/sysctl.h], [],[],
+[
+#include <sys/param.h>
+])
+
 # linux capabilities
 AC_CHECK_HEADERS([sys/prctl.h sys/capability.h])
 if test "$ac_cv_header_sys_capability_h" = "yes" ; then

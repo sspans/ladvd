@@ -96,7 +96,7 @@ int my_rsocket() {
     return(socket);
 }
 
-int my_rsend(int s, struct session *session, const void *msg, size_t len) {
+int my_rsend(int s, struct netif *netif, const void *msg, size_t len) {
 
     size_t count = 0;
 
@@ -109,7 +109,7 @@ int my_rsend(int s, struct session *session, const void *msg, size_t len) {
     memset(&sa, 0, sizeof (sa));
 
     sa.sll_family = AF_PACKET;
-    sa.sll_ifindex = session->index;
+    sa.sll_ifindex = netif->index;
     sa.sll_protocol = htons(ETH_P_ALL);
 
     count = sendto(s, msg, len, 0, (struct sockaddr *)&sa, sizeof (sa));
@@ -118,7 +118,7 @@ int my_rsend(int s, struct session *session, const void *msg, size_t len) {
 
     // prepare ifr struct
     memset(&ifr, 0, sizeof(ifr));
-    strncpy(ifr.ifr_name, session->name, IFNAMSIZ);
+    strncpy(ifr.ifr_name, netif->name, IFNAMSIZ);
 
     if (ioctl(s, BIOCSETIF, (caddr_t)&ifr) < 0) {
 	my_log(0, "ioctl failed: %s", strerror(errno));
@@ -133,23 +133,23 @@ int my_rsend(int s, struct session *session, const void *msg, size_t len) {
     return(count);
 }
 
-struct session *session_byindex(struct session *sessions, uint8_t index) {
-    struct session *session;
+struct netif *netif_byindex(struct netif *netifs, uint8_t index) {
+    struct netif *netif;
 
-    for (session = sessions; session != NULL; session = session->next) {
-	if (session->index == index)
+    for (netif = netifs; netif != NULL; netif = netif->next) {
+	if (netif->index == index)
 	    break;
     }
-    return(session);
+    return(netif);
 }
 
-struct session *session_byname(struct session *sessions, char *name) {
-    struct session *session;
+struct netif *netif_byname(struct netif *netifs, char *name) {
+    struct netif *netif;
 
-    for (session = sessions; session != NULL; session = session->next) {
-	if (strcmp(session->name, name) == 0)
+    for (netif = netifs; netif != NULL; netif = netif->next) {
+	if (strcmp(netif->name, name) == 0)
 	    break;
     }
-    return(session);
+    return(netif);
 }
 

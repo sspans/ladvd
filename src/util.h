@@ -8,9 +8,9 @@ char *my_strdup(const char *str);
 int my_socket(int af, int type, int proto);
 
 int my_rsocket();
-int my_rsend(int s, struct session *session, const void *msg, size_t len);
+int my_rsend(int s, struct netif *, const void *msg, size_t len);
 
-struct session *session_byindex(struct session *sessions, uint8_t index);
-struct session *session_byname(struct session *sessions, char *name);
+struct netif *netif_byindex(struct netif *, uint8_t index);
+struct netif *netif_byname(struct netif *, char *name);
 
 #endif /* _util_h */

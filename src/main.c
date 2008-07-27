@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
     size_t len;
 
     // interfaces
-    struct session *sessions = NULL, *session, *csession;
+    struct netif *netifs = NULL, *netif, *master;
 
 #ifdef USE_CAPABILITIES
     // capabilities
@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
 	usage(progname);
 
     // validate interfaces
-    if (netif_list(argc, argv, &sysinfo, &sessions) == 0) {
+    if (netif_list(argc, argv, &sysinfo, &netifs) == 0) {
 	my_log(0, "unable fetch interfaces");
 	exit(EXIT_FAILURE);
     }
@@ -232,92 +232,92 @@ loop:
 
     while (sockfd) {
 
-	// create sessions
+	// create netifs
 	my_log(3, "fetching all interfaces"); 
-	if (netif_list(argc, argv, &sysinfo, &sessions) == 0) {
+	if (netif_list(argc, argv, &sysinfo, &netifs) == 0) {
 	    my_log(0, "unable fetch interfaces");
-	    sleep(SLEEPTIME);
-	    continue;
+	    goto sleep;
 	}
 
-	for (session = sessions; session != NULL; session = session->next) {
+	for (netif = netifs; netif != NULL; netif = netif->next) {
 	    // skip autodetected slaves
-	    if ((argc == 0) && (session->slave == 1))
+	    if ((argc == 0) && (netif->slave == 1))
 		continue;
 
 	    // skip unlisted interfaces
-	    if ((argc > 0) && (session->argv == 0))
+	    if ((argc > 0) && (netif->argv == 0))
 		continue;
 
 	    // skip masters without slaves
-	    if ((session->type > 0) && (session->subif == NULL)) {
-		my_log(3, "skipping interface %s", session->name); 
+	    if ((netif->type > 0) && (netif->subif == NULL)) {
+		my_log(3, "skipping interface %s", netif->name); 
 		continue;
 	    }
 
-	    my_log(3, "starting loop with interface %s", session->name); 
+	    my_log(3, "starting loop with interface %s", netif->name); 
 
-	    // point csession to subif when session is master
-	    if (session->type > 0)
-		csession = session->subif;
-	    else
-		csession = session;
+	    // point netif to subif when netif is master
+	    if (netif->type > 0) {
+		master = netif;
+		netif = master->subif;
+	    } else {
+		master = NULL;
+	    }
 
-	    while (csession != NULL) {
+	    while (netif != NULL) {
 		// fetch interface media status
-		my_log(3, "fetching %s media details", csession->name);
-		if (netif_media(csession) == EXIT_FAILURE) {
+		my_log(3, "fetching %s media details", netif->name);
+		if (netif_media(netif) == EXIT_FAILURE) {
 		    my_log(0, "error fetching interface media details");
 		}
 
 		// cdp packet
 		if (do_cdp == 1) {
-		    my_log(3, "building cdp packet for %s",
-			      csession->name);
-
-		    len = cdp_packet(&packet, csession, session, &sysinfo);
+		    my_log(3, "building cdp packet for %s", netif->name);
+		    len = cdp_packet(&packet, netif, &sysinfo);
 		    if (len == 0) {
 			my_log(0, "can't generate CDP packet for %s",
-				  csession->name);
-			exit(EXIT_FAILURE);
+				  netif->name);
+			goto sleep;
 		    }
 
 		    // write it to the wire.
 		    my_log(3, "sending cdp packet (%d bytes) on %s",
-				len, csession->name);
-		    if (my_rsend(sockfd, csession, &packet, len) != len) {
+				len, netif->name);
+		    if (my_rsend(sockfd, netif, &packet, len) != len) {
 			my_log(0, "network transmit error on %s",
-				  csession->name);
+				  netif->name);
 		    }
 		}
 
 		// lldp packet
 		if (do_lldp == 1) {
-		    my_log(3, "building lldp packet for %s", csession->name);
+		    my_log(3, "building lldp packet for %s", netif->name);
 
-		    len = lldp_packet(&packet, csession, session, &sysinfo);
+		    len = lldp_packet(&packet, netif, &sysinfo);
 		    if (len == 0) {
 			my_log(0, "can't generate LLDP packet for %s",
-				  csession->name);
-			exit(EXIT_FAILURE);
+				  netif->name);
+			goto sleep;
 		    }
 
 		    // write it to the wire.
 		    my_log(3, "sending lldp packet (%d bytes) on %s",
-				len, csession->name);
-		    if (my_rsend(sockfd, csession, &packet, len) != len) {
+				len, netif->name);
+		    if (my_rsend(sockfd, netif, &packet, len) != len) {
 			my_log(0, "network transmit error on %s",
-				  csession->name);
+				  netif->name);
 		    }
 		}
 
-		if (session->type > 0)
-		    csession = csession->subif;
+		if (master != NULL)
+		    netif = netif->subif;
 		else
-		    csession = NULL;
+		    netif = NULL;
 	    }
 	}
 
+sleep:
 	if (do_once == 1)
 	    return (EXIT_SUCCESS);
 

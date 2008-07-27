@@ -9,6 +9,7 @@
 #include <sys/ioctl.h>
 #include <sys/param.h>
 #include <sys/socket.h>
+#include <sys/sysctl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <ifaddrs.h>
@@ -77,8 +78,10 @@
 #include <net80211/ieee80211_ioctl.h>
 #endif /* HAVE_NET80211_IEEE80211_IOCTL_H */
 
-#define SYSFS_VIRTUAL "/sys/devices/virtual/net"
-#define SYSFS_PATH_MAX  256
+#define SYSFS_VIRTUAL		"/sys/devices/virtual/net"
+#define SYSFS_PATH_MAX		256
+#define PROCFS_FORWARD_IPV4	"/proc/sys/net/ipv4/conf/all/forwarding"
+#define PROCFS_FORWARD_IPV6	"/proc/sys/net/ipv6/conf/all/forwarding"
 
 #ifdef AF_PACKET
 #define NETIF_AF    AF_PACKET
@@ -88,14 +91,15 @@
 
 int netif_wireless(int sockfd, struct ifaddrs *ifaddr, struct ifreq *);
 int netif_type(int sockfd, struct ifaddrs *ifaddr, struct ifreq *);
-void netif_bond(int sockfd, struct session *, struct session *);
-void netif_bridge(int sockfd, struct session *, struct session *);
-int netif_addrs(struct ifaddrs *, struct session *);
+void netif_bond(int sockfd, struct netif *, struct netif *);
+void netif_bridge(int sockfd, struct netif *, struct netif *);
+int netif_addrs(struct ifaddrs *, struct netif *);
+int netif_forwarding();
 
 
-// create sessions for a list of interfaces
+// create netifs for a list of interfaces
 uint16_t netif_list(int ifc, char *ifl[], struct sysinfo *sysinfo,
-		    struct session **msessions) {
+		    struct netif **mnetifs) {
 
     int sockfd, af = AF_INET;
     struct ifaddrs *ifaddrs, *ifaddr = NULL;
@@ -110,8 +114,8 @@ uint16_t netif_list(int ifc, char *ifl[], struct sysinfo *sysinfo,
     struct sockaddr_dl saddrdl;
 #endif
 
-    // sessions
-    struct session *sessions = NULL, *session_prev = NULL, *session = NULL;
+    // netifs
+    struct netif *netifs = NULL, *netif_prev = NULL, *netif = NULL;
 
     sockfd = my_socket(af, SOCK_DGRAM, 0);
 
@@ -128,15 +132,15 @@ uint16_t netif_list(int ifc, char *ifl[], struct sysinfo *sysinfo,
     }
 
     // allocate memory
-    sessions = realloc(*msessions, sizeof(struct session) * count);
-    if (sessions == NULL) {
-	my_log(3, "unable to allocate sessions");
+    netifs = realloc(*mnetifs, sizeof(struct netif) * count);
+    if (netifs == NULL) {
+	my_log(3, "unable to allocate netifs");
 	goto cleanup;
     }
-    *msessions = sessions;
+    *mnetifs = netifs;
 
     // zero
-    memset(sessions, 0, sizeof(struct session) * count);
+    memset(netifs, 0, sizeof(struct netif) * count);
     count = 0;
 
     for (ifaddr = ifaddrs; ifaddr != NULL; ifaddr = ifaddr->ifa_next) {
@@ -202,64 +206,68 @@ uint16_t netif_list(int ifc, char *ifl[], struct sysinfo *sysinfo,
 
 	my_log(3, "adding interface %s", ifaddr->ifa_name);
 
-	// create session
-	if (session == NULL)
-	    session = sessions;
+	// create netif
+	if (netif == NULL)
+	    netif = netifs;
 	else
-	    session = (struct session *)session + 1;
+	    netif = (struct netif *)netif + 1;
 	
         // copy name, index and type
 #ifdef AF_PACKET
-	session->index = saddrll.sll_ifindex;
+	netif->index = saddrll.sll_ifindex;
 #endif
 #ifdef AF_LINK
-	session->index = saddrdl.sdl_index;
+	netif->index = saddrdl.sdl_index;
 #endif
-	strncpy(session->name, ifaddr->ifa_name, IFNAMSIZ);
-	session->type = type;
+	strncpy(netif->name, ifaddr->ifa_name, IFNAMSIZ);
+	netif->type = type;
 
 	// update linked list
-	if (session_prev != NULL)
-	    session_prev->next = session;
-	session_prev = session;
+	if (netif_prev != NULL)
+	    netif_prev->next = netif;
+	netif_prev = netif;
 
 	// update counter
 	count++;
     }
 
     // add slave subif lists to each master
-    for (session = sessions; session != NULL; session = session->next) {
+    for (netif = netifs; netif != NULL; netif = netif->next) {
 
-	switch(session->type) {
+	switch(netif->type) {
 	    case NETIF_BONDING:
-		netif_bond(sockfd, sessions, session);
+		netif_bond(sockfd, netifs, netif);
 		break;
 	    case NETIF_BRIDGE:
-		netif_bridge(sockfd, sessions, session);
+		netif_bridge(sockfd, netifs, netif);
 		break;
 	    default:
 		break;
 	}
     }
 
-    // add addresses to sessions
+    // add addresses to netifs
     my_log(3, "fetching addresses for all interfaces");
-    if (netif_addrs(ifaddrs, sessions) == EXIT_FAILURE) {
+    if (netif_addrs(ifaddrs, netifs) == EXIT_FAILURE) {
 	my_log(0, "unable fetch interface addresses");
 	count = 0;
 	goto cleanup;
     }
+
+    // check for forwarding
+    if (netif_forwarding() == 1)
+	sysinfo->cap |= CAP_ROUTER; 
 
     // validate detected interfaces
     if (ifc > 0) {
 	count = 0;
 
 	for (j=0; j < ifc; j++) {
-	    session = session_byname(sessions, ifl[j]);
-	    if (session == NULL) {
+	    netif = netif_byname(netifs, ifl[j]);
+	    if (netif == NULL) {
 		my_log(0, "interface %s is invalid", ifl[j]);
 	    } else {
-		session->argv = 1;
+		netif->argv = 1;
 		count++;
 	    }
 	}
@@ -387,10 +395,9 @@ int netif_type(int sockfd, struct ifaddrs *ifaddr, struct ifreq *ifr) {
 
 
 // handle aggregated interfaces
-void netif_bond(int sockfd,
-		struct session *sessions, struct session *session) {
+void netif_bond(int sockfd, struct netif *netifs, struct netif *master) {
 
-    struct session *subif = NULL, *csubif = session;
+    struct netif *subif = NULL, *csubif = master;
     int i;
 
 #ifdef HAVE_LINUX_IF_BONDING_H
@@ -401,15 +408,15 @@ void netif_bond(int sockfd,
     char *slave, *nslave;
 
     // check for lacp
-    sprintf(path, "%s/%s/bonding/mode", SYSFS_VIRTUAL, session->name); 
+    sprintf(path, "%s/%s/bonding/mode", SYSFS_VIRTUAL, master->name); 
     if ((fp = fopen(path, "r")) != NULL) {
 	if (fscanf(fp, "802.3ad") != EOF)
-	    session->lacp = 1;
+	    master->lacp = 1;
 	fclose(fp);
     }
 
     // handle slaves
-    sprintf(path, "%s/%s/bonding/slaves", SYSFS_VIRTUAL, session->name); 
+    sprintf(path, "%s/%s/bonding/slaves", SYSFS_VIRTUAL, master->name); 
     if ((fp = fopen(path, "r")) != NULL) {
 	if (fgets(line, sizeof(line), fp) != NULL) {
 	    // remove newline
@@ -422,10 +429,11 @@ void netif_bond(int sockfd,
 		if (nslave != NULL)
 		    *nslave = '\0';
 
-		subif = session_byname(sessions, slave);
+		subif = netif_byname(netifs, slave);
 		if (subif != NULL) {
 		    my_log(3, "found slave %s", subif->name);
 		    subif->slave = 1;
+		    subif->master = master;
 		    subif->lacp_index = i++;
 		    csubif->subif = subif;
 		    csubif = subif;
@@ -457,27 +465,28 @@ void netif_bond(int sockfd,
 
     memset(&ra, 0, sizeof(ra));
 
-    strncpy(ra.ra_ifname, session->name, sizeof(ra.ra_ifname));
+    strncpy(ra.ra_ifname, master->name, sizeof(ra.ra_ifname));
     ra.ra_size = sizeof(rpbuf);
     ra.ra_port = rpbuf;
 
 #ifdef HAVE_NET_IF_LAGG_H
     if (ioctl(sockfd, SIOCGLAGG, &ra) >= 0)
 	if (ra.ra_proto == LAGG_PROTO_LACP)
-	    session->lacp = 1;
+	    master->lacp = 1;
 #elif HAVE_NET_IF_TRUNK_H
     if (ioctl(sockfd, SIOCGTRUNK, &ra) >= 0)
 	if ((ra.ra_proto == TRUNK_PROTO_ROUNDROBIN) ||
 	    (ra.ra_proto == TRUNK_PROTO_LOADBALANCE))
-	    session->lacp = 1;
+	    master->lacp = 1;
 #endif
     
     for (i = 0; i < ra.ra_ports; i++) {
-	subif = session_byname(sessions, rpbuf[i].rp_portname);
+	subif = netif_byname(netifs, rpbuf[i].rp_portname);
 
 	if (subif != NULL) {
 	    my_log(3, "found slave %s", subif->name);
 	    subif->slave = 1;
+	    subif->master = master;
 	    subif->lacp_index = i++;
 	    csubif->subif = subif;
 	    csubif = subif;
@@ -490,10 +499,9 @@ void netif_bond(int sockfd,
 
 
 // handle bridge interfaces
-void netif_bridge(int sockfd,
-		  struct session *sessions, struct session *session) {
+void netif_bridge(int sockfd, struct netif *netifs, struct netif *master) {
 
-    struct session *subif = NULL, *csubif = session;
+    struct netif *subif = NULL, *csubif = master;
 
 #if HAVE_LINUX_IF_BRIDGE_H 
     // handle linux bridge interfaces
@@ -502,19 +510,19 @@ void netif_bridge(int sockfd,
     struct dirent *dirent;
 
     // handle slaves
-    sprintf(path, "%s/%s/%s",
-		SYSFS_VIRTUAL, session->name, SYSFS_BRIDGE_PORT_SUBDIR); 
+    sprintf(path, SYSFS_VIRTUAL "/%s/" SYSFS_BRIDGE_PORT_SUBDIR, master->name); 
 
     if ((dir = opendir(path)) == NULL) {
 	my_log(0, "reading bridge %s subdir %s failed: %s",
-	    session->name, path, strerror(errno));
+	    master->name, path, strerror(errno));
 	return;
     }
 
     while ((dirent = readdir(dir)) != NULL) {
-	subif = session_byname(sessions, dirent->d_name);
+	subif = netif_byname(netifs, dirent->d_name);
 	if (subif != NULL) {
 	    subif->slave = 1;
+	    subif->master = master;
 	    csubif->subif = subif;
 	    csubif = subif;
 	}
@@ -535,7 +543,7 @@ void netif_bridge(int sockfd,
 
     memset(&ifd, 0, sizeof(ifd));
 
-    strncpy(ifd.ifd_name, session->name, sizeof(ifd.ifd_name));
+    strncpy(ifd.ifd_name, master->name, sizeof(ifd.ifd_name));
     ifd.ifd_cmd = BRDGGIFS;
     ifd.ifd_len = sizeof(bifc);
     ifd.ifd_data = &bifc;
@@ -571,9 +579,10 @@ void netif_bridge(int sockfd,
     for (i = 0; i < bifc.ifbic_len / sizeof(*req); i++) {
 	req = bifc.ifbic_req + i;
 
-	subif = session_byname(sessions, req->ifbr_ifsname);
+	subif = netif_byname(netifs, req->ifbr_ifsname);
 	if (subif != NULL) {
 	    subif->slave = 1;
+	    subif->master = master;
 	    csubif->subif = subif;
 	    csubif = subif;
 	}
@@ -588,10 +597,10 @@ void netif_bridge(int sockfd,
 }
 
 
-// perform address detection for all sessions
-int netif_addrs(struct ifaddrs *ifaddrs, struct session *sessions) {
+// perform address detection for all netifs
+int netif_addrs(struct ifaddrs *ifaddrs, struct netif *netifs) {
     struct ifaddrs *ifaddr;
-    struct session *session;
+    struct netif *netif;
 
     struct sockaddr_in saddr4;
     struct sockaddr_in6 saddr6;
@@ -603,23 +612,23 @@ int netif_addrs(struct ifaddrs *ifaddrs, struct session *sessions) {
 #endif
 
     for (ifaddr = ifaddrs; ifaddr != NULL; ifaddr = ifaddr->ifa_next) {
-	// fetch the session for this ifaddr
-	session = session_byname(sessions, ifaddr->ifa_name);
-	if (session == NULL)
+	// fetch the netif for this ifaddr
+	netif = netif_byname(netifs, ifaddr->ifa_name);
+	if (netif == NULL)
 	    continue;
 
 	if (ifaddr->ifa_addr->sa_family == AF_INET) {
-	    if (session->ipaddr4 != 0)
+	    if (netif->ipaddr4 != 0)
 		continue;
 
 	    // alignment
 	    memcpy(&saddr4, ifaddr->ifa_addr, sizeof(saddr4));
 
-	    memcpy(&session->ipaddr4, &saddr4.sin_addr,
+	    memcpy(&netif->ipaddr4, &saddr4.sin_addr,
 		  sizeof(saddr4.sin_addr));
 
 	} else if (ifaddr->ifa_addr->sa_family == AF_INET6) {
-	    if (!IN6_IS_ADDR_UNSPECIFIED((struct in6_addr *)session->ipaddr6))
+	    if (!IN6_IS_ADDR_UNSPECIFIED((struct in6_addr *)netif->ipaddr6))
 		continue;
 
 	    // alignment
@@ -629,7 +638,7 @@ int netif_addrs(struct ifaddrs *ifaddrs, struct session *sessions) {
 	    if (IN6_IS_ADDR_LINKLOCAL(&saddr6.sin6_addr))
 		continue;
 
-	    memcpy(&session->ipaddr6, &saddr6.sin6_addr,
+	    memcpy(&netif->ipaddr6, &saddr6.sin6_addr,
 		  sizeof(saddr6.sin6_addr));
 #ifdef AF_PACKET
 	} else if (ifaddr->ifa_addr->sa_family == AF_PACKET) {
@@ -637,7 +646,7 @@ int netif_addrs(struct ifaddrs *ifaddrs, struct session *sessions) {
 	    // alignment
 	    memcpy(&saddrll, ifaddr->ifa_addr, sizeof(saddrll));
 
-	    memcpy(&session->hwaddr, &saddrll.sll_addr, ETHER_ADDR_LEN);
+	    memcpy(&netif->hwaddr, &saddrll.sll_addr, ETHER_ADDR_LEN);
 #endif
 #ifdef AF_LINK
 	} else if (ifaddr->ifa_addr->sa_family == AF_LINK) {
@@ -645,7 +654,7 @@ int netif_addrs(struct ifaddrs *ifaddrs, struct session *sessions) {
 	    // alignment
 	    memcpy(&saddrdl, ifaddr->ifa_addr, sizeof(saddrdl));
 
-	    memcpy(&session->hwaddr, LLADDR(&saddrdl), ETHER_ADDR_LEN);
+	    memcpy(&netif->hwaddr, LLADDR(&saddrdl), ETHER_ADDR_LEN);
 #endif
 	}
     }
@@ -654,8 +663,54 @@ int netif_addrs(struct ifaddrs *ifaddrs, struct session *sessions) {
 }
 
 
+// detect forwarding capability
+int netif_forwarding() {
+
+    FILE *file;
+    char line[256];
+
+#ifdef CTL_NET
+    int mib[4], n;
+    size_t len;
+
+    len = sizeof(n);
+
+    mib[0] = CTL_NET;
+    mib[2] = 0;
+#endif
+
+    if ((file = fopen(PROCFS_FORWARD_IPV4, "r")) != NULL) {
+        if (fgets(line, sizeof(line), file))
+            if (atoi(line) == 1)
+		return(1);
+	fclose(file);
+    }
+
+    if ((file = fopen(PROCFS_FORWARD_IPV6, "r")) != NULL) {
+        if (fgets(line, sizeof(line), file))
+            if (atoi(line) == 1)
+		return(1);
+	fclose(file);
+    }
+
+#ifdef CTL_NET
+    mib[1] = PF_INET;
+    mib[3] = IPCTL_FORWARDING;
+    if (sysctl(mib, 4, &n, &len, NULL, 0) != -1 && n)
+	return(1);
+
+    mib[1] = PF_INET6;
+    mib[3] = IPV6CTL_FORWARDING;
+    if (sysctl(mib, 4, &n, &len, NULL, 0) != -1 && n)
+	return(1);
+#endif
+
+    return(0);
+}
+
+
 // perform media detection on physical interfaces
-int netif_media(struct session *session) {
+int netif_media(struct netif *netif) {
     int sockfd, af = AF_INET;
     struct ifreq ifr;
 
@@ -670,19 +725,19 @@ int netif_media(struct session *session) {
 
     sockfd = my_socket(af, SOCK_DGRAM, 0);
 
-    session->duplex = -1;
-    session->autoneg_supported = -1;
-    session->autoneg_enabled = -1;
-    session->mau = 0;
+    netif->duplex = -1;
+    netif->autoneg_supported = -1;
+    netif->autoneg_enabled = -1;
+    netif->mau = 0;
 
     memset(&ifr, 0, sizeof(ifr));
-    strncpy(ifr.ifr_name, session->name, IFNAMSIZ);
+    strncpy(ifr.ifr_name, netif->name, IFNAMSIZ);
 
     // interface mtu
     if (ioctl(sockfd, SIOCGIFMTU, (caddr_t)&ifr) >= 0)
-	session->mtu = ifr.ifr_mtu;
+	netif->mtu = ifr.ifr_mtu;
     else
-	my_log(3, "mtu detection failed on interface %s", session->name);
+	my_log(3, "mtu detection failed on interface %s", netif->name);
 
 #if HAVE_LINUX_ETHTOOL_H
     memset(&ecmd, 0, sizeof(ecmd));
@@ -691,33 +746,33 @@ int netif_media(struct session *session) {
 
     if (ioctl(sockfd, SIOCETHTOOL, &ifr) >= 0) {
 	// duplex
-	session->duplex = (ecmd.duplex == DUPLEX_FULL) ? 1 : 0;
+	netif->duplex = (ecmd.duplex == DUPLEX_FULL) ? 1 : 0;
 
 	// autoneg
 	if (ecmd.supported & SUPPORTED_Autoneg) {
-	    my_log(3, "autoneg supported on %s", session->name);
-	    session->autoneg_supported = 1;
-	    session->autoneg_enabled = (ecmd.autoneg == AUTONEG_ENABLE) ? 1 : 0;
+	    my_log(3, "autoneg supported on %s", netif->name);
+	    netif->autoneg_supported = 1;
+	    netif->autoneg_enabled = (ecmd.autoneg == AUTONEG_ENABLE) ? 1 : 0;
 	} else {
-	    my_log(3, "autoneg not supported on %s", session->name);
-	    session->autoneg_supported = 0;
+	    my_log(3, "autoneg not supported on %s", netif->name);
+	    netif->autoneg_supported = 0;
 	}	
     } else {
-	my_log(3, "ethtool ioctl failed on interface %s", session->name);
+	my_log(3, "ethtool ioctl failed on interface %s", netif->name);
     }
 #endif /* HAVE_LINUX_ETHTOOL_H */
 
 #if HAVE_NET_IF_MEDIA_H
     memset(&ifmr, 0, sizeof(ifmr));
-    strncpy(ifmr.ifm_name, session->name, IFNAMSIZ);
+    strncpy(ifmr.ifm_name, netif->name, IFNAMSIZ);
 
     if (ioctl(sockfd, SIOCGIFMEDIA, (caddr_t)&ifmr) < 0) {
-	my_log(3, "media detection not supported on %s", session->name);
+	my_log(3, "media detection not supported on %s", netif->name);
 	return(EXIT_SUCCESS);
     }
 
     if (ifmr.ifm_count == 0) {
-	my_log(0, "missing media types for interface %s", session->name);
+	my_log(0, "missing media types for interface %s", netif->name);
 	return(EXIT_FAILURE);
     }
 
@@ -725,122 +780,122 @@ int netif_media(struct session *session) {
     ifmr.ifm_ulist = media_list;
 
     if (ioctl(sockfd, SIOCGIFMEDIA, (caddr_t)&ifmr) < 0) {
-	my_log(0, "media detection failed for interface %s", session->name);
+	my_log(0, "media detection failed for interface %s", netif->name);
 	return(EXIT_FAILURE);
     }
 
     if (IFM_TYPE(ifmr.ifm_current) != IFM_ETHER) {
-	my_log(0, "non-ethernet interface %s found", session->name);
+	my_log(0, "non-ethernet interface %s found", netif->name);
 	return(EXIT_FAILURE);
     }
 
     if ((ifmr.ifm_status & IFM_ACTIVE) == 0) { 
-	my_log(0, "no link detected on interface %s", session->name);
+	my_log(0, "no link detected on interface %s", netif->name);
 	return(EXIT_SUCCESS);
     }
 
     // autoneg support
     for (i = 0; i < ifmr.ifm_count; i++) {
 	if (IFM_SUBTYPE(ifmr.ifm_ulist[i]) == IFM_AUTO) {
-	    my_log(3, "autoneg supported on %s", session->name);
-	    session->autoneg_supported = 1;
+	    my_log(3, "autoneg supported on %s", netif->name);
+	    netif->autoneg_supported = 1;
 	    break;
 	}
     }
 
     // autoneg enabled
-    if (session->autoneg_supported == 1) {
+    if (netif->autoneg_supported == 1) {
 	if (IFM_SUBTYPE(ifmr.ifm_current) == IFM_AUTO) {
-	    my_log(3, "autoneg enabled on %s", session->name);
-	    session->autoneg_enabled = 1;
+	    my_log(3, "autoneg enabled on %s", netif->name);
+	    netif->autoneg_enabled = 1;
 	} else {
-	    my_log(3, "autoneg disabled on interface %s", session->name);
-	    session->autoneg_enabled = 0;
+	    my_log(3, "autoneg disabled on interface %s", netif->name);
+	    netif->autoneg_enabled = 0;
 	}
     } else {
-	my_log(3, "autoneg not supported on interface %s", session->name);
-	session->autoneg_supported = 0;
+	my_log(3, "autoneg not supported on interface %s", netif->name);
+	netif->autoneg_supported = 0;
     }
 
     // duplex
     if ((IFM_OPTIONS(ifmr.ifm_active) & IFM_FDX) != 0) {
-	my_log(3, "full-duplex enabled on interface %s", session->name);
-	session->duplex = 1;
+	my_log(3, "full-duplex enabled on interface %s", netif->name);
+	netif->duplex = 1;
     } else {
-	my_log(3, "half-duplex enabled on interface %s", session->name);
-	session->duplex = 0;
+	my_log(3, "half-duplex enabled on interface %s", netif->name);
+	netif->duplex = 0;
     }
 
     // mau
     switch (IFM_SUBTYPE(ifmr.ifm_active)) {
 	case IFM_10_T:
-	    if (session->duplex == 1)
-		session->mau = LLDP_MAU_TYPE_10BASE_T_FD;
+	    if (netif->duplex == 1)
+		netif->mau = LLDP_MAU_TYPE_10BASE_T_FD;
 	    else
-		session->mau = LLDP_MAU_TYPE_10BASE_T_HD;
+		netif->mau = LLDP_MAU_TYPE_10BASE_T_HD;
 	    break;
 	case IFM_10_2:
-	    session->mau = LLDP_MAU_TYPE_10BASE_2;
+	    netif->mau = LLDP_MAU_TYPE_10BASE_2;
 	    break;
 	case IFM_10_5:
-	    session->mau = LLDP_MAU_TYPE_10BASE_5;
+	    netif->mau = LLDP_MAU_TYPE_10BASE_5;
 	    break;
 	case IFM_100_TX:
-	    if (session->duplex == 1)
-		session->mau = LLDP_MAU_TYPE_100BASE_TX_FD;
+	    if (netif->duplex == 1)
+		netif->mau = LLDP_MAU_TYPE_100BASE_TX_FD;
 	    else
-		session->mau = LLDP_MAU_TYPE_100BASE_TX_HD;
+		netif->mau = LLDP_MAU_TYPE_100BASE_TX_HD;
 	    break;
 	case IFM_100_FX:
-	    if (session->duplex == 1)
-		session->mau = LLDP_MAU_TYPE_100BASE_FX_FD;
+	    if (netif->duplex == 1)
+		netif->mau = LLDP_MAU_TYPE_100BASE_FX_FD;
 	    else
-		session->mau = LLDP_MAU_TYPE_100BASE_FX_HD;
+		netif->mau = LLDP_MAU_TYPE_100BASE_FX_HD;
 	    break;
 	case IFM_100_T4:
-	    session->mau = LLDP_MAU_TYPE_100BASE_T4;
+	    netif->mau = LLDP_MAU_TYPE_100BASE_T4;
 	    break;
 	case IFM_100_T2:
-	    if (session->duplex == 1)
-		session->mau = LLDP_MAU_TYPE_100BASE_T2_FD;
+	    if (netif->duplex == 1)
+		netif->mau = LLDP_MAU_TYPE_100BASE_T2_FD;
 	    else
-		session->mau = LLDP_MAU_TYPE_100BASE_T2_HD;
+		netif->mau = LLDP_MAU_TYPE_100BASE_T2_HD;
 	    break;
 	case IFM_1000_SX:
-	    if (session->duplex == 1)
-		session->mau = LLDP_MAU_TYPE_1000BASE_SX_FD;
+	    if (netif->duplex == 1)
+		netif->mau = LLDP_MAU_TYPE_1000BASE_SX_FD;
 	    else
-		session->mau = LLDP_MAU_TYPE_1000BASE_SX_HD;
+		netif->mau = LLDP_MAU_TYPE_1000BASE_SX_HD;
 	    break;
 	case IFM_10_FL: 
-	    if (session->duplex == 1)
-		session->mau = LLDP_MAU_TYPE_10BASE_FL_FD;
+	    if (netif->duplex == 1)
+		netif->mau = LLDP_MAU_TYPE_10BASE_FL_FD;
 	    else
-		session->mau = LLDP_MAU_TYPE_10BASE_FL_HD;
+		netif->mau = LLDP_MAU_TYPE_10BASE_FL_HD;
 	    break;
 	case IFM_1000_LX:
-	    if (session->duplex == 1)
-		session->mau = LLDP_MAU_TYPE_1000BASE_LX_FD;
+	    if (netif->duplex == 1)
+		netif->mau = LLDP_MAU_TYPE_1000BASE_LX_FD;
 	    else
-		session->mau = LLDP_MAU_TYPE_1000BASE_LX_HD;
+		netif->mau = LLDP_MAU_TYPE_1000BASE_LX_HD;
 	    break;
 	case IFM_1000_CX:
-	    if (session->duplex == 1)
-		session->mau = LLDP_MAU_TYPE_1000BASE_CX_FD;
+	    if (netif->duplex == 1)
+		netif->mau = LLDP_MAU_TYPE_1000BASE_CX_FD;
 	    else
-		session->mau = LLDP_MAU_TYPE_1000BASE_CX_HD;
+		netif->mau = LLDP_MAU_TYPE_1000BASE_CX_HD;
 	    break;
 	case IFM_1000_T:
-	    if (session->duplex == 1)
-		session->mau = LLDP_MAU_TYPE_1000BASE_T_FD;
+	    if (netif->duplex == 1)
+		netif->mau = LLDP_MAU_TYPE_1000BASE_T_FD;
 	    else
-		session->mau = LLDP_MAU_TYPE_1000BASE_T_HD;
+		netif->mau = LLDP_MAU_TYPE_1000BASE_T_HD;
 	    break;
 	case IFM_10G_LR:
-	    session->mau = LLDP_MAU_TYPE_10GBASE_LR;
+	    netif->mau = LLDP_MAU_TYPE_10GBASE_LR;
 	    break;
 	case IFM_10G_SR:
-	    session->mau = LLDP_MAU_TYPE_10GBASE_SR;
+	    netif->mau = LLDP_MAU_TYPE_10GBASE_SR;
 	    break;
     }
 

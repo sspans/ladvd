@@ -30,8 +30,7 @@ uint16_t cdp_checksum(void *data, size_t length) {
     return (uint16_t)~sum;
 }
 
-int cdp_packet(struct packet *packet,
-	       struct session *csession, struct session *session,
+int cdp_packet(struct packet *packet, struct netif *netif,
 	       struct sysinfo *sysinfo) {
 
     size_t length;
@@ -40,11 +39,18 @@ int cdp_packet(struct packet *packet,
 
     void *cdp_pos, *checksum_pos;
     uint8_t addr_count = 0;
+    struct netif *master;
 
     // init
     memset(packet, 0, sizeof(packet));
     pos = packet->data;
     length = sizeof(packet->data);
+
+
+    if (netif->master != NULL)
+	master = netif->master;
+    else
+	master = netif;
 
 
     // snap header
@@ -99,7 +105,7 @@ int cdp_packet(struct packet *packet,
     // port id
     if (!(
 	START_CDP_TLV(CDP_TYPE_PORT_ID) &&
-	PUSH_BYTES(csession->name, strlen(csession->name))
+	PUSH_BYTES(netif->name, strlen(netif->name))
     ))
 	return 0;
     END_CDP_TLV;
@@ -124,9 +130,9 @@ int cdp_packet(struct packet *packet,
 
 
     // management addrs
-    if (session->ipaddr4 != 0)
+    if (master->ipaddr4 != 0)
 	addr_count++;
-    if (!IN6_IS_ADDR_UNSPECIFIED((struct in6_addr *)session->ipaddr6)) 
+    if (!IN6_IS_ADDR_UNSPECIFIED((struct in6_addr *)master->ipaddr6)) 
 	addr_count++;
 
     if (addr_count > 0) {
@@ -136,26 +142,26 @@ int cdp_packet(struct packet *packet,
 	))
 	    return 0;
 
-	if (session->ipaddr4 != 0) {
+	if (master->ipaddr4 != 0) {
 	    if (!(
 		PUSH_UINT8(cdp_predefs[CDP_ADDR_PROTO_IPV4].protocol_type) &&
 		PUSH_UINT8(cdp_predefs[CDP_ADDR_PROTO_IPV4].protocol_length) &&
 		PUSH_BYTES(cdp_predefs[CDP_ADDR_PROTO_IPV4].protocol,
 			   cdp_predefs[CDP_ADDR_PROTO_IPV4].protocol_length) &&
-		PUSH_UINT16(sizeof(session->ipaddr4)) &&
-		PUSH_BYTES(&session->ipaddr4, sizeof(session->ipaddr4))
+		PUSH_UINT16(sizeof(master->ipaddr4)) &&
+		PUSH_BYTES(&master->ipaddr4, sizeof(master->ipaddr4))
 	    ))
 		return 0;
 	}
 
-	if (!IN6_IS_ADDR_UNSPECIFIED((struct in6_addr *)session->ipaddr6)) {
+	if (!IN6_IS_ADDR_UNSPECIFIED((struct in6_addr *)master->ipaddr6)) {
 	    if (!(
 		PUSH_UINT8(cdp_predefs[CDP_ADDR_PROTO_IPV6].protocol_type) &&
 		PUSH_UINT8(cdp_predefs[CDP_ADDR_PROTO_IPV6].protocol_length) &&
 		PUSH_BYTES(cdp_predefs[CDP_ADDR_PROTO_IPV6].protocol,
 			   cdp_predefs[CDP_ADDR_PROTO_IPV6].protocol_length) &&
-		PUSH_UINT16(sizeof(session->ipaddr6)) &&
-		PUSH_BYTES(session->ipaddr6, sizeof(session->ipaddr6))
+		PUSH_UINT16(sizeof(master->ipaddr6)) &&
+		PUSH_BYTES(master->ipaddr6, sizeof(master->ipaddr6))
 	    ))
 		return 0;
 	}
@@ -164,22 +170,19 @@ int cdp_packet(struct packet *packet,
     }
 
 
-    // TODO: IPv6
-
-
     // mtu
-    if (csession->mtu && !(
+    if (netif->mtu && !(
 	START_CDP_TLV(CDP_TYPE_MTU) &&
-	PUSH_UINT32(csession->mtu)
+	PUSH_UINT32(netif->mtu)
     ))
 	return 0;
     END_CDP_TLV;
 
 
     // duplex
-    if ((csession->duplex != -1) && !(
+    if ((netif->duplex != -1) && !(
 	START_CDP_TLV(CDP_TYPE_DUPLEX) &&
-	PUSH_UINT8(csession->duplex)
+	PUSH_UINT8(netif->duplex)
     ))
 	return 0;
     END_CDP_TLV;
@@ -211,7 +214,7 @@ int cdp_packet(struct packet *packet,
 
     // ethernet header
     memcpy(packet->dst, cdp_dst, ETHER_ADDR_LEN);
-    memcpy(packet->src, csession->hwaddr, ETHER_ADDR_LEN);
+    memcpy(packet->src, netif->hwaddr, ETHER_ADDR_LEN);
     *(uint16_t *)packet->length = htons(VOIDP_DIFF(pos, packet->data));
 
     // packet length

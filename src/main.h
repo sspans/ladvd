@@ -39,7 +39,7 @@ struct packet {
     uint8_t data[1024];
 };
 
-struct session {
+struct netif {
     uint8_t index;
     char name[IFNAMSIZ];
     uint8_t hwaddr[ETHER_ADDR_LEN];
@@ -58,8 +58,9 @@ struct session {
     uint8_t lacp;
     uint8_t lacp_index;
 
-    struct session *subif;
-    struct session *next;
+    struct netif *master;
+    struct netif *subif;
+    struct netif *next;
 };
 
 struct sysinfo {
@@ -81,14 +82,10 @@ struct sysinfo {
 #define NETIF_BONDING	1
 #define NETIF_BRIDGE	2
 
-uint16_t netif_list(int ifc, char *ifl[], struct sysinfo *, struct session **);
-int netif_media(struct session *session);
+uint16_t netif_list(int ifc, char *ifl[], struct sysinfo *, struct netif **);
+int netif_media(struct netif *session);
 
-int cdp_packet(struct packet *,
-	       struct session *, struct session *,
-	       struct sysinfo *);
-int lldp_packet(struct packet *,
-		struct session *, struct session *,
-		struct sysinfo *);
+int cdp_packet(struct packet *, struct netif *, struct sysinfo *);
+int lldp_packet(struct packet *, struct netif *, struct sysinfo *);
 
 #endif /* _main_h */

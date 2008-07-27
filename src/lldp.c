@@ -10,13 +10,13 @@
 static uint8_t lldp_dst[] = { 0x01, 0x80, 0xc2, 0x00, 0x00, 0x0e };
 static uint8_t lldp_ether[] = { 0x88, 0xcc };
 
-int lldp_packet(struct packet *packet,
-		struct session *csession, struct session *session,
+int lldp_packet(struct packet *packet, struct netif *netif,
 		struct sysinfo *sysinfo) {
 
     size_t length;
     uint8_t *pos, *tlv;
     uint8_t capabilities = 0;
+    struct netif *master;
 
     // init
     memset(packet, 0, sizeof(packet));
@@ -24,11 +24,17 @@ int lldp_packet(struct packet *packet,
     length = sizeof(packet->data);
 
 
+    if (netif->master != NULL)
+	master = netif->master;
+    else
+	master = netif;
+
+
     // chassis id
     if (!(
 	START_LLDP_TLV(LLDP_CHASSIS_ID_TLV) &&
 	PUSH_UINT8(LLDP_CHASSIS_INTF_NAME_SUBTYPE) &&
-	PUSH_BYTES(csession->name, strlen(csession->name))
+	PUSH_BYTES(netif->name, strlen(netif->name))
     ))
 	return 0;
     END_LLDP_TLV;
@@ -38,7 +44,7 @@ int lldp_packet(struct packet *packet,
     if (!(
 	START_LLDP_TLV(LLDP_PORT_ID_TLV) &&
 	PUSH_UINT8(LLDP_PORT_INTF_NAME_SUBTYPE) &&
-	PUSH_BYTES(csession->name, strlen(csession->name))
+	PUSH_BYTES(netif->name, strlen(netif->name))
     ))
 	return 0;
     END_LLDP_TLV;
@@ -95,14 +101,14 @@ int lldp_packet(struct packet *packet,
 
 
     // ipv4 management addr
-    if (session->ipaddr4 != 0) {
+    if (master->ipaddr4 != 0) {
 	if (!(
 	    START_LLDP_TLV(LLDP_MGMT_ADDR_TLV) &&
-	    PUSH_UINT8(1 + sizeof(session->ipaddr4)) &&
+	    PUSH_UINT8(1 + sizeof(master->ipaddr4)) &&
 	    PUSH_UINT8(LLDP_AFNUM_INET) &&
-	    PUSH_BYTES(&session->ipaddr4, sizeof(session->ipaddr4)) &&
+	    PUSH_BYTES(&master->ipaddr4, sizeof(master->ipaddr4)) &&
 	    PUSH_UINT8(LLDP_INTF_NUMB_IFX_SUBTYPE) &&
-	    PUSH_UINT32(csession->index) &&
+	    PUSH_UINT32(netif->index) &&
 	    PUSH_UINT8(0)
 	))
 	    return 0;
@@ -111,14 +117,14 @@ int lldp_packet(struct packet *packet,
 
 
     // ipv6 management addr
-    if (!IN6_IS_ADDR_UNSPECIFIED((struct in6_addr *)session->ipaddr6)) {
+    if (!IN6_IS_ADDR_UNSPECIFIED((struct in6_addr *)master->ipaddr6)) {
 	if (!(
 	    START_LLDP_TLV(LLDP_MGMT_ADDR_TLV) &&
-	    PUSH_UINT8(1 + sizeof(session->ipaddr6)) &&
+	    PUSH_UINT8(1 + sizeof(master->ipaddr6)) &&
 	    PUSH_UINT8(LLDP_AFNUM_INET6) &&
-	    PUSH_BYTES(session->ipaddr6, sizeof(session->ipaddr6)) &&
+	    PUSH_BYTES(master->ipaddr6, sizeof(master->ipaddr6)) &&
 	    PUSH_UINT8(LLDP_INTF_NUMB_IFX_SUBTYPE) &&
-	    PUSH_UINT32(csession->index) &&
+	    PUSH_UINT32(netif->index) &&
 	    PUSH_UINT8(0)
 	))
 	    return 0;
@@ -127,15 +133,15 @@ int lldp_packet(struct packet *packet,
 
 
     // autoneg
-    if (csession->autoneg_supported != -1) {
+    if (netif->autoneg_supported != -1) {
 	if (!(
 	    START_LLDP_TLV(LLDP_PRIVATE_TLV) &&
 	    PUSH_BYTES(OUI_IEEE_8023_PRIVATE, OUI_LEN) &&
 	    PUSH_UINT8(LLDP_PRIVATE_8023_SUBTYPE_MACPHY) &&
-	    PUSH_UINT8(csession->autoneg_supported +
-		       (csession->autoneg_enabled << 1)) &&
+	    PUSH_UINT8(netif->autoneg_supported +
+		       (netif->autoneg_enabled << 1)) &&
 	    PUSH_UINT16(0) &&
-	    PUSH_UINT16(csession->mau)
+	    PUSH_UINT16(netif->mau)
 	))
 	    return 0;
 	END_LLDP_TLV;
@@ -143,13 +149,13 @@ int lldp_packet(struct packet *packet,
 
 
     // lacp
-    if (session->lacp != 0) {
+    if (master->lacp != 0) {
 	if (!(
 	    START_LLDP_TLV(LLDP_PRIVATE_TLV) &&
 	    PUSH_BYTES(OUI_IEEE_8023_PRIVATE, OUI_LEN) &&
 	    PUSH_UINT8(LLDP_PRIVATE_8023_SUBTYPE_LINKAGGR) &&
 	    PUSH_UINT8(LLDP_AGGREGATION_CAPABILTIY|LLDP_AGGREGATION_STATUS) &&
-	    PUSH_UINT32(csession->lacp_index)
+	    PUSH_UINT32(netif->lacp_index)
 	))
 	    return 0;
 	END_LLDP_TLV;
@@ -157,12 +163,12 @@ int lldp_packet(struct packet *packet,
 
 
     // mtu
-    if (csession->mtu != 0) {
+    if (netif->mtu != 0) {
 	if (!(
 	    START_LLDP_TLV(LLDP_PRIVATE_TLV) &&
 	    PUSH_BYTES(OUI_IEEE_8023_PRIVATE, OUI_LEN) &&
 	    PUSH_UINT8(LLDP_PRIVATE_8023_SUBTYPE_MTU) &&
-	    PUSH_UINT16(csession->mtu + 22)
+	    PUSH_UINT16(netif->mtu + 22)
 	))
 	    return 0;
 	END_LLDP_TLV;
@@ -179,7 +185,7 @@ int lldp_packet(struct packet *packet,
 
     // ethernet header
     memcpy(packet->dst, lldp_dst, ETHER_ADDR_LEN);
-    memcpy(packet->src, csession->hwaddr, ETHER_ADDR_LEN);
+    memcpy(packet->src, netif->hwaddr, ETHER_ADDR_LEN);
     memcpy(packet->type, lldp_ether, ETHER_TYPE_LEN);
 
     // packet length
