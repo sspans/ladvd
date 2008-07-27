@@ -1,5 +1,7 @@
 
 CODE:
+- PACKAGE_USER in manpage
+- location support for lldp
 - investigate netlink/other interface notifications
 - pcap packet format for -d
 
