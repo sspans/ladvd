@@ -61,6 +61,8 @@ AC_CHECK_HEADERS([net/if_types.h])
 # bridge / bonding
 AC_CHECK_HEADERS([linux/if_bridge.h linux/if_bonding.h], [], [],
 [
+#include <sys/types.h>
+#include <sys/socket.h>
 #include <linux/netdevice.h>
 ])
 AC_CHECK_HEADERS([net/if_bridge.h net/if_bridgevar.h \
