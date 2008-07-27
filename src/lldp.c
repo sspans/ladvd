@@ -59,6 +59,17 @@ int lldp_packet(struct packet *packet, struct netif *netif,
     END_LLDP_TLV;
 
 
+    // port description
+    if (strlen(netif->description) > 0) {
+	if (!(
+	    START_LLDP_TLV(LLDP_PORT_DESCR_TLV) &&
+	    PUSH_BYTES(netif->description, strlen(netif->description))
+	))
+	    return 0;
+	END_LLDP_TLV;
+    }
+
+
     // system name
     if (!(
 	START_LLDP_TLV(LLDP_SYSTEM_NAME_TLV) &&

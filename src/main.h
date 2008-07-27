@@ -29,6 +29,10 @@
 #define SLEEPTIME   30
 #define LADVD_TTL   180
 
+#ifndef IFDESCRSIZE
+#define IFDESCRSIZE 255
+#endif
+
 struct packet {
     uint8_t dst[ETHER_ADDR_LEN];
     uint8_t src[ETHER_ADDR_LEN];
@@ -42,6 +46,7 @@ struct packet {
 struct netif {
     uint8_t index;
     char name[IFNAMSIZ];
+    char description[IFDESCRSIZE];
     uint8_t hwaddr[ETHER_ADDR_LEN];
     uint16_t mtu;
     int8_t duplex;

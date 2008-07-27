@@ -228,6 +228,11 @@ uint16_t netif_list(int ifc, char *ifl[], struct sysinfo *sysinfo,
 	strncpy(netif->name, ifaddr->ifa_name, IFNAMSIZ);
 	netif->type = type;
 
+#ifdef SIOCGIFDESCR
+	ifr.ifr_data = (caddr_t)&netif->description;
+	ioctl(sockfd, SIOCGIFDESCR, &ifr);
+#endif
+
 	// update linked list
 	if (netif_prev != NULL)
 	    netif_prev->next = netif;
