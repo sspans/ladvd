@@ -6,9 +6,9 @@ installinit_error() {
 	exit $?
 }
 
-#DEBHELPER#
-
 if [ "$1" = "configure" ]; then
     adduser --system --quiet --group --no-create-home ladvd || :
 fi
+
+#DEBHELPER#
 
