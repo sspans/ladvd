@@ -258,6 +258,9 @@ uint16_t netif_list(int ifc, char *ifl[], struct sysinfo *sysinfo,
     if (netif_forwarding() == 1)
 	sysinfo->cap |= CAP_ROUTER; 
 
+    // use the first mac as chassis id
+    memcpy(&sysinfo->hwaddr, &netifs->hwaddr, ETHER_ADDR_LEN);
+
     // validate detected interfaces
     if (ifc > 0) {
 	count = 0;

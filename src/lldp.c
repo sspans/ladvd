@@ -33,8 +33,8 @@ int lldp_packet(struct packet *packet, struct netif *netif,
     // chassis id
     if (!(
 	START_LLDP_TLV(LLDP_CHASSIS_ID_TLV) &&
-	PUSH_UINT8(LLDP_CHASSIS_INTF_NAME_SUBTYPE) &&
-	PUSH_BYTES(netif->name, strlen(netif->name))
+	PUSH_UINT8(LLDP_CHASSIS_MAC_ADDR_SUBTYPE) &&
+	PUSH_BYTES(sysinfo->hwaddr, ETHER_ADDR_LEN)
     ))
 	return 0;
     END_LLDP_TLV;

@@ -257,14 +257,12 @@ loop:
 	    my_log(3, "starting loop with interface %s", netif->name); 
 
 	    // point netif to subif when netif is master
-	    if (netif->type > 0) {
-		master = netif;
-		netif = master->subif;
-	    } else {
-		master = NULL;
-	    }
+	    master = netif;
 
-	    while (netif != NULL) {
+	    if (master->type > 0)
+		netif = master->subif;
+
+	    while (master != NULL) {
 		// fetch interface media status
 		my_log(3, "fetching %s media details", netif->name);
 		if (netif_media(netif) == EXIT_FAILURE) {
@@ -310,10 +308,15 @@ loop:
 		    }
 		}
 
-		if (master != NULL)
+		// point netif to the next subif
+		if (master->type == 0) {
+		    master = NULL;
+		} else if (netif->subif != NULL) {
 		    netif = netif->subif;
-		else
-		    netif = NULL;
+		} else {
+		    netif = master;
+		    master = NULL;
+		}
 	    }
 	}
 

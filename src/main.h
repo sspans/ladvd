@@ -69,6 +69,7 @@ struct sysinfo {
     char *hostname;
     char *location;
     int8_t cap;
+    uint8_t hwaddr[ETHER_ADDR_LEN];
 };
 
 #define CAP_BRIDGE	(1 << 0)
