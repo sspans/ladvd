@@ -1,10 +1,9 @@
 
 CODE:
 - lldp doc lezen
-- check for forwarding (bsd, linux)
-- check cap_host
-- pcap packet format for -d
+- fix bsd ipv6 forwarding check
 - investigate netlink/other interface notifications
+- pcap packet format for -d
 
 - LLDP-MED Inventory Management TLV (dmi)
 - LLDP-MED LCI TLV (coord/civic)
