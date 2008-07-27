@@ -5,8 +5,11 @@ ladvd is a cdp / lldp sender for unix.
 
 ladvd uses cdp / lldp frames to inform switches about connected hosts,
 which simplifies ethernet switch management. It does this by creating
-the required payloads and descriptors on startup and then switching 
-to a non-privileged user for the remaining runtime.
+a raw socket at startup, and then switching to a non-privileged user for the
+remaining runtime. Every 30 seconds it will transmit CDP/LLDP packets 
+reflecting the current system state. Interfaces (bridge, bonding, wireless),
+capabilities (bridging, forwarding, wireless) and addresses (IPv4, IPv6) 
+are detected dynamically.
 
 
 USAGE
@@ -42,10 +45,8 @@ COPYRIGHT
 ---------
 
 ladvd is written by Sten Spans, and may be used, modified and
-redistributed only under the terms of the GNU General Public License,
-found in the file COPYING in this distribution, or at 
-
-  http://www.fsf.org/licenses/gpl.html
+redistributed only under the terms of the ISC License,
+found in the file LICENSE in this distribution.
 
 
 AVAILABILITY

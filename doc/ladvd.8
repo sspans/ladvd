@@ -1,17 +1,17 @@
-.TH ladvd 8 "April 18 2008" ladvd
+.TH ladvd 8 "Juli 27 2008" ladvd
 .SH NAME
 ladvd \- send link layer advertisements
 .SH SYNOPSIS
-.BI "ladvd [" -c "] [" -l "]" 
-.I INTERFACE INTERFACE
+.BI "ladvd [ -c ] [ -l ]" 
+.BI "[ " INTERFACE " ] [ " INTERFACE " ]"
 .B ...
 .SH DESCRIPTION
 .B ladvd
-sends CDP/LLDP link layer advertisements on the specified
+sends CDP/LLDP link layer advertisements on all available
 interfaces. This makes connected hosts visible on managed
-switches. By default it will run as user "nobody" and daemonize.
-Either -c or -l and a list of interfaces are required for
-correct operation.
+switches. By default it will run as a non-privileged user and daemonize.
+Either -c or -l is required. Optionally a list of interfaces on which ladvd
+should transmit can be supplied.
 .SH OPTIONS
 .IP -c
 Send CDP messages.
