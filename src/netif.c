@@ -676,7 +676,6 @@ int netif_forwarding() {
     len = sizeof(n);
 
     mib[0] = CTL_NET;
-    mib[2] = 0;
 #endif
 
     if ((file = fopen(PROCFS_FORWARD_IPV4, "r")) != NULL) {
@@ -695,12 +694,16 @@ int netif_forwarding() {
 
 #ifdef CTL_NET
     mib[1] = PF_INET;
+    mib[2] = IPPROTO_IP;
     mib[3] = IPCTL_FORWARDING;
+
     if (sysctl(mib, 4, &n, &len, NULL, 0) != -1 && n)
 	return(1);
 
     mib[1] = PF_INET6;
+    mib[2] = IPPROTO_IPV6;
     mib[3] = IPV6CTL_FORWARDING;
+
     if (sysctl(mib, 4, &n, &len, NULL, 0) != -1 && n)
 	return(1);
 #endif

@@ -1,7 +1,6 @@
 
 CODE:
 - lldp doc lezen
-- fix bsd ipv6 forwarding check
 - investigate netlink/other interface notifications
 - pcap packet format for -d
 
