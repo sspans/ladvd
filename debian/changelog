@@ -1,3 +1,9 @@
+ladvd (0.6.0-1) unstable; urgency=low
+
+  * misc small packaging fixes
+
+ -- Sten Spans <sten@blinkenlights.nl>  Mon, 28 Jul 2008 01:19:57 +0200
+
 ladvd (0.6.0) unstable; urgency=low
 
   * Update to 0.6.0
