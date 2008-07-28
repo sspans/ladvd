@@ -144,8 +144,8 @@ uint16_t netif_list(int ifc, char *ifl[], struct sysinfo *sysinfo,
     count = 0;
 
     // default to CAP_HOST
-    sysinfo.cap = CAP_HOST;
-    sysinfo.cap_active = CAP_HOST;
+    sysinfo->cap = CAP_HOST;
+    sysinfo->cap_active = CAP_HOST;
 
     for (ifaddr = ifaddrs; ifaddr != NULL; ifaddr = ifaddr->ifa_next) {
 
