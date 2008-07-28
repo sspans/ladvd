@@ -105,10 +105,6 @@ int main(int argc, char *argv[]) {
 	exit(EXIT_FAILURE);
     }
 
-    // default to CAP_HOST
-    sysinfo.cap = CAP_HOST;
-    sysinfo.cap_active = CAP_HOST;
-
     // validate username
     if ((do_debug == 0) && (pwd = getpwnam(username)) == NULL) {
 	my_log(0, "User %s does not exist", username);
