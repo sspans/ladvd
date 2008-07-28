@@ -25,4 +25,5 @@ dpkg-buildpackage -S
 cd ${RELEASE}/debian
 rm -rf ladvd-*
 
+# return to the root
 cd ${BASE}
