@@ -685,8 +685,10 @@ int netif_addrs(struct ifaddrs *ifaddrs, struct netif *netifs) {
 // detect forwarding capability
 void netif_forwarding(struct sysinfo *sysinfo) {
 
+#ifdef HAVE_PROC_SYS_NET
     FILE *file;
     char line[256];
+#endif
 
 #ifdef CTL_NET
     int mib[4], n;
@@ -697,6 +699,7 @@ void netif_forwarding(struct sysinfo *sysinfo) {
     mib[0] = CTL_NET;
 #endif
 
+#ifdef HAVE_PROC_SYS_NET
     if ((file = fopen(PROCFS_FORWARD_IPV4, "r")) != NULL) {
 	sysinfo->cap |= CAP_ROUTER; 
 
@@ -718,6 +721,7 @@ void netif_forwarding(struct sysinfo *sysinfo) {
 	    }
 	fclose(file);
     }
+#endif
 
 #ifdef CTL_NET
     mib[1] = PF_INET;
