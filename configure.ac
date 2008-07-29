@@ -2,6 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_INIT(ladvd, 0.6.0, sten@blinkenlights.nl)
+AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 AC_CONFIG_SRCDIR([src/config.h.in])
 AC_CONFIG_HEADER([src/config.h])
@@ -11,6 +12,7 @@ AC_PROG_CC
 AC_GNU_SOURCE
 AC_PROG_INSTALL
 
+
 if test -n "$GCC"; then
     CFLAGS="$CFLAGS -Wall"
 fi
@@ -19,8 +21,13 @@ AC_ARG_ENABLE(debug,
 [  --enable-debug           Enable debugging options (bugreports and developers only)],
 	enable_debug="$enableval", enable_debug="no")
 
-if test "x$enable_debug" = "xyes"; then
+if test "$enable_debug" = "yes"; then
     CFLAGS="$CFLAGS -DDEBUG"
+fi
+
+if test "$target_os" = "linux-gnu"; then
+    AC_DEFINE(HAVE_PROC_SYS_NET,1,
+    [define if /proc/sys/net should be used])
 fi
 
 # Checks for header files.
