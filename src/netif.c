@@ -94,7 +94,7 @@ int netif_type(int sockfd, struct ifaddrs *ifaddr, struct ifreq *);
 void netif_bond(int sockfd, struct netif *, struct netif *);
 void netif_bridge(int sockfd, struct netif *, struct netif *);
 int netif_addrs(struct ifaddrs *, struct netif *);
-int netif_forwarding();
+void netif_forwarding(struct sysinfo *);
 
 
 // create netifs for a list of interfaces
@@ -272,10 +272,7 @@ uint16_t netif_list(int ifc, char *ifl[], struct sysinfo *sysinfo,
     }
 
     // check for forwarding
-    if (netif_forwarding() == 1) {
-	sysinfo->cap |= CAP_ROUTER; 
-	sysinfo->cap_active |= CAP_ROUTER; 
-    };
+    netif_forwarding(sysinfo);
 
     // use the first mac as chassis id
     memcpy(&sysinfo->hwaddr, &netifs->hwaddr, ETHER_ADDR_LEN);
@@ -686,7 +683,7 @@ int netif_addrs(struct ifaddrs *ifaddrs, struct netif *netifs) {
 
 
 // detect forwarding capability
-int netif_forwarding() {
+void netif_forwarding(struct sysinfo *sysinfo) {
 
     FILE *file;
     char line[256];
@@ -701,16 +698,24 @@ int netif_forwarding() {
 #endif
 
     if ((file = fopen(PROCFS_FORWARD_IPV4, "r")) != NULL) {
+	sysinfo->cap |= CAP_ROUTER; 
+
         if (fgets(line, sizeof(line), file))
-            if (atoi(line) == 1)
-		return(1);
+            if (atoi(line) == 1) {
+		sysinfo->cap_active |= CAP_ROUTER; 
+		return;
+	    }
 	fclose(file);
     }
 
     if ((file = fopen(PROCFS_FORWARD_IPV6, "r")) != NULL) {
+	sysinfo->cap |= CAP_ROUTER; 
+
         if (fgets(line, sizeof(line), file))
-            if (atoi(line) == 1)
-		return(1);
+            if (atoi(line) == 1) {
+		sysinfo->cap_active |= CAP_ROUTER; 
+		return;
+	    }
 	fclose(file);
     }
 
@@ -719,18 +724,26 @@ int netif_forwarding() {
     mib[2] = IPPROTO_IP;
     mib[3] = IPCTL_FORWARDING;
 
-    if (sysctl(mib, 4, &n, &len, NULL, 0) != -1 && n)
-	return(1);
+    if (sysctl(mib, 4, &n, &len, NULL, 0) != -1) {
+	sysinfo->cap |= CAP_ROUTER; 
+	if (n = 1) {
+	    sysinfo->cap_active |= CAP_ROUTER; 
+	    return;
+	}
+    }
 
     mib[1] = PF_INET6;
     mib[2] = IPPROTO_IPV6;
     mib[3] = IPV6CTL_FORWARDING;
 
-    if (sysctl(mib, 4, &n, &len, NULL, 0) != -1 && n)
-	return(1);
+    if (sysctl(mib, 4, &n, &len, NULL, 0) != -1) {
+	sysinfo->cap |= CAP_ROUTER; 
+	if (n = 1) {
+	    sysinfo->cap_active |= CAP_ROUTER; 
+	    return;
+	}
+    }
 #endif
-
-    return(0);
 }
 
 
