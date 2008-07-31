@@ -56,6 +56,9 @@
 
 #if HAVE_LINUX_IF_BRIDGE_H
 #include <linux/if_bridge.h>
+#ifndef SYSFS_BRIDGE_PORT_SUBDIR
+#define SYSFS_BRIDGE_PORT_SUBDIR "brif"
+#endif
 #endif /* HAVE_LINUX_IF_BRIDGE_H */
 
 #if HAVE_NET_IF_BRIDGEVAR_H
