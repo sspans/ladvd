@@ -430,7 +430,7 @@ void netif_bond(int sockfd, struct netif *netifs, struct netif *master) {
     char *slave, *nslave;
 
     // check for lacp
-    sprintf(path, "%s/%s/bonding/mode", SYSFS_VIRTUAL, master->name); 
+    sprintf(path, "%s/%s/bonding/mode", SYSFS_CLASS_NET, master->name); 
     if ((fp = fopen(path, "r")) != NULL) {
 	if (fscanf(fp, "802.3ad") != EOF)
 	    master->lacp = 1;
@@ -438,7 +438,7 @@ void netif_bond(int sockfd, struct netif *netifs, struct netif *master) {
     }
 
     // handle slaves
-    sprintf(path, "%s/%s/bonding/slaves", SYSFS_VIRTUAL, master->name); 
+    sprintf(path, "%s/%s/bonding/slaves", SYSFS_CLASS_NET, master->name); 
     if ((fp = fopen(path, "r")) != NULL) {
 	if (fgets(line, sizeof(line), fp) != NULL) {
 	    // remove newline
@@ -532,7 +532,7 @@ void netif_bridge(int sockfd, struct netif *netifs, struct netif *master) {
     struct dirent *dirent;
 
     // handle slaves
-    sprintf(path, SYSFS_VIRTUAL "/%s/" SYSFS_BRIDGE_PORT_SUBDIR, master->name); 
+    sprintf(path, SYSFS_CLASS_NET "/%s/" SYSFS_BRIDGE_PORT_SUBDIR, master->name); 
 
     if ((dir = opendir(path)) == NULL) {
 	my_log(0, "reading bridge %s subdir %s failed: %s",
