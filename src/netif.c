@@ -81,7 +81,7 @@
 #include <net80211/ieee80211_ioctl.h>
 #endif /* HAVE_NET80211_IEEE80211_IOCTL_H */
 
-#define SYSFS_VIRTUAL		"/sys/devices/virtual/net"
+#define SYSFS_CLASS_NET		"/sys/class/net"
 #define SYSFS_PATH_MAX		256
 #define PROCFS_FORWARD_IPV4	"/proc/sys/net/ipv4/conf/all/forwarding"
 #define PROCFS_FORWARD_IPV6	"/proc/sys/net/ipv6/conf/all/forwarding"
@@ -358,10 +358,10 @@ int netif_type(int sockfd, struct ifaddrs *ifaddr, struct ifreq *ifr) {
     struct ethtool_drvinfo drvinfo;
 
     memset(&drvinfo, 0, sizeof(drvinfo));
-    sprintf(path, "%s/%s", SYSFS_VIRTUAL, ifaddr->ifa_name); 
+    sprintf(path, "%s/%s/device", SYSFS_CLASS_NET, ifaddr->ifa_name); 
 
     // accept physical devices
-    if (stat(path, &sb) != 0)
+    if (stat(path, &sb) == 0)
 	return(NETIF_REGULAR);
 
     // use ethtool to detect various drivers

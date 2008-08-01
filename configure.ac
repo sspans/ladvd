@@ -166,3 +166,10 @@ AC_CHECK_FUNCS([asprintf memcpy memset snprintf strdup strerror uname vsyslog], 
 AC_CONFIG_FILES([Makefile
                  src/Makefile])
 AC_OUTPUT
+
+AC_CONFIG_COMMANDS([manual], 
+[
+sed -e s/PACKAGE_USER/$user/ < doc/ladvd.8 > doc/ladvd.8.$$
+mv doc/ladvd.8.$$ doc/ladvd.8
+])
+
