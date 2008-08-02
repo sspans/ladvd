@@ -89,6 +89,7 @@ struct sysinfo {
 #define NETIF_BONDING	1
 #define NETIF_BRIDGE	2
 
+int sysinfo_get(struct sysinfo *);
 uint16_t netif_list(int ifc, char *ifl[], struct sysinfo *, struct netif **);
 int netif_media(struct netif *session);
 

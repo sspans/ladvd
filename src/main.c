@@ -10,8 +10,6 @@
 #include <fcntl.h>
 #include <pwd.h>
 #include <grp.h>
-#include <netdb.h>
-#include <signal.h>
 
 #ifdef USE_CAPABILITIES
 #include <sys/prctl.h>
@@ -23,7 +21,6 @@ unsigned int do_fork = 1;
 unsigned int do_debug = 0;
 
 void usage(const char *fn);
-void cleanup();
 
 int main(int argc, char *argv[]) {
 
@@ -34,11 +31,9 @@ int main(int argc, char *argv[]) {
     char *pidfile = PACKAGE_PID_FILE;
     char pidstr[16];
     struct passwd *pwd = NULL;
-    struct sigaction cleanup_action;
 
     // sysinfo
     struct sysinfo sysinfo;
-    struct hostent *hp;
 
     // socket
     int sockfd;
@@ -111,25 +106,8 @@ int main(int argc, char *argv[]) {
 	exit(EXIT_FAILURE);
     }
 
-    // sysinfo.uts
-    if (uname(&sysinfo.uts) == -1) {
-	my_log(0, "can't fetch uname: %s", strerror(errno));
-	exit(EXIT_FAILURE);
-    }
-
-    asprintf(&sysinfo.uts_str, "%s %s %s %s",
-	sysinfo.uts.sysname, sysinfo.uts.release,
-	sysinfo.uts.version, sysinfo.uts.machine);
-    if (sysinfo.uts_str == NULL) {
-	my_log(0, "can't createsysinfo.uts_str: %s", strerror(errno));
-	exit(EXIT_FAILURE);
-    }
-
-    if ((hp = gethostbyname(sysinfo.uts.nodename)) == NULL) {
-	my_log(0, "cant resolve hostname: %s", hstrerror(h_errno));
-	exit(EXIT_FAILURE);
-    }
-    sysinfo.hostname = hp->h_name;
+    // fetch system details
+    sysinfo_get(&sysinfo);
 
     // open pidfile
     if (do_fork == 1) {
@@ -140,22 +118,9 @@ int main(int argc, char *argv[]) {
 	    exit(EXIT_FAILURE);	
 	}
 	if (flock(fd, LOCK_EX|LOCK_NB) == -1) {
-	    my_log(0, "failed to lock pidfile %s: %s",
-			pidfile, strerror(errno));
+	    my_log(0, "ladvd already running (%s locked)", pidfile);
 	    exit(EXIT_FAILURE);	
 	}
-	if (fchown(fd, pwd->pw_uid, -1) == -1) {
-	    my_log(0, "failed to chown pidfile %s: %s",
-			pidfile, strerror(errno));
-	    exit(EXIT_FAILURE);	
-	}
-
-	/* cleanup pidfile when shutting down */
-	cleanup_action.sa_handler = cleanup;
-	cleanup_action.sa_flags = 0;
-	sigemptyset(&cleanup_action.sa_mask);
-
-	sigaction (SIGTERM, &cleanup_action, NULL);
     }
 
     // open a raw socket
@@ -346,11 +311,3 @@ void usage(const char *fn) {
     exit(EXIT_FAILURE);
 }
 
-void cleanup() {
-    if (unlink(PACKAGE_PID_FILE) < 0) {
-	exit(EXIT_SUCCESS);
-    } else {
-	my_log(0, "pidfile cleanup failed: %s", strerror(errno));
-	exit(EXIT_FAILURE);
-    }
-}
