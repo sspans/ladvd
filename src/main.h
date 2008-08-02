@@ -76,6 +76,14 @@ struct sysinfo {
     int8_t cap;
     int8_t cap_active;
     uint8_t hwaddr[ETHER_ADDR_LEN];
+
+    char hw_revision[32];
+    char fw_revision[32];
+    char sw_revision[32];
+    char serial_number[32];
+    char manufacturer[32];
+    char model_name[32];
+    char asset_id[32];
 };
 
 #define CAP_BRIDGE	(1 << 0)
