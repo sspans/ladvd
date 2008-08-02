@@ -101,7 +101,7 @@ void netif_forwarding(struct sysinfo *);
 
 
 // create netifs for a list of interfaces
-uint16_t netif_list(int ifc, char *ifl[], struct sysinfo *sysinfo,
+uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 		    struct netif **mnetifs) {
 
     int sockfd, af = AF_INET;

@@ -95,7 +95,7 @@ int main(int argc, char *argv[]) {
 	usage(progname);
 
     // validate interfaces
-    if (netif_list(argc, argv, &sysinfo, &netifs) == 0) {
+    if (netif_fetch(argc, argv, &sysinfo, &netifs) == 0) {
 	my_log(0, "unable fetch interfaces");
 	exit(EXIT_FAILURE);
     }
@@ -107,7 +107,7 @@ int main(int argc, char *argv[]) {
     }
 
     // fetch system details
-    sysinfo_get(&sysinfo);
+    sysinfo_fetch(&sysinfo);
 
     // open pidfile
     if (do_fork == 1) {
@@ -196,7 +196,7 @@ loop:
 
 	// create netifs
 	my_log(3, "fetching all interfaces"); 
-	if (netif_list(argc, argv, &sysinfo, &netifs) == 0) {
+	if (netif_fetch(argc, argv, &sysinfo, &netifs) == 0) {
 	    my_log(0, "unable fetch interfaces");
 	    goto sleep;
 	}

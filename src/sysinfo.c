@@ -7,7 +7,7 @@
 #include <unistd.h>
 #include <netdb.h>
 
-int sysinfo_get(struct sysinfo *sysinfo) {
+int sysinfo_fetch(struct sysinfo *sysinfo) {
 
     struct hostent *hp;
 
