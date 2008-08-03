@@ -20,7 +20,7 @@
 int sysinfo_fetch(struct sysinfo *sysinfo) {
 
     struct hostent *hp;
-    size_t len = LLDP_INVENTORY_SIZE;
+    size_t len = LLDP_INVENTORY_SIZE + 1;
 
 #ifdef CTL_HW
     int mib[2];
@@ -47,14 +47,14 @@ int sysinfo_fetch(struct sysinfo *sysinfo) {
     }
     sysinfo->hostname = hp->h_name;
 
-    strncpy(sysinfo->sw_revision, sysinfo->uts.release, len);
+    strlcpy(sysinfo->sw_revision, sysinfo->uts.release, len);
 
 #ifdef HAVE_SYSFS
-    read_line(SYSFS_HW_REVISION, sysinfo->hw_revision, len + 1);
-    read_line(SYSFS_FW_REVISION, sysinfo->fw_revision, len + 1);
-    read_line(SYSFS_SERIAL_NO, sysinfo->serial_number, len + 1);
-    read_line(SYSFS_MANUFACTURER, sysinfo->manufacturer, len + 1);
-    read_line(SYSFS_MODEL_NAME, sysinfo->model_name, len + 1);
+    read_line(SYSFS_HW_REVISION, sysinfo->hw_revision, len);
+    read_line(SYSFS_FW_REVISION, sysinfo->fw_revision, len);
+    read_line(SYSFS_SERIAL_NO, sysinfo->serial_number, len);
+    read_line(SYSFS_MANUFACTURER, sysinfo->manufacturer, len);
+    read_line(SYSFS_MODEL_NAME, sysinfo->model_name, len);
 #endif
 
 #ifdef CTL_HW
