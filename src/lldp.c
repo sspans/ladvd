@@ -145,6 +145,9 @@ int lldp_packet(struct packet *packet, struct netif *netif,
     }
 
 
+
+    // IEEE 802.3 Organizationally Specific TLV set
+
     // autoneg
     if (netif->autoneg_supported != -1) {
 	if (!(
@@ -186,6 +189,102 @@ int lldp_packet(struct packet *packet, struct netif *netif,
 	    return 0;
 	END_LLDP_TLV;
     }
+
+
+
+
+    // TIA Inventory Management TLV Set
+
+    // hardware revision
+    if (strlen(sysinfo->hw_revision) > 0) {
+	if (!(
+	    START_LLDP_TLV(LLDP_PRIVATE_TLV) &&
+	    PUSH_BYTES(OUI_TIA, OUI_LEN) &&
+	    PUSH_UINT8(LLDP_PRIVATE_TIA_SUBTYPE_INVENTORY_HARDWARE_REV) &&
+	    PUSH_BYTES(sysinfo->hw_revision, strlen(sysinfo->hw_revision))
+	))
+	    return 0;
+	END_LLDP_TLV;
+    }
+
+
+    // firmware revision
+    if (strlen(sysinfo->fw_revision) > 0) {
+	if (!(
+	    START_LLDP_TLV(LLDP_PRIVATE_TLV) &&
+	    PUSH_BYTES(OUI_TIA, OUI_LEN) &&
+	    PUSH_UINT8(LLDP_PRIVATE_TIA_SUBTYPE_INVENTORY_FIRMWARE_REV) &&
+	    PUSH_BYTES(sysinfo->fw_revision, strlen(sysinfo->fw_revision))
+	))
+	    return 0;
+	END_LLDP_TLV;
+    }
+
+
+    // software revision
+    if (strlen(sysinfo->sw_revision) > 0) {
+	if (!(
+	    START_LLDP_TLV(LLDP_PRIVATE_TLV) &&
+	    PUSH_BYTES(OUI_TIA, OUI_LEN) &&
+	    PUSH_UINT8(LLDP_PRIVATE_TIA_SUBTYPE_INVENTORY_SOFTWARE_REV) &&
+	    PUSH_BYTES(sysinfo->sw_revision, strlen(sysinfo->sw_revision))
+	))
+	    return 0;
+	END_LLDP_TLV;
+    }
+
+
+    // serial number
+    if (strlen(sysinfo->serial_number) > 0) {
+	if (!(
+	    START_LLDP_TLV(LLDP_PRIVATE_TLV) &&
+	    PUSH_BYTES(OUI_TIA, OUI_LEN) &&
+	    PUSH_UINT8(LLDP_PRIVATE_TIA_SUBTYPE_INVENTORY_SERIAL_NUMBER) &&
+	    PUSH_BYTES(sysinfo->serial_number, strlen(sysinfo->serial_number))
+	))
+	    return 0;
+	END_LLDP_TLV;
+    }
+
+
+    // manufacturer
+    if (strlen(sysinfo->manufacturer) > 0) {
+	if (!(
+	    START_LLDP_TLV(LLDP_PRIVATE_TLV) &&
+	    PUSH_BYTES(OUI_TIA, OUI_LEN) &&
+	    PUSH_UINT8(LLDP_PRIVATE_TIA_SUBTYPE_INVENTORY_MANUFACTURER_NAME) &&
+	    PUSH_BYTES(sysinfo->manufacturer, strlen(sysinfo->manufacturer))
+	))
+	    return 0;
+	END_LLDP_TLV;
+    }
+
+
+    // model name
+    if (strlen(sysinfo->model_name) > 0) {
+	if (!(
+	    START_LLDP_TLV(LLDP_PRIVATE_TLV) &&
+	    PUSH_BYTES(OUI_TIA, OUI_LEN) &&
+	    PUSH_UINT8(LLDP_PRIVATE_TIA_SUBTYPE_INVENTORY_MODEL_NAME) &&
+	    PUSH_BYTES(sysinfo->model_name, strlen(sysinfo->model_name))
+	))
+	    return 0;
+	END_LLDP_TLV;
+    }
+
+
+    // asset id
+    if (strlen(sysinfo->asset_id) > 0) {
+	if (!(
+	    START_LLDP_TLV(LLDP_PRIVATE_TLV) &&
+	    PUSH_BYTES(OUI_TIA, OUI_LEN) &&
+	    PUSH_UINT8(LLDP_PRIVATE_TIA_SUBTYPE_INVENTORY_ASSET_ID) &&
+	    PUSH_BYTES(sysinfo->asset_id, strlen(sysinfo->asset_id))
+	))
+	    return 0;
+	END_LLDP_TLV;
+    }
+
 
 
     // the end
