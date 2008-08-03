@@ -20,14 +20,10 @@
 int sysinfo_fetch(struct sysinfo *sysinfo) {
 
     struct hostent *hp;
+    size_t len = LLDP_INVENTORY_SIZE;
 
 #ifdef CTL_HW
-    int mib[2], n;
-    size_t len;
-    char *p;
-
-    len = sizeof(n);
-
+    int mib[2];
     mib[0] = CTL_HW;
 #endif
 
@@ -51,32 +47,32 @@ int sysinfo_fetch(struct sysinfo *sysinfo) {
     }
     sysinfo->hostname = hp->h_name;
 
-    strncpy(sysinfo->sw_revision, sysinfo->uts.version, LLDP_INVENTORY_SIZE);
+    strncpy(sysinfo->sw_revision, sysinfo->uts.version, len);
 
 #ifdef HAVE_SYSFS
-    read_line(SYSFS_HW_REVISION, sysinfo->hw_revision, LLDP_INVENTORY_SIZE);
-    read_line(SYSFS_FW_REVISION, sysinfo->fw_revision, LLDP_INVENTORY_SIZE);
-    read_line(SYSFS_SERIAL_NO, sysinfo->serial_number, LLDP_INVENTORY_SIZE);
-    read_line(SYSFS_MANUFACTURER, sysinfo->manufacturer, LLDP_INVENTORY_SIZE);
-    read_line(SYSFS_MODEL_NAME, sysinfo->model_name, LLDP_INVENTORY_SIZE);
+    read_line(SYSFS_HW_REVISION, sysinfo->hw_revision, len + 1);
+    read_line(SYSFS_FW_REVISION, sysinfo->fw_revision, len + 1);
+    read_line(SYSFS_SERIAL_NO, sysinfo->serial_number, len + 1);
+    read_line(SYSFS_MANUFACTURER, sysinfo->manufacturer, len + 1);
+    read_line(SYSFS_MODEL_NAME, sysinfo->model_name, len + 1);
 #endif
 
 #ifdef CTL_HW
 #ifdef HW_VERSION
     mib[1] = HW_VERSION;
-    sysctl(mib, 2, sysinfo->hw_revision, LLDP_INVENTORY_SIZE, NULL, 0);
+    sysctl(mib, 2, sysinfo->hw_revision, &len, NULL, 0);
 #endif
 #ifdef HW_SERIALNO
     mib[1] = HW_SERIALNO;
-    sysctl(mib, 2, sysinfo->serial_number, LLDP_INVENTORY_SIZE, NULL, 0);
+    sysctl(mib, 2, sysinfo->serial_number, &len, NULL, 0);
 #endif
 #ifdef HW_VENDOR
     mib[1] = HW_VENDOR;
-    sysctl(mib, 2, sysinfo->manufacturer, LLDP_INVENTORY_SIZE, NULL, 0);
+    sysctl(mib, 2, sysinfo->manufacturer, &len, NULL, 0);
 #endif
 #ifdef HW_PRODUCT
     mib[1] = HW_PRODUCT;
-    sysctl(mib, 2, sysinfo->model_name, LLDP_INVENTORY_SIZE, NULL, 0);
+    sysctl(mib, 2, sysinfo->model_name, &len, NULL, 0);
 #endif
 #endif
 
