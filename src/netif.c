@@ -733,7 +733,7 @@ void netif_forwarding(struct sysinfo *sysinfo) {
 
     if (sysctl(mib, 4, &n, &len, NULL, 0) != -1) {
 	sysinfo->cap |= CAP_ROUTER; 
-	if (n = 1) {
+	if (n == 1) {
 	    sysinfo->cap_active |= CAP_ROUTER; 
 	    return;
 	}
@@ -745,7 +745,7 @@ void netif_forwarding(struct sysinfo *sysinfo) {
 
     if (sysctl(mib, 4, &n, &len, NULL, 0) != -1) {
 	sysinfo->cap |= CAP_ROUTER; 
-	if (n = 1) {
+	if (n == 1) {
 	    sysinfo->cap_active |= CAP_ROUTER; 
 	    return;
 	}
