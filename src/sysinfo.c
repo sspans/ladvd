@@ -47,7 +47,7 @@ int sysinfo_fetch(struct sysinfo *sysinfo) {
     }
     sysinfo->hostname = hp->h_name;
 
-    strncpy(sysinfo->sw_revision, sysinfo->uts.version, len);
+    strncpy(sysinfo->sw_revision, sysinfo->uts.release, len);
 
 #ifdef HAVE_SYSFS
     read_line(SYSFS_HW_REVISION, sysinfo->hw_revision, len + 1);
