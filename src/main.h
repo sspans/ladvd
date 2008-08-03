@@ -30,7 +30,7 @@
 #define LADVD_TTL   180
 
 #ifndef IFDESCRSIZE
-#define IFDESCRSIZE 255
+#define IFDESCRSIZE 256
 #endif
 
 #define LLDP_INVENTORY_SIZE 32
@@ -72,7 +72,7 @@ struct netif {
 
 struct sysinfo {
     struct utsname uts;
-    char *uts_str;
+    char uts_str[256];
     char *hostname;
     char *location;
     int8_t cap;
