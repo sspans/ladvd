@@ -120,7 +120,7 @@ int my_rsend(int s, struct netif *netif, const void *msg, size_t len) {
 
     // prepare ifr struct
     memset(&ifr, 0, sizeof(ifr));
-    strncpy(ifr.ifr_name, netif->name, IFNAMSIZ);
+    strlcpy(ifr.ifr_name, netif->name, IFNAMSIZ);
 
     if (ioctl(s, BIOCSETIF, (caddr_t)&ifr) < 0) {
 	my_log(0, "ioctl failed: %s", strerror(errno));
