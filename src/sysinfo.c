@@ -45,7 +45,8 @@ int sysinfo_fetch(struct sysinfo *sysinfo) {
 	my_log(0, "cant resolve hostname: %s", hstrerror(h_errno));
 	exit(EXIT_FAILURE);
     }
-    sysinfo->hostname = hp->h_name;
+    strlcpy(sysinfo->hostname, hp->h_name, sizeof(sysinfo->hostname));
+    free(hp);
 
     strlcpy(sysinfo->sw_revision, sysinfo->uts.release, len);
 

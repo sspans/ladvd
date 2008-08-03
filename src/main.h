@@ -48,7 +48,7 @@ struct packet {
 struct netif {
     uint8_t index;
     char name[IFNAMSIZ];
-    char description[IFDESCRSIZE + 1];
+    char description[IFDESCRSIZE];
     uint8_t hwaddr[ETHER_ADDR_LEN];
     uint16_t mtu;
     int8_t duplex;
@@ -73,7 +73,7 @@ struct netif {
 struct sysinfo {
     struct utsname uts;
     char uts_str[256];
-    char *hostname;
+    char hostname[256];
     char location[256];
     int8_t cap;
     int8_t cap_active;
