@@ -167,7 +167,7 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 
 	// prepare ifr struct
 	memset(&ifr, 0, sizeof(ifr));
-	strncpy(ifr.ifr_name, ifaddr->ifa_name, IFNAMSIZ);
+	strlcpy(ifr.ifr_name, ifaddr->ifa_name, sizeof(ifr.ifr_name));
 
 
 	// skip non-ethernet interfaces
@@ -237,7 +237,7 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 #ifdef AF_LINK
 	netif->index = saddrdl.sdl_index;
 #endif
-	strncpy(netif->name, ifaddr->ifa_name, IFNAMSIZ);
+	strlcpy(netif->name, ifaddr->ifa_name, sizeof(netif->name));
 	netif->type = type;
 
 #ifdef SIOCGIFDESCR
@@ -321,7 +321,7 @@ int netif_wireless(int sockfd, struct ifaddrs *ifaddr, struct ifreq *ifr) {
     struct iwreq iwreq;
 
     memset(&iwreq, 0, sizeof(iwreq));
-    strncpy(iwreq.ifr_name, ifaddr->ifa_name, IFNAMSIZ);
+    strlcpy(iwreq.ifr_name, ifaddr->ifa_name, sizeof(iwreq.ifr_name));
 
     return(ioctl(sockfd, SIOCGIWNAME, &iwreq));
 #endif
@@ -332,7 +332,7 @@ int netif_wireless(int sockfd, struct ifaddrs *ifaddr, struct ifreq *ifr) {
     u_int8_t i_data[32];
 
     memset(&ireq, 0, sizeof(ireq));
-    strncpy(ireq.i_name, ifaddr->ifa_name, sizeof(ireq.i_name));
+    strlcpy(ireq.i_name, ifaddr->ifa_name, sizeof(ireq.i_name));
     ireq.i_data = &i_data;
 
     ireq.i_type = IEEE80211_IOC_SSID;
@@ -492,7 +492,7 @@ void netif_bond(int sockfd, struct netif *netifs, struct netif *master) {
 
     memset(&ra, 0, sizeof(ra));
 
-    strncpy(ra.ra_ifname, master->name, sizeof(ra.ra_ifname));
+    strlcpy(ra.ra_ifname, master->name, sizeof(ra.ra_ifname));
     ra.ra_size = sizeof(rpbuf);
     ra.ra_port = rpbuf;
 
@@ -570,7 +570,7 @@ void netif_bridge(int sockfd, struct netif *netifs, struct netif *master) {
 
     memset(&ifd, 0, sizeof(ifd));
 
-    strncpy(ifd.ifd_name, master->name, sizeof(ifd.ifd_name));
+    strlcpy(ifd.ifd_name, master->name, sizeof(ifd.ifd_name));
     ifd.ifd_cmd = BRDGGIFS;
     ifd.ifd_len = sizeof(bifc);
     ifd.ifd_data = &bifc;
@@ -776,7 +776,7 @@ int netif_media(struct netif *netif) {
     netif->mau = 0;
 
     memset(&ifr, 0, sizeof(ifr));
-    strncpy(ifr.ifr_name, netif->name, IFNAMSIZ);
+    strlcpy(ifr.ifr_name, netif->name, sizeof(ifr.ifr_name));
 
     // interface mtu
     if (ioctl(sockfd, SIOCGIFMTU, (caddr_t)&ifr) >= 0)
@@ -809,7 +809,7 @@ int netif_media(struct netif *netif) {
 
 #if HAVE_NET_IF_MEDIA_H
     memset(&ifmr, 0, sizeof(ifmr));
-    strncpy(ifmr.ifm_name, netif->name, IFNAMSIZ);
+    strlcpy(ifmr.ifm_name, netif->name, sizeof(ifmr.ifm_name));
 
     if (ioctl(sockfd, SIOCGIFMEDIA, (caddr_t)&ifmr) < 0) {
 	my_log(3, "media detection not supported on %s", netif->name);
