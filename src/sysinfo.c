@@ -7,6 +7,15 @@
 #include <unistd.h>
 #include <netdb.h>
 
+#ifdef HAVE_SYSFS
+#define SYSFS_CLASS_DMI		"/sys/class/dmi/id"
+#define SYSFS_HW_REVISION	SYSFS_CLASS_DMI "/product_version"
+#define SYSFS_FW_REVISION	SYSFS_CLASS_DMI "/bios_version"
+#define SYSFS_SERIAL_NO		SYSFS_CLASS_DMI "/product_serial"
+#define SYSFS_MANUFACTURER	SYSFS_CLASS_DMI "/sys_vendor"
+#define SYSFS_MODEL_NAME	SYSFS_CLASS_DMI "/product_name"
+#endif
+
 int sysinfo_fetch(struct sysinfo *sysinfo) {
 
     struct hostent *hp;
@@ -30,6 +39,16 @@ int sysinfo_fetch(struct sysinfo *sysinfo) {
 	exit(EXIT_FAILURE);
     }
     sysinfo->hostname = hp->h_name;
+
+    strncpy(sysinfo->sw_revision, sysinfo->uts.version, LLDP_INVENTORY_SIZE);
+
+#ifdef HAVE_SYSFS
+    sysfs_read(SYSFS_HW_REVISION, sysinfo->hw_revision, LLDP_INVENTORY_SIZE);
+    sysfs_read(SYSFS_FW_REVISION, sysinfo->fw_revision, LLDP_INVENTORY_SIZE);
+    sysfs_read(SYSFS_SERIAL_NO, sysinfo->serial_number, LLDP_INVENTORY_SIZE);
+    sysfs_read(SYSFS_MANUFACTURER, sysinfo->manufacturer, LLDP_INVENTORY_SIZE);
+    sysfs_read(SYSFS_MODEL_NAME, sysinfo->model_name, LLDP_INVENTORY_SIZE);
+#endif
 
     return(0);
 }

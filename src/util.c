@@ -5,6 +5,7 @@
 #include "main.h"
 #include <stdarg.h>
 #include <stdio.h>
+#include <string.h>
 #include <syslog.h>
 #include <sys/ioctl.h>
 #include <sys/time.h>
@@ -153,3 +154,22 @@ struct netif *netif_byname(struct netif *netifs, char *name) {
     return(netif);
 }
 
+#ifdef HAVE_SYSFS
+int sysfs_read(char *path, char *line, uint16_t len) {
+    FILE *file;
+
+    if ((file = fopen(path, "r")) == NULL)
+	return(-1);
+
+    if (fgets(line, len, file) == NULL) {
+	fclose(file);
+	return(-1);
+    }
+    fclose(file);
+
+    // remove newline
+    *strchr(line, '\n') = '\0';
+
+    return(strlen(line));
+}
+#endif

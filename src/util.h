@@ -13,4 +13,6 @@ int my_rsend(int s, struct netif *, const void *msg, size_t len);
 struct netif *netif_byindex(struct netif *, uint8_t index);
 struct netif *netif_byname(struct netif *, char *name);
 
+int sysfs_read(char *path, char *line, int16_t len);
+
 #endif /* _util_h */

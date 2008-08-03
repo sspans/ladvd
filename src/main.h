@@ -33,6 +33,8 @@
 #define IFDESCRSIZE 255
 #endif
 
+#define LLDP_INVENTORY_SIZE 32
+
 struct packet {
     uint8_t dst[ETHER_ADDR_LEN];
     uint8_t src[ETHER_ADDR_LEN];
@@ -46,7 +48,7 @@ struct packet {
 struct netif {
     uint8_t index;
     char name[IFNAMSIZ];
-    char description[IFDESCRSIZE];
+    char description[IFDESCRSIZE + 1];
     uint8_t hwaddr[ETHER_ADDR_LEN];
     uint16_t mtu;
     int8_t duplex;
@@ -77,13 +79,13 @@ struct sysinfo {
     int8_t cap_active;
     uint8_t hwaddr[ETHER_ADDR_LEN];
 
-    char hw_revision[32];
-    char fw_revision[32];
-    char sw_revision[32];
-    char serial_number[32];
-    char manufacturer[32];
-    char model_name[32];
-    char asset_id[32];
+    char hw_revision[LLDP_INVENTORY_SIZE + 1];
+    char fw_revision[LLDP_INVENTORY_SIZE + 1];
+    char sw_revision[LLDP_INVENTORY_SIZE + 1];
+    char serial_number[LLDP_INVENTORY_SIZE + 1];
+    char manufacturer[LLDP_INVENTORY_SIZE + 1];
+    char model_name[LLDP_INVENTORY_SIZE + 1];
+    char asset_id[LLDP_INVENTORY_SIZE + 1];
 };
 
 #define CAP_BRIDGE	(1 << 0)

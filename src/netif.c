@@ -81,10 +81,15 @@
 #include <net80211/ieee80211_ioctl.h>
 #endif /* HAVE_NET80211_IEEE80211_IOCTL_H */
 
+#ifdef HAVE_SYSFS
 #define SYSFS_CLASS_NET		"/sys/class/net"
 #define SYSFS_PATH_MAX		256
+#endif
+
+#ifdef HAVE_PROC_SYS_NET
 #define PROCFS_FORWARD_IPV4	"/proc/sys/net/ipv4/conf/all/forwarding"
 #define PROCFS_FORWARD_IPV6	"/proc/sys/net/ipv6/conf/all/forwarding"
+#endif
 
 #ifdef AF_PACKET
 #define NETIF_AF    AF_PACKET
@@ -351,19 +356,25 @@ int netif_wireless(int sockfd, struct ifaddrs *ifaddr, struct ifreq *ifr) {
 // detect interface type
 int netif_type(int sockfd, struct ifaddrs *ifaddr, struct ifreq *ifr) {
 
-#if HAVE_LINUX_ETHTOOL_H
+#ifdef HAVE_SYSFS
     char path[SYSFS_PATH_MAX];
     struct stat sb;
+#endif
 
+#if HAVE_LINUX_ETHTOOL_H
     struct ethtool_drvinfo drvinfo;
-
     memset(&drvinfo, 0, sizeof(drvinfo));
+#endif
+
+#ifdef HAVE_SYSFS
     sprintf(path, "%s/%s/device", SYSFS_CLASS_NET, ifaddr->ifa_name); 
 
     // accept physical devices
     if (stat(path, &sb) == 0)
 	return(NETIF_REGULAR);
+#endif
 
+#if HAVE_LINUX_ETHTOOL_H
     // use ethtool to detect various drivers
     drvinfo.cmd = ETHTOOL_GDRVINFO;
     ifr->ifr_data = (caddr_t)&drvinfo;
@@ -422,59 +433,53 @@ void netif_bond(int sockfd, struct netif *netifs, struct netif *master) {
     struct netif *subif = NULL, *csubif = master;
     int i;
 
-#ifdef HAVE_LINUX_IF_BONDING_H
+#ifdef HAVE_SYSFS
     // handle linux bonding interfaces
     char path[SYSFS_PATH_MAX];
-    FILE *fp;
+    FILE *file;
     char line[1024];
     char *slave, *nslave;
 
     // check for lacp
     sprintf(path, "%s/%s/bonding/mode", SYSFS_CLASS_NET, master->name); 
-    if ((fp = fopen(path, "r")) != NULL) {
-	if (fscanf(fp, "802.3ad") != EOF)
+    if ((file = fopen(path, "r")) != NULL) {
+	if (fscanf(file, "802.3ad") != EOF)
 	    master->lacp = 1;
-	fclose(fp);
+	fclose(file);
     }
 
     // handle slaves
     sprintf(path, "%s/%s/bonding/slaves", SYSFS_CLASS_NET, master->name); 
-    if ((fp = fopen(path, "r")) != NULL) {
-	if (fgets(line, sizeof(line), fp) != NULL) {
-	    // remove newline
-	    *strchr(line, '\n') = '\0';
 
-	    slave = line;
-	    i = 0;
-	    while (strlen(slave) > 0) {
-		nslave = strstr(line, " ");
-		if (nslave != NULL)
-		    *nslave = '\0';
+    if (sysfs_read(path, line, sizeof(line)) != -1) {
+	slave = line;
+	i = 0;
+	while (strlen(slave) > 0) {
+	    nslave = strstr(line, " ");
+	    if (nslave != NULL)
+		*nslave = '\0';
 
-		subif = netif_byname(netifs, slave);
-		if (subif != NULL) {
-		    my_log(3, "found slave %s", subif->name);
-		    subif->slave = 1;
-		    subif->master = master;
-		    subif->lacp_index = i++;
-		    csubif->subif = subif;
-		    csubif = subif;
-		}
-
-		if (nslave != NULL) {
-		    nslave++;
-		    slave = nslave;
-		} else {
-		    break;
-		}
+	    subif = netif_byname(netifs, slave);
+	    if (subif != NULL) {
+		my_log(3, "found slave %s", subif->name);
+		subif->slave = 1;
+		subif->master = master;
+		subif->lacp_index = i++;
+		csubif->subif = subif;
+		csubif = subif;
 	    }
-	};
 
-	fclose(fp);
+	    if (nslave != NULL) {
+		nslave++;
+		slave = nslave;
+	    } else {
+		break;
+	    }
+	}
     }
 
     return;
-#endif /* HAVE_LINUX_IF_BONDING_H */
+#endif /* HAVE_SYSFS */
 
 #if defined(HAVE_NET_IF_LAGG_H) || defined(HAVE_NET_IF_TRUNK_H)
 #ifdef HAVE_NET_IF_LAGG_H
@@ -525,7 +530,7 @@ void netif_bridge(int sockfd, struct netif *netifs, struct netif *master) {
 
     struct netif *subif = NULL, *csubif = master;
 
-#if HAVE_LINUX_IF_BRIDGE_H 
+#if HAVE_SYSFS
     // handle linux bridge interfaces
     char path[SYSFS_PATH_MAX];
     DIR  *dir;
@@ -552,7 +557,7 @@ void netif_bridge(int sockfd, struct netif *netifs, struct netif *master) {
 
     closedir(dir);
     return;
-#endif /* HAVE_LINUX_IF_BRIDGE_H */
+#endif /* HAVE_SYSFS */
 
 #if defined(HAVE_NET_IF_BRIDGEVAR_H) || defined(HAVE_NET_IF_BRIDGE_H)
     struct ifbifconf bifc;
