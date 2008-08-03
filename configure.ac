@@ -26,8 +26,8 @@ if test "$enable_debug" = "yes"; then
 fi
 
 if test "$target_os" = "linux-gnu"; then
-    AC_DEFINE(HAVE_PROC_SYS_NET,1,
-    [define if /proc/sys/net should be used])
+    AC_DEFINE(HAVE_PROC_SYS_NET,1, [define if /proc/sys/net should be used])
+    AC_DEFINE(HAVE_SYSFS,1, [define if /sys should be used])
 fi
 
 # Checks for header files.
