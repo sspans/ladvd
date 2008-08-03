@@ -16,8 +16,7 @@ struct netif *netif_byname(struct netif *, char *name);
 int read_line(char *path, char *line, int16_t len);
 
 #ifndef HAVE_STRLCPY
-size_t   strlcpy(char *, const char *, size_t)
-                __attribute__ ((__bounded__(__string__,1,3)));
+size_t strlcpy(char *, const char *, size_t);
 #endif
 
 #endif /* _util_h */
