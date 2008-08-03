@@ -6,6 +6,7 @@
 #include "util.h"
 #include <unistd.h>
 #include <netdb.h>
+#include <sys/sysctl.h>
 
 #ifdef HAVE_SYSFS
 #define SYSFS_CLASS_DMI		"/sys/class/dmi/id"
@@ -19,6 +20,16 @@
 int sysinfo_fetch(struct sysinfo *sysinfo) {
 
     struct hostent *hp;
+
+#ifdef CTL_HW
+    int mib[2], n;
+    size_t len;
+    char *p;
+
+    len = sizeof(n);
+
+    mib[0] = CTL_HW;
+#endif
 
     // sysinfo.uts
     if (uname(&sysinfo->uts) == -1) {
@@ -48,6 +59,25 @@ int sysinfo_fetch(struct sysinfo *sysinfo) {
     read_line(SYSFS_SERIAL_NO, sysinfo->serial_number, LLDP_INVENTORY_SIZE);
     read_line(SYSFS_MANUFACTURER, sysinfo->manufacturer, LLDP_INVENTORY_SIZE);
     read_line(SYSFS_MODEL_NAME, sysinfo->model_name, LLDP_INVENTORY_SIZE);
+#endif
+
+#ifdef CTL_HW
+#ifdef HW_VERSION
+    mib[1] = HW_VERSION;
+    sysctl(mib, 2, sysinfo->hw_revision, LLDP_INVENTORY_SIZE, NULL, 0);
+#endif
+#ifdef HW_SERIALNO
+    mib[1] = HW_SERIALNO;
+    sysctl(mib, 2, sysinfo->serial_number, LLDP_INVENTORY_SIZE, NULL, 0);
+#endif
+#ifdef HW_VENDOR
+    mib[1] = HW_VENDOR;
+    sysctl(mib, 2, sysinfo->manufacturer, LLDP_INVENTORY_SIZE, NULL, 0);
+#endif
+#ifdef HW_PRODUCT
+    mib[1] = HW_PRODUCT;
+    sysctl(mib, 2, sysinfo->model_name, LLDP_INVENTORY_SIZE, NULL, 0);
+#endif
 #endif
 
     return(0);
