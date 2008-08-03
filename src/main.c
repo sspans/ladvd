@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
 		loglevel++;
 		break;
 	    case 'L':
-		sysinfo.location = optarg;
+		strlcpy(sysinfo.location, optarg, sizeof(sysinfo.location));
 		break;
 	    default:
 		usage(progname);

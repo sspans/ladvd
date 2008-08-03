@@ -74,7 +74,7 @@ struct sysinfo {
     struct utsname uts;
     char uts_str[256];
     char *hostname;
-    char *location;
+    char location[256];
     int8_t cap;
     int8_t cap_active;
     uint8_t hwaddr[ETHER_ADDR_LEN];
