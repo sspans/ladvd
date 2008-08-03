@@ -132,14 +132,13 @@ if test "$ac_cv_header_sys_capability_h" = "yes" ; then
 fi
 
 # daemon user
-AC_ARG_WITH([user],
-	    [AS_HELP_STRING([--with-user=USER],[user to switch to])],
-	    [user="$withval"],[])
+package_user="$PACKAGE_NAME"
 
-AS_IF([test -n "$user"],
-    [AC_DEFINE_UNQUOTED(PACKAGE_USER,"$user",[user to switch to])],
-    [AC_DEFINE(PACKAGE_USER,PACKAGE_NAME,[user to switch to])]
-)
+AC_ARG_WITH([package_user],
+	    [AS_HELP_STRING([--with-user=USER],[user to switch to])],
+	    [package_user="$withval"],[])
+AC_DEFINE_UNQUOTED(PACKAGE_USER,"$package_user",[user to switch to])
+AC_SUBST([PACKAGE_USER], ["$package_user"])
 
 # pidfile
 AC_ARG_WITH([pid_dir],

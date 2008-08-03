@@ -6,3 +6,6 @@ EXTRA_DIST = debian
 dist-hook:
 	rm -rf `find $(distdir)/debian -name .svn`
 
+doc/ladvd.8: doc/ladvd.8.in
+	sed -e s/PACKAGE_USER/@PACKAGE_USER@/ < doc/ladvd.8.in > $@
+
