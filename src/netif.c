@@ -694,7 +694,6 @@ int netif_addrs(struct ifaddrs *ifaddrs, struct netif *netifs) {
 void netif_forwarding(struct sysinfo *sysinfo) {
 
 #ifdef HAVE_PROC_SYS_NET
-    FILE *file;
     char line[256];
 #endif
 
