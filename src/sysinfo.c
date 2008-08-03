@@ -43,11 +43,11 @@ int sysinfo_fetch(struct sysinfo *sysinfo) {
     strncpy(sysinfo->sw_revision, sysinfo->uts.version, LLDP_INVENTORY_SIZE);
 
 #ifdef HAVE_SYSFS
-    sysfs_read(SYSFS_HW_REVISION, sysinfo->hw_revision, LLDP_INVENTORY_SIZE);
-    sysfs_read(SYSFS_FW_REVISION, sysinfo->fw_revision, LLDP_INVENTORY_SIZE);
-    sysfs_read(SYSFS_SERIAL_NO, sysinfo->serial_number, LLDP_INVENTORY_SIZE);
-    sysfs_read(SYSFS_MANUFACTURER, sysinfo->manufacturer, LLDP_INVENTORY_SIZE);
-    sysfs_read(SYSFS_MODEL_NAME, sysinfo->model_name, LLDP_INVENTORY_SIZE);
+    read_line(SYSFS_HW_REVISION, sysinfo->hw_revision, LLDP_INVENTORY_SIZE);
+    read_line(SYSFS_FW_REVISION, sysinfo->fw_revision, LLDP_INVENTORY_SIZE);
+    read_line(SYSFS_SERIAL_NO, sysinfo->serial_number, LLDP_INVENTORY_SIZE);
+    read_line(SYSFS_MANUFACTURER, sysinfo->manufacturer, LLDP_INVENTORY_SIZE);
+    read_line(SYSFS_MODEL_NAME, sysinfo->model_name, LLDP_INVENTORY_SIZE);
 #endif
 
     return(0);

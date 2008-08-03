@@ -451,7 +451,7 @@ void netif_bond(int sockfd, struct netif *netifs, struct netif *master) {
     // handle slaves
     sprintf(path, "%s/%s/bonding/slaves", SYSFS_CLASS_NET, master->name); 
 
-    if (sysfs_read(path, line, sizeof(line)) != -1) {
+    if (read_line(path, line, sizeof(line)) != -1) {
 	slave = line;
 	i = 0;
 	while (strlen(slave) > 0) {
@@ -708,26 +708,22 @@ void netif_forwarding(struct sysinfo *sysinfo) {
 #endif
 
 #ifdef HAVE_PROC_SYS_NET
-    if ((file = fopen(PROCFS_FORWARD_IPV4, "r")) != NULL) {
+    if (read_line(PROCFS_FORWARD_IPV4, line, sizeof(line)) != -1) {
 	sysinfo->cap |= CAP_ROUTER; 
 
-        if (fgets(line, sizeof(line), file))
-            if (atoi(line) == 1) {
-		sysinfo->cap_active |= CAP_ROUTER; 
-		return;
-	    }
-	fclose(file);
+        if (atoi(line) == 1) {
+	    sysinfo->cap_active |= CAP_ROUTER; 
+	    return;
+	}
     }
 
-    if ((file = fopen(PROCFS_FORWARD_IPV6, "r")) != NULL) {
+    if (read_line(PROCFS_FORWARD_IPV6, line, sizeof(line)) != -1) {
 	sysinfo->cap |= CAP_ROUTER; 
 
-        if (fgets(line, sizeof(line), file))
-            if (atoi(line) == 1) {
-		sysinfo->cap_active |= CAP_ROUTER; 
-		return;
-	    }
-	fclose(file);
+        if (atoi(line) == 1) {
+	    sysinfo->cap_active |= CAP_ROUTER; 
+	    return;
+	}
     }
 #endif
 

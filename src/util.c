@@ -154,8 +154,7 @@ struct netif *netif_byname(struct netif *netifs, char *name) {
     return(netif);
 }
 
-#ifdef HAVE_SYSFS
-int sysfs_read(char *path, char *line, uint16_t len) {
+int read_line(char *path, char *line, uint16_t len) {
     FILE *file;
 
     if ((file = fopen(path, "r")) == NULL)
@@ -172,4 +171,4 @@ int sysfs_read(char *path, char *line, uint16_t len) {
 
     return(strlen(line));
 }
-#endif
+
