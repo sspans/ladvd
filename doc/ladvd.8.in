@@ -7,11 +7,7 @@ ladvd \- send link layer advertisements
 .B ...
 .SH DESCRIPTION
 .B ladvd
-sends CDP/LLDP link layer advertisements on all available
-interfaces. This makes connected hosts visible on managed
-switches. By default it will run as a non-privileged user and daemonize.
-Either -c or -l is required. Optionally a list of interfaces on which ladvd
-should transmit can be supplied.
+sends CDP/LLDP link layer advertisements on all available interfaces. This makes connected hosts visible on managed switches. By default it will run as a non-privileged user and daemonize. Either -c or -l is required. Optionally a list of interfaces on which ladvd should transmit can be supplied.
 .SH OPTIONS
 .IP -c
 Send CDP messages.
@@ -22,7 +18,7 @@ Run in the foreground and send logging to stderr.
 .IP -o
 Run only once, useful for quick troubleshooting.
 .IP "-u user"
-Switch to this user.
+Switch to this user (defaults to @@PACKAGE_USER@@)
 .IP "-L <location>"
 Specify the physical location of the server (Currently CDP only).
 .IP -v
