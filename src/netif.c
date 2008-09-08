@@ -101,7 +101,7 @@ int netif_wireless(int sockfd, struct ifaddrs *ifaddr, struct ifreq *);
 int netif_type(int sockfd, struct ifaddrs *ifaddr, struct ifreq *);
 void netif_bond(int sockfd, struct netif *, struct netif *);
 void netif_bridge(int sockfd, struct netif *, struct netif *);
-int netif_addrs(struct ifaddrs *, struct netif *);
+int netif_addrs(struct ifaddrs *, struct netif *, struct sysinfo *sysinfo);
 void netif_forwarding(struct sysinfo *);
 
 
@@ -273,7 +273,7 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 
     // add addresses to netifs
     my_log(INFO, "fetching addresses for all interfaces");
-    if (netif_addrs(ifaddrs, netifs) == EXIT_FAILURE) {
+    if (netif_addrs(ifaddrs, netifs, sysinfo) == EXIT_FAILURE) {
 	my_log(CRIT, "unable fetch interface addresses");
 	count = 0;
 	goto cleanup;
@@ -625,7 +625,8 @@ void netif_bridge(int sockfd, struct netif *netifs, struct netif *master) {
 
 
 // perform address detection for all netifs
-int netif_addrs(struct ifaddrs *ifaddrs, struct netif *netifs) {
+int netif_addrs(struct ifaddrs *ifaddrs, struct netif *netifs,
+		struct sysinfo *sysinfo) {
     struct ifaddrs *ifaddr;
     struct netif *netif;
 

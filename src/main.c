@@ -72,8 +72,8 @@ int main(int argc, char *argv[]) {
 		do_lldp = 1;
 		break;
 	    case 'm':
-		if ( (inet_pton(AF_INET, optarg, &sysinfo->maddr4) != 1) &&
-		     (inet_pton(AF_INET6, optarg, &sysinfo->maddr6) != 1) ) {
+		if ( (inet_pton(AF_INET, optarg, &sysinfo.maddr4) != 1) &&
+		     (inet_pton(AF_INET6, optarg, &sysinfo.maddr6) != 1) ) {
 		    my_log(CRIT, "invalid management address %s", optarg);
 		    usage(progname);
 		}
@@ -307,13 +307,13 @@ void usage(const char *fn) {
 	    "\t-c = Send CDP Messages\n"
 	    "\t-d = Dump packets to stdout\n"
 	    "\t-f = Run in the foreground\n"
-	    "\t-h = Print this message\n",
+	    "\t-h = Print this message\n"
 	    "\t-l = Send LLDP Messages\n"
 	    "\t-m <address> = Management address (IPv4 and IPv6 supported)\n"
 	    "\t-o = Run Once\n"
 	    "\t-u <user> = Setuid User (defaults to %s)\n"
 	    "\t-v = Increase logging verbosity\n"
-	    "\t-L <location> = System Location\n"
+	    "\t-L <location> = System Location\n",
 	    PACKAGE_NAME, PACKAGE_VERSION, fn, PACKAGE_USER);
 
     exit(EXIT_FAILURE);
