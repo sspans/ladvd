@@ -828,11 +828,25 @@ int netif_media(struct netif *netif) {
 
     if (ioctl(sockfd, SIOCGIFMEDIA, (caddr_t)&ifmr) < 0) {
 	my_log(INFO, "media detection not supported on %s", netif->name);
+	close(sockfd);
+	return(EXIT_SUCCESS);
+    }
+
+    if (IFM_TYPE(ifmr.ifm_current) != IFM_ETHER) {
+	my_log(INFO, "non-ethernet interface %s found", netif->name);
+	close(sockfd);
+	return(EXIT_FAILURE);
+    }
+
+    if ((ifmr.ifm_status & IFM_ACTIVE) == 0) { 
+	my_log(INFO, "no link detected on interface %s", netif->name);
+	close(sockfd);
 	return(EXIT_SUCCESS);
     }
 
     if (ifmr.ifm_count == 0) {
 	my_log(CRIT, "missing media types for interface %s", netif->name);
+	close(sockfd);
 	return(EXIT_FAILURE);
     }
 
@@ -841,17 +855,9 @@ int netif_media(struct netif *netif) {
 
     if (ioctl(sockfd, SIOCGIFMEDIA, (caddr_t)&ifmr) < 0) {
 	my_log(CRIT, "media detection failed for interface %s", netif->name);
+	free(media_list);
+	close(sockfd);
 	return(EXIT_FAILURE);
-    }
-
-    if (IFM_TYPE(ifmr.ifm_current) != IFM_ETHER) {
-	my_log(CRIT, "non-ethernet interface %s found", netif->name);
-	return(EXIT_FAILURE);
-    }
-
-    if ((ifmr.ifm_status & IFM_ACTIVE) == 0) { 
-	my_log(CRIT, "no link detected on interface %s", netif->name);
-	return(EXIT_SUCCESS);
     }
 
     // autoneg support
