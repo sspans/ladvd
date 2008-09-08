@@ -18,7 +18,7 @@ int my_rsend(int s, struct netif *, const void *msg, size_t len);
 struct netif *netif_byindex(struct netif *, uint8_t index);
 struct netif *netif_byname(struct netif *, char *name);
 
-int read_line(char *path, char *line, int16_t len);
+int read_line(char *path, char *line, uint16_t len);
 
 #ifndef HAVE_STRLCPY
 size_t strlcpy(char *, const char *, size_t);
