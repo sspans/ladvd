@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <errno.h>
+#include <arpa/inet.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/utsname.h>
@@ -78,6 +79,9 @@ struct sysinfo {
     int8_t cap;
     int8_t cap_active;
     uint8_t hwaddr[ETHER_ADDR_LEN];
+
+    uint32_t maddr4;
+    uint32_t maddr6[4];
 
     char hw_revision[LLDP_INVENTORY_SIZE + 1];
     char fw_revision[LLDP_INVENTORY_SIZE + 1];

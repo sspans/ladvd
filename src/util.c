@@ -10,7 +10,6 @@
 #include <sys/ioctl.h>
 #include <sys/time.h>
 #include <sys/types.h>
-#include <arpa/inet.h>
 #include <fcntl.h>
 #include <unistd.h>
 

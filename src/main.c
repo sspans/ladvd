@@ -56,20 +56,27 @@ int main(int argc, char *argv[]) {
     do_once = 0;
     memset(&sysinfo, 0, sizeof(struct sysinfo));
 
-    while ((ch = getopt(argc, argv, "cdfhlou:vL:")) != -1) {
+    while ((ch = getopt(argc, argv, "cdfhlm:ou:vL:")) != -1) {
 	switch(ch) {
 	    case 'c':
 		do_cdp = 1;
 		break;
-	    case 'l':
-		do_lldp = 1;
+	    case 'd':
+		do_debug = 1;
+		do_fork = 0;
 		break;
 	    case 'f':
 		do_fork = 0;
 		break;
-	    case 'd':
-		do_debug = 1;
-		do_fork = 0;
+	    case 'l':
+		do_lldp = 1;
+		break;
+	    case 'm':
+		if ( (inet_pton(AF_INET, optarg, &sysinfo->maddr4) != 1) &&
+		     (inet_pton(AF_INET6, optarg, &sysinfo->maddr6) != 1) ) {
+		    my_log(CRIT, "invalid management address %s", optarg);
+		    usage(progname);
+		}
 		break;
 	    case 'o':
 		do_once = 1;

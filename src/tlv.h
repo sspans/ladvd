@@ -5,8 +5,6 @@
  * added support for LLDP tlv's (7/9 bits)
  */
 
-#include <arpa/inet.h>
-
 #define VOIDP_DIFF(P, Q) ((uintptr_t)((char *)(P) - (char *)(Q)))
 
 union {
