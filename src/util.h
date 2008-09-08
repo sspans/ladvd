@@ -2,6 +2,11 @@
 #ifndef _util_h
 #define _util_h
 
+#define CRIT    1
+#define WARN    2
+#define INFO    3
+#define DEBUG   4
+
 void my_log(int prio, const char *fmt, ...);
 void *my_malloc(size_t size);
 char *my_strdup(const char *str);

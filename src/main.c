@@ -96,13 +96,13 @@ int main(int argc, char *argv[]) {
 
     // validate interfaces
     if (netif_fetch(argc, argv, &sysinfo, &netifs) == 0) {
-	my_log(0, "unable fetch interfaces");
+	my_log(CRIT, "unable fetch interfaces");
 	exit(EXIT_FAILURE);
     }
 
     // validate username
     if ((do_debug == 0) && (pwd = getpwnam(username)) == NULL) {
-	my_log(0, "User %s does not exist", username);
+	my_log(CRIT, "User %s does not exist", username);
 	exit(EXIT_FAILURE);
     }
 
@@ -113,12 +113,12 @@ int main(int argc, char *argv[]) {
     if (do_fork == 1) {
 	fd = open(pidfile, O_WRONLY|O_CREAT, 0666);
 	if (fd == -1) {
-	    my_log(0, "failed to open pidfile %s: %s",
+	    my_log(CRIT, "failed to open pidfile %s: %s",
 			pidfile, strerror(errno));
 	    exit(EXIT_FAILURE);	
 	}
 	if (flock(fd, LOCK_EX|LOCK_NB) == -1) {
-	    my_log(0, "ladvd already running (%s locked)", pidfile);
+	    my_log(CRIT, "ladvd already running (%s locked)", pidfile);
 	    exit(EXIT_FAILURE);	
 	}
     }
@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
     sockfd = my_rsocket();
 
     if (sockfd < 0) {
-	my_log(0, "opening raw socket failed");
+	my_log(CRIT, "opening raw socket failed");
 	exit(EXIT_FAILURE);
     }
 
@@ -138,7 +138,7 @@ int main(int argc, char *argv[]) {
     // fork
     if (do_fork == 1) {
 	if (daemon(0,0) == -1) {
-	    my_log(0, "backgrounding failed: %s", strerror(errno));
+	    my_log(CRIT, "backgrounding failed: %s", strerror(errno));
 	    exit(EXIT_FAILURE);
 	}
 	snprintf(pidstr, sizeof(pidstr), "%u\n", getpid());
@@ -148,24 +148,24 @@ int main(int argc, char *argv[]) {
 #ifdef USE_CAPABILITIES
     // keep capabilities
     if (prctl(PR_SET_KEEPCAPS,1) == -1) {
-	my_log(0, "unable to keep capabilities: %s", strerror(errno));
+	my_log(CRIT, "unable to keep capabilities: %s", strerror(errno));
        	exit(EXIT_FAILURE);
     }
 #endif
 
     // setuid & setgid
     if (setgid(pwd->pw_gid) == -1){
-	my_log(0, "unable to setgid: %s", strerror(errno));
+	my_log(CRIT, "unable to setgid: %s", strerror(errno));
        	exit(EXIT_FAILURE);
     }
 
     if (setgroups(0, NULL) == -1){
-	my_log(0, "unable to setgroups: %s", strerror(errno));
+	my_log(CRIT, "unable to setgroups: %s", strerror(errno));
        	exit(EXIT_FAILURE);
     }
 
     if (setuid(pwd->pw_uid) == -1){
-   	my_log(0, "unable to setuid: %s", strerror(errno));
+   	my_log(CRIT, "unable to setuid: %s", strerror(errno));
        	exit(EXIT_FAILURE);
     }
 
@@ -175,12 +175,12 @@ int main(int argc, char *argv[]) {
     caps = cap_from_text("cap_net_admin=ep");
 
     if (caps == NULL) {
-	my_log(0, "unable to create capabilities: %s", strerror(errno));
+	my_log(CRIT, "unable to create capabilities: %s", strerror(errno));
 	exit(EXIT_FAILURE);
     }
 
     if (cap_set_proc(caps) == -1) {
-	my_log(0, "unable to set capabilities: %s", strerror(errno));
+	my_log(CRIT, "unable to set capabilities: %s", strerror(errno));
 	exit(EXIT_FAILURE);
     }
 
@@ -190,14 +190,14 @@ int main(int argc, char *argv[]) {
 
 loop: 
     // startup message
-    my_log(0, PACKAGE_STRING " running");
+    my_log(CRIT, PACKAGE_STRING " running");
 
     while (sockfd) {
 
 	// create netifs
-	my_log(3, "fetching all interfaces"); 
+	my_log(INFO, "fetching all interfaces"); 
 	if (netif_fetch(argc, argv, &sysinfo, &netifs) == 0) {
-	    my_log(0, "unable fetch interfaces");
+	    my_log(CRIT, "unable fetch interfaces");
 	    goto sleep;
 	}
 
@@ -212,11 +212,11 @@ loop:
 
 	    // skip masters without slaves
 	    if ((netif->type > 0) && (netif->subif == NULL)) {
-		my_log(3, "skipping interface %s", netif->name); 
+		my_log(INFO, "skipping interface %s", netif->name); 
 		continue;
 	    }
 
-	    my_log(3, "starting loop with interface %s", netif->name); 
+	    my_log(INFO, "starting loop with interface %s", netif->name); 
 
 	    // point netif to subif when netif is master
 	    master = netif;
@@ -226,46 +226,46 @@ loop:
 
 	    while (master != NULL) {
 		// fetch interface media status
-		my_log(3, "fetching %s media details", netif->name);
+		my_log(INFO, "fetching %s media details", netif->name);
 		if (netif_media(netif) == EXIT_FAILURE) {
-		    my_log(0, "error fetching interface media details");
+		    my_log(CRIT, "error fetching interface media details");
 		}
 
 		// cdp packet
 		if (do_cdp == 1) {
-		    my_log(3, "building cdp packet for %s", netif->name);
+		    my_log(INFO, "building cdp packet for %s", netif->name);
 		    len = cdp_packet(&packet, netif, &sysinfo);
 		    if (len == 0) {
-			my_log(0, "can't generate CDP packet for %s",
+			my_log(CRIT, "can't generate CDP packet for %s",
 				  netif->name);
 			goto sleep;
 		    }
 
 		    // write it to the wire.
-		    my_log(3, "sending cdp packet (%d bytes) on %s",
+		    my_log(INFO, "sending cdp packet (%d bytes) on %s",
 				len, netif->name);
 		    if (my_rsend(sockfd, netif, &packet, len) != len) {
-			my_log(0, "network transmit error on %s",
+			my_log(CRIT, "network transmit error on %s",
 				  netif->name);
 		    }
 		}
 
 		// lldp packet
 		if (do_lldp == 1) {
-		    my_log(3, "building lldp packet for %s", netif->name);
+		    my_log(INFO, "building lldp packet for %s", netif->name);
 
 		    len = lldp_packet(&packet, netif, &sysinfo);
 		    if (len == 0) {
-			my_log(0, "can't generate LLDP packet for %s",
+			my_log(CRIT, "can't generate LLDP packet for %s",
 				  netif->name);
 			goto sleep;
 		    }
 
 		    // write it to the wire.
-		    my_log(3, "sending lldp packet (%d bytes) on %s",
+		    my_log(INFO, "sending lldp packet (%d bytes) on %s",
 				len, netif->name);
 		    if (my_rsend(sockfd, netif, &packet, len) != len) {
-			my_log(0, "network transmit error on %s",
+			my_log(CRIT, "network transmit error on %s",
 				  netif->name);
 		    }
 		}
@@ -286,7 +286,7 @@ sleep:
 	if (do_once == 1)
 	    return (EXIT_SUCCESS);
 
-	my_log(3, "sleeping for %d seconds", SLEEPTIME);
+	my_log(INFO, "sleeping for %d seconds", SLEEPTIME);
 	sleep(SLEEPTIME);
     }
 

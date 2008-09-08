@@ -21,7 +21,7 @@
 #include <net/bpf.h>
 #endif /* HAVE_NET_BPF_H */
 
-unsigned int loglevel = 0;
+unsigned int loglevel = CRIT;
 extern int do_fork;
 extern int do_debug;
 
@@ -45,7 +45,7 @@ void * my_malloc(size_t size) {
     void *ptr;
 
     if ((ptr = malloc(size)) == NULL) {
-	my_log(0, "malloc failed: %s", strerror(errno));
+	my_log(CRIT, "malloc failed: %s", strerror(errno));
 	exit(EXIT_FAILURE);
     }
     memset(ptr, 0, size);
@@ -56,7 +56,7 @@ char * my_strdup(const char *str) {
     char *cstr;
 
     if ((cstr = strdup(str)) == NULL) {
-	my_log(0, "strdup failed: %s", strerror(errno));
+	my_log(CRIT, "strdup failed: %s", strerror(errno));
 	exit(EXIT_FAILURE);
     }
     return(cstr);
@@ -66,7 +66,7 @@ int my_socket(int af, int type, int proto) {
     int s;
 
     if ((s = socket(af, type, proto)) < 0) {
-	my_log(0, "opening socket failed: %s", strerror(errno));
+	my_log(CRIT, "opening socket failed: %s", strerror(errno));
 	exit(EXIT_FAILURE);
     }
     return(s);
@@ -88,7 +88,7 @@ int my_rsocket() {
 
     do {
 	if (asprintf(&dev, "/dev/bpf%d", n++) == -1) {
-	    my_log(0, "failed to allocate buffer");
+	    my_log(CRIT, "failed to allocate buffer");
 	    return(-1);
 	}
 	socket = open(dev, O_WRONLY);
@@ -123,14 +123,14 @@ int my_rsend(int s, struct netif *netif, const void *msg, size_t len) {
     strlcpy(ifr.ifr_name, netif->name, IFNAMSIZ);
 
     if (ioctl(s, BIOCSETIF, (caddr_t)&ifr) < 0) {
-	my_log(0, "ioctl failed: %s", strerror(errno));
+	my_log(CRIT, "ioctl failed: %s", strerror(errno));
 	return(-1);
     }
     count = write(s, msg, len);
 #endif
 
     if (count != len)
-	my_log(0, "only %d bytes written: %s", count, strerror(errno));
+	my_log(WARN, "only %d bytes written: %s", count, strerror(errno));
     
     return(count);
 }

@@ -128,7 +128,7 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
     sockfd = my_socket(af, SOCK_DGRAM, 0);
 
     if (getifaddrs(&ifaddrs) < 0) {
-	my_log(0, "address detection failed: %s", strerror(errno));
+	my_log(CRIT, "address detection failed: %s", strerror(errno));
 	close(sockfd);
 	return(0);
     }
@@ -142,7 +142,7 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
     // allocate memory
     netifs = realloc(*mnetifs, sizeof(struct netif) * count);
     if (netifs == NULL) {
-	my_log(3, "unable to allocate netifs");
+	my_log(INFO, "unable to allocate netifs");
 	goto cleanup;
     }
     *mnetifs = netifs;
@@ -174,14 +174,14 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 #ifdef AF_PACKET
 	memcpy(&saddrll, ifaddr->ifa_addr, sizeof(saddrll));
 	if (saddrll.sll_hatype != ARPHRD_ETHER) {
-	    my_log(3, "skipping interface %s", ifaddr->ifa_name);
+	    my_log(INFO, "skipping interface %s", ifaddr->ifa_name);
 	    continue;
 	}
 #endif
 #ifdef AF_LINK
 	memcpy(&saddrdl, ifaddr->ifa_addr, sizeof(saddrdl));
 	if (saddrdl.sdl_type != IFT_ETHER) {
-	    my_log(3, "skipping interface %s", ifaddr->ifa_name);
+	    my_log(INFO, "skipping interface %s", ifaddr->ifa_name);
 	    continue;
 	}
 #endif
@@ -192,7 +192,7 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 
 	// skip wireless interfaces
 	if (netif_wireless(sockfd, ifaddr, &ifr) == 0) {
-	    my_log(3, "skipping wireless interface %s", ifaddr->ifa_name);
+	    my_log(INFO, "skipping wireless interface %s", ifaddr->ifa_name);
 	    sysinfo->cap |= CAP_WLAN; 
 	    sysinfo->cap_active |= (enabled == 1) ? CAP_WLAN : 0;
 	    continue;
@@ -202,27 +202,27 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 	type = netif_type(sockfd, ifaddr, &ifr);
 
 	if (type == NETIF_REGULAR) { 
-	    my_log(2, "found ethernet interface %s", ifaddr->ifa_name);
+	    my_log(INFO, "found ethernet interface %s", ifaddr->ifa_name);
 	} else if (type == NETIF_BONDING) {
-	    my_log(2, "found bond interface %s", ifaddr->ifa_name);
+	    my_log(INFO, "found bond interface %s", ifaddr->ifa_name);
 	} else if (type == NETIF_BRIDGE) {
-	    my_log(2, "found bridge interface %s", ifaddr->ifa_name);
+	    my_log(INFO, "found bridge interface %s", ifaddr->ifa_name);
 	    sysinfo->cap |= CAP_BRIDGE; 
 	    sysinfo->cap_active |= (enabled == 1) ? CAP_BRIDGE : 0;
 	} else if (type == NETIF_INVALID) {
-	    my_log(3, "skipping interface %s", ifaddr->ifa_name);
+	    my_log(INFO, "skipping interface %s", ifaddr->ifa_name);
 	    continue;
 	}
 
 
 	// skip interfaces that are down
 	if (enabled == 0) {
-	    my_log(3, "skipping interface %s (down)", ifaddr->ifa_name);
+	    my_log(INFO, "skipping interface %s (down)", ifaddr->ifa_name);
 	    continue;
 	}
 
 
-	my_log(3, "adding interface %s", ifaddr->ifa_name);
+	my_log(INFO, "adding interface %s", ifaddr->ifa_name);
 
 	// create netif
 	if (netif == NULL)
@@ -259,11 +259,11 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 
 	switch(netif->type) {
 	    case NETIF_BONDING:
-		my_log(3, "detecting %s subifs", netif->name);
+		my_log(INFO, "detecting %s subifs", netif->name);
 		netif_bond(sockfd, netifs, netif);
 		break;
 	    case NETIF_BRIDGE:
-		my_log(3, "detecting %s subifs", netif->name);
+		my_log(INFO, "detecting %s subifs", netif->name);
 		netif_bridge(sockfd, netifs, netif);
 		break;
 	    default:
@@ -272,9 +272,9 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
     }
 
     // add addresses to netifs
-    my_log(3, "fetching addresses for all interfaces");
+    my_log(INFO, "fetching addresses for all interfaces");
     if (netif_addrs(ifaddrs, netifs) == EXIT_FAILURE) {
-	my_log(0, "unable fetch interface addresses");
+	my_log(CRIT, "unable fetch interface addresses");
 	count = 0;
 	goto cleanup;
     }
@@ -292,7 +292,7 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 	for (j=0; j < ifc; j++) {
 	    netif = netif_byname(netifs, ifl[j]);
 	    if (netif == NULL) {
-		my_log(0, "interface %s is invalid", ifl[j]);
+		my_log(CRIT, "interface %s is invalid", ifl[j]);
 	    } else {
 		netif->argv = 1;
 		count++;
@@ -302,7 +302,7 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 	    count = 0;
 
     } else if (count == 0) {
-	my_log(0, "no valid interface found");
+	my_log(CRIT, "no valid interface found");
     }
 
     // cleanup
@@ -461,7 +461,7 @@ void netif_bond(int sockfd, struct netif *netifs, struct netif *master) {
 
 	    subif = netif_byname(netifs, slave);
 	    if (subif != NULL) {
-		my_log(3, "found slave %s", subif->name);
+		my_log(INFO, "found slave %s", subif->name);
 		subif->slave = 1;
 		subif->master = master;
 		subif->lacp_index = i++;
@@ -511,7 +511,7 @@ void netif_bond(int sockfd, struct netif *netifs, struct netif *master) {
 	subif = netif_byname(netifs, rpbuf[i].rp_portname);
 
 	if (subif != NULL) {
-	    my_log(3, "found slave %s", subif->name);
+	    my_log(INFO, "found slave %s", subif->name);
 	    subif->slave = 1;
 	    subif->master = master;
 	    subif->lacp_index = i++;
@@ -540,7 +540,7 @@ void netif_bridge(int sockfd, struct netif *netifs, struct netif *master) {
     sprintf(path, SYSFS_CLASS_NET "/%s/" SYSFS_BRIDGE_PORT_SUBDIR, master->name); 
 
     if ((dir = opendir(path)) == NULL) {
-	my_log(0, "reading bridge %s subdir %s failed: %s",
+	my_log(CRIT, "reading bridge %s subdir %s failed: %s",
 	    master->name, path, strerror(errno));
 	return;
     }
@@ -582,7 +582,7 @@ void netif_bridge(int sockfd, struct netif *netifs, struct netif *master) {
 	if (ninbuf == NULL) {
 	    if (inbuf != NULL)
 		free(inbuf);
-	    my_log(1, "unable to allocate interface buffer");
+	    my_log(WARN, "unable to allocate interface buffer");
 	    return;
 	}
 
@@ -782,7 +782,7 @@ int netif_media(struct netif *netif) {
     if (ioctl(sockfd, SIOCGIFMTU, (caddr_t)&ifr) >= 0)
 	netif->mtu = ifr.ifr_mtu;
     else
-	my_log(3, "mtu detection failed on interface %s", netif->name);
+	my_log(INFO, "mtu detection failed on interface %s", netif->name);
 
 #if HAVE_LINUX_ETHTOOL_H
     memset(&ecmd, 0, sizeof(ecmd));
@@ -795,15 +795,15 @@ int netif_media(struct netif *netif) {
 
 	// autoneg
 	if (ecmd.supported & SUPPORTED_Autoneg) {
-	    my_log(3, "autoneg supported on %s", netif->name);
+	    my_log(INFO, "autoneg supported on %s", netif->name);
 	    netif->autoneg_supported = 1;
 	    netif->autoneg_enabled = (ecmd.autoneg == AUTONEG_ENABLE) ? 1 : 0;
 	} else {
-	    my_log(3, "autoneg not supported on %s", netif->name);
+	    my_log(INFO, "autoneg not supported on %s", netif->name);
 	    netif->autoneg_supported = 0;
 	}	
     } else {
-	my_log(3, "ethtool ioctl failed on interface %s", netif->name);
+	my_log(INFO, "ethtool ioctl failed on interface %s", netif->name);
     }
 #endif /* HAVE_LINUX_ETHTOOL_H */
 
@@ -812,12 +812,12 @@ int netif_media(struct netif *netif) {
     strlcpy(ifmr.ifm_name, netif->name, sizeof(ifmr.ifm_name));
 
     if (ioctl(sockfd, SIOCGIFMEDIA, (caddr_t)&ifmr) < 0) {
-	my_log(3, "media detection not supported on %s", netif->name);
+	my_log(INFO, "media detection not supported on %s", netif->name);
 	return(EXIT_SUCCESS);
     }
 
     if (ifmr.ifm_count == 0) {
-	my_log(0, "missing media types for interface %s", netif->name);
+	my_log(CRIT, "missing media types for interface %s", netif->name);
 	return(EXIT_FAILURE);
     }
 
@@ -825,24 +825,24 @@ int netif_media(struct netif *netif) {
     ifmr.ifm_ulist = media_list;
 
     if (ioctl(sockfd, SIOCGIFMEDIA, (caddr_t)&ifmr) < 0) {
-	my_log(0, "media detection failed for interface %s", netif->name);
+	my_log(CRIT, "media detection failed for interface %s", netif->name);
 	return(EXIT_FAILURE);
     }
 
     if (IFM_TYPE(ifmr.ifm_current) != IFM_ETHER) {
-	my_log(0, "non-ethernet interface %s found", netif->name);
+	my_log(CRIT, "non-ethernet interface %s found", netif->name);
 	return(EXIT_FAILURE);
     }
 
     if ((ifmr.ifm_status & IFM_ACTIVE) == 0) { 
-	my_log(0, "no link detected on interface %s", netif->name);
+	my_log(CRIT, "no link detected on interface %s", netif->name);
 	return(EXIT_SUCCESS);
     }
 
     // autoneg support
     for (i = 0; i < ifmr.ifm_count; i++) {
 	if (IFM_SUBTYPE(ifmr.ifm_ulist[i]) == IFM_AUTO) {
-	    my_log(3, "autoneg supported on %s", netif->name);
+	    my_log(INFO, "autoneg supported on %s", netif->name);
 	    netif->autoneg_supported = 1;
 	    break;
 	}
@@ -851,23 +851,23 @@ int netif_media(struct netif *netif) {
     // autoneg enabled
     if (netif->autoneg_supported == 1) {
 	if (IFM_SUBTYPE(ifmr.ifm_current) == IFM_AUTO) {
-	    my_log(3, "autoneg enabled on %s", netif->name);
+	    my_log(INFO, "autoneg enabled on %s", netif->name);
 	    netif->autoneg_enabled = 1;
 	} else {
-	    my_log(3, "autoneg disabled on interface %s", netif->name);
+	    my_log(INFO, "autoneg disabled on interface %s", netif->name);
 	    netif->autoneg_enabled = 0;
 	}
     } else {
-	my_log(3, "autoneg not supported on interface %s", netif->name);
+	my_log(INFO, "autoneg not supported on interface %s", netif->name);
 	netif->autoneg_supported = 0;
     }
 
     // duplex
     if ((IFM_OPTIONS(ifmr.ifm_active) & IFM_FDX) != 0) {
-	my_log(3, "full-duplex enabled on interface %s", netif->name);
+	my_log(INFO, "full-duplex enabled on interface %s", netif->name);
 	netif->duplex = 1;
     } else {
-	my_log(3, "half-duplex enabled on interface %s", netif->name);
+	my_log(INFO, "half-duplex enabled on interface %s", netif->name);
 	netif->duplex = 0;
     }
 
