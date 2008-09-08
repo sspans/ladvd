@@ -112,10 +112,13 @@ int cdp_packet(struct packet *packet, struct netif *netif,
 
 
     // capabilities
-    cap |= (sysinfo->cap & CAP_BRIDGE) ? CDP_CAP_TRANSPARENT_BRIDGE : 0;
-    cap |= (sysinfo->cap & CAP_HOST) ? CDP_CAP_HOST : 0;
-    cap |= (sysinfo->cap & CAP_ROUTER) ? CDP_CAP_ROUTER : 0;
-    cap |= (sysinfo->cap & CAP_SWITCH) ? CDP_CAP_SWITCH : 0;
+    if (sysinfo->cap == CAP_HOST) {
+	cap = cap_active = CDP_CAP_HOST;
+    } else {
+	cap |= (sysinfo->cap & CAP_BRIDGE) ? CDP_CAP_TRANSPARENT_BRIDGE : 0;
+	cap |= (sysinfo->cap & CAP_ROUTER) ? CDP_CAP_ROUTER : 0;
+	cap |= (sysinfo->cap & CAP_SWITCH) ? CDP_CAP_SWITCH : 0;
+    }
 
     if (!(
 	START_CDP_TLV(CDP_TYPE_CAPABILITIES) &&
