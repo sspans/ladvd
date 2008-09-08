@@ -11,19 +11,23 @@ sends CDP/LLDP link layer advertisements on all available interfaces. This makes
 .SH OPTIONS
 .IP -c
 Send CDP messages.
-.IP -l
-Send LLDP messages.
+.IP -d
+Dump packets to stdout.
 .IP -f
 Run in the foreground and send logging to stderr.
+.IP -h
+Print usage instructions.
+.IP -l
+Send LLDP messages.
+.IP "-m address"
+Management adress for unnumbered interfaces, can be specified for IPv4 and IPv6.
 .IP -o
 Run only once, useful for quick troubleshooting.
 .IP "-u user"
 Switch to this user (defaults to PACKAGE_USER)
-.IP "-L <location>"
-Specify the physical location of the server (Currently CDP only).
 .IP -v
 Increase logging verbosity.
-.IP -d
-Dump packets to stdout.
+.IP "-L <location>"
+Specify the physical location of the server (Currently CDP only).
 .SH AUTHOR
 Sten Spans <sten@blinkenlights.nl>

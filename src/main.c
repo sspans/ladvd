@@ -305,14 +305,15 @@ void usage(const char *fn) {
     fprintf(stderr, "%s version %s\n" 
 	"Usage: %s [-c] [-l] [-f] INTERFACE INTERFACE\n"
 	    "\t-c = Send CDP Messages\n"
-	    "\t-l = Send LLDP Messages\n"
+	    "\t-d = Dump packets to stdout\n"
 	    "\t-f = Run in the foreground\n"
+	    "\t-h = Print this message\n",
+	    "\t-l = Send LLDP Messages\n"
+	    "\t-m <address> = Management address (IPv4 and IPv6 supported)\n"
 	    "\t-o = Run Once\n"
 	    "\t-u <user> = Setuid User (defaults to %s)\n"
-	    "\t-L <location> = System Location\n"
 	    "\t-v = Increase logging verbosity\n"
-	    "\t-d = Dump packets to stdout\n"
-	    "\t-h = Print this message\n",
+	    "\t-L <location> = System Location\n"
 	    PACKAGE_NAME, PACKAGE_VERSION, fn, PACKAGE_USER);
 
     exit(EXIT_FAILURE);
