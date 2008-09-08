@@ -686,6 +686,21 @@ int netif_addrs(struct ifaddrs *ifaddrs, struct netif *netifs) {
 	}
     }
 
+    // return when no management addresses are defined
+    if ((sysinfo->maddr4 == 0) &&
+	(IN6_IS_ADDR_UNSPECIFIED((struct in6_addr *)sysinfo->maddr6)) )
+	return(EXIT_SUCCESS);
+
+    // use management address when unnumbered
+    for (netif = netifs; netif != NULL; netif = netif->next) {
+
+	if (netif->ipaddr4 == 0)
+	    netif->ipaddr4 = sysinfo->maddr4;
+
+	if (!IN6_IS_ADDR_UNSPECIFIED((struct in6_addr *)netif->ipaddr6))
+	    memcpy(&netif->ipaddr6, &sysinfo->maddr6, sizeof(sysinfo->maddr6));
+    }
+
     return(EXIT_SUCCESS);
 }
 
