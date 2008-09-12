@@ -36,7 +36,8 @@ int sysinfo_fetch(struct sysinfo *sysinfo) {
     snprintf(sysinfo->uts_str, sizeof(sysinfo->uts_str), "%s %s %s %s",
 	sysinfo->uts.sysname, sysinfo->uts.release,
 	sysinfo->uts.version, sysinfo->uts.machine);
-    if (strlen(sysinfo->uts_str)) {
+
+    if (strlen(sysinfo->uts_str) == 0) {
 	my_log(CRIT, "can't create uts string: %s", strerror(errno));
 	exit(EXIT_FAILURE);
     }
