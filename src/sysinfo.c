@@ -47,7 +47,6 @@ int sysinfo_fetch(struct sysinfo *sysinfo) {
 	exit(EXIT_FAILURE);
     }
     strlcpy(sysinfo->hostname, hp->h_name, sizeof(sysinfo->hostname));
-    free(hp);
 
     strlcpy(sysinfo->sw_revision, sysinfo->uts.release, len);
 
