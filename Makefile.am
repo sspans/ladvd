@@ -2,7 +2,7 @@ SUBDIRS = src
 dist_doc_DATA = LICENSE doc/ChangeLog doc/README
 dist_man_MANS = doc/ladvd.8
 
-EXTRA_DIST = debian
+EXTRA_DIST = debian doc/ladvd.8.in
 dist-hook:
 	rm -rf `find $(distdir)/debian -name .svn`
 
