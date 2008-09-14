@@ -369,7 +369,7 @@ int netif_type(int sockfd, struct ifaddrs *ifaddr, struct ifreq *ifr) {
 #ifdef HAVE_SYSFS
     sprintf(path, "%s/%s/device", SYSFS_CLASS_NET, ifaddr->ifa_name); 
 
-    // accept physical devices
+    // accept physical devices via sysfs
     if (stat(path, &sb) == 0)
 	return(NETIF_REGULAR);
 #endif
@@ -390,6 +390,11 @@ int netif_type(int sockfd, struct ifaddrs *ifaddr, struct ifreq *ifr) {
 	} else if (strcmp(drvinfo.driver, "tun") == 0) {
 	    return(NETIF_REGULAR);
 	}
+
+	// if we don't have sysfs, we'll accept interfaces
+	// which support ethtool (aka wing it)
+	if (stat(SYSFS_CLASS_NET, &sb) == -1)
+	    return(NETIF_REGULAR);
     }
 
     // we don't want the rest
