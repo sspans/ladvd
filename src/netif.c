@@ -134,6 +134,10 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
     }
 
     for (ifaddr = ifaddrs; ifaddr != NULL; ifaddr = ifaddr->ifa_next) {
+	// skip interfaces without addresses
+	if (ifaddr->ifa_addr == NULL)
+	    continue;
+
 	// only handle datalink addresses
 	if (ifaddr->ifa_addr->sa_family == NETIF_AF)
 	    count++;
@@ -156,6 +160,10 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
     sysinfo->cap_active = CAP_HOST;
 
     for (ifaddr = ifaddrs; ifaddr != NULL; ifaddr = ifaddr->ifa_next) {
+
+	// skip interfaces without addresses
+	if (ifaddr->ifa_addr == NULL)
+	    continue;
 
 	// only handle datalink addresses
 	if (ifaddr->ifa_addr->sa_family != NETIF_AF)
@@ -645,6 +653,11 @@ int netif_addrs(struct ifaddrs *ifaddrs, struct netif *netifs,
 #endif
 
     for (ifaddr = ifaddrs; ifaddr != NULL; ifaddr = ifaddr->ifa_next) {
+
+	// skip interfaces without addresses
+	if (ifaddr->ifa_addr == NULL)
+	    continue;
+
 	// fetch the netif for this ifaddr
 	netif = netif_byname(netifs, ifaddr->ifa_name);
 	if (netif == NULL)
