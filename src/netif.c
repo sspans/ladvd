@@ -666,7 +666,7 @@ void netif_bridge(int sockfd, struct netif *netifs, struct netif *master,
     struct ifbifconf bifc;
     struct ifbreq *req;
     char *inbuf = NULL, *ninbuf;
-    int i, len = 8192;
+    int len = 8192;
 
 #ifdef HAVE_NET_IF_BRIDGEVAR_H
     struct ifdrv ifd;
