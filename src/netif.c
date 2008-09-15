@@ -54,6 +54,10 @@
 #endif /* HAVE_NET_IF_TRUNK_H */
 
 
+#if HAVE_LINUX_IF_BONDING_H
+#include <linux/if_bonding.h>
+#endif /* HAVE_LINUX_IF_BONDING_H */
+
 #if HAVE_LINUX_IF_BRIDGE_H
 #include <linux/if_bridge.h>
 #ifndef SYSFS_BRIDGE_PORT_SUBDIR
@@ -100,7 +104,7 @@
 int netif_wireless(int sockfd, struct ifaddrs *ifaddr, struct ifreq *);
 int netif_type(int sockfd, struct ifaddrs *ifaddr, struct ifreq *);
 void netif_bond(int sockfd, struct netif *, struct netif *, struct ifreq *);
-void netif_bridge(int sockfd, struct netif *, struct netif *);
+void netif_bridge(int sockfd, struct netif *, struct netif *, struct ifreq *);
 int netif_addrs(struct ifaddrs *, struct netif *, struct sysinfo *sysinfo);
 void netif_forwarding(struct sysinfo *);
 
@@ -268,11 +272,11 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 	switch(netif->type) {
 	    case NETIF_BONDING:
 		my_log(INFO, "detecting %s subifs", netif->name);
-		netif_bond(sockfd, netifs, netif);
+		netif_bond(sockfd, netifs, netif, &ifr);
 		break;
 	    case NETIF_BRIDGE:
 		my_log(INFO, "detecting %s subifs", netif->name);
-		netif_bridge(sockfd, netifs, netif);
+		netif_bridge(sockfd, netifs, netif, &ifr);
 		break;
 	    default:
 		break;
@@ -467,7 +471,7 @@ void netif_bond(int sockfd, struct netif *netifs, struct netif *master,
 	fclose(file);
     // or ioctl
     } else {
-	ifr.ifr_data = (char *)&ifbond;
+	ifr->ifr_data = (char *)&ifbond;
 	if (ioctl(sockfd, SIOCBONDINFOQUERY, ifr) >= 0) {
 	    if (ifbond.bond_mode == BOND_MODE_8023AD)
 		master->lacp = 1;
@@ -575,7 +579,8 @@ void netif_bond(int sockfd, struct netif *netifs, struct netif *master,
 
 
 // handle bridge interfaces
-void netif_bridge(int sockfd, struct netif *netifs, struct netif *master) {
+void netif_bridge(int sockfd, struct netif *netifs, struct netif *master,
+		  struct ifreq *ifr) {
 
     struct netif *subif = NULL, *csubif = master;
 
