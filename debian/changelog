@@ -1,3 +1,9 @@
+ladvd (0.6.1-rc2) unstable; urgency=low
+
+  * update to 0.6.1-rc2
+
+ -- Sten Spans <sten@blinkenlights.nl>  Mon, 15 Sep 2008 23:08:40 +0200
+
 ladvd (0.6.1-rc1) unstable; urgency=low
 
   * update to the latest release
