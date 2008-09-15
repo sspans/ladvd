@@ -456,30 +456,38 @@ void netif_bond(int sockfd, struct netif *netifs, struct netif *master,
     // handle linux bonding interfaces
     char path[SYSFS_PATH_MAX];
     FILE *file;
-    struct ifbond ifbond;
-    struct ifslave ifslave;
     char line[1024];
     char *slave, *nslave;
+#endif /* HAVE_SYSFS */
 
+#ifdef HAVE_LINUX_IF_BONDING_H
+    struct ifbond ifbond;
+    struct ifslave ifslave;
     memset(&ifbond, 0, sizeof(ifbond));
+#endif /* HAVE_LINUX_IF_BONDING_H */
 
     // check for lacp
+
+#ifdef HAVE_SYSFS
     // via sysfs
     sprintf(path, "%s/%s/bonding/mode", SYSFS_CLASS_NET, master->name); 
     if ((file = fopen(path, "r")) != NULL) {
 	if (fscanf(file, "802.3ad") != EOF)
 	    master->lacp = 1;
 	fclose(file);
-    // or ioctl
-    } else {
-	ifr->ifr_data = (char *)&ifbond;
-	if (ioctl(sockfd, SIOCBONDINFOQUERY, ifr) >= 0) {
-	    if (ifbond.bond_mode == BOND_MODE_8023AD)
-		master->lacp = 1;
-	}
     }
+#elif defined(HAVE_LINUX_IF_BONDING_H)
+    ifr->ifr_data = (char *)&ifbond;
+    if (ioctl(sockfd, SIOCBONDINFOQUERY, ifr) >= 0) {
+	if (ifbond.bond_mode == BOND_MODE_8023AD)
+	    master->lacp = 1;
+    }
+#endif /* HAVE_LINUX_IF_BONDING_H */
+
 
     // handle slaves
+
+#ifdef HAVE_SYSFS
     // via sysfs
     sprintf(path, "%s/%s/bonding/slaves", SYSFS_CLASS_NET, master->name); 
     if (read_line(path, line, sizeof(line)) != -1) {
@@ -507,33 +515,38 @@ void netif_bond(int sockfd, struct netif *netifs, struct netif *master,
 		break;
 	    }
 	}
+
+	return;
+    }
+#endif /* HAVE_SYSFS */
+
+#ifdef HAVE_LINUX_IF_BONDING_H
     // or ioctl
-    } else {
-	// check valid ifbond
-	if (ifbond.num_slaves <= 0)
-	    return;
 
-	for (i = 0; i < ifbond.num_slaves; i++) {
-	    ifslave.slave_id = i;
-	    ifr->ifr_data = (char *)&ifslave;
+    // check for a sensible num_slaves entry
+    if (ifbond.num_slaves <= 0)
+	return;
 
-	    if (ioctl(sockfd, SIOCBONDSLAVEINFOQUERY, ifr) >= 0) {
-		subif = netif_byname(netifs, ifslave.slave_name);
+    for (i = 0; i < ifbond.num_slaves; i++) {
+	ifslave.slave_id = i;
+	ifr->ifr_data = (char *)&ifslave;
 
-		if (subif != NULL) {
-		    my_log(INFO, "found slave %s", subif->name);
-		    subif->slave = 1;
-		    subif->master = master;
-		    subif->lacp_index = i;
-		    csubif->subif = subif;
-		    csubif = subif;
-		}
+	if (ioctl(sockfd, SIOCBONDSLAVEINFOQUERY, ifr) >= 0) {
+	    subif = netif_byname(netifs, ifslave.slave_name);
+
+	    if (subif != NULL) {
+		my_log(INFO, "found slave %s", subif->name);
+		subif->slave = 1;
+		subif->master = master;
+		subif->lacp_index = i;
+		csubif->subif = subif;
+		csubif = subif;
 	    }
 	}
     }
 
     return;
-#endif /* HAVE_SYSFS */
+#endif /* HAVE_LINUX_IF_BONDING_H */
 
 #if defined(HAVE_NET_IF_LAGG_H) || defined(HAVE_NET_IF_TRUNK_H)
 #ifdef HAVE_NET_IF_LAGG_H
