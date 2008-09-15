@@ -624,6 +624,7 @@ void netif_bridge(int sockfd, struct netif *netifs, struct netif *master,
 	    subif = netif_byname(netifs, dirent->d_name);
 
 	    if (subif != NULL) {
+		my_log(INFO, "found slave %s", subif->name);
 		subif->slave = 1;
 		subif->master = master;
 		csubif->subif = subif;
@@ -652,6 +653,7 @@ void netif_bridge(int sockfd, struct netif *netifs, struct netif *master,
 	subif = netif_byindex(netifs, ifindex[i]);
 
 	if (subif != NULL) {
+	    my_log(INFO, "found slave %s", subif->name);
 	    subif->slave = 1;
 	    subif->master = master;
 	    csubif->subif = subif;
@@ -711,6 +713,7 @@ void netif_bridge(int sockfd, struct netif *netifs, struct netif *master,
 
 	subif = netif_byname(netifs, req->ifbr_ifsname);
 	if (subif != NULL) {
+	    my_log(INFO, "found slave %s", subif->name);
 	    subif->slave = 1;
 	    subif->master = master;
 	    csubif->subif = subif;
