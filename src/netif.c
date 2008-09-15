@@ -99,7 +99,7 @@
 
 int netif_wireless(int sockfd, struct ifaddrs *ifaddr, struct ifreq *);
 int netif_type(int sockfd, struct ifaddrs *ifaddr, struct ifreq *);
-void netif_bond(int sockfd, struct netif *, struct netif *);
+void netif_bond(int sockfd, struct netif *, struct netif *, struct ifreq *);
 void netif_bridge(int sockfd, struct netif *, struct netif *);
 int netif_addrs(struct ifaddrs *, struct netif *, struct sysinfo *sysinfo);
 void netif_forwarding(struct sysinfo *);
@@ -441,7 +441,8 @@ int netif_type(int sockfd, struct ifaddrs *ifaddr, struct ifreq *ifr) {
 
 
 // handle aggregated interfaces
-void netif_bond(int sockfd, struct netif *netifs, struct netif *master) {
+void netif_bond(int sockfd, struct netif *netifs, struct netif *master,
+		struct ifreq *ifr) {
 
     struct netif *subif = NULL, *csubif = master;
     int i;
@@ -450,10 +451,13 @@ void netif_bond(int sockfd, struct netif *netifs, struct netif *master) {
     // handle linux bonding interfaces
     char path[SYSFS_PATH_MAX];
     FILE *file;
+    struct ifbond ifbond;
+    struct ifslave ifslave;
     char line[1024];
     char *slave, *nslave;
 
     // check for lacp
+    // via sysfs
     sprintf(path, "%s/%s/bonding/mode", SYSFS_CLASS_NET, master->name); 
     if ((file = fopen(path, "r")) != NULL) {
 	if (fscanf(file, "802.3ad") != EOF)
@@ -461,9 +465,16 @@ void netif_bond(int sockfd, struct netif *netifs, struct netif *master) {
 	fclose(file);
     }
 
-    // handle slaves
-    sprintf(path, "%s/%s/bonding/slaves", SYSFS_CLASS_NET, master->name); 
+    // and ioctl
+    ifr.ifr_data = (char *)&ifbond;
+    if (ioctl(sockfd, SIOCBONDINFOQUERY, ifr) >= 0) {
+	if (ifbond->bond_mode == BOND_MODE_8023AD)
+	    master->lacp = 1;
+    }
 
+    // handle slaves
+    // via sysfs
+    sprintf(path, "%s/%s/bonding/slaves", SYSFS_CLASS_NET, master->name); 
     if (read_line(path, line, sizeof(line)) != -1) {
 	slave = line;
 	i = 0;
@@ -487,6 +498,29 @@ void netif_bond(int sockfd, struct netif *netifs, struct netif *master) {
 		slave = nslave;
 	    } else {
 		break;
+	    }
+	}
+    // or ioctl
+    } else {
+	// check valid ifbond
+	if (ifbond.num_slaves <= 0)
+	    return;
+
+	for (i = 0; i < ifbond.num_slaves; i++) {
+	    ifslave.slave_id = i;
+	    ifr->ifr_data = (char *)&ifslave;
+
+	    if (ioctl(sockfd, SIOCBONDSLAVEINFOQUERY, ifr) >= 0) {
+		subif = netif_byname(netifs, ifslave.slave_name);
+
+		if (subif != NULL) {
+		    my_log(INFO, "found slave %s", subif->name);
+		    subif->slave = 1;
+		    subif->master = master;
+		    subif->lacp_index = i;
+		    csubif->subif = subif;
+		    csubif = subif;
+		}
 	    }
 	}
     }
