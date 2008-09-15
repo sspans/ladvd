@@ -456,6 +456,8 @@ void netif_bond(int sockfd, struct netif *netifs, struct netif *master,
     char line[1024];
     char *slave, *nslave;
 
+    memset(&ifbond, 0, sizeof(ifbond));
+
     // check for lacp
     // via sysfs
     sprintf(path, "%s/%s/bonding/mode", SYSFS_CLASS_NET, master->name); 
@@ -463,13 +465,13 @@ void netif_bond(int sockfd, struct netif *netifs, struct netif *master,
 	if (fscanf(file, "802.3ad") != EOF)
 	    master->lacp = 1;
 	fclose(file);
-    }
-
-    // and ioctl
-    ifr.ifr_data = (char *)&ifbond;
-    if (ioctl(sockfd, SIOCBONDINFOQUERY, ifr) >= 0) {
-	if (ifbond->bond_mode == BOND_MODE_8023AD)
-	    master->lacp = 1;
+    // or ioctl
+    } else {
+	ifr.ifr_data = (char *)&ifbond;
+	if (ioctl(sockfd, SIOCBONDINFOQUERY, ifr) >= 0) {
+	    if (ifbond.bond_mode == BOND_MODE_8023AD)
+		master->lacp = 1;
+	}
     }
 
     // handle slaves
