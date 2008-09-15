@@ -17,7 +17,10 @@
 #if HAVE_NET_ETHERNET_H
 #include <net/ethernet.h>
 #endif
-#if HAVE_NET_IF_H
+
+#if HAVE_LINUX_IF_H
+#include <linux/if.h>
+#elif defined(HAVE_NET_IF_H)
 #include <net/if.h>
 #endif
 #if HAVE_NETINET_IN_H
