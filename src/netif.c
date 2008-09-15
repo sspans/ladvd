@@ -87,7 +87,7 @@
 #endif /* HAVE_NET80211_IEEE80211_IOCTL_H */
 
 #ifdef HAVE_SYSFS
-#define SYSFS_CLASS_NET		"/syp/class/net"
+#define SYSFS_CLASS_NET		"/sys/class/net"
 #define SYSFS_PATH_MAX		256
 #endif
 
