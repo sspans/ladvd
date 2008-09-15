@@ -463,7 +463,6 @@ void netif_bond(int sockfd, struct netif *netifs, struct netif *master,
 #ifdef HAVE_LINUX_IF_BONDING_H
     struct ifbond ifbond;
     struct ifslave ifslave;
-    memset(&ifbond, 0, sizeof(ifbond));
 #endif /* HAVE_LINUX_IF_BONDING_H */
 
     // check for lacp
@@ -479,7 +478,10 @@ void netif_bond(int sockfd, struct netif *netifs, struct netif *master,
 #endif /* HAVE_SYSFS */
 
 #ifdef HAVE_LINUX_IF_BONDING_H
+    strncpy(ifr->ifr_name, master->name, IFNAMSIZ);
+    memset(&ifbond, 0, sizeof(ifbond));
     ifr->ifr_data = (char *)&ifbond;
+
     if (ioctl(sockfd, SIOCBONDINFOQUERY, ifr) >= 0) {
 	if (ifbond.bond_mode == BOND_MODE_8023AD)
 	    master->lacp = 1;
