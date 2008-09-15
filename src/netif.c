@@ -54,15 +54,16 @@
 #endif /* HAVE_NET_IF_TRUNK_H */
 
 
-#if HAVE_LINUX_IF_BONDING_H
+#ifdef HAVE_LINUX_IF_BONDING_H
 #include <linux/if_bonding.h>
 #endif /* HAVE_LINUX_IF_BONDING_H */
 
-#if HAVE_LINUX_IF_BRIDGE_H
+#ifdef HAVE_LINUX_IF_BRIDGE_H
 #include <linux/if_bridge.h>
 #ifndef SYSFS_BRIDGE_PORT_SUBDIR
 #define SYSFS_BRIDGE_PORT_SUBDIR "brif"
 #endif
+#define BRIDGE_MAX_PORTS 1024
 #endif /* HAVE_LINUX_IF_BRIDGE_H */
 
 #if HAVE_NET_IF_BRIDGEVAR_H
@@ -583,24 +584,60 @@ void netif_bridge(int sockfd, struct netif *netifs, struct netif *master,
 		  struct ifreq *ifr) {
 
     struct netif *subif = NULL, *csubif = master;
+    int i;
 
 #if HAVE_SYSFS
     // handle linux bridge interfaces
     char path[SYSFS_PATH_MAX];
     DIR  *dir;
     struct dirent *dirent;
+#endif /* HAVE_SYSFS */
+
+#ifdef HAVE_LINUX_IF_BRIDGE_H
+    int ifindex[BRIDGE_MAX_PORTS];
+    unsigned long args[4] = { BRCTL_GET_PORT_LIST,
+		    (unsigned long)ifindex, BRIDGE_MAX_PORTS, 0 };
+#endif /* HAVE_LINUX_IF_BRIDGE_H */
+
 
     // handle slaves
+ 
+#if HAVE_SYSFS
+    // via sysfs
     sprintf(path, SYSFS_CLASS_NET "/%s/" SYSFS_BRIDGE_PORT_SUBDIR, master->name); 
+    if ((dir = opendir(path)) != NULL) {
 
-    if ((dir = opendir(path)) == NULL) {
-	my_log(CRIT, "reading bridge %s subdir %s failed: %s",
-	    master->name, path, strerror(errno));
+	while ((dirent = readdir(dir)) != NULL) {
+	    subif = netif_byname(netifs, dirent->d_name);
+
+	    if (subif != NULL) {
+		subif->slave = 1;
+		subif->master = master;
+		csubif->subif = subif;
+		csubif = subif;
+	    }
+	}
+
+	closedir(dir);
+	return;
+    }
+#endif /* HAVE_SYSFS */
+
+#ifdef HAVE_LINUX_IF_BRIDGE_H
+    // or ioctl
+    memset(ifindex, 0, sizeof(ifindex));
+    strncpy(ifr->ifr_name, master->name, IFNAMSIZ);
+    ifr->ifr_data = (char *)&args;
+
+    if (ioctl(sockfd, SIOCDEVPRIVATE, ifr) < 0) {
+	my_log(CRIT, "bridge ioctl failed on interface %s: %s",
+	       master->name, strerror(errno));
 	return;
     }
 
-    while ((dirent = readdir(dir)) != NULL) {
-	subif = netif_byname(netifs, dirent->d_name);
+    for (i = 0; i < BRIDGE_MAX_PORTS; i++) {
+	subif = netif_byindex(netifs, ifindex[i]);
+
 	if (subif != NULL) {
 	    subif->slave = 1;
 	    subif->master = master;
@@ -609,9 +646,8 @@ void netif_bridge(int sockfd, struct netif *netifs, struct netif *master,
 	}
     }
 
-    closedir(dir);
     return;
-#endif /* HAVE_SYSFS */
+#endif /* HAVE_LINUX_IF_BRIDGE_H */
 
 #if defined(HAVE_NET_IF_BRIDGEVAR_H) || defined(HAVE_NET_IF_BRIDGE_H)
     struct ifbifconf bifc;
