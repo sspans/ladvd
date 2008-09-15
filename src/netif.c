@@ -272,11 +272,11 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 
 	switch(netif->type) {
 	    case NETIF_BONDING:
-		my_log(INFO, "detecting %s subifs", netif->name);
+		my_log(INFO, "detecting %s settings", netif->name);
 		netif_bond(sockfd, netifs, netif, &ifr);
 		break;
 	    case NETIF_BRIDGE:
-		my_log(INFO, "detecting %s subifs", netif->name);
+		my_log(INFO, "detecting %s settings", netif->name);
 		netif_bridge(sockfd, netifs, netif, &ifr);
 		break;
 	    default:
@@ -487,6 +487,9 @@ void netif_bond(int sockfd, struct netif *netifs, struct netif *master,
 	    master->lacp = 1;
     }
 #endif /* HAVE_LINUX_IF_BONDING_H */
+
+    if (master->lacp == 1)
+	my_log(INFO, "lacp enabled on %s", master->name);
 
 
     // handle slaves
