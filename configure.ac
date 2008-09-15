@@ -134,9 +134,9 @@ fi
 # daemon user
 package_user="$PACKAGE_NAME"
 
-AC_ARG_WITH([package_user],
+AC_ARG_WITH([user],
 	    [AS_HELP_STRING([--with-user=USER],[user to switch to])],
-	    [package_user="$withval"],[])
+	    [package_user="$withval"])
 AC_DEFINE_UNQUOTED(PACKAGE_USER,"$package_user",[user to switch to])
 AC_SUBST([PACKAGE_USER], ["$package_user"])
 
