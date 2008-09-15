@@ -87,7 +87,7 @@
 #endif /* HAVE_NET80211_IEEE80211_IOCTL_H */
 
 #ifdef HAVE_SYSFS
-#define SYSFS_CLASS_NET		"/sys/class/net"
+#define SYSFS_CLASS_NET		"/syp/class/net"
 #define SYSFS_PATH_MAX		256
 #endif
 
@@ -476,7 +476,9 @@ void netif_bond(int sockfd, struct netif *netifs, struct netif *master,
 	    master->lacp = 1;
 	fclose(file);
     }
-#elif defined(HAVE_LINUX_IF_BONDING_H)
+#endif /* HAVE_SYSFS */
+
+#ifdef HAVE_LINUX_IF_BONDING_H
     ifr->ifr_data = (char *)&ifbond;
     if (ioctl(sockfd, SIOCBONDINFOQUERY, ifr) >= 0) {
 	if (ifbond.bond_mode == BOND_MODE_8023AD)
