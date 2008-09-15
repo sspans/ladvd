@@ -479,7 +479,7 @@ void netif_bond(int sockfd, struct netif *netifs, struct netif *master,
 	slave = line;
 	i = 0;
 	while (strlen(slave) > 0) {
-	    nslave = strstr(line, " ");
+	    nslave = strstr(slave, " ");
 	    if (nslave != NULL)
 		*nslave = '\0';
 
