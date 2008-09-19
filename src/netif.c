@@ -167,8 +167,10 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
     for (ifaddr = ifaddrs; ifaddr != NULL; ifaddr = ifaddr->ifa_next) {
 
 	// skip interfaces without addresses
-	if (ifaddr->ifa_addr == NULL)
+	if (ifaddr->ifa_addr == NULL) {
+	    my_log(INFO, "skipping interface %s", ifaddr->ifa_name);
 	    continue;
+	}
 
 	// only handle datalink addresses
 	if (ifaddr->ifa_addr->sa_family != NETIF_AF)
