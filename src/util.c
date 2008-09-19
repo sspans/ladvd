@@ -157,6 +157,7 @@ struct netif *netif_byname(struct netif *netifs, char *name) {
 
 int read_line(char *path, char *line, uint16_t len) {
     FILE *file;
+    char *newline;
 
     if ((file = fopen(path, "r")) == NULL)
 	return(-1);
@@ -168,7 +169,9 @@ int read_line(char *path, char *line, uint16_t len) {
     fclose(file);
 
     // remove newline
-    *strchr(line, '\n') = '\0';
+    newline = strchr(line, '\n');
+    if (newline != NULL)
+	*newline = '\0';
 
     return(strlen(line));
 }
