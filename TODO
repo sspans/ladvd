@@ -1,12 +1,6 @@
 
 CODE:
-- sync exit / return values
-- check tlv lengths
-- location support for lldp
 - investigate netlink/other interface notifications
-
-- LLDP-MED Inventory Management TLV (dmi)
-- LLDP-MED LCI TLV (coord/civic)
 - SNMP support for LLDP (agentx)
 - SNMP support for CDP (CISCO-CDP-MIB agentx)
 
