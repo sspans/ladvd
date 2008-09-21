@@ -88,7 +88,9 @@ int main(int argc, char *argv[]) {
 		loglevel++;
 		break;
 	    case 'L':
-		strlcpy(sysinfo.location, optarg, sizeof(sysinfo.location));
+		if (strlcpy(sysinfo.location, optarg, 
+			sizeof(sysinfo.location)) == 0)
+		    usage(progname);
 		break;
 	    default:
 		usage(progname);
@@ -139,7 +141,7 @@ int main(int argc, char *argv[]) {
     }
 
     // debug
-    if (do_debug == 1)
+    if (do_debug != 0)
 	goto loop;
 
     // fork
@@ -148,8 +150,12 @@ int main(int argc, char *argv[]) {
 	    my_log(CRIT, "backgrounding failed: %s", strerror(errno));
 	    exit(EXIT_FAILURE);
 	}
-	snprintf(pidstr, sizeof(pidstr), "%u\n", getpid());
-	write(fd, pidstr, strlen(pidstr));
+
+	if ((snprintf(pidstr, sizeof(pidstr), "%d\n", (int)getpid()) <= 0) ||
+	    (write(fd, pidstr, strlen(pidstr)) <= 0)) {
+	    my_log(CRIT, "failed to write pidfile: %s", strerror(errno));
+	    exit(EXIT_FAILURE);
+	}
     }
 
 #ifdef USE_CAPABILITIES
@@ -191,7 +197,7 @@ int main(int argc, char *argv[]) {
 	exit(EXIT_FAILURE);
     }
 
-    cap_free(caps);
+    (void) cap_free(caps);
 #endif
 
 
@@ -294,7 +300,7 @@ sleep:
 	    return (EXIT_SUCCESS);
 
 	my_log(INFO, "sleeping for %d seconds", SLEEPTIME);
-	sleep(SLEEPTIME);
+	(void) sleep(SLEEPTIME);
     }
 
     return (EXIT_SUCCESS);

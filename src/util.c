@@ -22,10 +22,10 @@
 #endif /* HAVE_NET_BPF_H */
 
 unsigned int loglevel = CRIT;
-extern int do_fork;
-extern int do_debug;
+extern unsigned int do_fork;
+extern unsigned int do_debug;
 
-void my_log(int prio, const char *fmt, ...) {
+void my_log(unsigned int prio, const char *fmt, ...) {
 
     va_list ap;
     va_start(ap, fmt);
@@ -34,10 +34,10 @@ void my_log(int prio, const char *fmt, ...) {
 	return;
 
     if (do_fork == 1) {
-	vsyslog(LOG_INFO, fmt, ap);
+	(void) vsyslog(LOG_INFO, fmt, ap);
     } else {
-	vfprintf(stderr, fmt, ap);
-	fprintf(stderr, "\n");
+	(void) vfprintf(stderr, fmt, ap);
+	(void) fprintf(stderr, "\n");
     }
 }
 
@@ -98,7 +98,7 @@ int my_rsocket() {
     return(socket);
 }
 
-int my_rsend(int s, struct netif *netif, const void *msg, size_t len) {
+size_t my_rsend(int s, struct netif *netif, const void *msg, size_t len) {
 
     size_t count = 0;
 
@@ -163,10 +163,10 @@ int read_line(char *path, char *line, uint16_t len) {
 	return(-1);
 
     if (fgets(line, len, file) == NULL) {
-	fclose(file);
+	(void) fclose(file);
 	return(-1);
     }
-    fclose(file);
+    (void) fclose(file);
 
     // remove newline
     newline = strchr(line, '\n');

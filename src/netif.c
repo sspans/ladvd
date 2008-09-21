@@ -134,7 +134,7 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 
     if (getifaddrs(&ifaddrs) < 0) {
 	my_log(CRIT, "address detection failed: %s", strerror(errno));
-	close(sockfd);
+	(void) close(sockfd);
 	return(0);
     }
 
@@ -323,7 +323,7 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
     // cleanup
 cleanup:
     freeifaddrs(ifaddrs);
-    close(sockfd);
+    (void) close(sockfd);
 
     return(count);
 };
@@ -382,11 +382,13 @@ int netif_type(int sockfd, struct ifaddrs *ifaddr, struct ifreq *ifr) {
 #endif
 
 #ifdef HAVE_SYSFS
-    sprintf(path, "%s/%s/device", SYSFS_CLASS_NET, ifaddr->ifa_name); 
+    if (snprintf(path, SYSFS_PATH_MAX,
+	    SYSFS_CLASS_NET "/%s/device", ifaddr->ifa_name) > 0) {
 
-    // accept physical devices via sysfs
-    if (stat(path, &sb) == 0)
-	return(NETIF_REGULAR);
+	// accept physical devices via sysfs
+	if (stat(path, &sb) == 0)
+	    return(NETIF_REGULAR);
+    }
 #endif
 
 #if HAVE_LINUX_ETHTOOL_H
@@ -471,11 +473,13 @@ void netif_bond(int sockfd, struct netif *netifs, struct netif *master,
 
 #ifdef HAVE_SYSFS
     // via sysfs
-    sprintf(path, "%s/%s/bonding/mode", SYSFS_CLASS_NET, master->name); 
-    if ((file = fopen(path, "r")) != NULL) {
-	if (fscanf(file, "802.3ad") != EOF)
-	    master->lacp = 1;
-	fclose(file);
+    if (snprintf(path, SYSFS_PATH_MAX, "%s/%s/bonding/mode", 
+		SYSFS_CLASS_NET, master->name) > 0) {
+	if ((file = fopen(path, "r")) != NULL) {
+	    if (fscanf(file, "802.3ad") != EOF)
+		master->lacp = 1;
+	    (void) fclose(file);
+	}
     }
 #endif /* HAVE_SYSFS */
 
@@ -498,8 +502,10 @@ void netif_bond(int sockfd, struct netif *netifs, struct netif *master,
 
 #ifdef HAVE_SYSFS
     // via sysfs
-    sprintf(path, "%s/%s/bonding/slaves", SYSFS_CLASS_NET, master->name); 
-    if (read_line(path, line, sizeof(line)) != -1) {
+    if ((snprintf(path, SYSFS_PATH_MAX,
+	    SYSFS_CLASS_NET "/%s/bonding/slaves", master->name) > 0) &&
+	(read_line(path, line, sizeof(line)) != -1)) {
+
 	slave = line;
 	i = 0;
 	while (strlen(slave) > 0) {

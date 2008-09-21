@@ -7,13 +7,13 @@
 #define INFO    3
 #define DEBUG   4
 
-void my_log(int prio, const char *fmt, ...);
+void my_log(unsigned int prio, const char *fmt, ...);
 void *my_malloc(size_t size);
 char *my_strdup(const char *str);
 int my_socket(int af, int type, int proto);
 
 int my_rsocket();
-int my_rsend(int s, struct netif *, const void *msg, size_t len);
+size_t my_rsend(int s, struct netif *, const void *msg, size_t len);
 
 struct netif *netif_byindex(struct netif *, uint8_t index);
 struct netif *netif_byname(struct netif *, char *name);

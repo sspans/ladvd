@@ -106,11 +106,11 @@ struct sysinfo {
 #define NETIF_BONDING	1
 #define NETIF_BRIDGE	2
 
-int sysinfo_fetch(struct sysinfo *);
+void sysinfo_fetch(struct sysinfo *);
 uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *, struct netif **);
 int netif_media(struct netif *session);
 
-int cdp_packet(struct packet *, struct netif *, struct sysinfo *);
-int lldp_packet(struct packet *, struct netif *, struct sysinfo *);
+size_t cdp_packet(struct packet *, struct netif *, struct sysinfo *);
+size_t lldp_packet(struct packet *, struct netif *, struct sysinfo *);
 
 #endif /* _main_h */

@@ -17,7 +17,7 @@
 #define SYSFS_MODEL_NAME	SYSFS_CLASS_DMI "/product_name"
 #endif
 
-int sysinfo_fetch(struct sysinfo *sysinfo) {
+void sysinfo_fetch(struct sysinfo *sysinfo) {
 
     struct hostent *hp;
     size_t len = LLDP_INVENTORY_SIZE + 1;
@@ -33,11 +33,10 @@ int sysinfo_fetch(struct sysinfo *sysinfo) {
 	exit(EXIT_FAILURE);
     }
 
-    snprintf(sysinfo->uts_str, sizeof(sysinfo->uts_str), "%s %s %s %s",
+    if (snprintf(sysinfo->uts_str, sizeof(sysinfo->uts_str), "%s %s %s %s",
 	sysinfo->uts.sysname, sysinfo->uts.release,
-	sysinfo->uts.version, sysinfo->uts.machine);
+	sysinfo->uts.version, sysinfo->uts.machine) <= 0) {
 
-    if (strlen(sysinfo->uts_str) == 0) {
 	my_log(CRIT, "can't create uts string: %s", strerror(errno));
 	exit(EXIT_FAILURE);
     }
@@ -76,7 +75,5 @@ int sysinfo_fetch(struct sysinfo *sysinfo) {
     sysctl(mib, 2, sysinfo->model_name, &len, NULL, 0);
 #endif
 #endif
-
-    return(0);
 }
 

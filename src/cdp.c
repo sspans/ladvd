@@ -30,7 +30,7 @@ uint16_t cdp_checksum(void *data, size_t length) {
     return (uint16_t)~sum;
 }
 
-int cdp_packet(struct packet *packet, struct netif *netif,
+size_t cdp_packet(struct packet *packet, struct netif *netif,
 	       struct sysinfo *sysinfo) {
 
     size_t length;

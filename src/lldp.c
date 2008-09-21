@@ -10,7 +10,7 @@
 static uint8_t lldp_dst[] = { 0x01, 0x80, 0xc2, 0x00, 0x00, 0x0e };
 static uint8_t lldp_ether[] = { 0x88, 0xcc };
 
-int lldp_packet(struct packet *packet, struct netif *netif,
+size_t lldp_packet(struct packet *packet, struct netif *netif,
 		struct sysinfo *sysinfo) {
 
     size_t length;
