@@ -350,7 +350,7 @@ void usage(const char *fn) {
 	    "\t-u <user> = Setuid User (defaults to %s)\n"
 	    "\t-v = Increase logging verbosity\n"
 	    "\t-C <CC> = System Country Code\n"
-	    "\t-L <location> = System Location\n",
+	    "\t-L <location> = System Location\n"
 	    "\t-M = Use addresses specified via -m for all interfaces\n",
 	    PACKAGE_NAME, PACKAGE_VERSION, fn, PACKAGE_USER);
 
