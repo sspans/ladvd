@@ -84,6 +84,7 @@ struct sysinfo {
     int8_t cap_active;
     uint8_t hwaddr[ETHER_ADDR_LEN];
 
+    uint8_t maddr_force;
     uint32_t maddr4;
     uint32_t maddr6[4];
 

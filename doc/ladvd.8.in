@@ -31,5 +31,7 @@ Increase logging verbosity.
 Specify a two-letter ISO 3166 country code (required for LLDP location support).
 .IP "-L <location>"
 Specify the physical location of the server.
+.IP "-M"
+Use management addresses specified via -m for all interfaces.
 .SH AUTHOR
 Sten Spans <sten@blinkenlights.nl>

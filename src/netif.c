@@ -821,10 +821,11 @@ int netif_addrs(struct ifaddrs *ifaddrs, struct netif *netifs,
     // use management address when unnumbered
     for (netif = netifs; netif != NULL; netif = netif->next) {
 
-	if (netif->ipaddr4 == 0)
+	if ((netif->ipaddr4 == 0) || (sysinfo->maddr_force == 1))
 	    netif->ipaddr4 = sysinfo->maddr4;
 
-	if (IN6_IS_ADDR_UNSPECIFIED((struct in6_addr *)netif->ipaddr6))
+	if (IN6_IS_ADDR_UNSPECIFIED((struct in6_addr *)netif->ipaddr6) ||
+	    (sysinfo->maddr_force == 1))
 	    memcpy(&netif->ipaddr6, &sysinfo->maddr6, sizeof(sysinfo->maddr6));
     }
 

@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
     do_once = 0;
     memset(&sysinfo, 0, sizeof(struct sysinfo));
 
-    while ((ch = getopt(argc, argv, "cdfhlm:ou:vC:L:")) != -1) {
+    while ((ch = getopt(argc, argv, "cdfhlm:ou:vC:L:M")) != -1) {
 	switch(ch) {
 	    case 'c':
 		do_cdp = 1;
@@ -98,10 +98,14 @@ int main(int argc, char *argv[]) {
 		// in capital ASCII letters
 		sysinfo.country[0] = toupper(optarg[0]);
 		sysinfo.country[1] = toupper(optarg[1]);
+		break;
 	    case 'L':
 		if (strlcpy(sysinfo.location, optarg, 
 			sizeof(sysinfo.location)) == 0)
 		    usage(progname);
+		break;
+	    case 'M':
+		sysinfo.maddr_force = 1;
 		break;
 	    default:
 		usage(progname);
@@ -347,6 +351,7 @@ void usage(const char *fn) {
 	    "\t-v = Increase logging verbosity\n"
 	    "\t-C <CC> = System Country Code\n"
 	    "\t-L <location> = System Location\n",
+	    "\t-M = Use addresses specified via -m for all interfaces\n",
 	    PACKAGE_NAME, PACKAGE_VERSION, fn, PACKAGE_USER);
 
     exit(EXIT_FAILURE);
