@@ -34,7 +34,7 @@ fi
 AC_HEADER_STDC
 AC_CHECK_HEADERS([fcntl.h grp.h pwd.h stdarg.h stdint.h stdio.h syslog.h \
 		  sys/file.h sys/utsname.h unistd.h sys/ioctl.h sys/types.h \
-		  sys/socket.h sys/time.h signal.h], 
+		  sys/socket.h sys/time.h signal.h ctype.h], 
 		 [], AC_MSG_ERROR([required header missing]))
 
 # bsd ifmedia

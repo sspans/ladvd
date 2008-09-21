@@ -78,6 +78,7 @@ struct sysinfo {
     struct utsname uts;
     char uts_str[256];
     char hostname[256];
+    char country[3];
     char location[256];
     int8_t cap;
     int8_t cap_active;

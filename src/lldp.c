@@ -192,6 +192,27 @@ size_t lldp_packet(struct packet *packet, struct netif *netif,
 
 
 
+    // TIA Location Identification TLv
+
+    // LOC ("location", CAtype 22): unstructured additional information
+    if ((strlen(sysinfo->country) == 2) && (strlen(sysinfo->location) != 0)) {
+	if (!(
+	    START_LLDP_TLV(LLDP_PRIVATE_TLV) &&
+	    PUSH_BYTES(OUI_TIA, OUI_LEN) &&
+	    PUSH_UINT8(LLDP_PRIVATE_TIA_SUBTYPE_LOCAL_ID) &&
+	    PUSH_UINT8(LLDP_TIA_LOCATION_DATA_FORMAT_CIVIC_ADDRESS) &&
+	    PUSH_UINT8(5 + strlen(sysinfo->location)) &&
+	    PUSH_UINT8(LLDP_TIA_LOCATION_LCI_WHAT_CLIENT) &&
+	    PUSH_BYTES(sysinfo->country, 2) &&
+	    PUSH_UINT8(LLDP_TIA_LOCATION_LCI_CATYPE_LOC) &&
+	    PUSH_UINT8(strlen(sysinfo->location)) &&
+	    PUSH_BYTES(sysinfo->location, strlen(sysinfo->location))
+	))
+	    return 0;
+	END_LLDP_TLV;
+    }
+
+
 
     // TIA Inventory Management TLV Set
 

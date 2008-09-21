@@ -4,6 +4,7 @@
 
 #include "main.h"
 #include "util.h"
+#include <ctype.h>
 #include <unistd.h>
 #include <sys/file.h>
 #include <sys/stat.h>
@@ -56,7 +57,7 @@ int main(int argc, char *argv[]) {
     do_once = 0;
     memset(&sysinfo, 0, sizeof(struct sysinfo));
 
-    while ((ch = getopt(argc, argv, "cdfhlm:ou:vL:")) != -1) {
+    while ((ch = getopt(argc, argv, "cdfhlm:ou:vC:L:")) != -1) {
 	switch(ch) {
 	    case 'c':
 		do_cdp = 1;
@@ -87,6 +88,13 @@ int main(int argc, char *argv[]) {
 	    case 'v':
 		loglevel++;
 		break;
+	    case 'C':
+		// two-letter ISO 3166 country code
+		if (strlen(optarg) != 2)
+		    usage(progname);
+		// in capital ASCII letters
+		sysinfo.country[0] = toupper(optarg[0]);
+		sysinfo.country[1] = toupper(optarg[1]);
 	    case 'L':
 		if (strlcpy(sysinfo.location, optarg, 
 			sizeof(sysinfo.location)) == 0)
@@ -319,6 +327,7 @@ void usage(const char *fn) {
 	    "\t-o = Run Once\n"
 	    "\t-u <user> = Setuid User (defaults to %s)\n"
 	    "\t-v = Increase logging verbosity\n"
+	    "\t-C <CC> = System Country Code\n"
 	    "\t-L <location> = System Location\n",
 	    PACKAGE_NAME, PACKAGE_VERSION, fn, PACKAGE_USER);
 

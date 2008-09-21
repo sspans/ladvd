@@ -27,7 +27,9 @@ Run only once, useful for quick troubleshooting.
 Switch to this user (defaults to PACKAGE_USER)
 .IP -v
 Increase logging verbosity.
+.IP "-C <CC>"
+Specify a two-letter ISO 3166 country code (required for LLDP location support).
 .IP "-L <location>"
-Specify the physical location of the server (Currently CDP only).
+Specify the physical location of the server.
 .SH AUTHOR
 Sten Spans <sten@blinkenlights.nl>
