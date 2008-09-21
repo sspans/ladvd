@@ -4,7 +4,6 @@ CODE:
 - check tlv lengths
 - location support for lldp
 - investigate netlink/other interface notifications
-- pcap packet format for -d
 
 - LLDP-MED Inventory Management TLV (dmi)
 - LLDP-MED LCI TLV (coord/civic)
