@@ -12,7 +12,7 @@ sends CDP/LLDP link layer advertisements on all available interfaces. This makes
 .IP -c
 Send CDP messages.
 .IP -d
-Dump packets to stdout.
+Dump pcap-compatible packets to stdout which can be piped to tcpdump (via "| tcpdump -r -") or redirected to a file for further analysis.
 .IP -f
 Run in the foreground and send logging to stderr.
 .IP -h

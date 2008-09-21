@@ -337,7 +337,7 @@ void usage(const char *fn) {
     fprintf(stderr, "%s version %s\n" 
 	"Usage: %s [-c] [-l] [-f] INTERFACE INTERFACE\n"
 	    "\t-c = Send CDP Messages\n"
-	    "\t-d = Dump packets to stdout\n"
+	    "\t-d = Dump pcap-compatible packets to stdout\n"
 	    "\t-f = Run in the foreground\n"
 	    "\t-h = Print this message\n"
 	    "\t-l = Send LLDP Messages\n"
