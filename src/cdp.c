@@ -188,7 +188,7 @@ size_t cdp_packet(struct packet *packet, struct netif *netif,
 
 
     // location
-    if (sysinfo->location != NULL && !(
+    if ((strlen(sysinfo->location) != 0) && !(
 	START_CDP_TLV(CDP_TYPE_LOCATION) &&
 	PUSH_UINT8(0) &&
 	PUSH_BYTES(sysinfo->location, strlen(sysinfo->location))
