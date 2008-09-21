@@ -824,7 +824,7 @@ int netif_addrs(struct ifaddrs *ifaddrs, struct netif *netifs,
 	if (netif->ipaddr4 == 0)
 	    netif->ipaddr4 = sysinfo->maddr4;
 
-	if (!IN6_IS_ADDR_UNSPECIFIED((struct in6_addr *)netif->ipaddr6))
+	if (IN6_IS_ADDR_UNSPECIFIED((struct in6_addr *)netif->ipaddr6))
 	    memcpy(&netif->ipaddr6, &sysinfo->maddr6, sizeof(sysinfo->maddr6));
     }
 
