@@ -46,6 +46,9 @@ int main(int argc, char *argv[]) {
     // interfaces
     struct netif *netifs = NULL, *netif, *master;
 
+    // pcap
+    pcap_hdr_t pcap_hdr;
+
 #ifdef USE_CAPABILITIES
     // capabilities
     cap_t caps;
@@ -149,8 +152,23 @@ int main(int argc, char *argv[]) {
     }
 
     // debug
-    if (do_debug != 0)
+    if (do_debug != 0) {
+
+	// zero
+	memset(&pcap_hdr, 0, sizeof(pcap_hdr));
+
+	// create pcap global header
+	pcap_hdr.magic_number = PCAP_MAGIC;
+	pcap_hdr.version_major = 2;
+	pcap_hdr.version_minor = 4;
+	pcap_hdr.snaplen = sizeof(struct packet);
+	pcap_hdr.network = 1;
+
+	// send pcap global header
+	(void) my_rsend(sockfd, NULL, &pcap_hdr, sizeof(pcap_hdr));
+
 	goto loop;
+    }
 
     // fork
     if (do_fork == 1) {

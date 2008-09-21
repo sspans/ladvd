@@ -13,6 +13,7 @@
 #include <sys/types.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <time.h>
 
 #ifdef HAVE_NETPACKET_PACKET_H
 #include <netpacket/packet.h>
@@ -102,9 +103,24 @@ size_t my_rsend(int s, struct netif *netif, const void *msg, size_t len) {
 
     size_t count = 0;
 
+    pcaprec_hdr_t pcap_rec_hdr;
+    struct timeval tv;
+
     // debug
-    if (do_debug == 1)
+    if (do_debug == 1) {
+
+	// write a pcap record header if netif is set
+	if ((netif != NULL) && (gettimeofday(&tv, NULL) == 0)) {
+	    pcap_rec_hdr.ts_sec = tv.tv_sec;
+	    pcap_rec_hdr.ts_usec = tv.tv_usec;
+	    pcap_rec_hdr.incl_len = len;
+	    pcap_rec_hdr.orig_len = len;
+
+	    (void) write(s, &pcap_rec_hdr, sizeof(pcap_rec_hdr));
+	}
+
 	return(write(s, msg, len));
+    }
 
 #ifdef HAVE_NETPACKET_PACKET_H
     struct sockaddr_ll sa;
