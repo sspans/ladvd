@@ -14,14 +14,14 @@ PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 . /lib/lsb/init-functions
 
 NAME=ladvd
-DAEMON=/usr/sbin/ladvd
+DAEMON=/usr/sbin/$NAME
 PIDFILE=/var/run/$NAME.pid
 
 test -x $DAEMON || exit 5
 
-# Include ladvd defaults if available
-if [ -f /etc/default/ladvd ] ; then
-	. /etc/default/ladvd
+# Include defaults if available
+if [ -f /etc/default/$NAME ] ; then
+	. /etc/default/$NAME
 fi
 
 set -e
