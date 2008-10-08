@@ -142,7 +142,7 @@ int main(int argc, char *argv[]) {
 	    exit(EXIT_FAILURE);	
 	}
 	if (flock(fd, LOCK_EX|LOCK_NB) == -1) {
-	    my_log(CRIT, "ladvd already running (%s locked)", pidfile);
+	    my_log(CRIT, PACKAGE_NAME " already running (%s locked)", pidfile);
 	    exit(EXIT_FAILURE);	
 	}
     }
