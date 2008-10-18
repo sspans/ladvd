@@ -436,8 +436,10 @@ int netif_type(int sockfd, struct ifaddrs *ifaddr, struct ifreq *ifr) {
 	return(NETIF_REGULAR);
 
     // bridge
+#ifdef IFT_BRIDGE
     } else if (if_data->ifi_type == IFT_BRIDGE) {
 	return(NETIF_BRIDGE);
+#endif
     }
 
     // we don't want the rest
