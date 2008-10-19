@@ -53,6 +53,10 @@
 #include <net/if_trunk.h>
 #endif /* HAVE_NET_IF_TRUNK_H */
 
+#ifdef HAVE_NET_IF_BOND_VAR_H
+#include <net/if_bond_var.h>
+#endif /* HAVE_NET_IF_BOND_VAR_H */
+
 
 #ifdef HAVE_LINUX_IF_BONDING_H
 #include <linux/if_bonding.h>
@@ -609,7 +613,52 @@ void netif_bond(int sockfd, struct netif *netifs, struct netif *master,
     }
 
     return;
-#endif /* HAVE_NET_IF_LAGG_H */
+#endif /* HAVE_NET_IF_LAGG_H || HAVE_NET_IF_TRUNK_H */
+
+#ifdef HAVE_NET_IF_BOND_VAR_H
+    struct if_bond_req ibr;
+    struct if_bond_status *ibs;
+    struct if_bond_status_req *ibsr;
+
+    memset(&ibr, 0, sizeof(ibr));
+    ibr.ibr_op = IF_BOND_OP_GET_STATUS;
+    ibsr = &ibr.ibr_ibru.ibru_status;
+    ibsr->ibsr_version = IF_BOND_STATUS_REQ_VERSION;
+
+    strncpy(ifr->ifr_name, master->name, IFNAMSIZ);
+    ifr->ifr_data = (caddr_t)&ibr;
+
+    if (ioctl(sockfd, SIOCGIFBOND, ifr) >= 0)
+	if (ibsr->ibsr_mode == IF_BOND_MODE_LACP)
+	    master->lacp = 1;
+
+    if (ibsr->ibsr_total <= 0) 
+	return;
+
+    ibsr->ibsr_buffer = my_malloc(sizeof(struct if_bond_status) * 
+				    ibsr->ibsr_total);
+    ibsr->ibsr_count = ibsr->ibsr_total;
+
+    if ((ioctl(sockfd, SIOCGIFBOND, ifr) >= 0) && (ibsr->ibsr_total > 0)) {
+	ibs = (struct if_bond_status *)ibsr->ibsr_buffer;
+
+	for (i = 0; i < ibsr->ibsr_total; i++) {
+	    subif = netif_byname(netifs, ibs->ibs_if_name);
+
+	    if (subif != NULL) {
+		my_log(INFO, "found slave %s", subif->name);
+		subif->slave = 1;
+		subif->master = master;
+		subif->lacp_index = i++;
+		csubif->subif = subif;
+		csubif = subif;
+	    }
+	}
+    }	
+
+    free(ibsr->ibsr_buffer);
+    return;
+#endif /* HAVE_NET_IF_BOND_VAR_H */
 }
 
 
