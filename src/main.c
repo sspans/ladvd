@@ -26,11 +26,13 @@ void usage(const char *fn);
 int main(int argc, char *argv[]) {
 
     int ch, do_cdp, do_lldp, do_once;
-    int fd = -1;
     char *progname = argv[0];
     char *username = PACKAGE_USER;
+#ifndef __APPLE__
     char *pidfile = PACKAGE_PID_FILE;
     char pidstr[16];
+    int fd = -1;
+#endif /* __APPLE__ */
     struct passwd *pwd = NULL;
 
     // sysinfo
@@ -133,6 +135,7 @@ int main(int argc, char *argv[]) {
     // fetch system details
     sysinfo_fetch(&sysinfo);
 
+#ifndef __APPLE__
     // open pidfile
     if (do_fork == 1) {
 	fd = open(pidfile, O_WRONLY|O_CREAT, 0666);
@@ -146,6 +149,7 @@ int main(int argc, char *argv[]) {
 	    exit(EXIT_FAILURE);	
 	}
     }
+#endif /* __APPLE__ */
 
     // open a raw socket
     sockfd = my_rsocket();
@@ -174,6 +178,7 @@ int main(int argc, char *argv[]) {
 	goto loop;
     }
 
+#ifndef __APPLE__
     // fork
     if (do_fork == 1) {
 	if (daemon(0,0) == -1) {
@@ -187,6 +192,7 @@ int main(int argc, char *argv[]) {
 	    exit(EXIT_FAILURE);
 	}
     }
+#endif /* __APPLE__ */
 
 #ifdef USE_CAPABILITIES
     // keep capabilities
