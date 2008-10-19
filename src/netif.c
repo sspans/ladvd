@@ -508,7 +508,7 @@ void netif_bond(int sockfd, struct netif *netifs, struct netif *master,
     }
 #endif /* HAVE_SYSFS */
 
-#ifdef HAVE_LINUX_IF_BONDING_H
+#if defined(HAVE_LINUX_IF_BONDING_H) && defined(BOND_MODE_8023AD)
     strncpy(ifr->ifr_name, master->name, IFNAMSIZ);
     memset(&ifbond, 0, sizeof(ifbond));
     ifr->ifr_data = (char *)&ifbond;
@@ -517,7 +517,7 @@ void netif_bond(int sockfd, struct netif *netifs, struct netif *master,
 	if (ifbond.bond_mode == BOND_MODE_8023AD)
 	    master->lacp = 1;
     }
-#endif /* HAVE_LINUX_IF_BONDING_H */
+#endif /* HAVE_LINUX_IF_BONDING_H && BOND_MODE_8023AD */
 
     if (master->lacp == 1)
 	my_log(INFO, "lacp enabled on %s", master->name);
