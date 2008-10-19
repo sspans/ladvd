@@ -47,7 +47,7 @@ struct packet {
 	uint8_t length[ETHER_TYPE_LEN];
     };
     uint8_t data[1024];
-};
+} __attribute__ ((__packed__));
 
 struct netif {
     uint8_t index;
@@ -105,7 +105,7 @@ typedef struct pcap_hdr_s {
     uint32_t sigfigs;        /* accuracy of timestamps */
     uint32_t snaplen;        /* max length of captured packets, in octets */
     uint32_t network;        /* data link type */
-} pcap_hdr_t;
+} __attribute__ ((__packed__)) pcap_hdr_t;
 
 #define PCAP_MAGIC	0xA1B2C3D4
 
@@ -114,7 +114,7 @@ typedef struct pcaprec_hdr_s {
     uint32_t ts_usec;        /* timestamp microseconds */
     uint32_t incl_len;       /* number of octets of packet saved in file */
     uint32_t orig_len;       /* actual length of packet */
-} pcaprec_hdr_t;
+} __attribute__ ((__packed__)) pcaprec_hdr_t;
 
 
 #define CAP_BRIDGE	(1 << 0)
