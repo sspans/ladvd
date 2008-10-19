@@ -336,6 +336,10 @@ cleanup:
 // detect wireless interfaces
 int netif_wireless(int sockfd, struct ifaddrs *ifaddr, struct ifreq *ifr) {
 
+#if HAVE_NET_IF_MEDIA_H
+    struct ifmediareq ifmr;
+#endif /* HAVE_HAVE_NET_IF_MEDIA_H */
+
 #ifdef HAVE_LINUX_WIRELESS_H
     struct iwreq iwreq;
 
@@ -366,6 +370,17 @@ int netif_wireless(int sockfd, struct ifaddrs *ifaddr, struct ifreq *ifr) {
     return(ioctl(sockfd, SIOCG80211NWID, (caddr_t)ifr));
 #endif
 #endif /* HAVE_NET80211_IEEE80211_IOCTL_H */
+
+#if defined(HAVE_NET_IF_MEDIA_H) && defined(IFM_IEEE80211)
+    memset(&ifmr, 0, sizeof(ifmr));
+    strlcpy(ifmr.ifm_name, ifaddr->ifa_name, sizeof(ifmr.ifm_name));
+
+    if (ioctl(sockfd, SIOCGIFMEDIA, (caddr_t)&ifmr) < 0)
+	return(-1);
+
+    if (IFM_TYPE(ifmr.ifm_current) == IFM_IEEE80211)
+	return(0);
+#endif /* HAVE_HAVE_NET_IF_MEDIA_H */
 
     // default
     return(-1);
