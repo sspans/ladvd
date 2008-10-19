@@ -440,6 +440,10 @@ int netif_type(int sockfd, struct ifaddrs *ifaddr, struct ifreq *ifr) {
     } else if (if_data->ifi_type == IFT_BRIDGE) {
 	return(NETIF_BRIDGE);
 #endif
+#ifdef IFT_IEEE8023ADLAG
+    } else if (if_data->ifi_type == IFT_IEEE8023ADLAG) {
+	return(NETIF_BONDING);
+#endif
     }
 
     // we don't want the rest
