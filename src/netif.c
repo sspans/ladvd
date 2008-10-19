@@ -681,10 +681,13 @@ void netif_bond(int sockfd, struct netif *netifs, struct netif *master,
 void netif_bridge(int sockfd, struct netif *netifs, struct netif *master,
 		  struct ifreq *ifr) {
 
+#if defined(HAVE_SYSFS) || defined(HAVE_LINUX_IF_BRIDGE_H) || \
+    defined(HAVE_NET_IF_BRIDGEVAR_H) || defined(HAVE_NET_IF_BRIDGE_H)
     struct netif *subif = NULL, *csubif = master;
     int i;
+#endif
 
-#if HAVE_SYSFS
+#ifdef HAVE_SYSFS
     // handle linux bridge interfaces
     char path[SYSFS_PATH_MAX];
     DIR  *dir;
