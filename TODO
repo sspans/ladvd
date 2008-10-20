@@ -1,7 +1,9 @@
 
 CODE:
-- support macosx
+- support macosx (package)
 - support solaris
+- support edp
+- support fdp
 - investigate netlink/other interface notifications
 - SNMP support for LLDP (agentx)
 - SNMP support for CDP (CISCO-CDP-MIB agentx)
