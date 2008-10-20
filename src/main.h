@@ -97,6 +97,13 @@ struct sysinfo {
     char asset_id[LLDP_INVENTORY_SIZE + 1];
 };
 
+struct proto {
+    const char *name;
+    uint8_t enabled;
+    uint8_t received;
+    size_t (*build_packet) (struct packet *, struct netif *, struct sysinfo *);
+};
+
 typedef struct pcap_hdr_s {
     uint32_t magic_number;   /* magic number */
     uint16_t version_major;  /* major version number */
@@ -116,7 +123,6 @@ typedef struct pcaprec_hdr_s {
     uint32_t orig_len;       /* actual length of packet */
 } __attribute__ ((__packed__)) pcaprec_hdr_t;
 
-
 #define CAP_BRIDGE	(1 << 0)
 #define CAP_HOST	(1 << 1)
 #define CAP_ROUTER	(1 << 2)
@@ -132,7 +138,10 @@ void sysinfo_fetch(struct sysinfo *);
 uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *, struct netif **);
 int netif_media(struct netif *session);
 
-size_t cdp_packet(struct packet *, struct netif *, struct sysinfo *);
 size_t lldp_packet(struct packet *, struct netif *, struct sysinfo *);
+size_t cdp_packet(struct packet *, struct netif *, struct sysinfo *);
+size_t edp_packet(struct packet *, struct netif *, struct sysinfo *);
+size_t fdp_packet(struct packet *, struct netif *, struct sysinfo *);
+size_t sonmp_packet(struct packet *, struct netif *, struct sysinfo *);
 
 #endif /* _main_h */

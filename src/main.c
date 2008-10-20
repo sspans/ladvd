@@ -17,6 +17,22 @@
 #include <sys/capability.h>
 #endif
 
+#define PROTO_LLDP  0
+#define PROTO_CDP   1
+#define PROTO_EDP   2
+#define PROTO_FDP   3
+#define PROTO_SONMP 4
+
+//protos
+struct proto protos[] = {
+    { "LLDP", 1, 0, &lldp_packet },
+    { "CDP",  0, 0, &cdp_packet },
+//    { "EDP",  0, 0, &edp_packet },
+//    { "FDP",  0, 0, &fdp_packet },
+//    { "SONMP",0, 0, &sonmp_packet },
+    { NULL, 0, 0, NULL },
+};
+
 extern unsigned int loglevel;
 unsigned int do_fork = 1;
 unsigned int do_debug = 0;
@@ -25,7 +41,7 @@ void usage(const char *fn);
 
 int main(int argc, char *argv[]) {
 
-    int ch, do_cdp, do_lldp, do_once;
+    int ch, p, run_once = 0;
     char *progname = argv[0];
     char *username = PACKAGE_USER;
 #ifndef __APPLE__
@@ -57,15 +73,12 @@ int main(int argc, char *argv[]) {
 #endif
 
     /* set arguments */
-    do_cdp  = 0;
-    do_lldp = 0;
-    do_once = 0;
     memset(&sysinfo, 0, sizeof(struct sysinfo));
 
     while ((ch = getopt(argc, argv, "cdfhlm:ou:vC:L:M")) != -1) {
 	switch(ch) {
 	    case 'c':
-		do_cdp = 1;
+		protos[PROTO_CDP].enabled = 1;
 		break;
 	    case 'd':
 		do_debug = 1;
@@ -75,7 +88,6 @@ int main(int argc, char *argv[]) {
 		do_fork = 0;
 		break;
 	    case 'l':
-		do_lldp = 1;
 		break;
 	    case 'm':
 		if ( (inet_pton(AF_INET, optarg, &sysinfo.maddr4) != 1) &&
@@ -85,7 +97,7 @@ int main(int argc, char *argv[]) {
 		}
 		break;
 	    case 'o':
-		do_once = 1;
+		run_once = 1;
 		break;
 	    case 'u':
 		username = optarg;
@@ -116,9 +128,6 @@ int main(int argc, char *argv[]) {
 
     argc -= optind;
     argv += optind;
-
-    if (do_cdp == 0 && do_lldp == 0)
-	usage(progname);
 
     // validate interfaces
     if (netif_fetch(argc, argv, &sysinfo, &netifs) == 0) {
@@ -280,39 +289,25 @@ loop:
 		    my_log(CRIT, "error fetching interface media details");
 		}
 
-		// cdp packet
-		if (do_cdp == 1) {
-		    my_log(INFO, "building cdp packet for %s", netif->name);
-		    len = cdp_packet(&packet, netif, &sysinfo);
+		// generate and send packets
+		for (p = 0; protos[p].name != NULL; p++) {
+
+		    // only enabled protos
+		    if (protos[p].enabled == 0)
+			continue;
+
+		    my_log(INFO, "building %s packet for %s", 
+				  protos[p].name, netif->name);
+		    len = protos[p].build_packet(&packet, netif, &sysinfo);
 		    if (len == 0) {
-			my_log(CRIT, "can't generate CDP packet for %s",
-				  netif->name);
-			goto sleep;
+			my_log(CRIT, "can't generate %s packet for %s",
+				  protos[p].name, netif->name);
+			continue;
 		    }
 
 		    // write it to the wire.
-		    my_log(INFO, "sending cdp packet (%d bytes) on %s",
-				len, netif->name);
-		    if (my_rsend(sockfd, netif, &packet, len) != len) {
-			my_log(CRIT, "network transmit error on %s",
-				  netif->name);
-		    }
-		}
-
-		// lldp packet
-		if (do_lldp == 1) {
-		    my_log(INFO, "building lldp packet for %s", netif->name);
-
-		    len = lldp_packet(&packet, netif, &sysinfo);
-		    if (len == 0) {
-			my_log(CRIT, "can't generate LLDP packet for %s",
-				  netif->name);
-			goto sleep;
-		    }
-
-		    // write it to the wire.
-		    my_log(INFO, "sending lldp packet (%d bytes) on %s",
-				len, netif->name);
+		    my_log(INFO, "sending %s packet (%d bytes) on %s",
+				  protos[p].name, len, netif->name);
 		    if (my_rsend(sockfd, netif, &packet, len) != len) {
 			my_log(CRIT, "network transmit error on %s",
 				  netif->name);
@@ -332,7 +327,7 @@ loop:
 	}
 
 sleep:
-	if (do_once == 1)
+	if (run_once == 1)
 	    return (EXIT_SUCCESS);
 
 	my_log(INFO, "sleeping for %d seconds", SLEEPTIME);
@@ -350,7 +345,6 @@ void usage(const char *fn) {
 	    "\t-d = Dump pcap-compatible packets to stdout\n"
 	    "\t-f = Run in the foreground\n"
 	    "\t-h = Print this message\n"
-	    "\t-l = Send LLDP Messages\n"
 	    "\t-m <address> = Management address (IPv4 and IPv6 supported)\n"
 	    "\t-o = Run Once\n"
 	    "\t-u <user> = Setuid User (defaults to %s)\n"
