@@ -1,4 +1,6 @@
 
+#define CDP_VERSION 2
+
 /*
  * CDP capabilities.
  */

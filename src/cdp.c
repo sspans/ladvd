@@ -7,7 +7,6 @@
 #include "cdp.h"
 #include "tlv.h"
 
-static uint8_t cdp_version = 2;
 static uint8_t cdp_dst[] = { 0x01, 0x00, 0x0c, 0xcc, 0xcc, 0xcc };
 static uint8_t cdp_snap[] = { 0x00, 0x00, 0x0c, 0x20, 0x00 };
 
@@ -64,7 +63,7 @@ size_t cdp_packet(struct packet *packet, struct netif *netif,
     cdp_pos = pos;
 
     // version
-    PUSH_UINT8(cdp_version);
+    PUSH_UINT8(CDP_VERSION);
     if (!PUSH_UINT8(LADVD_TTL))
 	return 0;
 
