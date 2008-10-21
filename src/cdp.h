@@ -51,13 +51,13 @@
 #define CDP_ADDR_PROTO_XNS       7
 #define CDP_ADDR_PROTO_APOLLO    8
 
-struct cdp_predef {
+struct cdp_proto {
 	uint8_t protocol_type;
 	uint8_t protocol_length;
 	void *protocol;
 };
 
-struct cdp_predef cdp_predefs[] = {
+struct cdp_proto cdp_protos[] = {
 	/* CDP_ADDR_PROTO_CLNP      */
 	{ 0x01, 1, "\x81" },
 	/* CDP_ADDR_PROTO_IPV4      */

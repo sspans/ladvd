@@ -143,10 +143,10 @@ size_t cdp_packet(struct packet *packet, struct netif *netif,
 
 	if (master->ipaddr4 != 0) {
 	    if (!(
-		PUSH_UINT8(cdp_predefs[CDP_ADDR_PROTO_IPV4].protocol_type) &&
-		PUSH_UINT8(cdp_predefs[CDP_ADDR_PROTO_IPV4].protocol_length) &&
-		PUSH_BYTES(cdp_predefs[CDP_ADDR_PROTO_IPV4].protocol,
-			   cdp_predefs[CDP_ADDR_PROTO_IPV4].protocol_length) &&
+		PUSH_UINT8(cdp_protos[CDP_ADDR_PROTO_IPV4].protocol_type) &&
+		PUSH_UINT8(cdp_protos[CDP_ADDR_PROTO_IPV4].protocol_length) &&
+		PUSH_BYTES(cdp_protos[CDP_ADDR_PROTO_IPV4].protocol,
+			   cdp_protos[CDP_ADDR_PROTO_IPV4].protocol_length) &&
 		PUSH_UINT16(sizeof(master->ipaddr4)) &&
 		PUSH_BYTES(&master->ipaddr4, sizeof(master->ipaddr4))
 	    ))
@@ -155,10 +155,10 @@ size_t cdp_packet(struct packet *packet, struct netif *netif,
 
 	if (!IN6_IS_ADDR_UNSPECIFIED((struct in6_addr *)master->ipaddr6)) {
 	    if (!(
-		PUSH_UINT8(cdp_predefs[CDP_ADDR_PROTO_IPV6].protocol_type) &&
-		PUSH_UINT8(cdp_predefs[CDP_ADDR_PROTO_IPV6].protocol_length) &&
-		PUSH_BYTES(cdp_predefs[CDP_ADDR_PROTO_IPV6].protocol,
-			   cdp_predefs[CDP_ADDR_PROTO_IPV6].protocol_length) &&
+		PUSH_UINT8(cdp_protos[CDP_ADDR_PROTO_IPV6].protocol_type) &&
+		PUSH_UINT8(cdp_protos[CDP_ADDR_PROTO_IPV6].protocol_length) &&
+		PUSH_BYTES(cdp_protos[CDP_ADDR_PROTO_IPV6].protocol,
+			   cdp_protos[CDP_ADDR_PROTO_IPV6].protocol_length) &&
 		PUSH_UINT16(sizeof(master->ipaddr6)) &&
 		PUSH_BYTES(master->ipaddr6, sizeof(master->ipaddr6))
 	    ))
