@@ -2,7 +2,7 @@
  $Id$
 */
 
-#include "main.h"
+#include "common.h"
 #include "util.h"
 #include <unistd.h>
 #include <netdb.h>

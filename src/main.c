@@ -2,6 +2,7 @@
  $Id$
 */
 
+#include "common.h"
 #include "main.h"
 #include "util.h"
 #include <ctype.h>
@@ -16,22 +17,6 @@
 #include <sys/prctl.h>
 #include <sys/capability.h>
 #endif
-
-#define PROTO_LLDP  0
-#define PROTO_CDP   1
-#define PROTO_EDP   2
-#define PROTO_FDP   3
-#define PROTO_SONMP 4
-
-//protos
-struct proto protos[] = {
-    { "LLDP", 1, 0, &lldp_packet },
-    { "CDP",  0, 0, &cdp_packet },
-//    { "EDP",  0, 0, &edp_packet },
-//    { "FDP",  0, 0, &fdp_packet },
-//    { "SONMP",0, 0, &sonmp_packet },
-    { NULL, 0, 0, NULL },
-};
 
 extern unsigned int loglevel;
 unsigned int do_fork = 1;

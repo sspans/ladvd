@@ -2,7 +2,7 @@
  $Id$
 */
 
-#include "main.h"
+#include "common.h"
 #include "util.h"
 #include <stdarg.h>
 #include <stdio.h>
