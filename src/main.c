@@ -43,7 +43,7 @@ int main(int argc, char *argv[]) {
     int sockfd;
 
     // packet
-    struct packet packet;
+    char packet [ETHER_MAX_LEN];
     size_t len;
 
     // interfaces
@@ -163,7 +163,7 @@ int main(int argc, char *argv[]) {
 	pcap_hdr.magic_number = PCAP_MAGIC;
 	pcap_hdr.version_major = 2;
 	pcap_hdr.version_minor = 4;
-	pcap_hdr.snaplen = sizeof(struct packet);
+	pcap_hdr.snaplen = ETHER_MAX_LEN;
 	pcap_hdr.network = 1;
 
 	// send pcap global header
@@ -280,6 +280,9 @@ loop:
 		    // only enabled protos
 		    if (protos[p].enabled == 0)
 			continue;
+
+		    // clear packet
+		    memset(&packet, 0, ETHER_MAX_LEN);
 
 		    my_log(INFO, "building %s packet for %s", 
 				  protos[p].name, netif->name);

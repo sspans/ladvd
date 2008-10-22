@@ -14,10 +14,6 @@
 #include <sys/socket.h>
 #include <sys/utsname.h>
 
-#if HAVE_NET_ETHERNET_H
-#include <net/ethernet.h>
-#endif
-
 #if HAVE_LINUX_IF_H
 #include <linux/if.h>
 #elif defined(HAVE_NET_IF_H)
@@ -30,6 +26,8 @@
 #include <netinet/if_ether.h>
 #endif
 
+#include "ether.h"
+
 #define SLEEPTIME   30
 #define LADVD_TTL   180
 
@@ -38,16 +36,6 @@
 #endif
 
 #define LLDP_INVENTORY_SIZE 32
-
-struct packet {
-    uint8_t dst[ETHER_ADDR_LEN];
-    uint8_t src[ETHER_ADDR_LEN];
-    union {
-	uint8_t type[ETHER_TYPE_LEN];
-	uint8_t length[ETHER_TYPE_LEN];
-    };
-    uint8_t data[1024];
-} __attribute__ ((__packed__));
 
 struct netif {
     uint8_t index;
@@ -135,10 +123,10 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *, struct netif **);
 int netif_media(struct netif *session);
 
 
-size_t lldp_packet(struct packet *, struct netif *, struct sysinfo *);
-size_t cdp_packet(struct packet *, struct netif *, struct sysinfo *);
-size_t edp_packet(struct packet *, struct netif *, struct sysinfo *);
-size_t fdp_packet(struct packet *, struct netif *, struct sysinfo *);
-size_t sonmp_packet(struct packet *, struct netif *, struct sysinfo *);
+size_t lldp_packet(void *, struct netif *, struct sysinfo *);
+size_t cdp_packet(void *, struct netif *, struct sysinfo *);
+size_t edp_packet(void *, struct netif *, struct sysinfo *);
+size_t fdp_packet(void *, struct netif *, struct sysinfo *);
+size_t sonmp_packet(void *, struct netif *, struct sysinfo *);
 
 #endif /* _common_h */

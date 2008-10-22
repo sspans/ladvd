@@ -7,13 +7,10 @@
 #include "cdp.h"
 #include "tlv.h"
 
-static uint8_t cdp_dst[] = { 0x01, 0x00, 0x0c, 0xcc, 0xcc, 0xcc };
-static uint8_t cdp_snap[] = { 0x00, 0x00, 0x0c, 0x20, 0x00 };
-
 /*
  * Actually, this is the standard IP checksum algorithm.
  */
-uint16_t cdp_checksum(void *data, size_t length) {
+uint16_t cdp_checksum2(void *data, size_t length) {
     register uint32_t sum = 0;
     register const uint16_t *d = (const uint16_t *)data;
 
@@ -29,38 +26,44 @@ uint16_t cdp_checksum(void *data, size_t length) {
     return (uint16_t)~sum;
 }
 
-size_t cdp_packet(struct packet *packet, struct netif *netif,
+size_t cdp_packet(void *packet, struct netif *netif,
 	       struct sysinfo *sysinfo) {
 
-    size_t length;
-    uint8_t *pos, *tlv;
-    uint8_t cap = 0;
+    struct ether_llc *llc = packet;
+    struct ether_hdr *ether = &llc->ether;
 
-    void *cdp_pos, *checksum_pos;
+    uint8_t *tlv;
+    uint8_t *pos = packet;
+    size_t length = ETHER_MAX_LEN;
+
+    void *cdp_start, *cdp_checksum;
+    uint8_t cap = 0;
     uint8_t addr_count = 0;
     struct netif *master;
 
-    // init
-    memset(packet, 0, sizeof(packet));
-    pos = packet->data;
-    length = sizeof(packet->data);
+    const uint8_t cdp_dst[] = CDP_MULTICAST_ADDR;
+    const uint8_t llc_org[] = LLC_ORG_CISCO;
 
+    // ethernet header
+    memcpy(ether->dst, cdp_dst, ETHER_ADDR_LEN);
+    memcpy(ether->src, netif->hwaddr, ETHER_ADDR_LEN);
 
+    // llc snap header
+    llc->dsap = llc->ssap = 0xaa;
+    llc->control = 0x03;
+    memcpy(llc->org, llc_org, sizeof(llc->org));
+    llc->protoid = htons(LLC_PID_CDP);
+
+    // update tlv counters
+    pos += sizeof(struct ether_llc);
+    length -= sizeof(struct ether_llc);
+    cdp_start = pos;
+
+    // fixup master netif
     if (netif->master != NULL)
 	master = netif->master;
     else
 	master = netif;
-
-
-    // snap header
-    if (!(
-	PUSH_UINT8(0xaa) && PUSH_UINT8(0xaa) && PUSH_UINT8(0x03) &&
-	PUSH_BYTES(cdp_snap, sizeof(cdp_snap))
-    ))
-	return 0;
-
-    // save start of the cdp data
-    cdp_pos = pos;
 
     // version
     PUSH_UINT8(CDP_VERSION);
@@ -69,7 +72,7 @@ size_t cdp_packet(struct packet *packet, struct netif *netif,
 
 
     // save the current position, then leave enough space for the checksum.
-    checksum_pos = pos;
+    cdp_checksum = pos;
     if (!PUSH_UINT16(0))
 	return 0;
 
@@ -207,13 +210,12 @@ size_t cdp_packet(struct packet *packet, struct netif *netif,
 
 
     // cdp checksum
-    *(uint16_t *)checksum_pos = cdp_checksum(cdp_pos,
-					VOIDP_DIFF(pos, cdp_pos));
+    *(uint16_t *)cdp_checksum = cdp_checksum2(cdp_start,
+					VOIDP_DIFF(pos, cdp_start));
 
-    // ethernet header
-    memcpy(packet->dst, cdp_dst, ETHER_ADDR_LEN);
-    memcpy(packet->src, netif->hwaddr, ETHER_ADDR_LEN);
-    *(uint16_t *)packet->length = htons(VOIDP_DIFF(pos, packet->data));
+    // ethernet length
+    *(uint16_t *)ether->length = htons(VOIDP_DIFF(pos, 
+					packet + sizeof(struct ether_hdr)));
 
     // packet length
     return(VOIDP_DIFF(pos, packet));

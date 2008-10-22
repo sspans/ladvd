@@ -1,5 +1,8 @@
 
 #define CDP_VERSION 2
+#define CDP_MULTICAST_ADDR { 0x01, 0x00, 0x0c, 0xcc, 0xcc, 0xcc }
+#define LLC_ORG_CISCO { 0x00, 0x00, 0x0c }
+#define LLC_PID_CDP 0x2000
 
 /*
  * CDP capabilities.

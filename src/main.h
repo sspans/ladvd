@@ -8,7 +8,7 @@ struct proto {
     const char *name;
     uint8_t enabled;
     uint8_t received;
-    size_t (*build_packet) (struct packet *, struct netif *, struct sysinfo *);
+    size_t (*build_packet) (void *, struct netif *, struct sysinfo *);
 };
 
 #define PROTO_LLDP  0
