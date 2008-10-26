@@ -1,5 +1,5 @@
 /*
- $Id: cdp.c 335 2008-10-21 19:03:12Z sten $
+ $Id$
 */
 
 #include "common.h"

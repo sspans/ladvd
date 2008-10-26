@@ -16,7 +16,7 @@ struct edp_header {
     uint8_t hwaddr[ETHER_ADDR_LEN];
 } __attribute__ ((__packed__));
 
-// EDP Types
+// EDP TVL Types
 #define EDP_TYPE_NULL	    0x00
 #define EDP_TYPE_DISPLAY    0x01
 #define EDP_TYPE_INFO	    0x02
