@@ -3,6 +3,7 @@
  * VOIDP_DIFF: fixed types
  * PUSH, END_TLV: use memcpy to make them strict alignment compatible
  * added support for LLDP tlv's (7/9 bits)
+ * added support for EDP tlv's (0x99 marker)
  */
 
 #define VOIDP_DIFF(P, Q) ((uintptr_t)((char *)(P) - (char *)(Q)))
@@ -55,5 +56,17 @@ union {
 	    memcpy(&types.uint16, tlv, sizeof(uint16_t)), \
 	    types.uint16 |= htons((pos - (tlv + 2)) & 0x01ff), \
 	    memcpy(tlv, &types.uint16, sizeof(uint16_t)) \
+	)
+
+#define EDP_TLV_MARKER   0x99
+#define START_EDP_TLV(type) \
+	( \
+	    tlv = pos, \
+	    PUSH_UINT8(EDP_TLV_MARKER) && PUSH_UINT8(type) && PUSH_UINT16(0) \
+	)
+#define END_EDP_TLV \
+	( \
+	    types.uint16 = htons(pos - tlv), \
+	    memcpy((uint16_t *)tlv + 1, &types.uint16, sizeof(uint16_t)) \
 	)
 
