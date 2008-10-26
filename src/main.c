@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
     /* set arguments */
     memset(&sysinfo, 0, sizeof(struct sysinfo));
 
-    while ((ch = getopt(argc, argv, "cdfhlm:ou:vC:L:M")) != -1) {
+    while ((ch = getopt(argc, argv, "cdefhlm:ou:vC:L:M")) != -1) {
 	switch(ch) {
 	    case 'c':
 		protos[PROTO_CDP].enabled = 1;
@@ -68,6 +68,9 @@ int main(int argc, char *argv[]) {
 	    case 'd':
 		do_debug = 1;
 		do_fork = 0;
+		break;
+	    case 'e':
+		protos[PROTO_EDP].enabled = 1;
 		break;
 	    case 'f':
 		do_fork = 0;
@@ -329,8 +332,9 @@ void usage(const char *fn) {
 
     fprintf(stderr, "%s version %s\n" 
 	"Usage: %s [-c] [-l] [-f] INTERFACE INTERFACE\n"
-	    "\t-c = Send CDP Messages\n"
+	    "\t-c = Enable CDP\n"
 	    "\t-d = Dump pcap-compatible packets to stdout\n"
+	    "\t-c = Enable EDP\n"
 	    "\t-f = Run in the foreground\n"
 	    "\t-h = Print this message\n"
 	    "\t-m <address> = Management address (IPv4 and IPv6 supported)\n"

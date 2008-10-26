@@ -190,7 +190,7 @@ size_t cdp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
 
 
     // cdp header
-    cdp.checksum = my_chksum(cdp_start, VOIDP_DIFF(pos, cdp_start));
+    cdp.checksum = my_chksum(cdp_start, VOIDP_DIFF(pos, cdp_start), 1);
     memcpy(cdp_start, &cdp, sizeof(struct cdp_header));
 
     // ethernet header

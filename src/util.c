@@ -196,7 +196,7 @@ int read_line(char *path, char *line, uint16_t len) {
 /*
  * Actually, this is the standard IP checksum algorithm.
  */
-uint16_t my_chksum(void *data, size_t length) {
+uint16_t my_chksum(void *data, size_t length, int cisco) {
     uint32_t sum = 0;
     const uint16_t *d = (const uint16_t *)data;
 
@@ -204,9 +204,14 @@ uint16_t my_chksum(void *data, size_t length) {
 	sum += *d++;
 	length -= 2;
     }
-    if (length)
-	sum += htons(*(const uint8_t *)d);
-	
+    if (length) {
+	if (cisco) {
+	    sum += htons(*(const uint8_t *)d);
+	} else {
+	    sum += htons(*(const uint8_t *)d << 8);
+	}
+    }
+
     sum = (sum >> 16) + (sum & 0xffff);
     sum += (sum >> 16);
     return (uint16_t)~sum;
