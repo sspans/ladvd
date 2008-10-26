@@ -167,6 +167,8 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
     // default to CAP_HOST
     sysinfo->cap = CAP_HOST;
     sysinfo->cap_active = CAP_HOST;
+    // reset counter
+    sysinfo->physif_count = 0;
 
     for (ifaddr = ifaddrs; ifaddr != NULL; ifaddr = ifaddr->ifa_next) {
 
@@ -222,6 +224,7 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 
 	if (type == NETIF_REGULAR) { 
 	    my_log(INFO, "found ethernet interface %s", ifaddr->ifa_name);
+	    sysinfo->physif_count++;
 	} else if (type == NETIF_BONDING) {
 	    my_log(INFO, "found bond interface %s", ifaddr->ifa_name);
 	} else if (type == NETIF_BRIDGE) {
@@ -269,7 +272,7 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 	    netif_prev->next = netif;
 	netif_prev = netif;
 
-	// update counter
+	// update counters
 	count++;
     }
 

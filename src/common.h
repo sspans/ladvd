@@ -71,6 +71,7 @@ struct sysinfo {
     int8_t cap;
     int8_t cap_active;
     uint8_t hwaddr[ETHER_ADDR_LEN];
+    uint16_t physif_count;
 
     uint8_t maddr_force;
     uint32_t maddr4;
@@ -127,6 +128,6 @@ size_t lldp_packet(void *, struct netif *, struct sysinfo *);
 size_t cdp_packet(void *, struct netif *, struct sysinfo *);
 size_t edp_packet(void *, struct netif *, struct sysinfo *);
 size_t fdp_packet(void *, struct netif *, struct sysinfo *);
-size_t sonmp_packet(void *, struct netif *, struct sysinfo *);
+size_t ndp_packet(void *, struct netif *, struct sysinfo *);
 
 #endif /* _common_h */

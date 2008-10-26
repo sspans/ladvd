@@ -15,7 +15,7 @@ struct proto {
 #define PROTO_CDP   1
 #define PROTO_EDP   2
 #define PROTO_FDP   3
-#define PROTO_SONMP 4
+#define PROTO_NDP   4
 
 // supported protocols
 struct proto protos[] = {
@@ -23,7 +23,7 @@ struct proto protos[] = {
     { "CDP",  0, 0, &cdp_packet },
     { "EDP",  0, 0, &edp_packet },
     { "FDP",  0, 0, &fdp_packet },
-//  { "SONMP",0, 0, &sonmp_packet },
+    { "NDP",  0, 0, &ndp_packet },
     { NULL, 0, 0, NULL },
 };
 

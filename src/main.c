@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
     /* set arguments */
     memset(&sysinfo, 0, sizeof(struct sysinfo));
 
-    while ((ch = getopt(argc, argv, "dfhlm:nou:vc:l:CEF")) != -1) {
+    while ((ch = getopt(argc, argv, "dfhlm:nou:vc:l:CEFN")) != -1) {
 	switch(ch) {
 	    case 'd':
 		do_debug = 1;
@@ -109,6 +109,9 @@ int main(int argc, char *argv[]) {
 		break;
 	    case 'F':
 		protos[PROTO_FDP].enabled = 1;
+		break;
+	    case 'N':
+		protos[PROTO_NDP].enabled = 1;
 		break;
 	    default:
 		usage(progname);
@@ -345,7 +348,8 @@ void usage(const char *fn) {
 	    "\t-l <location> = System Location\n"
 	    "\t-C = Enable CDP\n"
 	    "\t-E = Enable EDP\n"
-	    "\t-F = Enable FDP\n",
+	    "\t-F = Enable FDP\n"
+	    "\t-N = Enable NDP\n",
 	    PACKAGE_NAME, PACKAGE_VERSION, fn, PACKAGE_USER);
 
     exit(EXIT_FAILURE);
