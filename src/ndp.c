@@ -7,8 +7,6 @@
 #include "ndp.h"
 #include "tlv.h"
 
-int ndp_state = NDP_TOPOLOGY_NEW;
-
 size_t ndp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
 
     struct ether_hdr ether;
