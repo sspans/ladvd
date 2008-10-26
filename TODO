@@ -4,6 +4,7 @@ CODE:
 - support solaris
 - support edp
 - support fdp
+- support vlan interfaces
 - investigate netlink/other interface notifications
 - SNMP support for LLDP (agentx)
 - SNMP support for CDP (CISCO-CDP-MIB agentx)
