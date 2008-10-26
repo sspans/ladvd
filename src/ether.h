@@ -28,4 +28,9 @@ struct ether_llc {
     uint16_t protoid;
 } __attribute__ ((__packed__));
 
+/* Should be defined in net/ethertypes.h */
+#ifndef ETHERTYPE_LLDP
+#define ETHERTYPE_LLDP  0x88cc
+#endif
+
 #endif /* _ether_h */

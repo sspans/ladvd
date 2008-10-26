@@ -65,13 +65,15 @@ struct cdp_proto {
 	void *protocol;
 };
 
-struct cdp_proto cdp_protos[] = {
-	/* CDP_ADDR_PROTO_CLNP      */
-	{ 0x01, 1, "\x81" },
-	/* CDP_ADDR_PROTO_IPV4      */
-	{ 0x01, 1, "\xcc" },
-	/* CDP_ADDR_PROTO_IPV6      */
-	{ 0x02, 8, "\xaa\xaa\x03\x00\x00\x00\x86\xdd" },
-};
+#define PT_NLPID                1       /* OSI NLPID */
+#define PT_IEEE_802_2           2       /* IEEE 802.2 LLC header */
+#define NLPID_CLNP		"\x81"
+#define NLPID_IP		"\xcc"
+#define LLC_SNAP_HDR		"\xaa\xaa\x03" "\x00\x00\x00"
+#define ETHERTYPE_IPV6_STR	"\x86\xdd"
+
+#define ADDR_PROTO_CLNP { PT_NLPID, 1, NLPID_CLNP }
+#define ADDR_PROTO_IPV4 { PT_NLPID, 1, NLPID_IP }
+#define ADDR_PROTO_IPV6 { PT_IEEE_802_2, 8, LLC_SNAP_HDR ETHERTYPE_IPV6_STR }
 
 #endif /* _cdp_h */

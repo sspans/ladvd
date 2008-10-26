@@ -7,7 +7,7 @@
 #include "edp.h"
 #include "tlv.h"
 
-int count = 0;
+int edp_count = 0;
 
 size_t edp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
 
@@ -47,7 +47,7 @@ size_t edp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
     // edp header
     memset(&edp, 0, sizeof(edp));
     edp.version = 1;
-    edp.sequence = htons(count++);
+    edp.sequence = htons(edp_count++);
     memcpy(&edp.hwaddr, sysinfo->hwaddr, ETHER_ADDR_LEN);
     edp_start = pos;
 

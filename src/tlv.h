@@ -70,3 +70,14 @@ union {
 	    memcpy((uint16_t *)tlv + 1, &types.uint16, sizeof(uint16_t)) \
 	)
 
+#define START_FDP_TLV(type) \
+	( \
+	    tlv = pos, \
+	    PUSH_UINT16(type) && PUSH_UINT16(0) \
+	)
+#define END_FDP_TLV \
+	( \
+	    types.uint16 = htons(pos - tlv), \
+	    memcpy((uint16_t *)tlv + 1, &types.uint16, sizeof(uint16_t)) \
+	)
+

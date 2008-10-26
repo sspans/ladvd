@@ -22,7 +22,7 @@ struct proto protos[] = {
     { "LLDP", 1, 0, &lldp_packet },
     { "CDP",  0, 0, &cdp_packet },
     { "EDP",  0, 0, &edp_packet },
-//  { "FDP",  0, 0, &fdp_packet },
+    { "FDP",  0, 0, &fdp_packet },
 //  { "SONMP",0, 0, &sonmp_packet },
     { NULL, 0, 0, NULL },
 };

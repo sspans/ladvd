@@ -24,6 +24,9 @@ size_t cdp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
 
     const uint8_t cdp_dst[] = CDP_MULTICAST_ADDR;
     const uint8_t llc_org[] = LLC_ORG_CISCO;
+    const struct cdp_proto cdp_protos[] = {
+	ADDR_PROTO_CLNP, ADDR_PROTO_IPV4, ADDR_PROTO_IPV6,
+    };
 
     // fixup master netif
     if (netif->master != NULL)

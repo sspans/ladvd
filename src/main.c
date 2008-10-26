@@ -60,22 +60,14 @@ int main(int argc, char *argv[]) {
     /* set arguments */
     memset(&sysinfo, 0, sizeof(struct sysinfo));
 
-    while ((ch = getopt(argc, argv, "cdefhlm:ou:vC:L:M")) != -1) {
+    while ((ch = getopt(argc, argv, "dfhlm:nou:vc:l:CEF")) != -1) {
 	switch(ch) {
-	    case 'c':
-		protos[PROTO_CDP].enabled = 1;
-		break;
 	    case 'd':
 		do_debug = 1;
 		do_fork = 0;
 		break;
-	    case 'e':
-		protos[PROTO_EDP].enabled = 1;
-		break;
 	    case 'f':
 		do_fork = 0;
-		break;
-	    case 'l':
 		break;
 	    case 'm':
 		if ( (inet_pton(AF_INET, optarg, &sysinfo.maddr4) != 1) &&
@@ -83,6 +75,9 @@ int main(int argc, char *argv[]) {
 		    my_log(CRIT, "invalid management address %s", optarg);
 		    usage(progname);
 		}
+		break;
+	    case 'n':
+		sysinfo.maddr_force = 1;
 		break;
 	    case 'o':
 		run_once = 1;
@@ -93,7 +88,7 @@ int main(int argc, char *argv[]) {
 	    case 'v':
 		loglevel++;
 		break;
-	    case 'C':
+	    case 'c':
 		// two-letter ISO 3166 country code
 		if (strlen(optarg) != 2)
 		    usage(progname);
@@ -101,13 +96,19 @@ int main(int argc, char *argv[]) {
 		sysinfo.country[0] = toupper(optarg[0]);
 		sysinfo.country[1] = toupper(optarg[1]);
 		break;
-	    case 'L':
+	    case 'l':
 		if (strlcpy(sysinfo.location, optarg, 
 			sizeof(sysinfo.location)) == 0)
 		    usage(progname);
 		break;
-	    case 'M':
-		sysinfo.maddr_force = 1;
+	    case 'C':
+		protos[PROTO_CDP].enabled = 1;
+		break;
+	    case 'E':
+		protos[PROTO_EDP].enabled = 1;
+		break;
+	    case 'F':
+		protos[PROTO_FDP].enabled = 1;
 		break;
 	    default:
 		usage(progname);
@@ -332,18 +333,19 @@ void usage(const char *fn) {
 
     fprintf(stderr, "%s version %s\n" 
 	"Usage: %s [-c] [-l] [-f] INTERFACE INTERFACE\n"
-	    "\t-c = Enable CDP\n"
 	    "\t-d = Dump pcap-compatible packets to stdout\n"
-	    "\t-c = Enable EDP\n"
 	    "\t-f = Run in the foreground\n"
 	    "\t-h = Print this message\n"
 	    "\t-m <address> = Management address (IPv4 and IPv6 supported)\n"
+	    "\t-n = Use addresses specified via -m for all interfaces\n"
 	    "\t-o = Run Once\n"
 	    "\t-u <user> = Setuid User (defaults to %s)\n"
 	    "\t-v = Increase logging verbosity\n"
-	    "\t-C <CC> = System Country Code\n"
-	    "\t-L <location> = System Location\n"
-	    "\t-M = Use addresses specified via -m for all interfaces\n",
+	    "\t-c <CC> = System Country Code\n"
+	    "\t-l <location> = System Location\n"
+	    "\t-C = Enable CDP\n"
+	    "\t-E = Enable EDP\n"
+	    "\t-F = Enable FDP\n",
 	    PACKAGE_NAME, PACKAGE_VERSION, fn, PACKAGE_USER);
 
     exit(EXIT_FAILURE);
