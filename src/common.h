@@ -65,6 +65,7 @@ struct netif {
 struct sysinfo {
     struct utsname uts;
     char uts_str[256];
+    uint8_t uts_rel[3];
     char hostname[256];
     char country[3];
     char location[256];

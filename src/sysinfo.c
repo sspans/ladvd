@@ -19,6 +19,8 @@
 
 void sysinfo_fetch(struct sysinfo *sysinfo) {
 
+    int i;
+    char *release, *endptr;
     struct hostent *hp;
     size_t len = LLDP_INVENTORY_SIZE + 1;
 
@@ -39,6 +41,20 @@ void sysinfo_fetch(struct sysinfo *sysinfo) {
 
 	my_log(CRIT, "can't create uts string: %s", strerror(errno));
 	exit(EXIT_FAILURE);
+    }
+
+    i = 0;
+    endptr = release = sysinfo->uts.release;
+    while ((*release != '\0') && ( i < 3)){
+	sysinfo->uts_rel[i] = (uint8_t)strtol(release, &endptr, 10);
+
+	// found one
+	if (release != endptr)
+	    i++;
+	
+	release = endptr;
+	if (*release != '\0')
+	    release++;
     }
 
     if ((hp = gethostbyname(sysinfo->uts.nodename)) == NULL) {

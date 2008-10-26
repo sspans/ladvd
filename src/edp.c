@@ -65,6 +65,20 @@ size_t edp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
     END_EDP_TLV;
 
 
+    // info
+    if (!(
+	START_EDP_TLV(EDP_TYPE_INFO) &&
+	PUSH_UINT16(0) && PUSH_UINT16(netif->index) && PUSH_UINT16(0) &&
+	PUSH_UINT16(0) && PUSH_UINT32(0) &&
+	PUSH_UINT8(sysinfo->uts_rel[0]) && PUSH_UINT8(sysinfo->uts_rel[1]) &&
+	PUSH_UINT8(sysinfo->uts_rel[2]) && PUSH_UINT8(0) &&
+	PUSH_UINT16(0xffff) && PUSH_UINT16(0) &&
+	PUSH_UINT32(0) && PUSH_UINT32(0) && PUSH_UINT32(0)
+    ))
+	return 0;
+    END_EDP_TLV;
+
+
     // vlan
     if (master->ipaddr4 != 0) {
 	if (!(
