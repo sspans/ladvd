@@ -7,13 +7,10 @@
 #include "lldp.h"
 #include "tlv.h"
 
-static uint8_t lldp_dst[] = { 0x01, 0x80, 0xc2, 0x00, 0x00, 0x0e };
-static uint8_t lldp_ether[] = { 0x88, 0xcc };
 
-size_t lldp_packet(void *packet, struct netif *netif,
-		struct sysinfo *sysinfo) {
+size_t lldp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
 
-    struct ether_hdr *ether = packet;
+    struct ether_hdr ether;
 
     uint8_t *tlv;
     uint8_t *pos = packet;
@@ -22,20 +19,24 @@ size_t lldp_packet(void *packet, struct netif *netif,
     uint8_t cap = 0, cap_active = 0;
     struct netif *master;
 
-    // ethernet header
-    memcpy(ether->dst, lldp_dst, ETHER_ADDR_LEN);
-    memcpy(ether->src, netif->hwaddr, ETHER_ADDR_LEN);
-    memcpy(ether->type, lldp_ether, ETHER_TYPE_LEN);
-
-    // update tlv counters
-    pos += sizeof(struct ether_hdr);
-    length -= sizeof(struct ether_hdr);
+    static uint8_t lldp_dst[] = LLDP_MULTICAST_ADDR;
 
     // fixup master netif
     if (netif->master != NULL)
 	master = netif->master;
     else
 	master = netif;
+
+
+    // ethernet header
+    memcpy(ether.dst, lldp_dst, ETHER_ADDR_LEN);
+    memcpy(ether.src, netif->hwaddr, ETHER_ADDR_LEN);
+    ether.type = htons(ETHERTYPE_LLDP);
+    memcpy(pos, &ether, sizeof(struct ether_hdr));
+    pos += sizeof(struct ether_hdr);
+
+    // update tlv counters
+    length -= VOIDP_DIFF(pos, packet);
 
 
     // chassis id

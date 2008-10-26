@@ -20,6 +20,8 @@ struct netif *netif_byname(struct netif *, char *name);
 
 int read_line(char *path, char *line, uint16_t len);
 
+uint16_t my_chksum(void *data, size_t length);
+
 #ifndef HAVE_STRLCPY
 size_t strlcpy(char *, const char *, size_t);
 #endif

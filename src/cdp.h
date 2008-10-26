@@ -1,23 +1,20 @@
 
+#ifndef _cdp_h
+#define _cdp_h
+
 #define CDP_VERSION 2
 #define CDP_MULTICAST_ADDR { 0x01, 0x00, 0x0c, 0xcc, 0xcc, 0xcc }
 #define LLC_ORG_CISCO { 0x00, 0x00, 0x0c }
 #define LLC_PID_CDP 0x2000
 
-/*
- * CDP capabilities.
- */
-#define CDP_CAP_ROUTER             0x01
-#define CDP_CAP_TRANSPARENT_BRIDGE 0x02
-#define CDP_CAP_SOURCE_BRIDGE      0x04
-#define CDP_CAP_SWITCH             0x08
-#define CDP_CAP_HOST               0x10
-#define CDP_CAP_IGMP               0x20
-#define CDP_CAP_REPEATER           0x40
+struct cdp_header {
+    uint8_t version;
+    uint8_t ttl;
+    uint16_t checksum;
+} __attribute__ ((__packed__));
 
-/*
- * CDP chunk types.
- */
+
+// CDP Types.
 #define CDP_TYPE_DEVICE_ID         0x0001
 #define CDP_TYPE_ADDRESS           0x0002
 #define CDP_TYPE_PORT_ID           0x0003
@@ -42,10 +39,16 @@
 #define CDP_TYPE_MGMT_ADDRESS      0x0016
 #define CDP_TYPE_LOCATION          0x0017
 
-/*
- * CDP Addr types.
- */
+// CDP capabilities.
+#define CDP_CAP_ROUTER             0x01
+#define CDP_CAP_TRANSPARENT_BRIDGE 0x02
+#define CDP_CAP_SOURCE_BRIDGE      0x04
+#define CDP_CAP_SWITCH             0x08
+#define CDP_CAP_HOST               0x10
+#define CDP_CAP_IGMP               0x20
+#define CDP_CAP_REPEATER           0x40
 
+// CDP Addr types.
 #define CDP_ADDR_PROTO_CLNP      0
 #define CDP_ADDR_PROTO_IPV4      1
 #define CDP_ADDR_PROTO_IPV6      2
@@ -71,3 +74,4 @@ struct cdp_proto cdp_protos[] = {
 	{ 0x02, 8, "\xaa\xaa\x03\x00\x00\x00\x86\xdd" },
 };
 
+#endif /* _cdp_h */

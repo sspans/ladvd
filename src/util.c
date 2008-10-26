@@ -192,6 +192,26 @@ int read_line(char *path, char *line, uint16_t len) {
     return(strlen(line));
 }
 
+
+/*
+ * Actually, this is the standard IP checksum algorithm.
+ */
+uint16_t my_chksum(void *data, size_t length) {
+    uint32_t sum = 0;
+    const uint16_t *d = (const uint16_t *)data;
+
+    while (length > 1) {
+	sum += *d++;
+	length -= 2;
+    }
+    if (length)
+	sum += htons(*(const uint8_t *)d);
+	
+    sum = (sum >> 16) + (sum & 0xffff);
+    sum += (sum >> 16);
+    return (uint16_t)~sum;
+}
+
 #ifndef HAVE_STRLCPY
 /*
  * Copyright (c) 1998 Todd C. Miller <Todd.Miller@courtesan.com>

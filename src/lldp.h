@@ -1,4 +1,15 @@
 
+#ifndef _lldp_h
+#define _lldp_h
+
+/* Should be defined in net/ethertypes.h */
+#ifndef ETHERTYPE_LLDP
+#define ETHERTYPE_LLDP  0x88cc
+#endif
+
+#define LLDP_MULTICAST_ADDR     { 0x01, 0x80, 0xc2, 0x00, 0x00, 0x0e }
+
+
 /*
  * TLV type codes
  */
@@ -146,3 +157,4 @@
 #define LLDP_TIA_LOCATION_LCI_WHAT_CLIENT   2
 #define LLDP_TIA_LOCATION_LCI_CATYPE_LOC    22
 
+#endif /* _lldp_h */
