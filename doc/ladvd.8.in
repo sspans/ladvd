@@ -30,10 +30,12 @@ Specify a two-letter ISO 3166 country code (required for LLDP location support).
 .IP "-l <location>"
 Specify the physical location of the host.
 .IP -C
-Send CDP messages.
+Enable CDP (Cisco Discovery Protocol).
 .IP -E
-Send EDP messages.
+Enable EDP (Extreme Discovery Protocol).
 .IP -F
-Send FDP messages.
+Enable FDP (Foundry Discovery Protocol).
+.IP -N
+Enable NDP (Nortel Discovery Protocol) formerly called SynOptics Network Management Protocol (SONMP).
 .SH AUTHOR
 Sten Spans <sten@blinkenlights.nl>
