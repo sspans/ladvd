@@ -1,4 +1,4 @@
-.TH ladvd 8 "Juli 27 2008" ladvd
+.TH ladvd 8 "October 26 2008" ladvd
 .SH NAME
 ladvd \- send link layer advertisements
 .SH SYNOPSIS
@@ -7,7 +7,7 @@ ladvd \- send link layer advertisements
 .B ...
 .SH DESCRIPTION
 .B ladvd
-sends LLDP link layer advertisements on all available interfaces. This makes connected hosts visible on managed switches. By default it will run as a non-privileged user and daemonize. Additional protocols can be enabled using the -C, -E and -F options. Optionally a list of interfaces on which ladvd should transmit can be supplied.
+sends LLDP link layer advertisements on all available interfaces. This makes connected hosts visible on managed switches. By default it will run as a non-privileged user and daemonize. Additional protocols can be enabled using the -C, -E, -F and -N options. Optionally a list of interfaces on which ladvd should transmit can be supplied.
 .SH OPTIONS
 .IP -d
 Dump pcap-compatible packets to stdout which can be piped to tcpdump (via "| tcpdump -r -") or redirected to a file for further analysis.
