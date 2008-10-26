@@ -14,7 +14,7 @@ struct cdp_header {
 } __attribute__ ((__packed__));
 
 
-// CDP Types.
+// CDP TLV types.
 #define CDP_TYPE_DEVICE_ID         0x0001
 #define CDP_TYPE_ADDRESS           0x0002
 #define CDP_TYPE_PORT_ID           0x0003

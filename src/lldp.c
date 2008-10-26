@@ -41,7 +41,7 @@ size_t lldp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
 
     // chassis id
     if (!(
-	START_LLDP_TLV(LLDP_CHASSIS_ID_TLV) &&
+	START_LLDP_TLV(LLDP_TYPE_CHASSIS_ID) &&
 	PUSH_UINT8(LLDP_CHASSIS_MAC_ADDR_SUBTYPE) &&
 	PUSH_BYTES(sysinfo->hwaddr, ETHER_ADDR_LEN)
     ))
@@ -51,7 +51,7 @@ size_t lldp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
 
     // port id
     if (!(
-	START_LLDP_TLV(LLDP_PORT_ID_TLV) &&
+	START_LLDP_TLV(LLDP_TYPE_PORT_ID) &&
 	PUSH_UINT8(LLDP_PORT_INTF_NAME_SUBTYPE) &&
 	PUSH_BYTES(netif->name, strlen(netif->name))
     ))
@@ -61,7 +61,7 @@ size_t lldp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
 
     // ttl
     if (!(
-	START_LLDP_TLV(LLDP_TTL_TLV) &&
+	START_LLDP_TLV(LLDP_TYPE_TTL) &&
 	PUSH_UINT16(LADVD_TTL)
     ))
 	return 0;
@@ -71,7 +71,7 @@ size_t lldp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
     // port description
     if (strlen(netif->description) > 0) {
 	if (!(
-	    START_LLDP_TLV(LLDP_PORT_DESCR_TLV) &&
+	    START_LLDP_TLV(LLDP_TYPE_PORT_DESCR) &&
 	    PUSH_BYTES(netif->description, strlen(netif->description))
 	))
 	    return 0;
@@ -81,7 +81,7 @@ size_t lldp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
 
     // system name
     if (!(
-	START_LLDP_TLV(LLDP_SYSTEM_NAME_TLV) &&
+	START_LLDP_TLV(LLDP_TYPE_SYSTEM_NAME) &&
 	PUSH_BYTES(sysinfo->hostname, strlen(sysinfo->hostname))
     ))
 	return 0;
@@ -90,7 +90,7 @@ size_t lldp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
 
     // system description
     if (!(
-	START_LLDP_TLV(LLDP_SYSTEM_DESCR_TLV) &&
+	START_LLDP_TLV(LLDP_TYPE_SYSTEM_DESCR) &&
 	PUSH_BYTES(sysinfo->uts_str, strlen(sysinfo->uts_str))
     ))
 	return 0;
@@ -115,7 +115,7 @@ size_t lldp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
     }
 
     if (!(
-	START_LLDP_TLV(LLDP_SYSTEM_CAP_TLV) &&
+	START_LLDP_TLV(LLDP_TYPE_SYSTEM_CAP) &&
 	PUSH_UINT16(cap) && PUSH_UINT16(cap_active)
     ))
 	return 0;
@@ -125,7 +125,7 @@ size_t lldp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
     // ipv4 management addr
     if (master->ipaddr4 != 0) {
 	if (!(
-	    START_LLDP_TLV(LLDP_MGMT_ADDR_TLV) &&
+	    START_LLDP_TLV(LLDP_TYPE_MGMT_ADDR) &&
 	    PUSH_UINT8(1 + sizeof(master->ipaddr4)) &&
 	    PUSH_UINT8(LLDP_AFNUM_INET) &&
 	    PUSH_BYTES(&master->ipaddr4, sizeof(master->ipaddr4)) &&
@@ -141,7 +141,7 @@ size_t lldp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
     // ipv6 management addr
     if (!IN6_IS_ADDR_UNSPECIFIED((struct in6_addr *)master->ipaddr6)) {
 	if (!(
-	    START_LLDP_TLV(LLDP_MGMT_ADDR_TLV) &&
+	    START_LLDP_TLV(LLDP_TYPE_MGMT_ADDR) &&
 	    PUSH_UINT8(1 + sizeof(master->ipaddr6)) &&
 	    PUSH_UINT8(LLDP_AFNUM_INET6) &&
 	    PUSH_BYTES(master->ipaddr6, sizeof(master->ipaddr6)) &&
@@ -160,7 +160,7 @@ size_t lldp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
     // autoneg
     if (netif->autoneg_supported != -1) {
 	if (!(
-	    START_LLDP_TLV(LLDP_PRIVATE_TLV) &&
+	    START_LLDP_TLV(LLDP_TYPE_PRIVATE) &&
 	    PUSH_BYTES(OUI_IEEE_8023_PRIVATE, OUI_LEN) &&
 	    PUSH_UINT8(LLDP_PRIVATE_8023_SUBTYPE_MACPHY) &&
 	    PUSH_UINT8(netif->autoneg_supported +
@@ -176,7 +176,7 @@ size_t lldp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
     // lacp
     if (master->lacp != 0) {
 	if (!(
-	    START_LLDP_TLV(LLDP_PRIVATE_TLV) &&
+	    START_LLDP_TLV(LLDP_TYPE_PRIVATE) &&
 	    PUSH_BYTES(OUI_IEEE_8023_PRIVATE, OUI_LEN) &&
 	    PUSH_UINT8(LLDP_PRIVATE_8023_SUBTYPE_LINKAGGR) &&
 	    PUSH_UINT8(LLDP_AGGREGATION_CAPABILTIY|LLDP_AGGREGATION_STATUS) &&
@@ -190,7 +190,7 @@ size_t lldp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
     // mtu
     if (netif->mtu != 0) {
 	if (!(
-	    START_LLDP_TLV(LLDP_PRIVATE_TLV) &&
+	    START_LLDP_TLV(LLDP_TYPE_PRIVATE) &&
 	    PUSH_BYTES(OUI_IEEE_8023_PRIVATE, OUI_LEN) &&
 	    PUSH_UINT8(LLDP_PRIVATE_8023_SUBTYPE_MTU) &&
 	    PUSH_UINT16(netif->mtu + 22)
@@ -206,7 +206,7 @@ size_t lldp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
     // LOC ("location", CAtype 22): unstructured additional information
     if ((strlen(sysinfo->country) == 2) && (strlen(sysinfo->location) != 0)) {
 	if (!(
-	    START_LLDP_TLV(LLDP_PRIVATE_TLV) &&
+	    START_LLDP_TLV(LLDP_TYPE_PRIVATE) &&
 	    PUSH_BYTES(OUI_TIA, OUI_LEN) &&
 	    PUSH_UINT8(LLDP_PRIVATE_TIA_SUBTYPE_LOCAL_ID) &&
 	    PUSH_UINT8(LLDP_TIA_LOCATION_DATA_FORMAT_CIVIC_ADDRESS) &&
@@ -228,7 +228,7 @@ size_t lldp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
     // hardware revision
     if (strlen(sysinfo->hw_revision) > 0) {
 	if (!(
-	    START_LLDP_TLV(LLDP_PRIVATE_TLV) &&
+	    START_LLDP_TLV(LLDP_TYPE_PRIVATE) &&
 	    PUSH_BYTES(OUI_TIA, OUI_LEN) &&
 	    PUSH_UINT8(LLDP_PRIVATE_TIA_SUBTYPE_INVENTORY_HARDWARE_REV) &&
 	    PUSH_BYTES(sysinfo->hw_revision, strlen(sysinfo->hw_revision))
@@ -241,7 +241,7 @@ size_t lldp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
     // firmware revision
     if (strlen(sysinfo->fw_revision) > 0) {
 	if (!(
-	    START_LLDP_TLV(LLDP_PRIVATE_TLV) &&
+	    START_LLDP_TLV(LLDP_TYPE_PRIVATE) &&
 	    PUSH_BYTES(OUI_TIA, OUI_LEN) &&
 	    PUSH_UINT8(LLDP_PRIVATE_TIA_SUBTYPE_INVENTORY_FIRMWARE_REV) &&
 	    PUSH_BYTES(sysinfo->fw_revision, strlen(sysinfo->fw_revision))
@@ -254,7 +254,7 @@ size_t lldp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
     // software revision
     if (strlen(sysinfo->sw_revision) > 0) {
 	if (!(
-	    START_LLDP_TLV(LLDP_PRIVATE_TLV) &&
+	    START_LLDP_TLV(LLDP_TYPE_PRIVATE) &&
 	    PUSH_BYTES(OUI_TIA, OUI_LEN) &&
 	    PUSH_UINT8(LLDP_PRIVATE_TIA_SUBTYPE_INVENTORY_SOFTWARE_REV) &&
 	    PUSH_BYTES(sysinfo->sw_revision, strlen(sysinfo->sw_revision))
@@ -267,7 +267,7 @@ size_t lldp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
     // serial number
     if (strlen(sysinfo->serial_number) > 0) {
 	if (!(
-	    START_LLDP_TLV(LLDP_PRIVATE_TLV) &&
+	    START_LLDP_TLV(LLDP_TYPE_PRIVATE) &&
 	    PUSH_BYTES(OUI_TIA, OUI_LEN) &&
 	    PUSH_UINT8(LLDP_PRIVATE_TIA_SUBTYPE_INVENTORY_SERIAL_NUMBER) &&
 	    PUSH_BYTES(sysinfo->serial_number, strlen(sysinfo->serial_number))
@@ -280,7 +280,7 @@ size_t lldp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
     // manufacturer
     if (strlen(sysinfo->manufacturer) > 0) {
 	if (!(
-	    START_LLDP_TLV(LLDP_PRIVATE_TLV) &&
+	    START_LLDP_TLV(LLDP_TYPE_PRIVATE) &&
 	    PUSH_BYTES(OUI_TIA, OUI_LEN) &&
 	    PUSH_UINT8(LLDP_PRIVATE_TIA_SUBTYPE_INVENTORY_MANUFACTURER_NAME) &&
 	    PUSH_BYTES(sysinfo->manufacturer, strlen(sysinfo->manufacturer))
@@ -293,7 +293,7 @@ size_t lldp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
     // model name
     if (strlen(sysinfo->model_name) > 0) {
 	if (!(
-	    START_LLDP_TLV(LLDP_PRIVATE_TLV) &&
+	    START_LLDP_TLV(LLDP_TYPE_PRIVATE) &&
 	    PUSH_BYTES(OUI_TIA, OUI_LEN) &&
 	    PUSH_UINT8(LLDP_PRIVATE_TIA_SUBTYPE_INVENTORY_MODEL_NAME) &&
 	    PUSH_BYTES(sysinfo->model_name, strlen(sysinfo->model_name))
@@ -306,7 +306,7 @@ size_t lldp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
     // asset id
     if (strlen(sysinfo->asset_id) > 0) {
 	if (!(
-	    START_LLDP_TLV(LLDP_PRIVATE_TLV) &&
+	    START_LLDP_TLV(LLDP_TYPE_PRIVATE) &&
 	    PUSH_BYTES(OUI_TIA, OUI_LEN) &&
 	    PUSH_UINT8(LLDP_PRIVATE_TIA_SUBTYPE_INVENTORY_ASSET_ID) &&
 	    PUSH_BYTES(sysinfo->asset_id, strlen(sysinfo->asset_id))
@@ -319,7 +319,7 @@ size_t lldp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
 
     // the end
     if (!(
-	START_LLDP_TLV(LLDP_END_TLV)
+	START_LLDP_TLV(LLDP_TYPE_END)
     ))
 	return 0;
     END_LLDP_TLV;
