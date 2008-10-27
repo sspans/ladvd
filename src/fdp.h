@@ -20,7 +20,7 @@ struct fdp_header {
 #define FDP_TYPE_CAPABILITIES	0x0004
 #define FDP_TYPE_SW_VERSION	0x0005
 #define FDP_TYPE_PLATFORM	0x0006
-#define FDP_TYPE_FILLER		0x0101
+#define FDP_TYPE_UNKNOWN_101	0x0101
 #define FDP_TYPE_UNKNOWN_102	0x0102
 
 #endif /* _fdp_h */

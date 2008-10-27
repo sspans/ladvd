@@ -18,7 +18,7 @@ size_t fdp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
     uint8_t *pos = packet;
     size_t length = ETHER_MAX_LEN;
 
-    void *fdp_start;
+    void *fdp_start, *cap_str;
     uint8_t addr_count = 0;
     struct netif *master;
 
@@ -77,7 +77,22 @@ size_t fdp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
     END_FDP_TLV;
 
 
-    // TODO: FDP_TYPE_CAPABILITIES
+    // capabilities
+    if (sysinfo->cap_active & CAP_ROUTER)
+	cap_str = "Router";
+    else if (sysinfo->cap_active & CAP_SWITCH)
+	cap_str = "Switch";
+    else if (sysinfo->cap_active & CAP_BRIDGE)
+	cap_str = "Bridge";
+    else
+	cap_str = "Host";
+
+    if (!(
+	START_FDP_TLV(FDP_TYPE_CAPABILITIES) &&
+	PUSH_BYTES(cap_str, strlen(cap_str))
+    ))
+	return 0;
+    END_FDP_TLV;
 
 
     // version
