@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
     /* set arguments */
     memset(&sysinfo, 0, sizeof(struct sysinfo));
 
-    while ((ch = getopt(argc, argv, "dfhlm:nou:vc:l:CEFN")) != -1) {
+    while ((ch = getopt(argc, argv, "dfhm:nou:vc:l:CEFN")) != -1) {
 	switch(ch) {
 	    case 'd':
 		do_debug = 1;
