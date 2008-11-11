@@ -19,7 +19,7 @@
 #endif
 
 extern unsigned int loglevel;
-unsigned int do_fork = 1;
+unsigned int do_detach = 1;
 unsigned int do_debug = 0;
 
 void usage(const char *fn);
@@ -64,10 +64,10 @@ int main(int argc, char *argv[]) {
 	switch(ch) {
 	    case 'd':
 		do_debug = 1;
-		do_fork = 0;
+		do_detach = 0;
 		break;
 	    case 'f':
-		do_fork = 0;
+		do_detach = 0;
 		break;
 	    case 'm':
 		if ( (inet_pton(AF_INET, optarg, &sysinfo.maddr4) != 1) &&
@@ -138,7 +138,7 @@ int main(int argc, char *argv[]) {
 
 #ifndef __APPLE__
     // open pidfile
-    if (do_fork == 1) {
+    if (do_detach == 1) {
 	fd = open(pidfile, O_WRONLY|O_CREAT, 0666);
 	if (fd == -1) {
 	    my_log(CRIT, "failed to open pidfile %s: %s",
@@ -180,8 +180,8 @@ int main(int argc, char *argv[]) {
     }
 
 #ifndef __APPLE__
-    // fork
-    if (do_fork == 1) {
+    // daemonize
+    if (do_detach == 1) {
 	if (daemon(0,0) == -1) {
 	    my_log(CRIT, "backgrounding failed: %s", strerror(errno));
 	    exit(EXIT_FAILURE);

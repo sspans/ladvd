@@ -23,7 +23,7 @@
 #endif /* HAVE_NET_BPF_H */
 
 unsigned int loglevel = CRIT;
-extern unsigned int do_fork;
+extern unsigned int do_detach;
 extern unsigned int do_debug;
 
 void my_log(unsigned int prio, const char *fmt, ...) {
@@ -34,7 +34,7 @@ void my_log(unsigned int prio, const char *fmt, ...) {
     if (prio > loglevel)
 	return;
 
-    if (do_fork == 1) {
+    if (do_detach == 1) {
 	(void) vsyslog(LOG_INFO, fmt, ap);
     } else {
 	(void) vfprintf(stderr, fmt, ap);
