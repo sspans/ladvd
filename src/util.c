@@ -151,7 +151,7 @@ size_t my_rsend(int s, struct netif *netif, const void *msg, size_t len) {
     return(count);
 }
 
-struct netif *netif_byindex(struct netif *netifs, uint8_t index) {
+struct netif *netif_byindex(struct netif *netifs, uint32_t index) {
     struct netif *netif;
 
     for (netif = netifs; netif != NULL; netif = netif->next) {

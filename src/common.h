@@ -38,7 +38,7 @@
 #define LLDP_INVENTORY_SIZE 32
 
 struct netif {
-    uint8_t index;
+    uint32_t index;
     char name[IFNAMSIZ];
     char description[IFDESCRSIZE];
     uint8_t hwaddr[ETHER_ADDR_LEN];
