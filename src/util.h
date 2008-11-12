@@ -15,10 +15,12 @@ int my_socket(int af, int type, int proto);
 int my_rsocket();
 size_t my_rsend(int s, struct netif *, const void *msg, size_t len);
 
-struct netif *netif_byindex(struct netif *, uint8_t index);
+struct netif *netif_byindex(struct netif *, uint32_t index);
 struct netif *netif_byname(struct netif *, char *name);
 
 int read_line(char *path, char *line, uint16_t len);
+
+void my_drop_privs(struct passwd *pwd);
 
 uint16_t my_chksum(void *data, size_t length, int cisco);
 
