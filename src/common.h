@@ -27,6 +27,7 @@
 #endif
 
 #include "ether.h"
+#include "compat/compat.h"
 
 #define SLEEPTIME   30
 #define LADVD_TTL   180

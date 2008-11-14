@@ -26,8 +26,4 @@ void my_drop_privs(struct passwd *pwd);
 
 uint16_t my_chksum(void *data, size_t length, int cisco);
 
-#ifndef HAVE_STRLCPY
-size_t strlcpy(char *, const char *, size_t);
-#endif
-
 #endif /* _util_h */
