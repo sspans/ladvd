@@ -162,7 +162,7 @@ AC_TYPE_UINT32_T
 # Checks for library functions.
 AC_FUNC_VPRINTF
 AC_CHECK_FUNCS([asprintf memcpy memset snprintf strdup strerror uname vsyslog], [], AC_MSG_ERROR([required function missing]))
-AC_CHECK_FUNCS([strlcpy])
+AC_CHECK_FUNCS([setproctitle strlcpy])
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile])
