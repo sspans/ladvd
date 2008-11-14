@@ -2,6 +2,8 @@
 #ifndef _util_h
 #define _util_h
 
+#include <pwd.h>
+
 #define CRIT    1
 #define WARN    2
 #define INFO    3

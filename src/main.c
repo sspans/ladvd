@@ -10,7 +10,6 @@
 #include <sys/file.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <pwd.h>
 #include <grp.h>
 
 #ifdef USE_CAPABILITIES
