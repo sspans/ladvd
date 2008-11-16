@@ -25,6 +25,9 @@
 
 #include "lldp.h"
 #include "cdp.h"
+#include "edp.h"
+#include "fdp.h"
+#include "ndp.h"
 
 extern unsigned int do_debug;
 
@@ -194,6 +197,36 @@ int master_rcheck(struct master_request *mreq) {
 	if ((memcmp(ether.dst, cdp_dst, ETHER_ADDR_LEN) == 0) &&
 	    (memcmp(llc.org, cdp_org, sizeof(llc.org)) == 0) &&
 	    (llc.protoid == htons(LLC_PID_CDP))) {
+	    return(EXIT_SUCCESS);
+	}
+
+	// edp
+	const uint8_t edp_dst[] = EDP_MULTICAST_ADDR;
+	const uint8_t edp_org[] = LLC_ORG_EXTREME;
+
+	if ((memcmp(ether.dst, edp_dst, ETHER_ADDR_LEN) == 0) &&
+	    (memcmp(llc.org, edp_org, sizeof(llc.org)) == 0) &&
+	    (llc.protoid == htons(LLC_PID_EDP))) {
+	    return(EXIT_SUCCESS);
+	}
+
+	// fdp
+	const uint8_t fdp_dst[] = FDP_MULTICAST_ADDR;
+	const uint8_t fdp_org[] = LLC_ORG_FOUNDRY;
+
+	if ((memcmp(ether.dst, fdp_dst, ETHER_ADDR_LEN) == 0) &&
+	    (memcmp(llc.org, fdp_org, sizeof(llc.org)) == 0) &&
+	    (llc.protoid == htons(LLC_PID_FDP))) {
+	    return(EXIT_SUCCESS);
+	}
+
+	// ndp
+	const uint8_t ndp_dst[] = NDP_MULTICAST_ADDR;
+	const uint8_t ndp_org[] = LLC_ORG_NORTEL;
+
+	if ((memcmp(ether.dst, ndp_dst, ETHER_ADDR_LEN) == 0) &&
+	    (memcmp(llc.org, ndp_org, sizeof(llc.org)) == 0) &&
+	    (llc.protoid == htons(LLC_PID_NDP_HELLO))) {
 	    return(EXIT_SUCCESS);
 	}
     }
