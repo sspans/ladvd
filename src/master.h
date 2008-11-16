@@ -20,6 +20,7 @@ struct master_request {
 #define MASTER_REQ_SIZE   sizeof(struct master_request)
 
 void master_init(struct passwd *pwd, int cmdfd);
+int master_rcheck(struct master_request *mreq);
 int master_rsocket();
 size_t master_rsend(int s, struct master_request *mreq);
 

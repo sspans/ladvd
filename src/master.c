@@ -23,6 +23,9 @@
 #include <net/bpf.h>
 #endif /* HAVE_NET_BPF_H */
 
+#include "lldp.h"
+#include "cdp.h"
+
 extern unsigned int do_debug;
 
 void master_init(struct passwd *pwd, int cmdfd) {
@@ -40,9 +43,6 @@ void master_init(struct passwd *pwd, int cmdfd) {
 
     // packet
     struct master_request mreq;
-
-    // nameindex
-    struct if_nameindex *ifs;
 
 #ifdef USE_CAPABILITIES
     // capabilities
@@ -119,21 +119,9 @@ void master_init(struct passwd *pwd, int cmdfd) {
 		exit(EXIT_FAILURE);
 	    }
 
-	    // fetch nameindex
-	    ifs = if_nameindex();
-
-	    if (ifs == NULL) {
-		my_log(CRIT, "couldn't list interfaces");
-		exit(EXIT_FAILURE);
-	    }
-
-	    if (if_indextoname(mreq.index, mreq.name) == NULL) {
-		my_log(CRIT, "invalid ifindex supplied");
-		exit(EXIT_FAILURE);
-	    }
-
-	    if (mreq.len > ETHER_MAX_LEN) {
-		my_log(CRIT, "invalid message lenght supplied");
+	    // validate request
+	    if (master_rcheck(&mreq) != EXIT_SUCCESS) {
+		my_log(CRIT, "invalid request supplied");
 		exit(EXIT_FAILURE);
 	    }
 
@@ -150,14 +138,11 @@ void master_init(struct passwd *pwd, int cmdfd) {
 		validate(ifindex);
 		ethtool = ethtool(ifindex);
 		write(child, ethtool);
+	    */
 	    } else {
 		my_log(CRIT, "invalid request received");
 		exit(EXIT_FAILURE);
-	    */
 	    }
-
-	    // cleanup
-	    if_freenameindex(ifs);
 	}
 
 	/*
@@ -174,6 +159,47 @@ void master_init(struct passwd *pwd, int cmdfd) {
     }
 }
 
+
+int master_rcheck(struct master_request *mreq) {
+    struct ether_hdr ether;
+    struct ether_llc llc;
+
+    // validate ifindex
+    if (if_indextoname(mreq->index, mreq->name) == NULL) {
+	my_log(CRIT, "invalid ifindex supplied");
+	return(EXIT_FAILURE);
+    }
+
+    if (mreq->len > ETHER_MAX_LEN) {
+	my_log(CRIT, "invalid message length supplied");
+	return(EXIT_FAILURE);
+    }
+
+    if (mreq->cmd == MASTER_SEND) {
+	memcpy(&ether, mreq->msg, sizeof(ether));
+	memcpy(&llc, mreq->msg + sizeof(ether), sizeof(llc));
+
+	// lldp
+	static uint8_t lldp_dst[] = LLDP_MULTICAST_ADDR;
+
+	if ((memcmp(ether.dst, lldp_dst, ETHER_ADDR_LEN) == 0) &&
+	    (ether.type == htons(ETHERTYPE_LLDP))) {
+	    return(EXIT_SUCCESS);
+	}
+
+	// cdp
+	const uint8_t cdp_dst[] = CDP_MULTICAST_ADDR;
+	const uint8_t cdp_org[] = LLC_ORG_CISCO;
+
+	if ((memcmp(ether.dst, cdp_dst, ETHER_ADDR_LEN) == 0) &&
+	    (memcmp(llc.org, cdp_org, sizeof(llc.org)) == 0) &&
+	    (llc.protoid == htons(LLC_PID_CDP))) {
+	    return(EXIT_SUCCESS);
+	}
+    }
+
+    return(EXIT_FAILURE);
+}
 
 int master_rsocket() {
 
