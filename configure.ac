@@ -39,7 +39,7 @@ AC_CHECK_HEADERS([fcntl.h grp.h pwd.h stdarg.h stdint.h stdio.h syslog.h \
 
 # bsd ifmedia
 AC_CHECK_HEADERS([asm/types.h linux/sockios.h net/if_media.h])
-AC_CHECK_HEADERS([linux/if.h net/if.h], [], [],
+AC_CHECK_HEADERS([net/if.h], [], [],
 [
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -161,8 +161,10 @@ AC_TYPE_UINT32_T
 
 # Checks for library functions.
 AC_FUNC_VPRINTF
-AC_CHECK_FUNCS([asprintf memcpy memset snprintf strdup strerror uname vsyslog], [], AC_MSG_ERROR([required function missing]))
-AC_CHECK_FUNCS([setproctitle strlcpy])
+AC_CHECK_FUNCS([asprintf memcpy memset snprintf strdup strerror uname \
+		socketpair vsyslog], [],
+		AC_MSG_ERROR([required function missing]))
+AC_CHECK_FUNCS([setproctitle strlcpy strlcat strnvis])
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile])
