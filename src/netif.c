@@ -512,7 +512,7 @@ void netif_bond(int sockfd, struct netif *netifs, struct netif *master,
 #endif /* HAVE_SYSFS */
 
 #if defined(HAVE_LINUX_IF_BONDING_H) && defined(BOND_MODE_8023AD)
-    strncpy(ifr->ifr_name, master->name, IFNAMSIZ);
+    strlcpy(ifr->ifr_name, master->name, IFNAMSIZ);
     memset(&ifbond, 0, sizeof(ifbond));
     ifr->ifr_data = (char *)&ifbond;
 
@@ -643,7 +643,7 @@ void netif_bond(int sockfd, struct netif *netifs, struct netif *master,
     ibsr = &ibr.ibr_ibru.ibru_status;
     ibsr->ibsr_version = IF_BOND_STATUS_REQ_VERSION;
 
-    strncpy(ifr->ifr_name, master->name, IFNAMSIZ);
+    strlcpy(ifr->ifr_name, master->name, IFNAMSIZ);
     ifr->ifr_data = (caddr_t)&ibr;
 
     if (ioctl(sockfd, SIOCGIFBOND, ifr) >= 0)
@@ -731,7 +731,7 @@ void netif_bridge(int sockfd, struct netif *netifs, struct netif *master,
 #ifdef HAVE_LINUX_IF_BRIDGE_H
     // or ioctl
     memset(ifindex, 0, sizeof(ifindex));
-    strncpy(ifr->ifr_name, master->name, IFNAMSIZ);
+    strlcpy(ifr->ifr_name, master->name, IFNAMSIZ);
     ifr->ifr_data = (char *)&args;
 
     if (ioctl(sockfd, SIOCDEVPRIVATE, ifr) < 0) {
