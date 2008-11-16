@@ -31,9 +31,11 @@
  * SUCH DAMAGE.
  */
 
+#include "config.h"
 #ifndef HAVE_SETPROCTITLE
 
 #include <stdarg.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #ifdef HAVE_SYS_PSTAT_H
@@ -41,12 +43,15 @@
 #endif
 #include <string.h>
 
+#include "compat/compat.h"
+#include "compat/vis.h"
+
 #define SPT_NONE	0	/* don't use it at all */
 #define SPT_PSTAT	1	/* use pstat(PSTAT_SETCMD, ...) */
 #define SPT_REUSEARGV	2	/* cover argv with title information */
 
 #ifndef SPT_TYPE
-# define SPT_TYPE	SPT_NONE
+# define SPT_TYPE	SPT_REUSEARGV
 #endif
 
 #ifndef SPT_PADCHAR
@@ -121,7 +126,7 @@ setproctitle(const char *fmt, ...)
 	va_list ap;
 	char buf[1024], ptitle[1024];
 	size_t len;
-	extern char *__progname;
+	extern char *progname;
 #if SPT_TYPE == SPT_PSTAT
 	union pstun pst;
 #endif
@@ -131,7 +136,7 @@ setproctitle(const char *fmt, ...)
 		return;
 #endif
 
-	strlcpy(buf, __progname, sizeof(buf));
+	strlcpy(buf, progname, sizeof(buf));
 
 	va_start(ap, fmt);
 	if (fmt != NULL) {
