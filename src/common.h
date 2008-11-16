@@ -14,10 +14,9 @@
 #include <sys/socket.h>
 #include <sys/utsname.h>
 
-#if HAVE_LINUX_IF_H
-#include <linux/if.h>
-#elif defined(HAVE_NET_IF_H)
+#if HAVE_NET_IF_H
 #include <net/if.h>
+#define _LINUX_IF_H
 #endif
 #if HAVE_NETINET_IN_H
 #include <netinet/in.h>
