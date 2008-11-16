@@ -2,6 +2,7 @@
 #ifndef _util_h
 #define _util_h
 
+#include "master.h"
 #include <pwd.h>
 
 #define CRIT    1
@@ -11,11 +12,11 @@
 
 void my_log(unsigned int prio, const char *fmt, ...);
 void *my_malloc(size_t size);
+void *my_calloc(size_t, size_t);
 char *my_strdup(const char *str);
 int my_socket(int af, int type, int proto);
 
-int my_rsocket();
-size_t my_rsend(int s, struct netif *, const void *msg, size_t len);
+size_t my_msend(int s, struct master_request *mreq);
 
 struct netif *netif_byindex(struct netif *, uint32_t index);
 struct netif *netif_byname(struct netif *, char *name);

@@ -10,12 +10,10 @@
 #include <sys/file.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <grp.h>
 
-#ifdef USE_CAPABILITIES
-#include <sys/prctl.h>
-#include <sys/capability.h>
-#endif
+char *progname;
+char **saved_argv;
+int saved_argc;
 
 extern unsigned int loglevel;
 unsigned int do_detach = 1;
@@ -25,8 +23,7 @@ void usage(const char *fn);
 
 int main(int argc, char *argv[]) {
 
-    int ch, p, run_once = 0;
-    char *progname = argv[0];
+    int ch, i, p, run_once = 0;
     char *username = PACKAGE_USER;
 #ifndef __APPLE__
     char *pidfile = PACKAGE_PID_FILE;
@@ -38,26 +35,36 @@ int main(int argc, char *argv[]) {
     // sysinfo
     struct sysinfo sysinfo;
 
-    // socket
-    int sockfd;
+    // sockets
+    int spair[2], cfd, mfd;
+
+    // pids
+    pid_t pid;
 
     // packet
-    char packet [ETHER_MAX_LEN];
-    size_t len;
+    struct master_request mreq;
 
     // interfaces
     struct netif *netifs = NULL, *netif, *master;
 
-    // pcap
-    pcap_hdr_t pcap_hdr;
-
-#ifdef USE_CAPABILITIES
-    // capabilities
-    cap_t caps;
-#endif
-
-    /* set arguments */
+    // clear sysinfo
     memset(&sysinfo, 0, sizeof(struct sysinfo));
+
+    // set progname
+    progname = argv[0];
+
+    // Save argv. Duplicate so setproctitle emulation doesn't clobber it
+    saved_argc = argc;
+    saved_argv = my_calloc(argc + 1, sizeof(*saved_argv));
+    for (i = 0; i < argc; i++)
+	saved_argv[i] = my_strdup(argv[i]);
+    saved_argv[i] = NULL;
+
+#ifndef HAVE_SETPROCTITLE
+    /* Prepare for later setproctitle emulation */
+    compat_init_setproctitle(argc, argv);
+    argv = saved_argv;
+#endif
 
     while ((ch = getopt(argc, argv, "dfhm:nou:vc:l:CEFN")) != -1) {
 	switch(ch) {
@@ -117,11 +124,11 @@ int main(int argc, char *argv[]) {
 	}
     }
 
-    argc -= optind;
-    argv += optind;
+    saved_argc -= optind;
+    saved_argv += optind;
 
     // validate interfaces
-    if (netif_fetch(argc, argv, &sysinfo, &netifs) == 0) {
+    if (netif_fetch(saved_argc, saved_argv, &sysinfo, &netifs) == 0) {
 	my_log(CRIT, "unable fetch interfaces");
 	exit(EXIT_FAILURE);
     }
@@ -151,33 +158,6 @@ int main(int argc, char *argv[]) {
     }
 #endif /* __APPLE__ */
 
-    // open a raw socket
-    sockfd = my_rsocket();
-
-    if (sockfd < 0) {
-	my_log(CRIT, "opening raw socket failed");
-	exit(EXIT_FAILURE);
-    }
-
-    // debug
-    if (do_debug != 0) {
-
-	// zero
-	memset(&pcap_hdr, 0, sizeof(pcap_hdr));
-
-	// create pcap global header
-	pcap_hdr.magic_number = PCAP_MAGIC;
-	pcap_hdr.version_major = 2;
-	pcap_hdr.version_minor = 4;
-	pcap_hdr.snaplen = ETHER_MAX_LEN;
-	pcap_hdr.network = 1;
-
-	// send pcap global header
-	(void) my_rsend(sockfd, NULL, &pcap_hdr, sizeof(pcap_hdr));
-
-	goto loop;
-    }
-
 #ifndef __APPLE__
     // daemonize
     if (do_detach == 1) {
@@ -194,69 +174,60 @@ int main(int argc, char *argv[]) {
     }
 #endif /* __APPLE__ */
 
-#ifdef USE_CAPABILITIES
-    // keep capabilities
-    if (prctl(PR_SET_KEEPCAPS,1) == -1) {
-	my_log(CRIT, "unable to keep capabilities: %s", strerror(errno));
-       	exit(EXIT_FAILURE);
-    }
-#endif
-
-    // setuid & setgid
-    if (setgid(pwd->pw_gid) == -1){
-	my_log(CRIT, "unable to setgid: %s", strerror(errno));
-       	exit(EXIT_FAILURE);
-    }
-
-    if (setgroups(0, NULL) == -1){
-	my_log(CRIT, "unable to setgroups: %s", strerror(errno));
-       	exit(EXIT_FAILURE);
-    }
-
-    if (setuid(pwd->pw_uid) == -1){
-   	my_log(CRIT, "unable to setuid: %s", strerror(errno));
-       	exit(EXIT_FAILURE);
-    }
-
-
-#ifdef USE_CAPABILITIES
-    // keep CAP_NET_ADMIN
-    caps = cap_from_text("cap_net_admin=ep");
-
-    if (caps == NULL) {
-	my_log(CRIT, "unable to create capabilities: %s", strerror(errno));
+    // create privsep socketpair
+    if (socketpair(AF_UNIX, SOCK_STREAM, 0, spair) == -1) {
+	my_log(CRIT, "privsep socketpair creation failed: %s", strerror(errno));
 	exit(EXIT_FAILURE);
     }
 
-    if (cap_set_proc(caps) == -1) {
-	my_log(CRIT, "unable to set capabilities: %s", strerror(errno));
+    cfd = spair[0];
+    mfd = spair[1];
+
+    // create privsep parent / child
+    pid = fork();
+
+    // quit on failure
+    if (pid == -1) {
+	my_log(CRIT, "privsep fork failed: %s", strerror(errno));
 	exit(EXIT_FAILURE);
     }
 
-    (void) cap_free(caps);
-#endif
+    // this is the parent
+    if (pid != 0) {
+
+	// enter the master loop
+	master_init(pwd, mfd);
+
+	// not reached
+	my_log(CRIT, "master process failed");
+	exit(EXIT_FAILURE);
+
+    } else {
+	if (do_debug == 0)
+	    my_drop_privs(pwd);
+	setproctitle("child");
+    }
 
 
-loop: 
     // startup message
     my_log(CRIT, PACKAGE_STRING " running");
 
-    while (sockfd) {
+    while (cfd) {
 
 	// create netifs
 	my_log(INFO, "fetching all interfaces"); 
-	if (netif_fetch(argc, argv, &sysinfo, &netifs) == 0) {
+	if (netif_fetch(saved_argc, saved_argv, &sysinfo, &netifs) == 0) {
 	    my_log(CRIT, "unable fetch interfaces");
 	    goto sleep;
 	}
 
 	for (netif = netifs; netif != NULL; netif = netif->next) {
 	    // skip autodetected slaves
-	    if ((argc == 0) && (netif->slave == 1))
+	    if ((saved_argc == 0) && (netif->slave == 1))
 		continue;
 
 	    // skip unlisted interfaces
-	    if ((argc > 0) && (netif->argv == 0))
+	    if ((saved_argc > 0) && (netif->argv == 0))
 		continue;
 
 	    // skip masters without slaves
@@ -274,6 +245,12 @@ loop:
 		netif = master->subif;
 
 	    while (master != NULL) {
+
+		// populate mreq
+		mreq.index = netif->index;
+		strlcpy(mreq.name, netif->name, IFNAMSIZ);
+		mreq.cmd = MASTER_SEND;
+
 		// fetch interface media status
 		my_log(INFO, "fetching %s media details", netif->name);
 		if (netif_media(netif) == EXIT_FAILURE) {
@@ -288,12 +265,13 @@ loop:
 			continue;
 
 		    // clear packet
-		    memset(&packet, 0, ETHER_MAX_LEN);
+		    memset(mreq.msg, 0, ETHER_MAX_LEN);
 
 		    my_log(INFO, "building %s packet for %s", 
 				  protos[p].name, netif->name);
-		    len = protos[p].build_packet(&packet, netif, &sysinfo);
-		    if (len == 0) {
+		    mreq.len = protos[p].build_msg(mreq.msg, netif, &sysinfo);
+
+		    if (mreq.len == 0) {
 			my_log(CRIT, "can't generate %s packet for %s",
 				  protos[p].name, netif->name);
 			continue;
@@ -301,8 +279,8 @@ loop:
 
 		    // write it to the wire.
 		    my_log(INFO, "sending %s packet (%d bytes) on %s",
-				  protos[p].name, len, netif->name);
-		    if (my_rsend(sockfd, netif, &packet, len) != len) {
+				  protos[p].name, mreq.len, netif->name);
+		    if (my_msend(cfd, &mreq) != mreq.len) {
 			my_log(CRIT, "network transmit error on %s",
 				  netif->name);
 		    }
