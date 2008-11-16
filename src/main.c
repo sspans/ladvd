@@ -253,7 +253,7 @@ int main(int argc, char *argv[]) {
 
 		// fetch interface media status
 		my_log(INFO, "fetching %s media details", netif->name);
-		if (netif_media(netif) == EXIT_FAILURE) {
+		if (netif_media(cfd, netif) == EXIT_FAILURE) {
 		    my_log(CRIT, "error fetching interface media details");
 		}
 

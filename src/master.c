@@ -5,6 +5,7 @@
 #include "common.h"
 #include "util.h"
 #include "master.h"
+#include <sys/ioctl.h>
 #include <sys/select.h>
 #include <sys/types.h>
 #include <sys/time.h>
@@ -22,6 +23,14 @@
 #ifdef HAVE_NET_BPF_H
 #include <net/bpf.h>
 #endif /* HAVE_NET_BPF_H */
+
+#if HAVE_LINUX_SOCKIOS_H
+#include <linux/sockios.h>
+#endif /* HAVE_LINUX_SOCKIOS_H */
+
+#if HAVE_LINUX_ETHTOOL_H
+#include <linux/ethtool.h>
+#endif /* HAVE_LINUX_ETHTOOL_H */
 
 #include "lldp.h"
 #include "cdp.h"
@@ -137,11 +146,13 @@ void master_init(struct passwd *pwd, int cmdfd) {
 		validate(ifindex);
 		open(ifindex);
 		fd=foo;
-	    } else if (mreq.cmd == MASTER_ETHTOOL) {
-		validate(ifindex);
-		ethtool = ethtool(ifindex);
-		write(child, ethtool);
 	    */
+#if HAVE_LINUX_ETHTOOL_H
+	    } else if (mreq.cmd == MASTER_ETHTOOL) {
+		mreq.len = master_ethtool(rawfd, &mreq);
+		mreq.completed = 1;
+		write(cmdfd, &mreq, MASTER_REQ_SIZE);
+#endif /* HAVE_LINUX_ETHTOOL_H */
 	    } else {
 		my_log(CRIT, "invalid request received");
 		exit(EXIT_FAILURE);
@@ -231,6 +242,13 @@ int master_rcheck(struct master_request *mreq) {
 	}
     }
 
+#if HAVE_LINUX_ETHTOOL_H
+    if (mreq->cmd == MASTER_ETHTOOL) {
+	if (mreq->len == sizeof(struct ethtool_cmd)) 
+	    return(EXIT_SUCCESS);
+    }
+#endif /* HAVE_LINUX_ETHTOOL_H */
+
     return(EXIT_FAILURE);
 }
 
@@ -312,4 +330,28 @@ size_t master_rsend(int s, struct master_request *mreq) {
     
     return(count);
 }
+
+#if HAVE_LINUX_ETHTOOL_H
+size_t master_ethtool(int s, struct master_request *mreq) {
+
+    struct ifreq ifr;
+    struct ethtool_cmd ecmd;
+
+    // prepare ifr struct
+    memset(&ifr, 0, sizeof(ifr));
+    strlcpy(ifr.ifr_name, mreq->name, IFNAMSIZ);
+
+    // prepare ecmd struct
+    memset(&ecmd, 0, sizeof(ecmd));
+    ecmd.cmd = ETHTOOL_GSET;
+    ifr.ifr_data = (caddr_t)&ecmd;
+
+    if (ioctl(s, SIOCETHTOOL, &ifr) >= 0) {
+	memcpy(mreq->msg, &ecmd, sizeof(ecmd));
+	return(sizeof(ecmd));
+    } else {
+	return(0);
+    }
+}
+#endif /* HAVE_LINUX_ETHTOOL_H */
 

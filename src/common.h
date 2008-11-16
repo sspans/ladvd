@@ -102,7 +102,7 @@ struct sysinfo {
 
 void sysinfo_fetch(struct sysinfo *);
 uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *, struct netif **);
-int netif_media(struct netif *session);
+int netif_media(int cfd, struct netif *session);
 
 
 size_t lldp_packet(void *, struct netif *, struct sysinfo *);

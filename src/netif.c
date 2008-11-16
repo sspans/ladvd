@@ -974,12 +974,13 @@ void netif_forwarding(struct sysinfo *sysinfo) {
 
 
 // perform media detection on physical interfaces
-int netif_media(struct netif *netif) {
+int netif_media(int cfd, struct netif *netif) {
     int sockfd, af = AF_INET;
     struct ifreq ifr;
 
 #if HAVE_LINUX_ETHTOOL_H
     struct ethtool_cmd ecmd;
+    struct master_request mreq;
 #endif /* HAVE_LINUX_ETHTOOL_H */
 
 #if HAVE_NET_IF_MEDIA_H
@@ -1004,11 +1005,16 @@ int netif_media(struct netif *netif) {
 	my_log(INFO, "mtu detection failed on interface %s", netif->name);
 
 #if HAVE_LINUX_ETHTOOL_H
-    memset(&ecmd, 0, sizeof(ecmd));
-    ecmd.cmd = ETHTOOL_GSET;
-    ifr.ifr_data = (caddr_t)&ecmd;
+    mreq.index = netif->index;
+    strlcpy(mreq.name, netif->name, IFNAMSIZ);
+    mreq.cmd = MASTER_ETHTOOL;
+    mreq.len = sizeof(ecmd);
 
-    if (ioctl(sockfd, SIOCETHTOOL, &ifr) >= 0) {
+    if (my_msend(cfd, &mreq) == sizeof(ecmd)) {
+
+	// copy ecmd struct
+	memcpy(&ecmd, mreq.msg, sizeof(ecmd));
+
 	// duplex
 	netif->duplex = (ecmd.duplex == DUPLEX_FULL) ? 1 : 0;
 
