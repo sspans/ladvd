@@ -18,6 +18,7 @@ int saved_argc;
 extern unsigned int loglevel;
 unsigned int do_detach = 1;
 unsigned int do_debug = 0;
+unsigned int do_recv = 0;
 
 void usage(const char *fn);
 
@@ -87,6 +88,9 @@ int main(int argc, char *argv[]) {
 		break;
 	    case 'o':
 		run_once = 1;
+		break;
+	    case 'r':
+		do_recv = 1;
 		break;
 	    case 'u':
 		username = optarg;
@@ -319,6 +323,7 @@ void usage(const char *fn) {
 	    "\t-m <address> = Management address (IPv4 and IPv6 supported)\n"
 	    "\t-n = Use addresses specified via -m for all interfaces\n"
 	    "\t-o = Run Once\n"
+	    "\t-r = Receive Packets\n"
 	    "\t-u <user> = Setuid User (defaults to %s)\n"
 	    "\t-v = Increase logging verbosity\n"
 	    "\t-c <CC> = System Country Code\n"

@@ -39,6 +39,7 @@
 #include "ndp.h"
 
 extern unsigned int do_debug;
+extern unsigned int do_recv;
 
 void master_init(struct passwd *pwd, int cmdfd) {
 
@@ -48,6 +49,11 @@ void master_init(struct passwd *pwd, int cmdfd) {
     // pcap
     pcap_hdr_t pcap_hdr;
 
+#ifdef USE_CAPABILITIES
+    // capabilities
+    cap_t caps;
+#endif /* USE_CAPABILITIES */
+
     // select set
     fd_set rset;
     int nfds;
@@ -56,33 +62,8 @@ void master_init(struct passwd *pwd, int cmdfd) {
     // packet
     struct master_request mreq;
 
-#ifdef USE_CAPABILITIES
-    // capabilities
-    cap_t caps;
-
-    // keep capabilities
-    if (prctl(PR_SET_KEEPCAPS,1) == -1) {
-	my_log(CRIT, "unable to keep capabilities: %s", strerror(errno));
-	exit(EXIT_FAILURE);
-    }
-
-    my_drop_privs(pwd);
-
-    // keep CAP_NET_ADMIN
-    caps = cap_from_text("cap_net_admin=ep");
-
-    if (caps == NULL) {
-	my_log(CRIT, "unable to create capabilities: %s", strerror(errno));
-	exit(EXIT_FAILURE);
-    }
-
-    if (cap_set_proc(caps) == -1) {
-	my_log(CRIT, "unable to set capabilities: %s", strerror(errno));
-	exit(EXIT_FAILURE);
-    }
-
-    (void) cap_free(caps);
-#endif /* USE_CAPABILITIES */
+    // proctitle
+    setproctitle("master [priv]");
 
     // open a raw socket
     rawfd = master_rsocket();
@@ -91,9 +72,6 @@ void master_init(struct passwd *pwd, int cmdfd) {
 	my_log(CRIT, "opening raw socket failed");
 	exit(EXIT_FAILURE);
     }
-
-    // proctitle
-    setproctitle("master [priv]");
 
     // debug
     if (do_debug != 0) {
@@ -110,6 +88,35 @@ void master_init(struct passwd *pwd, int cmdfd) {
 
 	// send pcap global header
 	write(rawfd, &pcap_hdr, sizeof(pcap_hdr));
+    } else {
+
+#ifdef USE_CAPABILITIES
+	// keep capabilities
+	if (prctl(PR_SET_KEEPCAPS,1) == -1) {
+	    my_log(CRIT, "unable to keep capabilities: %s", strerror(errno));
+	    exit(EXIT_FAILURE);
+	}
+
+	my_drop_privs(pwd);
+
+	// keep CAP_NET_ADMIN
+	caps = cap_from_text("cap_net_admin=ep");
+
+	if (caps == NULL) {
+	    my_log(CRIT, "unable to create capabilities: %s", strerror(errno));
+	    exit(EXIT_FAILURE);
+	}
+
+	if (cap_set_proc(caps) == -1) {
+	    my_log(CRIT, "unable to set capabilities: %s", strerror(errno));
+	    exit(EXIT_FAILURE);
+	}
+
+	(void) cap_free(caps);
+#else
+	if (do_recv == 0)
+	    my_drop_privs(pwd);
+#endif /* USE_CAPABILITIES */
     }
 
 
