@@ -1,4 +1,4 @@
-#! /bin/sh
+#!/bin/sh
 
 ### BEGIN INIT INFO
 # Provides:        ladvd
@@ -28,6 +28,12 @@ set -e
 
 case "$1" in
   start)
+	# create the privsep empty dir if necessary
+	if [ ! -d /var/run/ladvd ]; then
+	    mkdir /var/run/ladvd
+	    chmod 0755 /var/run/ladvd
+	fi
+
 	log_begin_msg "Starting $NAME: "
 	start-stop-daemon --start --quiet --oknodo --pidfile $PIDFILE \
 		--exec $DAEMON -- $DAEMON_OPTS
