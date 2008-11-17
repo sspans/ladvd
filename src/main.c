@@ -199,6 +199,9 @@ int main(int argc, char *argv[]) {
     // this is the parent
     if (pid != 0) {
 
+	// cleanup
+	close(cfd);
+
 	// enter the master loop
 	master_init(pwd, mfd);
 
@@ -207,6 +210,9 @@ int main(int argc, char *argv[]) {
 	exit(EXIT_FAILURE);
 
     } else {
+	// cleanup
+	close(mfd);
+
 	if (do_debug == 0)
 	    my_drop_privs(pwd);
 	setproctitle("child");
