@@ -152,6 +152,16 @@ AS_IF([test -n "$pid_dir"],
 )
 AC_DEFINE(PACKAGE_PID_FILE, PACKAGE_PID_DIR "/" PACKAGE_NAME ".pid", [pid file])
 
+# chroot dir
+AC_ARG_WITH([chroot_dir],
+	[AS_HELP_STRING([--with-chroot-dir=PATH],[location of the chroot dir])],
+	[chroot_dir="$withval"],[])
+
+AS_IF([test -n "$chroot_dir"],
+    [AC_DEFINE_UNQUOTED(PACKAGE_CHROOT_DIR,"$pid_dir",[location of chroot])],
+    [AC_DEFINE(PACKAGE_CHROOT_DIR,"/var/run/" PACKAGE_NAME,[location of chroot])]
+)
+
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 AC_TYPE_SIZE_T

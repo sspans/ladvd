@@ -68,10 +68,8 @@ void master_init(struct passwd *pwd, int cmdfd) {
     // open a raw socket
     rawfd = master_rsocket();
 
-    if (rawfd < 0) {
-	my_log(CRIT, "opening raw socket failed");
-	exit(EXIT_FAILURE);
-    }
+    if (rawfd < 0)
+	my_fatal("opening raw socket failed");
 
     // debug
     if (do_debug != 0) {
@@ -92,30 +90,27 @@ void master_init(struct passwd *pwd, int cmdfd) {
 
 #ifdef USE_CAPABILITIES
 	// keep capabilities
-	if (prctl(PR_SET_KEEPCAPS,1) == -1) {
-	    my_log(CRIT, "unable to keep capabilities: %s", strerror(errno));
-	    exit(EXIT_FAILURE);
-	}
+	if (prctl(PR_SET_KEEPCAPS,1) == -1)
+	    my_fatal("unable to keep capabilities: %s", strerror(errno));
 
+	my_chroot(PACKAGE_CHROOT_DIR);
 	my_drop_privs(pwd);
 
 	// keep CAP_NET_ADMIN
 	caps = cap_from_text("cap_net_admin=ep");
 
-	if (caps == NULL) {
-	    my_log(CRIT, "unable to create capabilities: %s", strerror(errno));
-	    exit(EXIT_FAILURE);
-	}
+	if (caps == NULL)
+	    my_fatal("unable to create capabilities: %s", strerror(errno));
 
-	if (cap_set_proc(caps) == -1) {
-	    my_log(CRIT, "unable to set capabilities: %s", strerror(errno));
-	    exit(EXIT_FAILURE);
-	}
+	if (cap_set_proc(caps) == -1)
+	    my_fatal("unable to set capabilities: %s", strerror(errno));
 
 	(void) cap_free(caps);
 #else
-	if (do_recv == 0)
+	if (do_recv == 0) {
+	    my_chroot(PACKAGE_CHROOT_DIR);
 	    my_drop_privs(pwd);
+	}
 #endif /* USE_CAPABILITIES */
     }
 
@@ -133,16 +128,12 @@ void master_init(struct passwd *pwd, int cmdfd) {
 	    if (len == 0)
 		continue;
 
-	    if (len != MASTER_REQ_SIZE) {
-		my_log(CRIT, "invalid request received");
-		exit(EXIT_FAILURE);
-	    }
+	    if (len != MASTER_REQ_SIZE)
+		my_fatal("invalid request received");
 
 	    // validate request
-	    if (master_rcheck(&mreq) != EXIT_SUCCESS) {
-		my_log(CRIT, "invalid request supplied");
-		exit(EXIT_FAILURE);
-	    }
+	    if (master_rcheck(&mreq) != EXIT_SUCCESS)
+		my_fatal("invalid request supplied");
 
 	    if (mreq.cmd == MASTER_SEND) {
 		mreq.len = master_rsend(rawfd, &mreq);
@@ -161,8 +152,7 @@ void master_init(struct passwd *pwd, int cmdfd) {
 		write(cmdfd, &mreq, MASTER_REQ_SIZE);
 #endif /* HAVE_LINUX_ETHTOOL_H */
 	    } else {
-		my_log(CRIT, "invalid request received");
-		exit(EXIT_FAILURE);
+		my_fatal("invalid request received");
 	    }
 	}
 

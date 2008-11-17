@@ -132,16 +132,12 @@ int main(int argc, char *argv[]) {
     saved_argv += optind;
 
     // validate interfaces
-    if (netif_fetch(saved_argc, saved_argv, &sysinfo, &netifs) == 0) {
-	my_log(CRIT, "unable fetch interfaces");
-	exit(EXIT_FAILURE);
-    }
+    if (netif_fetch(saved_argc, saved_argv, &sysinfo, &netifs) == 0)
+	my_fatal("unable fetch interfaces");
 
     // validate username
-    if ((do_debug == 0) && (pwd = getpwnam(username)) == NULL) {
-	my_log(CRIT, "User %s does not exist", username);
-	exit(EXIT_FAILURE);
-    }
+    if ((do_debug == 0) && (pwd = getpwnam(username)) == NULL)
+	my_fatal("user %s does not exist", username);
 
     // fetch system details
     sysinfo_fetch(&sysinfo);
@@ -150,39 +146,28 @@ int main(int argc, char *argv[]) {
     // open pidfile
     if (do_detach == 1) {
 	fd = open(pidfile, O_WRONLY|O_CREAT, 0666);
-	if (fd == -1) {
-	    my_log(CRIT, "failed to open pidfile %s: %s",
-			pidfile, strerror(errno));
-	    exit(EXIT_FAILURE);	
-	}
-	if (flock(fd, LOCK_EX|LOCK_NB) == -1) {
-	    my_log(CRIT, PACKAGE_NAME " already running (%s locked)", pidfile);
-	    exit(EXIT_FAILURE);	
-	}
+	if (fd == -1)
+	    my_fatal("failed to open pidfile %s: %s", pidfile, strerror(errno));
+	if (flock(fd, LOCK_EX|LOCK_NB) == -1)
+	    my_fatal(PACKAGE_NAME " already running (%s locked)", pidfile);
     }
 #endif /* __APPLE__ */
 
 #ifndef __APPLE__
     // daemonize
     if (do_detach == 1) {
-	if (daemon(0,0) == -1) {
-	    my_log(CRIT, "backgrounding failed: %s", strerror(errno));
-	    exit(EXIT_FAILURE);
-	}
+	if (daemon(0,0) == -1)
+	    my_fatal("backgrounding failed: %s", strerror(errno));
 
 	if ((snprintf(pidstr, sizeof(pidstr), "%d\n", (int)getpid()) <= 0) ||
-	    (write(fd, pidstr, strlen(pidstr)) <= 0)) {
-	    my_log(CRIT, "failed to write pidfile: %s", strerror(errno));
-	    exit(EXIT_FAILURE);
-	}
+	    (write(fd, pidstr, strlen(pidstr)) <= 0))
+	    my_fatal("failed to write pidfile: %s", strerror(errno));
     }
 #endif /* __APPLE__ */
 
     // create privsep socketpair
-    if (socketpair(AF_UNIX, SOCK_STREAM, 0, spair) == -1) {
-	my_log(CRIT, "privsep socketpair creation failed: %s", strerror(errno));
-	exit(EXIT_FAILURE);
-    }
+    if (socketpair(AF_UNIX, SOCK_STREAM, 0, spair) == -1)
+	my_fatal("privsep socketpair creation failed: %s", strerror(errno));
 
     cfd = spair[0];
     mfd = spair[1];
@@ -191,10 +176,8 @@ int main(int argc, char *argv[]) {
     pid = fork();
 
     // quit on failure
-    if (pid == -1) {
-	my_log(CRIT, "privsep fork failed: %s", strerror(errno));
-	exit(EXIT_FAILURE);
-    }
+    if (pid == -1)
+	my_fatal("privsep fork failed: %s", strerror(errno));
 
     // this is the parent
     if (pid != 0) {
@@ -206,8 +189,7 @@ int main(int argc, char *argv[]) {
 	master_init(pwd, mfd);
 
 	// not reached
-	my_log(CRIT, "master process failed");
-	exit(EXIT_FAILURE);
+	my_fatal("master process failed");
 
     } else {
 	// cleanup

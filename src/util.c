@@ -9,7 +9,9 @@
 #include <string.h>
 #include <syslog.h>
 #include <sys/ioctl.h>
+#include <sys/param.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <fcntl.h>
 #include <grp.h>
 #include <unistd.h>
@@ -34,13 +36,20 @@ void my_log(unsigned int prio, const char *fmt, ...) {
     }
 }
 
+void my_fatal(const char *fmt, ...) {
+    va_list args;
+
+    va_start(args, fmt);
+    my_log(CRIT, fmt, args);
+    va_end(args);
+    exit(EXIT_FAILURE);
+}
+
 void * my_malloc(size_t size) {
     void *ptr;
 
-    if ((ptr = malloc(size)) == NULL) {
-	my_log(CRIT, "malloc failed: %s", strerror(errno));
-	exit(EXIT_FAILURE);
-    }
+    if ((ptr = malloc(size)) == NULL)
+	my_fatal("malloc failed: %s", strerror(errno));
     memset(ptr, 0, size);
     return(ptr);
 }
@@ -48,30 +57,27 @@ void * my_malloc(size_t size) {
 void * my_calloc(size_t nmemb, size_t size) {
     void *ptr;
 
-    if ((ptr = calloc(nmemb, size)) == NULL) {
-	my_log(CRIT, "calloc failed: %s", strerror(errno));
-	exit(EXIT_FAILURE);
-    }
+    if ((ptr = calloc(nmemb, size)) == NULL)
+	my_fatal("calloc failed: %s", strerror(errno));
+
     return(ptr);
 }
 
 char * my_strdup(const char *str) {
     char *cstr;
 
-    if ((cstr = strdup(str)) == NULL) {
-	my_log(CRIT, "strdup failed: %s", strerror(errno));
-	exit(EXIT_FAILURE);
-    }
+    if ((cstr = strdup(str)) == NULL)
+	my_fatal("strdup failed: %s", strerror(errno));
+
     return(cstr);
 }
 
 int my_socket(int af, int type, int proto) {
     int s;
 
-    if ((s = socket(af, type, proto)) < 0) {
-	my_log(CRIT, "opening socket failed: %s", strerror(errno));
-	exit(EXIT_FAILURE);
-    }
+    if ((s = socket(af, type, proto)) < 0)
+	my_fatal("opening socket failed: %s", strerror(errno));
+
     return(s);
 }
 
@@ -86,10 +92,9 @@ size_t my_msend(int s, struct master_request *mreq) {
     // timeout ?
     count = recv(s, mreq, MASTER_REQ_SIZE, 0);
 
-    if (count != MASTER_REQ_SIZE) {
-	my_log(WARN, "invalid reply received from master");
-       	exit(EXIT_FAILURE);
-    } else if (mreq->completed != 1) {
+    if (count != MASTER_REQ_SIZE)
+	my_fatal("invalid reply received from master");
+    else if (mreq->completed != 1) {
 	my_log(WARN, "command failed");
 	return(0);
     }
@@ -138,22 +143,56 @@ int read_line(char *path, char *line, uint16_t len) {
     return(strlen(line));
 }
 
+// adapted from openssh's safely_chroot
+void my_chroot(const char *path) {
+    const char *cp;
+    char component[MAXPATHLEN];
+    struct stat st;
+
+    if (*path != '/')
+	my_fatal("chroot path does not begin at root");
+    if (strlen(path) >= sizeof(component))
+	my_fatal("chroot path too long");
+
+    for (cp = path; cp != NULL;) {
+	if ((cp = strchr(cp, '/')) == NULL)
+	    strlcpy(component, path, sizeof(component));
+	else {
+	    cp++;
+	    memcpy(component, path, cp - path);
+	    component[cp - path] = '\0';
+	}
+
+	if (stat(component, &st) != 0)
+	    my_fatal("stat(\"%s\"): %s", component, strerror(errno));
+	if (st.st_uid != 0 || (st.st_mode & 022) != 0)
+	    my_fatal("bad ownership or modes for chroot "
+		    "directory %s\"%s\"",
+		    cp == NULL ? "" : "component ", component);
+	if (!S_ISDIR(st.st_mode))
+	    my_fatal("chroot path %s\"%s\" is not a directory",
+		cp == NULL ? "" : "component ", component);
+    }
+
+    if (chdir(path) == -1)
+	my_fatal("unable to chdir to chroot path \"%s\": %s",
+		 path, strerror(errno));
+    if (chroot(path) == -1)
+	my_fatal("chroot(\"%s\"): %s", path, strerror(errno));
+    if (chdir("/") == -1)
+	my_fatal("chdir(/) after chroot: %s", strerror(errno));
+}
+
 void my_drop_privs(struct passwd *pwd) {
     // setuid & setgid
-    if (setgid(pwd->pw_gid) == -1){
-	my_log(CRIT, "unable to setgid: %s", strerror(errno));
-       	exit(EXIT_FAILURE);
-    }
+    if (setgid(pwd->pw_gid) == -1)
+	my_fatal("unable to setgid: %s", strerror(errno));
 
-    if (setgroups(0, NULL) == -1){
-	my_log(CRIT, "unable to setgroups: %s", strerror(errno));
-       	exit(EXIT_FAILURE);
-    }
+    if (setgroups(0, NULL) == -1)
+	my_fatal("unable to setgroups: %s", strerror(errno));
 
-    if (setuid(pwd->pw_uid) == -1){
-   	my_log(CRIT, "unable to setuid: %s", strerror(errno));
-       	exit(EXIT_FAILURE);
-    }
+    if (setuid(pwd->pw_uid) == -1)
+   	my_fatal("unable to setuid: %s", strerror(errno));
 }
 
 /*

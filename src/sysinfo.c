@@ -30,18 +30,13 @@ void sysinfo_fetch(struct sysinfo *sysinfo) {
 #endif
 
     // sysinfo.uts
-    if (uname(&sysinfo->uts) == -1) {
-	my_log(CRIT, "can't fetch uname: %s", strerror(errno));
-	exit(EXIT_FAILURE);
-    }
+    if (uname(&sysinfo->uts) == -1)
+	my_fatal("can't fetch uname: %s", strerror(errno));
 
     if (snprintf(sysinfo->uts_str, sizeof(sysinfo->uts_str), "%s %s %s %s",
 	sysinfo->uts.sysname, sysinfo->uts.release,
-	sysinfo->uts.version, sysinfo->uts.machine) <= 0) {
-
-	my_log(CRIT, "can't create uts string: %s", strerror(errno));
-	exit(EXIT_FAILURE);
-    }
+	sysinfo->uts.version, sysinfo->uts.machine) <= 0)
+	my_fatal("can't create uts string: %s", strerror(errno));
 
     i = 0;
     endptr = release = sysinfo->uts.release;
@@ -57,10 +52,8 @@ void sysinfo_fetch(struct sysinfo *sysinfo) {
 	    release++;
     }
 
-    if ((hp = gethostbyname(sysinfo->uts.nodename)) == NULL) {
-	my_log(CRIT, "cant resolve hostname: %s", hstrerror(h_errno));
-	exit(EXIT_FAILURE);
-    }
+    if ((hp = gethostbyname(sysinfo->uts.nodename)) == NULL)
+	my_fatal("cant resolve hostname: %s", hstrerror(h_errno));
     strlcpy(sysinfo->hostname, hp->h_name, sizeof(sysinfo->hostname));
 
     strlcpy(sysinfo->sw_revision, sysinfo->uts.release, len);
