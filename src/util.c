@@ -85,21 +85,19 @@ size_t my_msend(int s, struct master_request *mreq) {
     size_t count = 0;
 
     count = write(s, mreq, MASTER_REQ_SIZE);
-
     if (count != MASTER_REQ_SIZE)
-	my_log(WARN, "only %d bytes written: %s", count, strerror(errno));
+	my_fatal("only %d bytes written: %s", count, strerror(errno));
 
-    // timeout ?
     count = recv(s, mreq, MASTER_REQ_SIZE, 0);
-
     if (count != MASTER_REQ_SIZE)
 	my_fatal("invalid reply received from master");
-    else if (mreq->completed != 1) {
-	my_log(WARN, "command failed");
-	return(0);
-    }
 
-    return(mreq->len);
+    if (mreq->completed != 1) {
+	my_log(WARN, "request failed");
+	return(0);
+    } else {
+	return(mreq->len);
+    }
 };
 
 struct netif *netif_byindex(struct netif *netifs, uint32_t index) {
