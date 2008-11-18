@@ -49,6 +49,7 @@ void master_init(struct netif *netifs, uint16_t netifc, int ac,
 
     // interfaces
     struct netif *netif = NULL, *subif = NULL;
+    struct master_rfd *rfds = NULL;
 
     // pcap
     pcap_hdr_t pcap_hdr;
@@ -60,7 +61,7 @@ void master_init(struct netif *netifs, uint16_t netifc, int ac,
 
     // select set
     fd_set rset;
-    int nfds;
+    int nfds, i;
     size_t len;
 
     // packet
@@ -78,18 +79,30 @@ void master_init(struct netif *netifs, uint16_t netifc, int ac,
     // open listen sockets
     if (do_recv != 0) {
 
+	// init
 	netif = netifs;
+	rfds = my_calloc(netifc, sizeof(struct master_rfd));
+	i = 0;
+
 	while ((netif = netif_iter(netif, ac)) != NULL) {
 	    my_log(INFO, "starting receive loop with interface %s",
 			 netif->name);
 
 	    while ((subif = subif_iter(subif, netif)) != NULL) {
 		my_log(INFO, "listening on %s", subif->name);
-		//rawfd = master_rsocket();
+
+		rfds[i].index = subif->index;
+		strlcpy(rfds[i].name, subif->name, IFNAMSIZ);
+		rfds[i].fd = master_rsocket();
+
+		//master_rconf(rfds[i]);
+		i++;
 	    }
 
 	    netif = netif->next;
 	}
+
+	netifc = i;
     }
 
     // debug
@@ -135,7 +148,14 @@ void master_init(struct netif *netifs, uint16_t netifc, int ac,
 
     FD_ZERO(&rset);
     FD_SET(cmdfd, &rset);
-    nfds = cmdfd + 1;
+    nfds = 1;
+
+    if (do_recv != 0) {
+	for (i = 0; i < netifc; i++) {
+	    FD_SET(rfds[i].fd, &rset);
+	}
+	nfds += netifc;
+    }
 
     while (select(nfds, &rset, NULL, NULL, NULL) > 0) {
 
@@ -166,19 +186,25 @@ void master_init(struct netif *netifs, uint16_t netifc, int ac,
 	    } else {
 		my_fatal("invalid request received");
 	    }
+	} else {
+	    // re-enable cmdfd
+	    FD_SET(cmdfd, &rset);
 	}
 
-	/*
-	for (i = 0; netfd[i].fd != 0; i++) {
-	    if (!FD_ISSET(netfd[i].fd, &rset))
-		continue;
-	
-	    buffer.ifindex = netfd[i].index;
-	    recvfrom(netfd[i].fd, buffer.msg);
+	if (do_recv != 0) {
+	    for (i = 0; i < netifc; i++) {
 
-	    write(child, buffer);
+		// re-enable rfd
+		if (!FD_ISSET(rfds[i].fd, &rset)) {
+		    FD_SET(rfds[i].fd, &rset);
+		    continue;
+		}
+
+		//buffer.ifindex = netfd[i].index;
+		//recvfrom(netfd[i].fd, buffer.msg);
+		//write(child, buffer);
+	    }
 	}
-	*/
     }
 }
 

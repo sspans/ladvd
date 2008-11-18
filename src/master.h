@@ -19,6 +19,12 @@ struct master_request {
 
 #define MASTER_REQ_SIZE   sizeof(struct master_request)
 
+struct master_rfd {
+    uint32_t index;
+    char name[IFNAMSIZ];
+    int fd;
+};
+
 void master_init(struct netif *, uint16_t netifc, int ac,
 		 struct passwd *pwd, int cmdfd);
 int master_rcheck(struct master_request *mreq);
