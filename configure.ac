@@ -1,7 +1,7 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_INIT(ladvd, 0.6.1, sten@blinkenlights.nl)
+AC_INIT(ladvd, 0.7-alpha, sten@blinkenlights.nl)
 AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 AC_CONFIG_SRCDIR([src/config.h.in])
