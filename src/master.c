@@ -113,10 +113,12 @@ void master_init(struct netif *netifs, uint16_t netifc, int ac,
 	// keep capabilities
 	if (prctl(PR_SET_KEEPCAPS,1) == -1)
 	    my_fatal("unable to keep capabilities: %s", strerror(errno));
+#endif /* USE_CAPABILITIES */
 
 	my_chroot(PACKAGE_CHROOT_DIR);
 	my_drop_privs(pwd);
 
+#ifdef USE_CAPABILITIES
 	// keep CAP_NET_ADMIN
 	caps = cap_from_text("cap_net_admin=ep");
 
@@ -127,11 +129,6 @@ void master_init(struct netif *netifs, uint16_t netifc, int ac,
 	    my_fatal("unable to set capabilities: %s", strerror(errno));
 
 	(void) cap_free(caps);
-#else
-	if (do_recv == 0) {
-	    my_chroot(PACKAGE_CHROOT_DIR);
-	    my_drop_privs(pwd);
-	}
 #endif /* USE_CAPABILITIES */
     }
 
