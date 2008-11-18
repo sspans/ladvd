@@ -160,12 +160,6 @@ void master_init(struct netif *netifs, uint16_t netifc, int ac,
 		mreq.len = master_rsend(rawfd, &mreq);
 		mreq.completed = 1;
 		write(cmdfd, &mreq, MASTER_REQ_SIZE);
-	    /*
-	    } else if (mreq.cmd == MASTER_RECV) {
-		validate(ifindex);
-		open(ifindex);
-		fd=foo;
-	    */
 #if HAVE_LINUX_ETHTOOL_H
 	    } else if (mreq.cmd == MASTER_ETHTOOL) {
 		mreq.len = master_ethtool(rawfd, &mreq);
