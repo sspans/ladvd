@@ -34,14 +34,21 @@ void my_log(unsigned int prio, const char *fmt, ...) {
 	(void) vfprintf(stderr, fmt, ap);
 	(void) fprintf(stderr, "\n");
     }
+    va_end(ap);
 }
 
 void my_fatal(const char *fmt, ...) {
-    va_list args;
+    va_list ap;
 
-    va_start(args, fmt);
-    my_log(CRIT, fmt, args);
-    va_end(args);
+    va_start(ap, fmt);
+    if (do_detach == 1) {
+	(void) vsyslog(LOG_INFO, fmt, ap);
+    } else {
+	(void) vfprintf(stderr, fmt, ap);
+	(void) fprintf(stderr, "\n");
+    }
+    va_end(ap);
+
     exit(EXIT_FAILURE);
 }
 
@@ -99,6 +106,43 @@ size_t my_msend(int s, struct master_request *mreq) {
 	return(mreq->len);
     }
 };
+
+struct netif *netif_iter(struct netif *netifs, int argc) {
+    struct netif *netif;
+
+    for (netif = netifs; netif != NULL; netif = netif->next) {
+	// skip autodetected slaves
+	if ((argc == 0) && (netif->slave == 1))
+	    continue;
+	
+	// skip unlisted interfaces
+	if ((argc > 0) && (netif->argv == 0))
+	    continue;
+	
+	// skip masters without slaves
+	if ((netif->type > 0) && (netif->subif == NULL)) {
+	    my_log(INFO, "skipping interface %s", netif->name);
+	    continue;
+	}
+
+	break;
+    }
+
+    return(netif);
+}
+
+struct netif *subif_iter(struct netif *subif, struct netif *netif) {
+    if (subif == NULL) {
+	if (netif->type > 0)
+	    return(netif->subif);
+	else
+	    return(netif);
+    } else if (subif == netif) {
+	return(NULL);
+    } else {
+	return(subif->subif);
+    }
+}
 
 struct netif *netif_byindex(struct netif *netifs, uint32_t index) {
     struct netif *netif;

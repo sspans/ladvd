@@ -41,10 +41,13 @@
 extern unsigned int do_debug;
 extern unsigned int do_recv;
 
-void master_init(struct passwd *pwd, int cmdfd) {
+void master_init(struct netif *netifs, int ac, struct passwd *pwd, int cmdfd) {
 
     // raw socket
     int rawfd;
+
+    // interfaces
+    struct netif *netif = NULL, *subif = NULL;
 
     // pcap
     pcap_hdr_t pcap_hdr;
@@ -70,6 +73,23 @@ void master_init(struct passwd *pwd, int cmdfd) {
 
     if (rawfd < 0)
 	my_fatal("opening raw socket failed");
+
+    // open listen sockets
+    if (do_recv != 0) {
+
+	netif = netifs;
+	while ((netif = netif_iter(netif, ac)) != NULL) {
+	    my_log(INFO, "starting receive loop with interface %s",
+			 netif->name);
+
+	    while ((subif = subif_iter(subif, netif)) != NULL) {
+		my_log(INFO, "listening on %s", subif->name);
+		//rawfd = master_rsocket();
+	    }
+
+	    netif = netif->next;
+	}
+    }
 
     // debug
     if (do_debug != 0) {

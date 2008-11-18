@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
     struct master_request mreq;
 
     // interfaces
-    struct netif *netifs = NULL, *netif, *master;
+    struct netif *netifs = NULL, *netif = NULL, *subif = NULL;
 
     // clear sysinfo
     memset(&sysinfo, 0, sizeof(struct sysinfo));
@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
     argv = saved_argv;
 #endif
 
-    while ((ch = getopt(argc, argv, "dfhm:nou:vc:l:CEFN")) != -1) {
+    while ((ch = getopt(argc, argv, "dfhm:noru:vc:l:CEFN")) != -1) {
 	switch(ch) {
 	    case 'd':
 		do_debug = 1;
@@ -186,7 +186,7 @@ int main(int argc, char *argv[]) {
 	close(cfd);
 
 	// enter the master loop
-	master_init(pwd, mfd);
+	master_init(netifs, saved_argc, pwd, mfd);
 
 	// not reached
 	my_fatal("master process failed");
@@ -213,39 +213,21 @@ int main(int argc, char *argv[]) {
 	    goto sleep;
 	}
 
-	for (netif = netifs; netif != NULL; netif = netif->next) {
-	    // skip autodetected slaves
-	    if ((saved_argc == 0) && (netif->slave == 1))
-		continue;
-
-	    // skip unlisted interfaces
-	    if ((saved_argc > 0) && (netif->argv == 0))
-		continue;
-
-	    // skip masters without slaves
-	    if ((netif->type > 0) && (netif->subif == NULL)) {
-		my_log(INFO, "skipping interface %s", netif->name); 
-		continue;
-	    }
+	netif = netifs;
+	while ((netif = netif_iter(netif, saved_argc)) != NULL) {
 
 	    my_log(INFO, "starting loop with interface %s", netif->name); 
 
-	    // point netif to subif when netif is master
-	    master = netif;
-
-	    if (master->type > 0)
-		netif = master->subif;
-
-	    while (master != NULL) {
+	    while ((subif = subif_iter(subif, netif)) != NULL) {
 
 		// populate mreq
-		mreq.index = netif->index;
-		strlcpy(mreq.name, netif->name, IFNAMSIZ);
+		mreq.index = subif->index;
+		strlcpy(mreq.name, subif->name, IFNAMSIZ);
 		mreq.cmd = MASTER_SEND;
 
 		// fetch interface media status
-		my_log(INFO, "fetching %s media details", netif->name);
-		if (netif_media(cfd, netif) == EXIT_FAILURE) {
+		my_log(INFO, "fetching %s media details", subif->name);
+		if (netif_media(cfd, subif) == EXIT_FAILURE) {
 		    my_log(CRIT, "error fetching interface media details");
 		}
 
@@ -260,34 +242,25 @@ int main(int argc, char *argv[]) {
 		    memset(mreq.msg, 0, ETHER_MAX_LEN);
 
 		    my_log(INFO, "building %s packet for %s", 
-				  protos[p].name, netif->name);
-		    mreq.len = protos[p].build_msg(mreq.msg, netif, &sysinfo);
+				  protos[p].name, subif->name);
+		    mreq.len = protos[p].build_msg(mreq.msg, subif, &sysinfo);
 
 		    if (mreq.len == 0) {
 			my_log(CRIT, "can't generate %s packet for %s",
-				  protos[p].name, netif->name);
+				  protos[p].name, subif->name);
 			continue;
 		    }
 
 		    // write it to the wire.
 		    my_log(INFO, "sending %s packet (%d bytes) on %s",
-				  protos[p].name, mreq.len, netif->name);
+				  protos[p].name, mreq.len, subif->name);
 		    if (my_msend(cfd, &mreq) != mreq.len) {
 			my_log(CRIT, "network transmit error on %s",
-				  netif->name);
+				  subif->name);
 		    }
 		}
-
-		// point netif to the next subif
-		if (master->type == 0) {
-		    master = NULL;
-		} else if (netif->subif != NULL) {
-		    netif = netif->subif;
-		} else {
-		    netif = master;
-		    master = NULL;
-		}
 	    }
+	    netif = netif->next;
 	}
 
 sleep:

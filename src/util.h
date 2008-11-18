@@ -19,6 +19,8 @@ int my_socket(int af, int type, int proto);
 
 size_t my_msend(int s, struct master_request *mreq);
 
+struct netif *netif_iter(struct netif *netifs, int argc);
+struct netif *subif_iter(struct netif *subif, struct netif *netif);
 struct netif *netif_byindex(struct netif *, uint32_t index);
 struct netif *netif_byname(struct netif *, char *name);
 
