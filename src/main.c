@@ -12,8 +12,6 @@
 #include <fcntl.h>
 
 char *progname;
-char **saved_argv;
-int saved_argc;
 
 extern unsigned int loglevel;
 unsigned int do_detach = 1;
@@ -33,6 +31,10 @@ int main(int argc, char *argv[]) {
 #endif /* __APPLE__ */
     struct passwd *pwd = NULL;
 
+    // save argc/argv
+    int sargc;
+    char **sargv;
+
     // sysinfo
     struct sysinfo sysinfo;
 
@@ -47,6 +49,7 @@ int main(int argc, char *argv[]) {
 
     // interfaces
     struct netif *netifs = NULL, *netif = NULL, *subif = NULL;
+    uint16_t netifc = 0;
 
     // clear sysinfo
     memset(&sysinfo, 0, sizeof(struct sysinfo));
@@ -55,16 +58,16 @@ int main(int argc, char *argv[]) {
     progname = argv[0];
 
     // Save argv. Duplicate so setproctitle emulation doesn't clobber it
-    saved_argc = argc;
-    saved_argv = my_calloc(argc + 1, sizeof(*saved_argv));
+    sargc = argc;
+    sargv = my_calloc(argc + 1, sizeof(*sargv));
     for (i = 0; i < argc; i++)
-	saved_argv[i] = my_strdup(argv[i]);
-    saved_argv[i] = NULL;
+	sargv[i] = my_strdup(argv[i]);
+    sargv[i] = NULL;
 
 #ifndef HAVE_SETPROCTITLE
     /* Prepare for later setproctitle emulation */
     compat_init_setproctitle(argc, argv);
-    argv = saved_argv;
+    argv = sargv;
 #endif
 
     while ((ch = getopt(argc, argv, "dfhm:noru:vc:l:CEFN")) != -1) {
@@ -128,11 +131,12 @@ int main(int argc, char *argv[]) {
 	}
     }
 
-    saved_argc -= optind;
-    saved_argv += optind;
+    sargc -= optind;
+    sargv += optind;
 
     // validate interfaces
-    if (netif_fetch(saved_argc, saved_argv, &sysinfo, &netifs) == 0)
+    netifc = netif_fetch(sargc, sargv, &sysinfo, &netifs);
+    if (netifc == 0)
 	my_fatal("unable fetch interfaces");
 
     // validate username
@@ -186,7 +190,7 @@ int main(int argc, char *argv[]) {
 	close(cfd);
 
 	// enter the master loop
-	master_init(netifs, saved_argc, pwd, mfd);
+	master_init(netifs, netifc, sargc, pwd, mfd);
 
 	// not reached
 	my_fatal("master process failed");
@@ -208,13 +212,13 @@ int main(int argc, char *argv[]) {
 
 	// create netifs
 	my_log(INFO, "fetching all interfaces"); 
-	if (netif_fetch(saved_argc, saved_argv, &sysinfo, &netifs) == 0) {
+	if (netif_fetch(sargc, sargv, &sysinfo, &netifs) == 0) {
 	    my_log(CRIT, "unable fetch interfaces");
 	    goto sleep;
 	}
 
 	netif = netifs;
-	while ((netif = netif_iter(netif, saved_argc)) != NULL) {
+	while ((netif = netif_iter(netif, sargc)) != NULL) {
 
 	    my_log(INFO, "starting loop with interface %s", netif->name); 
 

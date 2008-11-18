@@ -41,7 +41,8 @@
 extern unsigned int do_debug;
 extern unsigned int do_recv;
 
-void master_init(struct netif *netifs, int ac, struct passwd *pwd, int cmdfd) {
+void master_init(struct netif *netifs, uint16_t netifc, int ac,
+		 struct passwd *pwd, int cmdfd) {
 
     // raw socket
     int rawfd;
