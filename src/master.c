@@ -71,7 +71,7 @@ void master_init(struct netif *netifs, uint16_t netifc, int ac,
     setproctitle("master [priv]");
 
     // open a raw socket
-    rawfd = master_rsocket();
+    rawfd = master_rsocket(NULL);
 
     if (rawfd < 0)
 	my_fatal("opening raw socket failed");
@@ -93,7 +93,7 @@ void master_init(struct netif *netifs, uint16_t netifc, int ac,
 
 		rfds[i].index = subif->index;
 		strlcpy(rfds[i].name, subif->name, IFNAMSIZ);
-		rfds[i].fd = master_rsocket();
+		rfds[i].fd = master_rsocket(&rfds[i]);
 
 		//master_rconf(rfds[i]);
 		i++;
@@ -294,12 +294,12 @@ int master_rcheck(struct master_request *mreq) {
     return(EXIT_FAILURE);
 }
 
-int master_rsocket() {
+int master_rsocket(struct master_rfd *rfd) {
 
     int socket = -1;
 
     // return stdout on debug
-    if (do_debug != 0)
+    if ((do_debug != 0) && (rfd == NULL))
 	return(1);
 
 #ifdef HAVE_NETPACKET_PACKET_H

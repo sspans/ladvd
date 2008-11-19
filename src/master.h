@@ -28,7 +28,7 @@ struct master_rfd {
 void master_init(struct netif *, uint16_t netifc, int ac,
 		 struct passwd *pwd, int cmdfd);
 int master_rcheck(struct master_request *mreq);
-int master_rsocket();
+int master_rsocket(struct master_rfd *rfd);
 size_t master_rsend(int s, struct master_request *mreq);
 #if HAVE_LINUX_ETHTOOL_H
 size_t master_ethtool(int s, struct master_request *mreq);
