@@ -95,7 +95,7 @@ void master_init(struct netif *netifs, uint16_t netifc, int ac,
 		strlcpy(rfds[i].name, subif->name, IFNAMSIZ);
 		rfds[i].fd = master_rsocket(&rfds[i]);
 
-		//master_rconf(rfds[i]);
+		//master_rfilter(rfds[i]);
 		i++;
 	    }
 
@@ -304,17 +304,42 @@ int master_rsocket(struct master_rfd *rfd) {
 
 #ifdef HAVE_NETPACKET_PACKET_H
     socket = my_socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
+
+    // return unbound socket if requested
+    if (rfd == NULL)
+	return(socket);
+
+    struct sockaddr_ll sa;
+    memset(&sa, 0, sizeof (sa));
+
+    sa.sll_family = AF_PACKET;
+    sa.sll_ifindex = rfd->index;
+    sa.sll_protocol = htons(ETH_P_ALL);
+
+    if (bind(socket, (struct sockaddr *)&sa, sizeof (sa)) != 0)
+	my_fatal("failed to bind socket to %s", rfd->name);
 #elif HAVE_NET_BPF_H
     int n = 0;
     char *dev;
 
     do {
-	if (asprintf(&dev, "/dev/bpf%d", n++) == -1) {
-	    my_log(CRIT, "failed to allocate buffer");
-	    return(-1);
-	}
+	if (asprintf(&dev, "/dev/bpf%d", n++) == -1)
+	    my_fatal("failed to allocate buffer for /dev/bpf");
 	socket = open(dev, O_WRONLY);
     } while (socket < 0 && errno == EBUSY);
+
+    // return unbound socket if requested
+    if (rfd == NULL)
+	return(socket);
+
+    struct ifreq ifr;
+
+    // prepare ifr struct
+    memset(&ifr, 0, sizeof(ifr));
+    strlcpy(ifr.ifr_name, rfd->name, IFNAMSIZ);
+
+    if (ioctl(socket, BIOCSETIF, (caddr_t)&ifr) < 0) {
+	fatal("ioctl failed: %s", strerror(errno));
 #endif
 
     return(socket);
@@ -361,9 +386,7 @@ size_t master_rsend(int s, struct master_request *mreq) {
     strlcpy(ifr.ifr_name, mreq->name, IFNAMSIZ);
 
     if (ioctl(s, BIOCSETIF, (caddr_t)&ifr) < 0) {
-	my_log(CRIT, "ioctl failed: %s", strerror(errno));
-	return(-1);
-    }
+	my_fatal("ioctl failed: %s", strerror(errno));
     count = write(s, mreq->msg, mreq->len);
 #endif
 
