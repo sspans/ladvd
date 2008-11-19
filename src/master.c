@@ -61,11 +61,11 @@ void master_init(struct netif *netifs, uint16_t netifc, int ac,
 
     // select set
     fd_set rset;
-    int nfds, i;
+    int nfds, i, rcount = 0;
     size_t len;
 
     // packet
-    struct master_request mreq;
+    struct master_request mreq, *rbuf = NULL, *mrecv;
 
     // proctitle
     setproctitle("master [priv]");
@@ -103,6 +103,7 @@ void master_init(struct netif *netifs, uint16_t netifc, int ac,
 	}
 
 	netifc = i;
+	rbuf = my_calloc(netifc, sizeof(*rbuf));
     }
 
     // debug
@@ -148,13 +149,14 @@ void master_init(struct netif *netifs, uint16_t netifc, int ac,
 
     FD_ZERO(&rset);
     FD_SET(cmdfd, &rset);
-    nfds = 1;
+    nfds = cmdfd + 1;
 
     if (do_recv != 0) {
 	for (i = 0; i < netifc; i++) {
 	    FD_SET(rfds[i].fd, &rset);
 	}
-	nfds += netifc;
+
+	nfds = rfds[i].fd + 1;
     }
 
     while (select(nfds, &rset, NULL, NULL, NULL) > 0) {
@@ -186,23 +188,28 @@ void master_init(struct netif *netifs, uint16_t netifc, int ac,
 	    } else {
 		my_fatal("invalid request received");
 	    }
-	} else {
-	    // re-enable cmdfd
-	    FD_SET(cmdfd, &rset);
 	}
 
 	if (do_recv != 0) {
 	    for (i = 0; i < netifc; i++) {
 
 		// re-enable rfd
-		if (!FD_ISSET(rfds[i].fd, &rset)) {
-		    FD_SET(rfds[i].fd, &rset);
+		if (!FD_ISSET(rfds[i].fd, &rset))
 		    continue;
-		}
 
-		//buffer.ifindex = netfd[i].index;
-		//recvfrom(netfd[i].fd, buffer.msg);
-		//write(child, buffer);
+		// skip if the buffer is full
+		if (rcount >= netifc)
+		    continue;
+
+		mrecv = &rbuf[rcount];
+		mrecv->index = rfds[i].index;
+		len = recv(rfds[i].fd, mrecv->msg,
+			   ETHER_MAX_LEN, MSG_DONTWAIT);
+
+		if (len == 0)
+		    continue;
+
+		rcount++;
 	    }
 	}
     }
