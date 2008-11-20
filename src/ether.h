@@ -19,6 +19,10 @@ struct ether_hdr {
     };
 } __attribute__ ((__packed__));
 
+#ifndef ETHER_HDR_LEN
+#define ETHER_HDR_LEN	sizeof(struct ether_hdr)
+#endif
+
 // IEEE 802.2 LLC
 struct ether_llc {
     uint8_t dsap;
@@ -27,6 +31,9 @@ struct ether_llc {
     uint8_t org[3];
     uint16_t protoid;
 } __attribute__ ((__packed__));
+
+#define ETH_LLC_CONTROL	ETHER_HDR_LEN + 2
+#define ETH_LLC_PROTOID	ETHER_HDR_LEN + 6
 
 /* Should be defined in net/ethertypes.h */
 #ifndef ETHERTYPE_LLDP
