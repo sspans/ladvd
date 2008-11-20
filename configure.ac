@@ -65,6 +65,7 @@ AC_CHECK_HEADERS([netinet/if_ether.h], [], [],
 #include <netinet/in.h>
 ])
 AC_CHECK_HEADERS([net/if_types.h])
+AC_CHECK_HEADERS([linux/filter.h])
 
 # bridge / bonding
 AC_CHECK_HEADERS([linux/if_bridge.h linux/if_bonding.h], [], [],
