@@ -306,12 +306,11 @@ void master_init(struct netif *netifs, uint16_t netifc, int ac,
 
 	    mrecv = &rbuf[rcount];
 	    mrecv->index = rfds[i].index;
-	    len = recv(rfds[i].fd, mrecv->msg, ETHER_MAX_LEN, MSG_DONTWAIT);
+	    mrecv->len = recv(rfds[i].fd, mrecv->msg, 
+			      ETHER_MAX_LEN, MSG_DONTWAIT);
 
-	    if (len == 0)
-		continue;
-
-	    rcount++;
+	    if (mrecv->len != 0)
+		rcount++;
 	}
     }
 }
