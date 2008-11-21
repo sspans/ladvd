@@ -41,6 +41,8 @@
 #include "fdp.h"
 #include "ndp.h"
 
+#define max(a,b) ((a)<(b)?(b):(a))
+
 #ifdef HAVE_NET_BPF_H
 struct bpf_insn master_filter[] = {
 #elif HAVE_LINUX_FILTER_H
@@ -238,25 +240,28 @@ void master_init(struct netif *netifs, uint16_t netifc, int ac,
 
     FD_ZERO(&rset);
     FD_SET(cmdfd, &rset);
-    nfds = cmdfd + 1;
+    nfds = cmdfd;
 
     if (do_recv != 0) {
 	for (i = 0; i < netifc; i++) {
 	    FD_SET(rfds[i].fd, &rset);
+	    nfds = max(nfds, rfds[i].fd);
 	}
-
-	nfds = rfds[i].fd + 1;
     }
+
+    nfds++;
 
     while (select(nfds, &rset, NULL, NULL, NULL) > 0) {
 
 	if (FD_ISSET(cmdfd, &rset)) {
 
+	    // receive request
 	    len = recv(cmdfd, &mreq, MASTER_REQ_SIZE, MSG_DONTWAIT);
 
 	    if (len == 0)
 		continue;
 
+	    // check request size
 	    if (len != MASTER_REQ_SIZE)
 		my_fatal("invalid request received");
 
@@ -264,42 +269,49 @@ void master_init(struct netif *netifs, uint16_t netifc, int ac,
 	    if (master_rcheck(&mreq) != EXIT_SUCCESS)
 		my_fatal("invalid request supplied");
 
+	    // transmit packet
 	    if (mreq.cmd == MASTER_SEND) {
 		mreq.len = master_rsend(rawfd, &mreq);
 		mreq.completed = 1;
 		write(cmdfd, &mreq, MASTER_REQ_SIZE);
 #if HAVE_LINUX_ETHTOOL_H
+	    // fetch ethtool details
 	    } else if (mreq.cmd == MASTER_ETHTOOL) {
 		mreq.len = master_ethtool(rawfd, &mreq);
 		mreq.completed = 1;
 		write(cmdfd, &mreq, MASTER_REQ_SIZE);
 #endif /* HAVE_LINUX_ETHTOOL_H */
+	    // invalid request
 	    } else {
 		my_fatal("invalid request received");
 	    }
+	} else {
+	    FD_SET(cmdfd, &rset);
 	}
 
-	if (do_recv != 0) {
-	    for (i = 0; i < netifc; i++) {
+	if (do_recv == 0)
+	    continue;
 
-		// re-enable rfd
-		if (!FD_ISSET(rfds[i].fd, &rset))
-		    continue;
+	for (i = 0; i < netifc; i++) {
 
-		// skip if the buffer is full
-		if (rcount >= netifc)
-		    continue;
-
-		mrecv = &rbuf[rcount];
-		mrecv->index = rfds[i].index;
-		len = recv(rfds[i].fd, mrecv->msg,
-			   ETHER_MAX_LEN, MSG_DONTWAIT);
-
-		if (len == 0)
-		    continue;
-
-		rcount++;
+	    // skip
+	    if (!FD_ISSET(rfds[i].fd, &rset)) {
+		FD_SET(rfds[i].fd, &rset);
+		continue;
 	    }
+
+	    // skip if the buffer is full
+	    if (rcount >= netifc)
+		continue;
+
+	    mrecv = &rbuf[rcount];
+	    mrecv->index = rfds[i].index;
+	    len = recv(rfds[i].fd, mrecv->msg, ETHER_MAX_LEN, MSG_DONTWAIT);
+
+	    if (len == 0)
+		continue;
+
+	    rcount++;
 	}
     }
 }
