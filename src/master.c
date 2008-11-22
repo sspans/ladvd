@@ -158,6 +158,7 @@ void master_init(struct netif *netifs, uint16_t netifc, int ac,
 
     // packet
     struct master_request mreq, *rbuf = NULL, *mrecv;
+    struct ether_hdr *ether;
 
     // proctitle
     setproctitle("master [priv]");
@@ -185,6 +186,7 @@ void master_init(struct netif *netifs, uint16_t netifc, int ac,
 
 		rfds[i].index = subif->index;
 		strlcpy(rfds[i].name, subif->name, IFNAMSIZ);
+		memcpy(rfds[i].hwaddr, subif->hwaddr, ETHER_ADDR_LEN);
 		rfds[i].fd = master_rsocket(&rfds[i]);
 
 		i++;
@@ -309,8 +311,16 @@ void master_init(struct netif *netifs, uint16_t netifc, int ac,
 	    mrecv->len = recv(rfds[i].fd, mrecv->msg, 
 			      ETHER_MAX_LEN, MSG_DONTWAIT);
 
-	    if (mrecv->len != 0)
-		rcount++;
+	    // skip small packets
+	    if (mrecv->len < ETHER_MIN_LEN)
+		continue;
+
+	    // skip locally generated packets
+	    ether = (struct ether_hdr *)mrecv->msg;
+	    if (memcmp(rfds[i].hwaddr, ether->src, ETHER_ADDR_LEN) == 0)
+		continue;
+
+	    rcount++;
 	}
     }
 }

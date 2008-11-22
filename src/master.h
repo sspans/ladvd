@@ -22,6 +22,7 @@ struct master_request {
 struct master_rfd {
     uint32_t index;
     char name[IFNAMSIZ];
+    uint8_t hwaddr[ETHER_ADDR_LEN];
     int fd;
 };
 
