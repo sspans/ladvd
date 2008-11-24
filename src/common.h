@@ -87,7 +87,6 @@ struct sysinfo {
     char asset_id[LLDP_INVENTORY_SIZE + 1];
 };
 
-
 #define CAP_BRIDGE	(1 << 0)
 #define CAP_HOST	(1 << 1)
 #define CAP_ROUTER	(1 << 2)
@@ -98,6 +97,16 @@ struct sysinfo {
 #define NETIF_REGULAR	0
 #define NETIF_BONDING	1
 #define NETIF_BRIDGE	2
+
+
+struct proto {
+    uint8_t enabled;
+    const char *name;
+    uint8_t dst_addr[ETHER_ADDR_LEN];
+    size_t (*build_msg) (void *, struct netif *, struct sysinfo *);
+    uint8_t llc_org[3];
+    uint16_t llc_pid;
+};
 
 
 void sysinfo_fetch(struct sysinfo *);

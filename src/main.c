@@ -190,7 +190,7 @@ int main(int argc, char *argv[]) {
 	close(cfd);
 
 	// enter the master loop
-	master_init(netifs, netifc, sargc, pwd, mfd);
+	master_init(protos, netifs, netifc, sargc, pwd, mfd);
 
 	// not reached
 	my_fatal("master process failed");

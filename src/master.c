@@ -133,8 +133,8 @@ struct sock_filter master_filter[] = {
 extern unsigned int do_debug;
 extern unsigned int do_recv;
 
-void master_init(struct netif *netifs, uint16_t netifc, int ac,
-		 struct passwd *pwd, int cmdfd) {
+void master_init(struct proto *protos, struct netif *netifs, uint16_t netifc,
+		 int ac, struct passwd *pwd, int cmdfd) {
 
     // raw socket
     int rawfd;
@@ -188,6 +188,8 @@ void master_init(struct netif *netifs, uint16_t netifc, int ac,
 		strlcpy(rfds[i].name, subif->name, IFNAMSIZ);
 		memcpy(rfds[i].hwaddr, subif->hwaddr, ETHER_ADDR_LEN);
 		rfds[i].fd = master_rsocket(&rfds[i]);
+
+		master_rconf(&rfds[i], protos);
 
 		i++;
 	    }
@@ -320,6 +322,7 @@ void master_init(struct netif *netifs, uint16_t netifc, int ac,
 	    if (memcmp(rfds[i].hwaddr, ether->src, ETHER_ADDR_LEN) == 0)
 		continue;
 
+	    write(1, mrecv->msg, mrecv->len);
 	    rcount++;
 	}
     }
@@ -430,19 +433,6 @@ int master_rsocket(struct master_rfd *rfd) {
     if (bind(socket, (struct sockaddr *)&sa, sizeof (sa)) != 0)
 	my_fatal("failed to bind socket to %s", rfd->name);
 
-#ifdef HAVE_LINUX_FILTER_H
-    // install socket filter
-    struct sock_fprog fprog;
-
-    memset(&fprog, 0, sizeof(fprog));
-    fprog.filter = master_filter; 
-    fprog.len = sizeof(master_filter) / sizeof(struct sock_filter);
-
-    if (setsockopt(socket, SOL_SOCKET, SO_ATTACH_FILTER,
-		   &fprog, sizeof(fprog)) < 0)
-	my_fatal("unable to configure socket filter for %s", rfd->name);
-#endif /* HAVE_LINUX_FILTER_H */
-
 #elif HAVE_NET_BPF_H
     int n = 0;
     char *dev;
@@ -466,6 +456,29 @@ int master_rsocket(struct master_rfd *rfd) {
 
     if (ioctl(socket, BIOCSETIF, (caddr_t)&ifr) < 0) {
 	my_fatal("failed to bind socket to %s", rfd->name);
+#endif
+
+    return(socket);
+}
+
+
+void master_rconf(struct master_rfd *rfd, struct proto *protos) {
+
+    struct ifreq ifr;
+    int p;
+
+#ifdef HAVE_LINUX_FILTER_H
+    // install socket filter
+    struct sock_fprog fprog;
+
+    memset(&fprog, 0, sizeof(fprog));
+    fprog.filter = master_filter; 
+    fprog.len = sizeof(master_filter) / sizeof(struct sock_filter);
+
+    if (setsockopt(rfd->fd, SOL_SOCKET, SO_ATTACH_FILTER,
+		   &fprog, sizeof(fprog)) < 0)
+	my_fatal("unable to configure socket filter for %s", rfd->name);
+#elif HAVE_NET_BPF_H
 
     // install bpf filter
     struct bpf_program fprog;
@@ -474,13 +487,26 @@ int master_rsocket(struct master_rfd *rfd) {
     fprog.bf_insns = &master_filter; 
     fprog.bf_len = sizeof(master_filter) / sizeof(struct sock_filter);
 
-    if (ioctl(socket, BIOCSETF, (caddr_t)&prog) < 0) {
+    if (ioctl(rfd->fd, BIOCSETF, (caddr_t)&prog) < 0) {
 	my_fatal("unable to configure bpf filter for %s", rfd->name);
 #endif
 
-    return(socket);
-}
+    // configure multicast recv
+    memset(&ifr, 0, sizeof(ifr));
+    strlcpy(ifr.ifr_name, rfd->name, IFNAMSIZ);
 
+    for (p = 0; protos[p].name != NULL; p++) {
+	
+	// only enabled protos
+	if (protos[p].enabled == 0)
+	    continue;
+
+	memcpy(ifr.ifr_hwaddr.sa_data, protos[p].dst_addr, ETHER_ADDR_LEN);
+	if (ioctl(rfd->fd, SIOCADDMULTI, &ifr) < 0)
+	    my_fatal("unable to add %s multicast to %s",
+		     protos[p].name, rfd->name);
+    }
+}
 
 size_t master_rsend(int s, struct master_request *mreq) {
 
