@@ -198,7 +198,7 @@ void master_init(struct proto *protos, struct netif *netifs, uint16_t netifc,
 	}
 
 	netifc = i;
-	rbuf = my_calloc(netifc, sizeof(*rbuf));
+	rbuf = my_calloc(netifc * 2, sizeof(*rbuf));
     }
 
     // debug
@@ -305,7 +305,7 @@ void master_init(struct proto *protos, struct netif *netifs, uint16_t netifc,
 	    }
 
 	    // skip if the buffer is full
-	    if (rcount >= netifc)
+	    if (rcount >= (netifc * 2))
 		continue;
 
 	    mrecv = &rbuf[rcount];
