@@ -164,7 +164,7 @@ void master_init(struct proto *protos, struct netif *netifs, uint16_t netifc,
     setproctitle("master [priv]");
 
     // open a raw socket
-    rawfd = master_rsocket(NULL);
+    rawfd = master_rsocket(NULL, O_WRONLY);
 
     if (rawfd < 0)
 	my_fatal("opening raw socket failed");
@@ -187,7 +187,10 @@ void master_init(struct proto *protos, struct netif *netifs, uint16_t netifc,
 		rfds[i].index = subif->index;
 		strlcpy(rfds[i].name, subif->name, IFNAMSIZ);
 		memcpy(rfds[i].hwaddr, subif->hwaddr, ETHER_ADDR_LEN);
-		rfds[i].fd = master_rsocket(&rfds[i]);
+		rfds[i].fd = master_rsocket(&rfds[i], O_RDONLY);
+
+		if (rfds[i].fd < 0)
+		    my_fatal("opening raw socket failed");
 
 		master_rconf(&rfds[i], protos);
 
@@ -400,7 +403,7 @@ int master_rcheck(struct master_request *mreq) {
     return(EXIT_FAILURE);
 }
 
-int master_rsocket(struct master_rfd *rfd) {
+int master_rsocket(struct master_rfd *rfd, int mode) {
 
     int socket = -1;
 
@@ -409,7 +412,11 @@ int master_rsocket(struct master_rfd *rfd) {
 	return(1);
 
 #ifdef HAVE_NETPACKET_PACKET_H
-    socket = my_socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
+    socket = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
+
+    // socket open failed
+    if (socket < 0)
+	return(socket);
 
     // return unbound socket if requested
     if (rfd == NULL)
@@ -428,13 +435,16 @@ int master_rsocket(struct master_rfd *rfd) {
 
 #elif HAVE_NET_BPF_H
     int n = 0;
-    char *dev;
+    char dev[50];
 
     do {
-	if (asprintf(&dev, "/dev/bpf%d", n++) == -1)
-	    my_fatal("failed to allocate buffer for /dev/bpf");
-	socket = open(dev, O_WRONLY);
+	snprintf(dev, sizeof(dev), "/dev/bpf%d", n++);
+	socket = open(dev, mode);
     } while (socket < 0 && errno == EBUSY);
+
+    // no free bpf available
+    if (socket < 0)
+	return(socket);
 
     // return unbound socket if requested
     if (rfd == NULL)
