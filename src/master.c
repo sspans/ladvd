@@ -218,14 +218,7 @@ void master_init(struct proto *protos, struct netif *netifs, uint16_t netifc,
 	write(rawfd, &pcap_hdr, sizeof(pcap_hdr));
     } else {
 
-#ifdef USE_CAPABILITIES
-	// keep capabilities
-	if (prctl(PR_SET_KEEPCAPS,1) == -1)
-	    my_fatal("unable to keep capabilities: %s", strerror(errno));
-#endif /* USE_CAPABILITIES */
-
 	my_chroot(PACKAGE_CHROOT_DIR);
-	my_drop_privs(pwd);
 
 #ifdef USE_CAPABILITIES
 	// keep CAP_NET_ADMIN
