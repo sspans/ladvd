@@ -21,6 +21,7 @@ mv *tar.gz ${RELEASE}
 cd ${RELEASE}/debian
 tar xf ../*tar.gz
 cd ladvd-*
+rsync -av ${BASE}/debian . --exclude=.svn
 dpkg-buildpackage -S
 cd ${RELEASE}/debian
 rm -rf ladvd-*
