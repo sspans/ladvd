@@ -1,34 +1,56 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_INIT(ladvd, 0.7-alpha, sten@blinkenlights.nl)
+AC_INIT([ladvd], [0.7-alpha], [sten@blinkenlights.nl])
 AC_CANONICAL_TARGET
-AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 AC_CONFIG_SRCDIR([src/config.h.in])
 AC_CONFIG_HEADER([src/config.h])
+AM_INIT_AUTOMAKE([subdir-objects -Wall -Werror foreign])
 
 # Checks for programs.
 AC_PROG_CC
 AC_GNU_SOURCE
 AC_PROG_INSTALL
+AC_PROG_LIBTOOL
+AM_PROG_CC_C_O
 
+# daemon user
+package_user="$PACKAGE_NAME"
 
-if test -n "$GCC"; then
-    CFLAGS="$CFLAGS -Wall"
-fi
+AC_ARG_WITH([user],
+	    [AS_HELP_STRING([--with-user=USER],[user to switch to])],
+	    [package_user="$withval"])
+AC_DEFINE_UNQUOTED(PACKAGE_USER,"$package_user",[user to switch to])
+AC_SUBST([PACKAGE_USER], ["$package_user"])
 
-AC_ARG_ENABLE(debug,
-[  --enable-debug           Enable debugging options (bugreports and developers only)],
-	enable_debug="$enableval", enable_debug="no")
+# pidfile
+AC_ARG_WITH([pid_dir],
+	    [AS_HELP_STRING([--with-pid-dir=PATH],[location of the pid file])],
+	    [pid_dir="$withval"],[])
 
-if test "$enable_debug" = "yes"; then
-    CFLAGS="$CFLAGS -DDEBUG"
-fi
+AS_IF([test -n "$pid_dir"],
+    [AC_DEFINE_UNQUOTED(PACKAGE_PID_DIR,"$pid_dir",[location of pid file])],
+    [AC_DEFINE(PACKAGE_PID_DIR,"/var/run",[location of pid file])]
+)
+AC_DEFINE(PACKAGE_PID_FILE, PACKAGE_PID_DIR "/" PACKAGE_NAME ".pid", [pid file])
+
+# chroot dir
+AC_ARG_WITH([chroot_dir],
+	[AS_HELP_STRING([--with-chroot-dir=PATH],[location of the chroot dir])],
+	[chroot_dir="$withval"],[])
+
+AS_IF([test -n "$chroot_dir"],
+    [AC_DEFINE_UNQUOTED(PACKAGE_CHROOT_DIR,"$pid_dir",[location of chroot])],
+    [AC_DEFINE(PACKAGE_CHROOT_DIR,"/var/run/" PACKAGE_NAME,[location of chroot])]
+)
 
 if test "$target_os" = "linux-gnu"; then
     AC_DEFINE(HAVE_PROC_SYS_NET,1, [define if /proc/sys/net should be used])
     AC_DEFINE(HAVE_SYSFS,1, [define if /sys should be used])
 fi
+
+# check unit tests
+PKG_CHECK_MODULES()
 
 # Checks for header files.
 AC_HEADER_STDC
@@ -133,36 +155,6 @@ if test "$ac_cv_header_sys_capability_h" = "yes" ; then
     fi
 fi
 
-# daemon user
-package_user="$PACKAGE_NAME"
-
-AC_ARG_WITH([user],
-	    [AS_HELP_STRING([--with-user=USER],[user to switch to])],
-	    [package_user="$withval"])
-AC_DEFINE_UNQUOTED(PACKAGE_USER,"$package_user",[user to switch to])
-AC_SUBST([PACKAGE_USER], ["$package_user"])
-
-# pidfile
-AC_ARG_WITH([pid_dir],
-	    [AS_HELP_STRING([--with-pid-dir=PATH],[location of the pid file])],
-	    [pid_dir="$withval"],[])
-
-AS_IF([test -n "$pid_dir"],
-    [AC_DEFINE_UNQUOTED(PACKAGE_PID_DIR,"$pid_dir",[location of pid file])],
-    [AC_DEFINE(PACKAGE_PID_DIR,"/var/run",[location of pid file])]
-)
-AC_DEFINE(PACKAGE_PID_FILE, PACKAGE_PID_DIR "/" PACKAGE_NAME ".pid", [pid file])
-
-# chroot dir
-AC_ARG_WITH([chroot_dir],
-	[AS_HELP_STRING([--with-chroot-dir=PATH],[location of the chroot dir])],
-	[chroot_dir="$withval"],[])
-
-AS_IF([test -n "$chroot_dir"],
-    [AC_DEFINE_UNQUOTED(PACKAGE_CHROOT_DIR,"$pid_dir",[location of chroot])],
-    [AC_DEFINE(PACKAGE_CHROOT_DIR,"/var/run/" PACKAGE_NAME,[location of chroot])]
-)
-
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 AC_TYPE_SIZE_T
@@ -175,9 +167,10 @@ AC_FUNC_VPRINTF
 AC_CHECK_FUNCS([asprintf memcpy memset snprintf strdup strerror uname \
 		socketpair vsyslog], [],
 		AC_MSG_ERROR([required function missing]))
-AC_CHECK_FUNCS([setproctitle strlcpy strlcat strnvis])
+AC_CHECK_FUNCS([setproctitle strlcpy strlcat])
 
 AC_CONFIG_FILES([Makefile
-                 src/Makefile])
+                 src/Makefile
+                 tests/Makefile])
 AC_OUTPUT
 
