@@ -4,8 +4,8 @@
 
 #include "common.h"
 #include "util.h"
-#include "lldp.h"
-#include "tlv.h"
+#include "proto/lldp.h"
+#include "proto/tlv.h"
 
 
 size_t lldp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
@@ -15,6 +15,7 @@ size_t lldp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
     uint8_t *tlv;
     uint8_t *pos = packet;
     size_t length = ETHER_MAX_LEN;
+    tlv_t type;
 
     uint8_t cap = 0, cap_active = 0;
     struct netif *master;

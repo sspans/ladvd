@@ -4,9 +4,9 @@
 
 #include "common.h"
 #include "util.h"
-#include "fdp.h"
-#include "cdp.h"
-#include "tlv.h"
+#include "proto/fdp.h"
+#include "proto/cdp.h"
+#include "proto/tlv.h"
 
 size_t fdp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
 
@@ -17,6 +17,7 @@ size_t fdp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
     uint8_t *tlv;
     uint8_t *pos = packet;
     size_t length = ETHER_MAX_LEN;
+    tlv_t type;
 
     void *fdp_start, *cap_str;
     uint8_t addr_count = 0;

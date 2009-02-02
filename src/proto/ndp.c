@@ -4,8 +4,8 @@
 
 #include "common.h"
 #include "util.h"
-#include "ndp.h"
-#include "tlv.h"
+#include "proto/ndp.h"
+
 
 size_t ndp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
 

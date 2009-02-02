@@ -4,8 +4,8 @@
 
 #include "common.h"
 #include "util.h"
-#include "cdp.h"
-#include "tlv.h"
+#include "proto/cdp.h"
+#include "proto/tlv.h"
 
 size_t cdp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
 
@@ -16,6 +16,7 @@ size_t cdp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
     uint8_t *tlv;
     uint8_t *pos = packet;
     size_t length = ETHER_MAX_LEN;
+    tlv_t type;
 
     void *cdp_start;
     uint8_t cap = 0;
