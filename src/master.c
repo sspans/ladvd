@@ -35,11 +35,11 @@
 #include <linux/ethtool.h>
 #endif /* HAVE_LINUX_ETHTOOL_H */
 
-#include "lldp.h"
-#include "cdp.h"
-#include "edp.h"
-#include "fdp.h"
-#include "ndp.h"
+#include "proto/lldp.h"
+#include "proto/cdp.h"
+#include "proto/edp.h"
+#include "proto/fdp.h"
+#include "proto/ndp.h"
 
 #define max(a,b) ((a)<(b)?(b):(a))
 
