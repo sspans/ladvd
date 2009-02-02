@@ -4,7 +4,7 @@
 
 #include "common.h"
 #include "util.h"
-#include "lldp.h"
+#include "proto/lldp.h"
 
 #include <sys/ioctl.h>
 #include <sys/param.h>
