@@ -11,6 +11,7 @@ AM_INIT_AUTOMAKE([subdir-objects -Wall -Werror foreign])
 AC_PROG_CC
 AC_GNU_SOURCE
 AC_PROG_INSTALL
+AC_PROG_LIBTOOL
 AM_PROG_CC_C_O
 
 # daemon user
