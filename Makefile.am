@@ -1,4 +1,4 @@
-SUBDIRS = src
+SUBDIRS = src . tests
 dist_doc_DATA = LICENSE doc/ChangeLog doc/README
 man_MANS = doc/ladvd.8
 
