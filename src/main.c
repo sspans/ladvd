@@ -11,14 +11,11 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-char *progname;
+extern uint8_t loglevel;
+uint8_t do_detach = 1;
+uint8_t do_recv = 0;
 
-extern unsigned int loglevel;
-unsigned int do_detach = 1;
-unsigned int do_debug = 0;
-unsigned int do_recv = 0;
-
-void usage(const char *fn);
+void usage();
 
 int main(int argc, char *argv[]) {
 
@@ -54,9 +51,6 @@ int main(int argc, char *argv[]) {
     // clear sysinfo
     memset(&sysinfo, 0, sizeof(struct sysinfo));
 
-    // set progname
-    progname = argv[0];
-
     // Save argv. Duplicate so setproctitle emulation doesn't clobber it
     sargc = argc;
     sargv = my_calloc(argc + 1, sizeof(*sargv));
@@ -73,7 +67,7 @@ int main(int argc, char *argv[]) {
     while ((ch = getopt(argc, argv, "dfhm:noru:vc:l:CEFN")) != -1) {
 	switch(ch) {
 	    case 'd':
-		do_debug = 1;
+		loglevel = DEBUG;
 		do_detach = 0;
 		break;
 	    case 'f':
@@ -83,7 +77,7 @@ int main(int argc, char *argv[]) {
 		if ( (inet_pton(AF_INET, optarg, &sysinfo.maddr4) != 1) &&
 		     (inet_pton(AF_INET6, optarg, &sysinfo.maddr6) != 1) ) {
 		    my_log(CRIT, "invalid management address %s", optarg);
-		    usage(progname);
+		    usage();
 		}
 		break;
 	    case 'n':
@@ -104,7 +98,7 @@ int main(int argc, char *argv[]) {
 	    case 'c':
 		// two-letter ISO 3166 country code
 		if (strlen(optarg) != 2)
-		    usage(progname);
+		    usage();
 		// in capital ASCII letters
 		sysinfo.country[0] = toupper(optarg[0]);
 		sysinfo.country[1] = toupper(optarg[1]);
@@ -112,7 +106,7 @@ int main(int argc, char *argv[]) {
 	    case 'l':
 		if (strlcpy(sysinfo.location, optarg, 
 			sizeof(sysinfo.location)) == 0)
-		    usage(progname);
+		    usage();
 		break;
 	    case 'C':
 		protos[PROTO_CDP].enabled = 1;
@@ -127,7 +121,7 @@ int main(int argc, char *argv[]) {
 		protos[PROTO_NDP].enabled = 1;
 		break;
 	    default:
-		usage(progname);
+		usage();
 	}
     }
 
@@ -140,7 +134,7 @@ int main(int argc, char *argv[]) {
 	my_fatal("unable fetch interfaces");
 
     // validate username
-    if ((do_debug == 0) && (pwd = getpwnam(username)) == NULL)
+    if ((loglevel != DEBUG) && (pwd = getpwnam(username)) == NULL)
 	my_fatal("user %s does not exist", username);
 
     // fetch system details
@@ -199,7 +193,7 @@ int main(int argc, char *argv[]) {
 	// cleanup
 	close(mfd);
 
-	if (do_debug == 0)
+	if (loglevel != DEBUG)
 	    my_drop_privs(pwd);
 	setproctitle("child");
     }
@@ -217,11 +211,12 @@ int main(int argc, char *argv[]) {
 	    goto sleep;
 	}
 
-	netif = netifs;
-	while ((netif = netif_iter(netif, sargc)) != NULL) {
+	netif = NULL;
+	while ((netif = netif_iter(netif, netifs, sargc)) != NULL) {
 
 	    my_log(INFO, "starting loop with interface %s", netif->name); 
 
+	    subif = NULL;
 	    while ((subif = subif_iter(subif, netif)) != NULL) {
 
 		// populate mreq
@@ -264,7 +259,6 @@ int main(int argc, char *argv[]) {
 		    }
 		}
 	    }
-	    netif = netif->next;
 	}
 
 sleep:
@@ -278,7 +272,8 @@ sleep:
     return (EXIT_SUCCESS);
 }
 
-void usage(const char *fn) {
+void usage() {
+    extern char *__progname;
 
     fprintf(stderr, "%s version %s\n" 
 	"Usage: %s [-c] [-l] [-f] INTERFACE INTERFACE\n"
@@ -297,7 +292,7 @@ void usage(const char *fn) {
 	    "\t-E = Enable EDP\n"
 	    "\t-F = Enable FDP\n"
 	    "\t-N = Enable NDP\n",
-	    PACKAGE_NAME, PACKAGE_VERSION, fn, PACKAGE_USER);
+	    PACKAGE_NAME, PACKAGE_VERSION, __progname, PACKAGE_USER);
 
     exit(EXIT_FAILURE);
 }

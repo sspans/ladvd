@@ -93,18 +93,25 @@ size_t my_msend(int s, struct master_request *mreq) {
     }
 };
 
-struct netif *netif_iter(struct netif *netifs, int argc) {
-    struct netif *netif;
+struct netif *netif_iter(struct netif *netif, struct netif *netifs, int argc) {
 
-    for (netif = netifs; netif != NULL; netif = netif->next) {
+    if (netifs == NULL)
+	return NULL;
+
+    if (netif == NULL)
+	netif = netifs;
+    else
+	netif = netif->next;
+
+    for (; netif != NULL; netif = netif->next) {
 	// skip autodetected slaves
 	if ((argc == 0) && (netif->slave == 1))
 	    continue;
-	
+
 	// skip unlisted interfaces
 	if ((argc > 0) && (netif->argv == 0))
 	    continue;
-	
+
 	// skip masters without slaves
 	if ((netif->type > 0) && (netif->subif == NULL)) {
 	    my_log(INFO, "skipping interface %s", netif->name);
@@ -118,6 +125,10 @@ struct netif *netif_iter(struct netif *netifs, int argc) {
 }
 
 struct netif *subif_iter(struct netif *subif, struct netif *netif) {
+
+    if (netif == NULL)
+	return NULL;
+
     if (subif == NULL) {
 	if (netif->type > 0)
 	    return(netif->subif);
@@ -133,6 +144,9 @@ struct netif *subif_iter(struct netif *subif, struct netif *netif) {
 struct netif *netif_byindex(struct netif *netifs, uint32_t index) {
     struct netif *netif;
 
+    if (netifs == NULL)
+	return NULL;
+
     for (netif = netifs; netif != NULL; netif = netif->next) {
 	if (netif->index == index)
 	    break;
@@ -143,6 +157,9 @@ struct netif *netif_byindex(struct netif *netifs, uint32_t index) {
 struct netif *netif_byname(struct netif *netifs, char *name) {
     struct netif *netif;
 
+    if (netifs == NULL || name == NULL)
+	return NULL;
+
     for (netif = netifs; netif != NULL; netif = netif->next) {
 	if (strcmp(netif->name, name) == 0)
 	    break;
@@ -150,9 +167,12 @@ struct netif *netif_byname(struct netif *netifs, char *name) {
     return(netif);
 }
 
-int read_line(char *path, char *line, uint16_t len) {
+int read_line(const char *path, char *line, uint16_t len) {
     FILE *file;
     char *newline;
+
+    if (path == NULL || line == NULL)
+	return(-1);
 
     if ((file = fopen(path, "r")) == NULL)
 	return(-1);
@@ -226,7 +246,7 @@ void my_drop_privs(struct passwd *pwd) {
 /*
  * Actually, this is the standard IP checksum algorithm.
  */
-uint16_t my_chksum(void *data, size_t length, int cisco) {
+uint16_t my_chksum(const void *data, size_t length, int cisco) {
     uint32_t sum = 0;
     const uint16_t *d = (const uint16_t *)data;
 

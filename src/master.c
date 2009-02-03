@@ -130,8 +130,8 @@ struct sock_filter master_filter[] = {
     BPF_STMT(BPF_RET+BPF_K, 0)
 };
 
-extern unsigned int do_debug;
-extern unsigned int do_recv;
+extern uint8_t loglevel;
+extern uint8_t do_recv;
 
 void master_init(struct proto *protos, struct netif *netifs, uint16_t netifc,
 		 int ac, struct passwd *pwd, int cmdfd) {
@@ -173,14 +173,15 @@ void master_init(struct proto *protos, struct netif *netifs, uint16_t netifc,
     if (do_recv != 0) {
 
 	// init
-	netif = netifs;
 	rfds = my_calloc(netifc, sizeof(struct master_rfd));
 	i = 0;
 
-	while ((netif = netif_iter(netif, ac)) != NULL) {
+	netif = NULL;
+	while ((netif = netif_iter(netif, netifs, ac)) != NULL) {
 	    my_log(INFO, "starting receive loop with interface %s",
 			 netif->name);
 
+	    subif = NULL;
 	    while ((subif = subif_iter(subif, netif)) != NULL) {
 		my_log(INFO, "listening on %s", subif->name);
 
@@ -196,8 +197,6 @@ void master_init(struct proto *protos, struct netif *netifs, uint16_t netifc,
 
 		i++;
 	    }
-
-	    netif = netif->next;
 	}
 
 	netifc = i;
@@ -205,7 +204,7 @@ void master_init(struct proto *protos, struct netif *netifs, uint16_t netifc,
     }
 
     // debug
-    if (do_debug != 0) {
+    if (loglevel == DEBUG) {
 
 	// zero
 	memset(&pcap_hdr, 0, sizeof(pcap_hdr));
@@ -408,7 +407,7 @@ int master_rsocket(struct master_rfd *rfd, int mode) {
     int socket = -1;
 
     // return stdout on debug
-    if ((do_debug != 0) && (rfd == NULL))
+    if ((loglevel == DEBUG) && (rfd == NULL))
 	return(1);
 
 #ifdef HAVE_NETPACKET_PACKET_H
@@ -519,7 +518,7 @@ size_t master_rsend(int s, struct master_request *mreq) {
     struct timeval tv;
 
     // debug
-    if (do_debug != 0) {
+    if (loglevel == DEBUG) {
 
 	// write a pcap record header
 	if (gettimeofday(&tv, NULL) == 0) {
