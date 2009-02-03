@@ -412,7 +412,7 @@ int master_rsocket(struct master_rfd *rfd, int mode) {
 	return(1);
 
 #ifdef HAVE_NETPACKET_PACKET_H
-    socket = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
+    socket = my_socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
 
     // socket open failed
     if (socket < 0)
