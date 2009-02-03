@@ -8,7 +8,7 @@
 #define FATAL	-1
 #define CRIT	0
 #define WARN	1
-#define NFO	2
+#define INFO	2
 #define DEBUG	3
 
 #define my_log(p, ...)	    __my_log(__func__, p, __VA_ARGS__)
