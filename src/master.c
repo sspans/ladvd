@@ -204,7 +204,7 @@ void master_init(struct proto *protos, struct netif *netifs, uint16_t netifc,
     }
 
     // debug
-    if (loglevel == DEBUG) {
+    if (loglevel >= DEBUG) {
 
 	// zero
 	memset(&pcap_hdr, 0, sizeof(pcap_hdr));
@@ -407,7 +407,7 @@ int master_rsocket(struct master_rfd *rfd, int mode) {
     int socket = -1;
 
     // return stdout on debug
-    if ((loglevel == DEBUG) && (rfd == NULL))
+    if ((loglevel >= DEBUG) && (rfd == NULL))
 	return(1);
 
 #ifdef HAVE_NETPACKET_PACKET_H
@@ -518,7 +518,7 @@ size_t master_rsend(int s, struct master_request *mreq) {
     struct timeval tv;
 
     // debug
-    if (loglevel == DEBUG) {
+    if (loglevel >= DEBUG) {
 
 	// write a pcap record header
 	if (gettimeofday(&tv, NULL) == 0) {

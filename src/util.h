@@ -5,14 +5,15 @@
 #include "master.h"
 #include <pwd.h>
 
-#define CRIT    1
-#define WARN    2
-#define INFO    3
-#define DEBUG   4
+#define FATAL	-1
+#define CRIT	0
+#define WARN	1
+#define NFO	2
+#define DEBUG	3
 
 #define my_log(p, ...)	    __my_log(__func__, p, __VA_ARGS__)
-#define my_fatal(...)	    my_log(CRIT, __VA_ARGS__); exit(EXIT_FAILURE)
-void __my_log(const char *func, uint8_t prio, const char *fmt, ...);
+#define my_fatal(...)	    __my_log(__func__, FATAL, __VA_ARGS__)
+void __my_log(const char *func, int8_t prio, const char *fmt, ...);
 
 void *my_malloc(size_t size);
 void *my_calloc(size_t, size_t);

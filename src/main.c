@@ -11,7 +11,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-extern uint8_t loglevel;
+extern int8_t loglevel;
 uint8_t do_detach = 1;
 uint8_t do_recv = 0;
 
@@ -134,7 +134,7 @@ int main(int argc, char *argv[]) {
 	my_fatal("unable fetch interfaces");
 
     // validate username
-    if ((loglevel != DEBUG) && (pwd = getpwnam(username)) == NULL)
+    if ((loglevel < DEBUG) && (pwd = getpwnam(username)) == NULL)
 	my_fatal("user %s does not exist", username);
 
     // fetch system details
@@ -193,7 +193,7 @@ int main(int argc, char *argv[]) {
 	// cleanup
 	close(mfd);
 
-	if (loglevel != DEBUG)
+	if (loglevel < DEBUG)
 	    my_drop_privs(pwd);
 	setproctitle("child");
     }

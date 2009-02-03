@@ -16,10 +16,10 @@
 #include <grp.h>
 #include <unistd.h>
 
-uint8_t loglevel = CRIT;
+int8_t loglevel = CRIT;
 extern uint8_t do_detach;
 
-void __my_log(const char *func, uint8_t prio, const char *fmt, ...) {
+void __my_log(const char *func, int8_t prio, const char *fmt, ...) {
 
     va_list ap;
     va_start(ap, fmt);
@@ -36,6 +36,9 @@ void __my_log(const char *func, uint8_t prio, const char *fmt, ...) {
 	fprintf(stderr, "\n");
     }
     va_end(ap);
+
+    if (prio == FATAL)
+	exit(EXIT_FAILURE);
 }
 
 void * my_malloc(size_t size) {
