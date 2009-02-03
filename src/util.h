@@ -10,8 +10,10 @@
 #define INFO    3
 #define DEBUG   4
 
-void my_log(unsigned int prio, const char *fmt, ...);
-void my_fatal(const char *fmt, ...);
+#define my_log(p, ...)	    __my_log(__func__, p, __VA_ARGS__)
+#define my_fatal(...)	    my_log(CRIT, __VA_ARGS__); exit(EXIT_FAILURE)
+void __my_log(const char *func, uint8_t prio, const char *fmt, ...);
+
 void *my_malloc(size_t size);
 void *my_calloc(size_t, size_t);
 char *my_strdup(const char *str);

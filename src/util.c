@@ -16,11 +16,10 @@
 #include <grp.h>
 #include <unistd.h>
 
-unsigned int loglevel = CRIT;
-extern unsigned int do_detach;
-extern unsigned int do_debug;
+uint8_t loglevel = CRIT;
+extern uint8_t do_detach;
 
-void my_log(unsigned int prio, const char *fmt, ...) {
+void __my_log(const char *func, uint8_t prio, const char *fmt, ...) {
 
     va_list ap;
     va_start(ap, fmt);
@@ -29,27 +28,14 @@ void my_log(unsigned int prio, const char *fmt, ...) {
 	return;
 
     if (do_detach == 1) {
-	(void) vsyslog(LOG_INFO, fmt, ap);
+	vsyslog(LOG_INFO, fmt, ap);
     } else {
-	(void) vfprintf(stderr, fmt, ap);
-	(void) fprintf(stderr, "\n");
+	if (loglevel == DEBUG)
+	    fprintf(stderr, "%s: ", func);
+	vfprintf(stderr, fmt, ap);
+	fprintf(stderr, "\n");
     }
     va_end(ap);
-}
-
-void my_fatal(const char *fmt, ...) {
-    va_list ap;
-
-    va_start(ap, fmt);
-    if (do_detach == 1) {
-	(void) vsyslog(LOG_INFO, fmt, ap);
-    } else {
-	(void) vfprintf(stderr, fmt, ap);
-	(void) fprintf(stderr, "\n");
-    }
-    va_end(ap);
-
-    exit(EXIT_FAILURE);
 }
 
 void * my_malloc(size_t size) {
