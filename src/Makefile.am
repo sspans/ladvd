@@ -13,5 +13,5 @@ libproto_la_SOURCES = $(common_headers) protos/tlv.h \
 
 sbin_PROGRAMS = ladvd
 ladvd_SOURCES = $(common_headers) main.c main.h \
-		master.c master.h util.c sysinfo.c netif.c master.c
+		master.c master.h util.c sysinfo.c netif.c
 ladvd_LDADD = $(lib_LTLIBRARIES) $(LIBOBJS) @CAP_LIBS@
