@@ -7,7 +7,6 @@
 #include "proto/edp.h"
 #include "proto/tlv.h"
 
-unsigned int edp_count = 0;
 
 size_t edp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
 
@@ -19,6 +18,8 @@ size_t edp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
     uint8_t *pos = packet;
     size_t length = ETHER_MAX_LEN;
     tlv_t type;
+
+    static uint16_t edp_count = 0;
 
     void *edp_start;
     struct netif *master;
