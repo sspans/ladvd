@@ -9,7 +9,7 @@
 #include <sys/select.h>
 #include <sys/types.h>
 #include <sys/time.h>
-#include <time.h>
+#include <fcntl.h>
 #include <unistd.h>
 
 #ifdef USE_CAPABILITIES
