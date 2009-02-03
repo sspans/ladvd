@@ -20,7 +20,7 @@ size_t lldp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
     uint8_t cap = 0, cap_active = 0;
     struct netif *master;
 
-    static uint8_t lldp_dst[] = LLDP_MULTICAST_ADDR;
+    const uint8_t lldp_dst[] = LLDP_MULTICAST_ADDR;
 
     // fixup master netif
     if (netif->master != NULL)
