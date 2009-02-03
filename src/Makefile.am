@@ -1,7 +1,7 @@
 
-common_headers = common.h ether.h util.h
+common_headers = common.h ether.h master.h util.h
 
-lib_LTLIBRARIES = libcompat.la libproto.la
+noinst_LTLIBRARIES = libcompat.la libproto.la libmisc.la
 libcompat_la_SOURCES = compat.h \
 	compat/strlcpy.c compat/strlcat.c compat/setproctitle.c
 libproto_la_SOURCES = $(common_headers) protos/tlv.h \
@@ -10,8 +10,9 @@ libproto_la_SOURCES = $(common_headers) protos/tlv.h \
 	proto/edp.c protos/edp.h \
 	proto/fdp.c protos/fdp.h \
 	proto/ndp.c protos/ndp.h
+libmisc_la_SOURCES = $(common_headers) master.c \
+	util.c sysinfo.c netif.c
 
 sbin_PROGRAMS = ladvd
-ladvd_SOURCES = $(common_headers) main.c main.h \
-		master.c master.h util.c sysinfo.c netif.c
-ladvd_LDADD = $(lib_LTLIBRARIES) $(LIBOBJS) @CAP_LIBS@
+ladvd_SOURCES = $(common_headers) main.c main.h
+ladvd_LDADD = $(noinst_LTLIBRARIES) @CAP_LIBS@
