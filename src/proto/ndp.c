@@ -5,6 +5,7 @@
 #include "common.h"
 #include "util.h"
 #include "proto/ndp.h"
+#include "proto/tlv.h"
 
 
 size_t ndp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
