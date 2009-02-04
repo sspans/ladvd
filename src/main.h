@@ -2,20 +2,6 @@
 #ifndef _main_h
 #define _main_h
 
-#include "proto/lldp.h"
-#include "proto/cdp.h"
-#include "proto/edp.h"
-#include "proto/fdp.h"
-#include "proto/ndp.h"
-
-#define SLEEPTIME   30
-
-#define PROTO_LLDP  0
-#define PROTO_CDP   1
-#define PROTO_EDP   2
-#define PROTO_FDP   3
-#define PROTO_NDP   4
-
 // supported protocols
 struct proto protos[] = {
   { 1, "LLDP", LLDP_MULTICAST_ADDR, &lldp_packet, {0}, 0 },

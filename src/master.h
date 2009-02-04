@@ -2,7 +2,6 @@
 #ifndef _master_h
 #define _master_h
 
-#include <pwd.h>
 #include <sys/time.h>
 #include <event.h>
 
@@ -29,10 +28,14 @@ struct master_rfd {
     char name[IFNAMSIZ];
     uint8_t hwaddr[ETHER_ADDR_LEN];
     int fd;
+    int cfd;
+    struct event event;
 };
 
-void master_init(struct proto *protos, struct netif *, uint16_t netifc,
-		 int ac, struct passwd *pwd, int cmdfd, int msgfd);
+void master_init(struct netif *, uint16_t netifc, int ac,
+		 int cmdfd, int msgfd);
+void master_cmd(int fd, short event, int *rawfd);
+void master_recv(int fd, short event, struct master_rfd *rfd);
 int master_rcheck(struct master_msg *mreq);
 int master_rsocket(struct master_rfd *rfd, int mode);
 void master_rconf(struct master_rfd *rfd, struct proto *protos);

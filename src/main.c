@@ -4,6 +4,7 @@
 
 #include "common.h"
 #include "util.h"
+#include "protos.h"
 #include "main.h"
 #include <ctype.h>
 #include <unistd.h>
@@ -192,7 +193,7 @@ int main(int argc, char *argv[]) {
 	close(mpair[0]);
 
 	// enter the master loop
-	master_init(protos, netifs, netifc, sargc, pwd, cpair[1], mpair[1]);
+	master_init(netifs, netifc, sargc, cpair[1], mpair[1]);
 
 	// not reached
 	my_fatal("master process failed");

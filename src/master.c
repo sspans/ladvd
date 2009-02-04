@@ -4,12 +4,15 @@
 
 #include "common.h"
 #include "util.h"
+#include "protos.h"
 #include "master.h"
 #include <sys/ioctl.h>
 #include <sys/select.h>
+#include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/time.h>
 #include <fcntl.h>
+#include <time.h>
 #include <unistd.h>
 
 #ifdef USE_CAPABILITIES
@@ -35,13 +38,6 @@
 #include <linux/ethtool.h>
 #endif /* HAVE_LINUX_ETHTOOL_H */
 
-#include "proto/lldp.h"
-#include "proto/cdp.h"
-#include "proto/edp.h"
-#include "proto/fdp.h"
-#include "proto/ndp.h"
-
-#define max(a,b) ((a)<(b)?(b):(a))
 
 #ifdef HAVE_NET_BPF_H
 struct bpf_insn master_filter[] = {
@@ -130,11 +126,12 @@ struct sock_filter master_filter[] = {
     BPF_STMT(BPF_RET+BPF_K, 0)
 };
 
+extern struct proto protos[];
 extern uint8_t loglevel;
 extern uint8_t do_recv;
 
-void master_init(struct proto *protos, struct netif *netifs, uint16_t netifc,
-		 int ac, struct passwd *pwd, int cmdfd, int msgfd) {
+void master_init(struct netif *netifs, uint16_t netifc, int ac,
+		 int cmdfd, int msgfd) {
 
     // raw socket
     int rawfd;
@@ -142,6 +139,7 @@ void master_init(struct proto *protos, struct netif *netifs, uint16_t netifc,
     // interfaces
     struct netif *netif = NULL, *subif = NULL;
     struct master_rfd *rfds = NULL;
+    unsigned int i;
 
     // pcap
     pcap_hdr_t pcap_hdr;
@@ -151,14 +149,9 @@ void master_init(struct proto *protos, struct netif *netifs, uint16_t netifc,
     cap_t caps;
 #endif /* USE_CAPABILITIES */
 
-    // select set
-    fd_set rset;
-    int nfds, i, rcount = 0;
-    size_t len;
+    // events
+    struct event events;
 
-    // packet
-    struct master_msg mreq, *rbuf = NULL, *mrecv;
-    struct ether_hdr *ether;
 
     // proctitle
     setproctitle("master [priv]");
@@ -189,6 +182,7 @@ void master_init(struct proto *protos, struct netif *netifs, uint16_t netifc,
 		strlcpy(rfds[i].name, subif->name, IFNAMSIZ);
 		memcpy(rfds[i].hwaddr, subif->hwaddr, ETHER_ADDR_LEN);
 		rfds[i].fd = master_rsocket(&rfds[i], O_RDONLY);
+		rfds[i].cfd = msgfd;
 
 		if (rfds[i].fd < 0)
 		    my_fatal("opening raw socket failed");
@@ -200,7 +194,6 @@ void master_init(struct proto *protos, struct netif *netifs, uint16_t netifc,
 	}
 
 	netifc = i;
-	rbuf = my_calloc(netifc * 2, sizeof(*rbuf));
     }
 
     // debug
@@ -237,90 +230,100 @@ void master_init(struct proto *protos, struct netif *netifs, uint16_t netifc,
     }
 
 
-    FD_ZERO(&rset);
-    FD_SET(cmdfd, &rset);
-    nfds = cmdfd;
+    // initalize the event library
+    event_init();
 
+    // listen for requests from the child
+    event_set(&events, cmdfd, EV_READ|EV_PERSIST, (void *)master_cmd, &rawfd);
+    event_add(&events, NULL);
+
+    // XXX: listen for sigchild
+
+    // listen for received packets
     if (do_recv != 0) {
 	for (i = 0; i < netifc; i++) {
-	    FD_SET(rfds[i].fd, &rset);
-	    nfds = max(nfds, rfds[i].fd);
+	    event_set(&rfds[i].event, rfds[i].fd, EV_READ|EV_PERSIST,
+		(void *)master_recv, &rfds[i]);
+	    event_add(&rfds[i].event, NULL);
 	}
     }
 
-    nfds++;
+    // wait for events
+    event_dispatch();
 
-    while (select(nfds, &rset, NULL, NULL, NULL) > 0) {
+    // not reached
+    exit(EXIT_FAILURE);
+}
 
-	if (FD_ISSET(cmdfd, &rset)) {
+void master_cmd(int cmdfd, short event, int *rawfd) {
+    struct master_msg mreq;
+    size_t len;
 
-	    // receive request
-	    len = recv(cmdfd, &mreq, MASTER_MSG_SIZE, MSG_DONTWAIT);
 
-	    if (len == 0)
-		continue;
+    // receive request
+    len = recv(cmdfd, &mreq, MASTER_MSG_SIZE, MSG_DONTWAIT);
 
-	    // check request size
-	    if (len != MASTER_MSG_SIZE)
-		my_fatal("invalid request received");
+    if (len == 0)
+	return;
 
-	    // validate request
-	    if (master_rcheck(&mreq) != EXIT_SUCCESS)
-		my_fatal("invalid request supplied");
+    // check request size
+    if (len != MASTER_MSG_SIZE)
+	my_fatal("invalid request received");
 
-	    // transmit packet
-	    if (mreq.cmd == MASTER_SEND) {
-		mreq.len = master_rsend(rawfd, &mreq);
-		mreq.completed = 1;
-		write(cmdfd, &mreq, MASTER_MSG_SIZE);
+    // validate request
+    if (master_rcheck(&mreq) != EXIT_SUCCESS)
+	my_fatal("invalid request supplied");
+
+    // transmit packet
+    if (mreq.cmd == MASTER_SEND) {
+	mreq.len = master_rsend(*rawfd, &mreq);
+	mreq.completed = 1;
+	write(cmdfd, &mreq, MASTER_MSG_SIZE);
 #if HAVE_LINUX_ETHTOOL_H
-	    // fetch ethtool details
-	    } else if (mreq.cmd == MASTER_ETHTOOL) {
-		mreq.len = master_ethtool(rawfd, &mreq);
-		mreq.completed = 1;
-		write(cmdfd, &mreq, MASTER_MSG_SIZE);
+    // fetch ethtool details
+    } else if (mreq.cmd == MASTER_ETHTOOL) {
+	mreq.len = master_ethtool(*rawfd, &mreq);
+	mreq.completed = 1;
+	write(cmdfd, &mreq, MASTER_MSG_SIZE);
 #endif /* HAVE_LINUX_ETHTOOL_H */
-	    // invalid request
-	    } else {
-		my_fatal("invalid request received");
-	    }
-	} else {
-	    FD_SET(cmdfd, &rset);
-	}
+    // invalid request
+    } else {
+	my_fatal("invalid request received");
+    }
+}
 
-	if (do_recv == 0)
+
+void master_recv(int fd, short event, struct master_rfd *rfd) {
+    // packet
+    struct master_msg mrecv;
+    struct ether_hdr *ether;
+    static unsigned int rcount = 0;
+    unsigned int p;
+
+
+    mrecv.index = rfd->index;
+    mrecv.len = recv(rfd->fd, mrecv.msg, ETHER_MAX_LEN, MSG_DONTWAIT);
+
+    // skip small packets
+    if (mrecv.len < ETHER_MIN_LEN)
+	return;
+
+    // skip locally generated packets
+    ether = (struct ether_hdr *)mrecv.msg;
+    if (memcmp(rfd->hwaddr, ether->src, ETHER_ADDR_LEN) == 0)
+	return;
+
+    // detect the protocol
+    for (p = 0; protos[p].name != NULL; p++) {
+	if (memcmp(protos[p].dst_addr, ether->dst, ETHER_ADDR_LEN) != 0)
 	    continue;
 
-	for (i = 0; i < netifc; i++) {
-
-	    // skip
-	    if (!FD_ISSET(rfds[i].fd, &rset)) {
-		FD_SET(rfds[i].fd, &rset);
-		continue;
-	    }
-
-	    // skip if the buffer is full
-	    if (rcount >= (netifc * 2))
-		continue;
-
-	    mrecv = &rbuf[rcount];
-	    mrecv->index = rfds[i].index;
-	    mrecv->len = recv(rfds[i].fd, mrecv->msg, 
-			      ETHER_MAX_LEN, MSG_DONTWAIT);
-
-	    // skip small packets
-	    if (mrecv->len < ETHER_MIN_LEN)
-		continue;
-
-	    // skip locally generated packets
-	    ether = (struct ether_hdr *)mrecv->msg;
-	    if (memcmp(rfds[i].hwaddr, ether->src, ETHER_ADDR_LEN) == 0)
-		continue;
-
-	    write(1, mrecv->msg, mrecv->len);
-	    rcount++;
-	}
+	mrecv.proto = p;
+	break;
     }
+
+    write(rfd->cfd, mrecv.msg, mrecv.len);
+    rcount++;
 }
 
 
@@ -404,22 +407,22 @@ int master_rcheck(struct master_msg *mreq) {
 
 int master_rsocket(struct master_rfd *rfd, int mode) {
 
-    int socket = -1;
+    int rsocket = -1;
 
     // return stdout on debug
     if ((loglevel >= DEBUG) && (rfd == NULL))
 	return(1);
 
 #ifdef HAVE_NETPACKET_PACKET_H
-    socket = my_socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
+    rsocket = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
 
     // socket open failed
-    if (socket < 0)
-	return(socket);
+    if (rsocket < 0)
+	return(rsocket);
 
     // return unbound socket if requested
     if (rfd == NULL)
-	return(socket);
+	return(rsocket);
 
     // bind the socket to rfd
     struct sockaddr_ll sa;
@@ -429,7 +432,7 @@ int master_rsocket(struct master_rfd *rfd, int mode) {
     sa.sll_ifindex = rfd->index;
     sa.sll_protocol = htons(ETH_P_ALL);
 
-    if (bind(socket, (struct sockaddr *)&sa, sizeof (sa)) != 0)
+    if (bind(rsocket, (struct sockaddr *)&sa, sizeof (sa)) != 0)
 	my_fatal("failed to bind socket to %s", rfd->name);
 
 #elif HAVE_NET_BPF_H
@@ -438,16 +441,16 @@ int master_rsocket(struct master_rfd *rfd, int mode) {
 
     do {
 	snprintf(dev, sizeof(dev), "/dev/bpf%d", n++);
-	socket = open(dev, mode);
-    } while (socket < 0 && errno == EBUSY);
+	rsocket = open(dev, mode);
+    } while (rsocket < 0 && errno == EBUSY);
 
     // no free bpf available
-    if (socket < 0)
-	return(socket);
+    if (rsocket < 0)
+	return(rsocket);
 
     // return unbound socket if requested
     if (rfd == NULL)
-	return(socket);
+	return(rsocket);
 
     // bind the socket to rfd
     struct ifreq ifr;
@@ -456,11 +459,11 @@ int master_rsocket(struct master_rfd *rfd, int mode) {
     memset(&ifr, 0, sizeof(ifr));
     strlcpy(ifr.ifr_name, rfd->name, IFNAMSIZ);
 
-    if (ioctl(socket, BIOCSETIF, (caddr_t)&ifr) < 0) {
+    if (ioctl(rsocket, BIOCSETIF, (caddr_t)&ifr) < 0) {
 	my_fatal("failed to bind socket to %s", rfd->name);
 #endif
 
-    return(socket);
+    return(rsocket);
 }
 
 
