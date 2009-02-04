@@ -487,7 +487,7 @@ int master_rsocket(struct master_rfd *rfd, int mode) {
     memset(&ifr, 0, sizeof(ifr));
     strlcpy(ifr.ifr_name, rfd->name, IFNAMSIZ);
 
-    if (ioctl(rsocket, BIOCSETIF, (caddr_t)&ifr) < 0) {
+    if (ioctl(rsocket, BIOCSETIF, (caddr_t)&ifr) < 0)
 	my_fatal("failed to bind socket to %s", rfd->name);
 #endif
 
@@ -517,10 +517,10 @@ void master_rconf(struct master_rfd *rfd, struct proto *protos) {
     struct bpf_program fprog;
 
     memset(&fprog, 0, sizeof(fprog));
-    fprog.bf_insns = &master_filter; 
-    fprog.bf_len = sizeof(master_filter) / sizeof(struct sock_filter);
+    fprog.bf_insns = master_filter; 
+    fprog.bf_len = sizeof(master_filter) / sizeof(struct bpf_program);
 
-    if (ioctl(rfd->fd, BIOCSETF, (caddr_t)&prog) < 0) {
+    if (ioctl(rfd->fd, BIOCSETF, (caddr_t)&fprog) < 0)
 	my_fatal("unable to configure bpf filter for %s", rfd->name);
 #endif
 
@@ -534,7 +534,14 @@ void master_rconf(struct master_rfd *rfd, struct proto *protos) {
 	if (protos[p].enabled == 0)
 	    continue;
 
+#ifdef AF_PACKET
 	memcpy(ifr.ifr_hwaddr.sa_data, protos[p].dst_addr, ETHER_ADDR_LEN);
+#endif
+#ifdef AF_LINK
+	ifr.ifr_addr.sa_family = AF_UNSPEC;
+	memcpy(ifr.ifr_addr.sa_data, protos[p].dst_addr, ETHER_ADDR_LEN);
+#endif
+
 	if (ioctl(rfd->fd, SIOCADDMULTI, &ifr) < 0)
 	    my_fatal("unable to add %s multicast to %s",
 		     protos[p].name, rfd->name);
@@ -572,7 +579,8 @@ size_t master_rsend(int s, struct master_msg *mreq) {
     sa.sll_ifindex = mreq->index;
     sa.sll_protocol = htons(ETH_P_ALL);
 
-    count = sendto(s, mreq->msg, mreq->len, 0, (struct sockaddr *)&sa, sizeof (sa));
+    count = sendto(s, mreq->msg, mreq->len, 0,
+		   (struct sockaddr *)&sa, sizeof (sa));
 #elif HAVE_NET_BPF_H
     struct ifreq ifr;
 
@@ -580,14 +588,14 @@ size_t master_rsend(int s, struct master_msg *mreq) {
     memset(&ifr, 0, sizeof(ifr));
     strlcpy(ifr.ifr_name, mreq->name, IFNAMSIZ);
 
-    if (ioctl(s, BIOCSETIF, (caddr_t)&ifr) < 0) {
+    if (ioctl(s, BIOCSETIF, (caddr_t)&ifr) < 0)
 	my_fatal("ioctl failed: %s", strerror(errno));
     count = write(s, mreq->msg, mreq->len);
 #endif
 
     if (count != mreq->len)
 	my_log(WARN, "only %d bytes written: %s", count, strerror(errno));
-    
+
     return(count);
 }
 
