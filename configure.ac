@@ -53,7 +53,8 @@ fi
 PKG_CHECK_MODULES([CHECK], [check >= 0.9.4])
 
 # libevent
-AC_CHECK_LIB(event, event_init, [], AC_MSG_ERROR([libevent is required]))
+AC_CHECK_LIB(event, event_init, AC_SUBST(EVENT_LIB,"-levent"),
+				AC_MSG_ERROR([libevent is required]))
 
 # Checks for header files.
 AC_HEADER_STDC
@@ -153,7 +154,7 @@ if test "$ac_cv_header_sys_capability_h" = "yes" ; then
     if test "$ac_cv_lib_cap_cap_init" = "yes"; then
 	AC_DEFINE(USE_CAPABILITIES,1,
 	[define if capabilities should be used])
-	AC_SUBST(CAP_LIBS,"-lcap")
+	AC_SUBST(CAP_LIB,"-lcap")
 	use_capabilities=yes
     fi
 fi

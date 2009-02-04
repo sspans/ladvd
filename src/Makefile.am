@@ -15,4 +15,4 @@ libmisc_la_SOURCES = $(common_headers) master.c \
 
 sbin_PROGRAMS = ladvd
 ladvd_SOURCES = $(common_headers) main.c main.h
-ladvd_LDADD = $(noinst_LTLIBRARIES) @CAP_LIBS@
+ladvd_LDADD = $(noinst_LTLIBRARIES) @EVENT_LIB@ @CAP_LIB@
