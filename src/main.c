@@ -233,6 +233,7 @@ int main(int argc, char *argv[]) {
 	    while ((subif = subif_iter(subif, netif)) != NULL) {
 
 		// populate mreq
+		memset(mreq, 0, sizeof(mreq));
 		mreq.index = subif->index;
 		strlcpy(mreq.name, subif->name, IFNAMSIZ);
 		mreq.cmd = MASTER_SEND;
