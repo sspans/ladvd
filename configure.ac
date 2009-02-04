@@ -50,7 +50,7 @@ if test "$target_os" = "linux-gnu"; then
 fi
 
 # check unit tests
-PKG_CHECK_MODULES([CHECK], [check >= 0.9.4])
+PKG_CHECK_MODULES([CHECK], [check >= 0.9.4], [], [true])
 
 # libevent
 AC_CHECK_LIB(event, event_init, AC_SUBST(EVENT_LIB,"-levent"),
