@@ -52,11 +52,14 @@ fi
 # check unit tests
 PKG_CHECK_MODULES([CHECK], [check >= 0.9.4])
 
+# libevent
+AC_CHECK_LIB(event, event_init, [], AC_MSG_ERROR([libevent is required]))
+
 # Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS([fcntl.h grp.h pwd.h stdarg.h stdint.h stdio.h syslog.h \
 		  sys/file.h sys/utsname.h unistd.h sys/ioctl.h sys/types.h \
-		  sys/socket.h sys/time.h signal.h ctype.h], 
+		  sys/socket.h sys/time.h signal.h ctype.h event.h], 
 		 [], AC_MSG_ERROR([required header missing]))
 
 # bsd ifmedia
