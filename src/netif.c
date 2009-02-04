@@ -980,7 +980,7 @@ int netif_media(int cfd, struct netif *netif) {
 
 #if HAVE_LINUX_ETHTOOL_H
     struct ethtool_cmd ecmd;
-    struct master_request mreq;
+    struct master_msg mreq;
 #endif /* HAVE_LINUX_ETHTOOL_H */
 
 #if HAVE_NET_IF_MEDIA_H

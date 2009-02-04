@@ -77,15 +77,15 @@ int my_socket(int af, int type, int proto) {
     return(s);
 }
 
-size_t my_msend(int s, struct master_request *mreq) {
+size_t my_msend(int s, struct master_msg *mreq) {
     size_t count = 0;
 
-    count = write(s, mreq, MASTER_REQ_SIZE);
-    if (count != MASTER_REQ_SIZE)
+    count = write(s, mreq, MASTER_MSG_SIZE);
+    if (count != MASTER_MSG_SIZE)
 	my_fatal("only %d bytes written: %s", count, strerror(errno));
 
-    count = recv(s, mreq, MASTER_REQ_SIZE, 0);
-    if (count != MASTER_REQ_SIZE)
+    count = recv(s, mreq, MASTER_MSG_SIZE, 0);
+    if (count != MASTER_MSG_SIZE)
 	my_fatal("invalid reply received from master");
 
     if (mreq->completed != 1) {

@@ -134,7 +134,7 @@ extern uint8_t loglevel;
 extern uint8_t do_recv;
 
 void master_init(struct proto *protos, struct netif *netifs, uint16_t netifc,
-		 int ac, struct passwd *pwd, int cmdfd) {
+		 int ac, struct passwd *pwd, int cmdfd, int msgfd) {
 
     // raw socket
     int rawfd;
@@ -157,7 +157,7 @@ void master_init(struct proto *protos, struct netif *netifs, uint16_t netifc,
     size_t len;
 
     // packet
-    struct master_request mreq, *rbuf = NULL, *mrecv;
+    struct master_msg mreq, *rbuf = NULL, *mrecv;
     struct ether_hdr *ether;
 
     // proctitle
@@ -255,13 +255,13 @@ void master_init(struct proto *protos, struct netif *netifs, uint16_t netifc,
 	if (FD_ISSET(cmdfd, &rset)) {
 
 	    // receive request
-	    len = recv(cmdfd, &mreq, MASTER_REQ_SIZE, MSG_DONTWAIT);
+	    len = recv(cmdfd, &mreq, MASTER_MSG_SIZE, MSG_DONTWAIT);
 
 	    if (len == 0)
 		continue;
 
 	    // check request size
-	    if (len != MASTER_REQ_SIZE)
+	    if (len != MASTER_MSG_SIZE)
 		my_fatal("invalid request received");
 
 	    // validate request
@@ -272,13 +272,13 @@ void master_init(struct proto *protos, struct netif *netifs, uint16_t netifc,
 	    if (mreq.cmd == MASTER_SEND) {
 		mreq.len = master_rsend(rawfd, &mreq);
 		mreq.completed = 1;
-		write(cmdfd, &mreq, MASTER_REQ_SIZE);
+		write(cmdfd, &mreq, MASTER_MSG_SIZE);
 #if HAVE_LINUX_ETHTOOL_H
 	    // fetch ethtool details
 	    } else if (mreq.cmd == MASTER_ETHTOOL) {
 		mreq.len = master_ethtool(rawfd, &mreq);
 		mreq.completed = 1;
-		write(cmdfd, &mreq, MASTER_REQ_SIZE);
+		write(cmdfd, &mreq, MASTER_MSG_SIZE);
 #endif /* HAVE_LINUX_ETHTOOL_H */
 	    // invalid request
 	    } else {
@@ -324,7 +324,7 @@ void master_init(struct proto *protos, struct netif *netifs, uint16_t netifc,
 }
 
 
-int master_rcheck(struct master_request *mreq) {
+int master_rcheck(struct master_msg *mreq) {
     struct ether_hdr ether;
     struct ether_llc llc;
 
@@ -510,7 +510,7 @@ void master_rconf(struct master_rfd *rfd, struct proto *protos) {
     }
 }
 
-size_t master_rsend(int s, struct master_request *mreq) {
+size_t master_rsend(int s, struct master_msg *mreq) {
 
     size_t count = 0;
 
@@ -561,7 +561,7 @@ size_t master_rsend(int s, struct master_request *mreq) {
 }
 
 #if HAVE_LINUX_ETHTOOL_H
-size_t master_ethtool(int s, struct master_request *mreq) {
+size_t master_ethtool(int s, struct master_msg *mreq) {
 
     struct ifreq ifr;
     struct ethtool_cmd ecmd;

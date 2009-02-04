@@ -20,7 +20,7 @@ void *my_calloc(size_t, size_t);
 char *my_strdup(const char *str);
 int my_socket(int af, int type, int proto);
 
-size_t my_msend(int s, struct master_request *mreq);
+size_t my_msend(int s, struct master_msg *mreq);
 
 struct netif *netif_iter(struct netif *netif, struct netif *netifs, int argc);
 struct netif *subif_iter(struct netif *subif, struct netif *netif);

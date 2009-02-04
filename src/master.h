@@ -3,21 +3,26 @@
 #define _master_h
 
 #include <pwd.h>
+#include <sys/time.h>
+#include <event.h>
 
 #define MASTER_SEND	0
 #define MASTER_RECV	1
 #define MASTER_ETHTOOL	2
 
-struct master_request {
+struct master_msg {
     uint32_t index;
     char name[IFNAMSIZ];
     uint8_t cmd;
     uint8_t completed;
     char msg[ETHER_MAX_LEN];
     size_t len;
+    uint8_t proto;
+    time_t ttl;
+    TAILQ_ENTRY(master_msg) entries;
 };
 
-#define MASTER_REQ_SIZE   sizeof(struct master_request)
+#define MASTER_MSG_SIZE   sizeof(struct master_msg)
 
 struct master_rfd {
     uint32_t index;
@@ -27,13 +32,13 @@ struct master_rfd {
 };
 
 void master_init(struct proto *protos, struct netif *, uint16_t netifc,
-		 int ac, struct passwd *pwd, int cmdfd);
-int master_rcheck(struct master_request *mreq);
+		 int ac, struct passwd *pwd, int cmdfd, int msgfd);
+int master_rcheck(struct master_msg *mreq);
 int master_rsocket(struct master_rfd *rfd, int mode);
 void master_rconf(struct master_rfd *rfd, struct proto *protos);
-size_t master_rsend(int s, struct master_request *mreq);
+size_t master_rsend(int s, struct master_msg *mreq);
 #if HAVE_LINUX_ETHTOOL_H
-size_t master_ethtool(int s, struct master_request *mreq);
+size_t master_ethtool(int s, struct master_msg *mreq);
 #endif /* HAVE_LINUX_ETHTOOL_H */
 
 #define PCAP_MAGIC	0xA1B2C3D4

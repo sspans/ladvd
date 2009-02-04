@@ -3,8 +3,8 @@
 */
 
 #include "common.h"
-#include "main.h"
 #include "util.h"
+#include "main.h"
 #include <ctype.h>
 #include <unistd.h>
 #include <sys/file.h>
@@ -16,6 +16,7 @@ uint8_t do_detach = 1;
 uint8_t do_recv = 0;
 
 void usage();
+void queue_msg(int fd, short event, struct msghead *mhead);
 
 int main(int argc, char *argv[]) {
 
@@ -36,17 +37,23 @@ int main(int argc, char *argv[]) {
     struct sysinfo sysinfo;
 
     // sockets
-    int spair[2], cfd, mfd;
+    int cpair[2], mpair[2], cfd, mfd;
 
     // pids
     pid_t pid;
 
-    // packet
-    struct master_request mreq;
+    // packets
+    struct master_msg mreq, *msg = NULL, *nmsg = NULL;
+    TAILQ_INIT(&mqueue);
+    struct msghead *mhead;
 
     // interfaces
     struct netif *netifs = NULL, *netif = NULL, *subif = NULL;
     uint16_t netifc = 0;
+
+    // receiving
+    struct event evmsg;
+    struct timeval tv;
 
     // clear sysinfo
     memset(&sysinfo, 0, sizeof(struct sysinfo));
@@ -163,12 +170,12 @@ int main(int argc, char *argv[]) {
     }
 #endif /* __APPLE__ */
 
-    // create privsep socketpair
-    if (socketpair(AF_UNIX, SOCK_STREAM, 0, spair) == -1)
-	my_fatal("privsep socketpair creation failed: %s", strerror(errno));
+    // create cmd/msg socketpair
+    if (socketpair(AF_UNIX, SOCK_STREAM, 0, cpair) == -1)
+	my_fatal("cmd socketpair creation failed: %s", strerror(errno));
 
-    cfd = spair[0];
-    mfd = spair[1];
+    if (socketpair(AF_UNIX, SOCK_STREAM, 0, mpair) == -1)
+	my_fatal("msg socketpair creation failed: %s", strerror(errno));
 
     // create privsep parent / child
     pid = fork();
@@ -181,17 +188,22 @@ int main(int argc, char *argv[]) {
     if (pid != 0) {
 
 	// cleanup
-	close(cfd);
+	close(cpair[0]);
+	close(mpair[0]);
 
 	// enter the master loop
-	master_init(protos, netifs, netifc, sargc, pwd, mfd);
+	master_init(protos, netifs, netifc, sargc, pwd, cpair[1], mpair[1]);
 
 	// not reached
 	my_fatal("master process failed");
 
     } else {
 	// cleanup
-	close(mfd);
+	close(cpair[1]);
+	close(mpair[1]);
+
+	cfd = cpair[0];
+	mfd = mpair[0];
 
 	if (loglevel < DEBUG)
 	    my_drop_privs(pwd);
@@ -265,12 +277,75 @@ sleep:
 	if (run_once == 1)
 	    return (EXIT_SUCCESS);
 
-	my_log(INFO, "sleeping for %d seconds", SLEEPTIME);
-	(void) sleep(SLEEPTIME);
+	if (do_recv == 0) {
+	    my_log(INFO, "sleeping for %d seconds", SLEEPTIME);
+	    sleep(SLEEPTIME);
+	    continue;
+	}
+
+	// fetch time
+	if (gettimeofday(&tv, NULL) != 0)
+	    continue;
+	tv.tv_sec += SLEEPTIME;
+	
+	event_set(&evmsg, mfd, EV_READ|EV_PERSIST, (void *)queue_msg, mhead);
+	event_add(&evmsg, &tv);
+	event_loop(EVLOOP_ONCE);
+	
+	// remove expired messages
+	for (msg = TAILQ_FIRST(mhead); msg != NULL; msg = nmsg) {
+	    nmsg = TAILQ_NEXT(msg, entries);
+
+	    if (msg->ttl < tv.tv_sec) {
+		TAILQ_REMOVE(mhead, msg, entries);
+		free(msg);
+	    }
+	}
     }
 
-    return (EXIT_SUCCESS);
+    return (EXIT_FAILURE);
 }
+
+
+void queue_msg(int fd, short event, struct msghead *mhead) {
+
+    struct master_msg rmsg, *msg = NULL, *nmsg = NULL;
+    unsigned int len;
+
+    len = recv(fd, &rmsg, MASTER_MSG_SIZE, MSG_DONTWAIT);
+    if (len < MASTER_MSG_SIZE)
+	return;
+    if (rmsg.cmd != MASTER_RECV)
+	return;
+
+    TAILQ_FOREACH(msg, mhead, entries) {
+	// match ifindex
+	if (rmsg.index != msg->index)
+	    continue;
+	// match protocol
+	if (rmsg.proto != msg->proto)
+	    continue;
+	// identical source & destination
+	if (memcmp(rmsg.msg, msg->msg, ETHER_ADDR_LEN * 2) != 0)
+	    continue;
+
+       nmsg = msg;
+       break;
+    }
+
+    if (nmsg != NULL)
+       TAILQ_REMOVE(mhead, msg, entries);
+    else
+       nmsg = my_malloc(MASTER_MSG_SIZE);
+
+    memcpy(nmsg, &rmsg, MASTER_MSG_SIZE);
+    TAILQ_INSERT_TAIL(mhead, nmsg, entries);
+
+    // enable the received protocol
+    // XXX: make this per interface ...
+    protos[rmsg.proto].enabled = 1;
+}
+
 
 void usage() {
     extern char *__progname;
