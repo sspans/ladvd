@@ -12,6 +12,7 @@
 #include <sys/types.h>
 #include <sys/time.h>
 #include <fcntl.h>
+#include <signal.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -150,7 +151,8 @@ void master_init(struct netif *netifs, uint16_t netifc, int ac,
 #endif /* USE_CAPABILITIES */
 
     // events
-    struct event events;
+    struct event ev_cmd;
+    struct event ev_sigchld, ev_sigint, ev_sigterm,  ev_sighup;
 
 
     // proctitle
@@ -234,10 +236,19 @@ void master_init(struct netif *netifs, uint16_t netifc, int ac,
     event_init();
 
     // listen for requests from the child
-    event_set(&events, cmdfd, EV_READ|EV_PERSIST, (void *)master_cmd, &rawfd);
-    event_add(&events, NULL);
+    event_set(&ev_cmd, cmdfd, EV_READ|EV_PERSIST, (void *)master_cmd, &rawfd);
+    event_add(&ev_cmd, NULL);
 
-    // XXX: listen for sigchild
+    // handle signals
+    signal_set(&ev_sigchld, SIGCHLD, master_signal, NULL);
+    signal_set(&ev_sigint, SIGINT, master_signal, NULL);
+    signal_set(&ev_sigterm, SIGTERM, master_signal, NULL);
+    signal_set(&ev_sighup, SIGHUP, master_signal, NULL);
+    signal_add(&ev_sigchld, NULL);
+    signal_add(&ev_sigint, NULL);
+    signal_add(&ev_sigterm, NULL);
+    signal_add(&ev_sighup, NULL);
+
 
     // listen for received packets
     if (do_recv != 0) {
@@ -254,6 +265,22 @@ void master_init(struct netif *netifs, uint16_t netifc, int ac,
     // not reached
     exit(EXIT_FAILURE);
 }
+
+
+void master_signal(int sig, short event, void *p) {
+    switch (sig) {
+	case SIGCHLD:
+	    my_fatal("child has exited");
+	    break;
+	case SIGINT:
+	case SIGTERM:
+	    my_fatal("quitting");
+	    break;
+	default:
+	    my_fatal("unexpected signal");
+    }
+}
+
 
 void master_cmd(int cmdfd, short event, int *rawfd) {
     struct master_msg mreq;
@@ -404,6 +431,7 @@ int master_rcheck(struct master_msg *mreq) {
 
     return(EXIT_FAILURE);
 }
+
 
 int master_rsocket(struct master_rfd *rfd, int mode) {
 
@@ -562,6 +590,7 @@ size_t master_rsend(int s, struct master_msg *mreq) {
     
     return(count);
 }
+
 
 #if HAVE_LINUX_ETHTOOL_H
 size_t master_ethtool(int s, struct master_msg *mreq) {

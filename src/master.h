@@ -34,6 +34,7 @@ struct master_rfd {
 
 void master_init(struct netif *, uint16_t netifc, int ac,
 		 int cmdfd, int msgfd);
+void master_signal(int fd, short event, void *p);
 void master_cmd(int fd, short event, int *rawfd);
 void master_recv(int fd, short event, struct master_rfd *rfd);
 int master_rcheck(struct master_msg *mreq);
