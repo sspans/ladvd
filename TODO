@@ -1,5 +1,11 @@
 
 CODE:
+- socket & cli to display received packets
+- parse functions for the cli
+- auto transmit / protocol detect optioni (per interface)
+- improve / investigate new/missing interfaces
+- -w wireless switch
+- received peers in ifdescr
 - support macosx (package)
 - support solaris
 - support vlan interfaces
