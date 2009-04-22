@@ -108,15 +108,15 @@
 
 int netif_wireless(int sockfd, struct ifaddrs *ifaddr, struct ifreq *);
 int netif_type(int sockfd, struct ifaddrs *ifaddr, struct ifreq *);
-void netif_bond(int sockfd, struct netif *, struct netif *, struct ifreq *);
-void netif_bridge(int sockfd, struct netif *, struct netif *, struct ifreq *);
-int netif_addrs(struct ifaddrs *, struct netif *, struct sysinfo *sysinfo);
+void netif_bond(int sockfd, struct nhead *, struct netif *, struct ifreq *);
+void netif_bridge(int sockfd, struct nhead *, struct netif *, struct ifreq *);
+int netif_addrs(struct ifaddrs *, struct nhead *, struct sysinfo *sysinfo);
 void netif_forwarding(struct sysinfo *);
 
 
 // create netifs for a list of interfaces
 uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
-		    struct netif **mnetifs) {
+		    struct nhead *netifs) {
 
     int sockfd, af = AF_INET;
     struct ifaddrs *ifaddrs, *ifaddr = NULL;
@@ -132,7 +132,7 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 #endif
 
     // netifs
-    struct netif *netifs = NULL, *netif_prev = NULL, *netif = NULL;
+    struct netif *netif = NULL;
 
     sockfd = my_socket(af, SOCK_DGRAM, 0);
 
@@ -142,26 +142,7 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 	return(0);
     }
 
-    for (ifaddr = ifaddrs; ifaddr != NULL; ifaddr = ifaddr->ifa_next) {
-	// skip interfaces without addresses
-	if (ifaddr->ifa_addr == NULL)
-	    continue;
-
-	// only handle datalink addresses
-	if (ifaddr->ifa_addr->sa_family == NETIF_AF)
-	    count++;
-    }
-
-    // allocate memory
-    netifs = realloc(*mnetifs, sizeof(struct netif) * count);
-    if (netifs == NULL) {
-	my_log(INFO, "unable to allocate netifs");
-	goto cleanup;
-    }
-    *mnetifs = netifs;
-
     // zero
-    memset(netifs, 0, sizeof(struct netif) * count);
     count = 0;
 
     // default to CAP_HOST
@@ -246,11 +227,11 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 
 	my_log(INFO, "adding interface %s", ifaddr->ifa_name);
 
-	// create netif
-	if (netif == NULL)
-	    netif = netifs;
-	else
-	    netif = (struct netif *)netif + 1;
+	// fetch / create netif
+	if ((netif = netif_byname(netifs, ifaddr->ifa_name)) == NULL) {
+	    netif = my_malloc(sizeof(struct netif));
+	    TAILQ_INSERT_TAIL(netifs, netif, entries);
+	}
 	
         // copy name, index and type
 #ifdef AF_PACKET
@@ -267,18 +248,12 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 	ioctl(sockfd, SIOCGIFDESCR, &ifr);
 #endif
 
-	// update linked list
-	if (netif_prev != NULL)
-	    netif_prev->next = netif;
-	netif_prev = netif;
-
 	// update counters
 	count++;
     }
 
     // add slave subif lists to each master
-    for (netif = netifs; netif != NULL; netif = netif->next) {
-
+    TAILQ_FOREACH(netif, netifs, entries) {
 	switch(netif->type) {
 	    case NETIF_BONDING:
 		my_log(INFO, "detecting %s settings", netif->name);
@@ -305,7 +280,8 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
     netif_forwarding(sysinfo);
 
     // use the first mac as chassis id
-    memcpy(&sysinfo->hwaddr, &netifs->hwaddr, ETHER_ADDR_LEN);
+    if ((netif = TAILQ_FIRST(netifs)) != NULL)
+	memcpy(&sysinfo->hwaddr, &netif->hwaddr, ETHER_ADDR_LEN);
 
     // validate detected interfaces
     if (ifc > 0) {
@@ -478,7 +454,7 @@ int netif_type(int sockfd, struct ifaddrs *ifaddr, struct ifreq *ifr) {
 
 
 // handle aggregated interfaces
-void netif_bond(int sockfd, struct netif *netifs, struct netif *master,
+void netif_bond(int sockfd, struct nhead *netifs, struct netif *master,
 		struct ifreq *ifr) {
 
     struct netif *subif = NULL, *csubif = master;
@@ -681,7 +657,7 @@ void netif_bond(int sockfd, struct netif *netifs, struct netif *master,
 
 
 // handle bridge interfaces
-void netif_bridge(int sockfd, struct netif *netifs, struct netif *master,
+void netif_bridge(int sockfd, struct nhead *netifs, struct netif *master,
 		  struct ifreq *ifr) {
 
 #if defined(HAVE_SYSFS) || defined(HAVE_LINUX_IF_BRIDGE_H) || \
@@ -822,7 +798,7 @@ void netif_bridge(int sockfd, struct netif *netifs, struct netif *master,
 
 
 // perform address detection for all netifs
-int netif_addrs(struct ifaddrs *ifaddrs, struct netif *netifs,
+int netif_addrs(struct ifaddrs *ifaddrs, struct nhead *netifs,
 		struct sysinfo *sysinfo) {
     struct ifaddrs *ifaddr;
     struct netif *netif;
@@ -895,7 +871,7 @@ int netif_addrs(struct ifaddrs *ifaddrs, struct netif *netifs,
 	return(EXIT_SUCCESS);
 
     // use management address when unnumbered
-    for (netif = netifs; netif != NULL; netif = netif->next) {
+    TAILQ_FOREACH(netif, netifs, entries) {
 
 	if ((netif->ipaddr4 == 0) || (sysinfo->maddr_force == 1))
 	    netif->ipaddr4 = sysinfo->maddr4;

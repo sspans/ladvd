@@ -131,7 +131,7 @@ extern struct proto protos[];
 extern uint8_t loglevel;
 extern uint8_t do_recv;
 
-void master_init(struct netif *netifs, uint16_t netifc, int ac,
+void master_init(struct nhead *netifs, uint16_t netifc, int ac,
 		 int cmdfd, int msgfd) {
 
     // raw socket

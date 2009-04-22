@@ -96,17 +96,17 @@ size_t my_msend(int s, struct master_msg *mreq) {
     }
 };
 
-struct netif *netif_iter(struct netif *netif, struct netif *netifs, int argc) {
+struct netif *netif_iter(struct netif *netif, struct nhead *netifs, int argc) {
 
     if (netifs == NULL)
 	return NULL;
 
     if (netif == NULL)
-	netif = netifs;
+	netif = TAILQ_FIRST(netifs);
     else
-	netif = netif->next;
+	netif = TAILQ_NEXT(netif, entries);
 
-    for (; netif != NULL; netif = netif->next) {
+    for (; netif != NULL; netif = TAILQ_NEXT(netif, entries)) {
 	// skip autodetected slaves
 	if ((argc == 0) && (netif->slave == 1))
 	    continue;
@@ -144,26 +144,26 @@ struct netif *subif_iter(struct netif *subif, struct netif *netif) {
     }
 }
 
-struct netif *netif_byindex(struct netif *netifs, uint32_t index) {
-    struct netif *netif;
+struct netif *netif_byindex(struct nhead *netifs, uint32_t index) {
+    struct netif *netif = NULL;
 
     if (netifs == NULL)
 	return NULL;
 
-    for (netif = netifs; netif != NULL; netif = netif->next) {
+    TAILQ_FOREACH(netif, netifs, entries) {
 	if (netif->index == index)
 	    break;
     }
     return(netif);
 }
 
-struct netif *netif_byname(struct netif *netifs, char *name) {
+struct netif *netif_byname(struct nhead *netifs, char *name) {
     struct netif *netif;
 
     if (netifs == NULL || name == NULL)
 	return NULL;
 
-    for (netif = netifs; netif != NULL; netif = netif->next) {
+    TAILQ_FOREACH(netif, netifs, entries) {
 	if (strcmp(netif->name, name) == 0)
 	    break;
     }

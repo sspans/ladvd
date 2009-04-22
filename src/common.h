@@ -58,10 +58,15 @@ struct netif {
     uint8_t lacp;
     uint8_t lacp_index;
 
+    uint16_t protos;
+
     struct netif *master;
     struct netif *subif;
-    struct netif *next;
+
+    TAILQ_ENTRY(netif) entries;
 };
+
+TAILQ_HEAD(nhead, netif);
 
 struct sysinfo {
     struct utsname uts;
@@ -111,7 +116,7 @@ struct proto {
 
 
 void sysinfo_fetch(struct sysinfo *);
-uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *, struct netif **);
+uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *, struct nhead *);
 int netif_media(int cfd, struct netif *session);
 
 

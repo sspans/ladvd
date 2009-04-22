@@ -15,9 +15,11 @@
 extern int8_t loglevel;
 uint8_t do_detach = 1;
 uint8_t do_recv = 0;
+uint8_t do_auto = 0;
+uint8_t do_descr = 0;
 
 void usage();
-void queue_msg(int fd, short event, struct msghead *mhead);
+void queue_msg(int fd, short event);
 
 int main(int argc, char *argv[]) {
 
@@ -46,10 +48,10 @@ int main(int argc, char *argv[]) {
     // packets
     struct master_msg mreq, *msg = NULL, *nmsg = NULL;
     TAILQ_INIT(&mqueue);
-    struct msghead *mhead;
 
     // interfaces
-    struct netif *netifs = NULL, *netif = NULL, *subif = NULL;
+    struct netif *netif = NULL, *subif = NULL;
+    TAILQ_INIT(&netifs);
     uint16_t netifc = 0;
 
     // receiving
@@ -72,8 +74,11 @@ int main(int argc, char *argv[]) {
     argv = sargv;
 #endif
 
-    while ((ch = getopt(argc, argv, "dfhm:noru:vc:l:CEFN")) != -1) {
+    while ((ch = getopt(argc, argv, "adfhm:noru:vc:l:CEFN")) != -1) {
 	switch(ch) {
+	    case 'a':
+		do_auto = 1;
+		break;
 	    case 'd':
 		loglevel = DEBUG;
 		do_detach = 0;
@@ -193,7 +198,7 @@ int main(int argc, char *argv[]) {
 	close(mpair[0]);
 
 	// enter the master loop
-	master_init(netifs, netifc, sargc, cpair[1], mpair[1]);
+	master_init(&netifs, netifc, sargc, cpair[1], mpair[1]);
 
 	// not reached
 	my_fatal("master process failed");
@@ -225,7 +230,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	netif = NULL;
-	while ((netif = netif_iter(netif, netifs, sargc)) != NULL) {
+	while ((netif = netif_iter(netif, &netifs, sargc)) != NULL) {
 
 	    my_log(INFO, "starting loop with interface %s", netif->name); 
 
@@ -290,16 +295,14 @@ sleep:
 	    continue;
 	tv.tv_sec += SLEEPTIME;
 	
-	event_set(&evmsg, mfd, EV_READ|EV_PERSIST, (void *)queue_msg, mhead);
+	event_set(&evmsg, mfd, EV_READ|EV_PERSIST, (void *)queue_msg, NULL);
 	event_add(&evmsg, &tv);
 	event_loop(EVLOOP_ONCE);
-	
-	// remove expired messages
-	for (msg = TAILQ_FIRST(mhead); msg != NULL; msg = nmsg) {
-	    nmsg = TAILQ_NEXT(msg, entries);
 
+	// remove expired messages
+	TAILQ_FOREACH_SAFE(msg, &mqueue, entries, nmsg) {
 	    if (msg->ttl < tv.tv_sec) {
-		TAILQ_REMOVE(mhead, msg, entries);
+		TAILQ_REMOVE(&mqueue, msg, entries);
 		free(msg);
 	    }
 	}
@@ -309,9 +312,10 @@ sleep:
 }
 
 
-void queue_msg(int fd, short event, struct msghead *mhead) {
+void queue_msg(int fd, short event) {
 
     struct master_msg rmsg, *msg = NULL, *nmsg = NULL;
+    struct netif *netif = NULL;
     unsigned int len;
 
     len = recv(fd, &rmsg, MASTER_MSG_SIZE, MSG_DONTWAIT);
@@ -320,7 +324,7 @@ void queue_msg(int fd, short event, struct msghead *mhead) {
     if (rmsg.cmd != MASTER_RECV)
 	return;
 
-    TAILQ_FOREACH(msg, mhead, entries) {
+    TAILQ_FOREACH(msg, &mqueue, entries) {
 	// match ifindex
 	if (rmsg.index != msg->index)
 	    continue;
@@ -336,16 +340,18 @@ void queue_msg(int fd, short event, struct msghead *mhead) {
     }
 
     if (nmsg != NULL)
-       TAILQ_REMOVE(mhead, msg, entries);
+       TAILQ_REMOVE(&mqueue, msg, entries);
     else
        nmsg = my_malloc(MASTER_MSG_SIZE);
 
     memcpy(nmsg, &rmsg, MASTER_MSG_SIZE);
-    TAILQ_INSERT_TAIL(mhead, nmsg, entries);
+    TAILQ_INSERT_TAIL(&mqueue, nmsg, entries);
 
     // enable the received protocol
-    // XXX: make this per interface ...
-    protos[rmsg.proto].enabled = 1;
+    if (do_auto == 1) {
+	if ((netif = netif_byindex(&netifs, msg->index)) != NULL)
+	    netif->protos |= (1 << msg->proto);
+    }
 }
 
 

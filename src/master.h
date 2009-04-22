@@ -21,6 +21,7 @@ struct master_msg {
     TAILQ_ENTRY(master_msg) entries;
 };
 
+TAILQ_HEAD(mhead, master_msg);
 #define MASTER_MSG_SIZE   sizeof(struct master_msg)
 
 struct master_rfd {
@@ -32,7 +33,7 @@ struct master_rfd {
     struct event event;
 };
 
-void master_init(struct netif *, uint16_t netifc, int ac,
+void master_init(struct nhead *, uint16_t netifc, int ac,
 		 int cmdfd, int msgfd);
 void master_signal(int fd, short event, void *p);
 void master_cmd(int fd, short event, int *rawfd);

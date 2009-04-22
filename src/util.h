@@ -22,10 +22,10 @@ int my_socket(int af, int type, int proto);
 
 size_t my_msend(int s, struct master_msg *mreq);
 
-struct netif *netif_iter(struct netif *netif, struct netif *netifs, int argc);
+struct netif *netif_iter(struct netif *netif, struct nhead *, int argc);
 struct netif *subif_iter(struct netif *subif, struct netif *netif);
-struct netif *netif_byindex(struct netif *, uint32_t index);
-struct netif *netif_byname(struct netif *, char *name);
+struct netif *netif_byindex(struct nhead *, uint32_t index);
+struct netif *netif_byname(struct nhead *, char *name);
 
 int read_line(const char *path, char *line, uint16_t len);
 

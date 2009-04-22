@@ -16,6 +16,7 @@ struct proto protos[] = {
   { 0, NULL, {0}, NULL, {0}, 0 },
 };
 
-TAILQ_HEAD(msghead, master_msg) mqueue;
+struct nhead netifs;
+struct mhead mqueue;
 
 #endif /* _main_h */
