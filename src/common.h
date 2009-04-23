@@ -80,7 +80,6 @@ struct sysinfo {
     uint8_t hwaddr[ETHER_ADDR_LEN];
     uint16_t physif_count;
 
-    uint8_t maddr_force;
     uint32_t maddr4;
     uint32_t maddr6[4];
 
@@ -103,6 +102,14 @@ struct sysinfo {
 #define NETIF_REGULAR	0
 #define NETIF_BONDING	1
 #define NETIF_BRIDGE	2
+
+
+#define OPT_DAEMON	(1 << 0)
+#define OPT_RECV	(1 << 1)
+#define OPT_AUTO	(1 << 2)
+#define OPT_ONCE	(1 << 3)
+#define OPT_MADDR	(1 << 4)
+#define OPT_DESCR	(1 << 5)
 
 
 struct proto {

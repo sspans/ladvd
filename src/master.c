@@ -129,7 +129,7 @@ struct sock_filter master_filter[] = {
 
 extern struct proto protos[];
 extern uint8_t loglevel;
-extern uint8_t do_recv;
+extern uint32_t options;
 
 void master_init(struct nhead *netifs, uint16_t netifc, int ac,
 		 int cmdfd, int msgfd) {
@@ -165,7 +165,7 @@ void master_init(struct nhead *netifs, uint16_t netifc, int ac,
 	my_fatal("opening raw socket failed");
 
     // open listen sockets
-    if (do_recv != 0) {
+    if (options & OPT_RECV) {
 
 	// init
 	rfds = my_calloc(netifc, sizeof(struct master_rfd));
@@ -251,7 +251,7 @@ void master_init(struct nhead *netifs, uint16_t netifc, int ac,
 
 
     // listen for received packets
-    if (do_recv != 0) {
+    if (options & OPT_RECV) {
 	for (i = 0; i < netifc; i++) {
 	    event_set(&rfds[i].event, rfds[i].fd, EV_READ|EV_PERSIST,
 		(void *)master_recv, &rfds[i]);

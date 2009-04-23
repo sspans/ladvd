@@ -17,7 +17,7 @@
 #include <unistd.h>
 
 int8_t loglevel = CRIT;
-extern uint8_t do_detach;
+extern uint32_t options;
 
 void __my_log(const char *func, int8_t prio, const char *fmt, ...) {
 
@@ -27,7 +27,7 @@ void __my_log(const char *func, int8_t prio, const char *fmt, ...) {
     if (prio > loglevel)
 	return;
 
-    if (do_detach == 1) {
+    if (options & OPT_DAEMON) {
 	vsyslog(LOG_INFO, fmt, ap);
     } else {
 	if (loglevel == DEBUG)

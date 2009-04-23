@@ -106,6 +106,8 @@
 #define NETIF_AF    AF_LINK
 #endif
 
+extern uint32_t options;
+
 int netif_wireless(int sockfd, struct ifaddrs *ifaddr, struct ifreq *);
 int netif_type(int sockfd, struct ifaddrs *ifaddr, struct ifreq *);
 void netif_bond(int sockfd, struct nhead *, struct netif *, struct ifreq *);
@@ -873,11 +875,11 @@ int netif_addrs(struct ifaddrs *ifaddrs, struct nhead *netifs,
     // use management address when unnumbered
     TAILQ_FOREACH(netif, netifs, entries) {
 
-	if ((netif->ipaddr4 == 0) || (sysinfo->maddr_force == 1))
+	if ((netif->ipaddr4 == 0) || (options & OPT_MADDR))
 	    netif->ipaddr4 = sysinfo->maddr4;
 
 	if (IN6_IS_ADDR_UNSPECIFIED((struct in6_addr *)netif->ipaddr6) ||
-	    (sysinfo->maddr_force == 1))
+	    (options & OPT_MADDR))
 	    memcpy(&netif->ipaddr6, &sysinfo->maddr6, sizeof(sysinfo->maddr6));
     }
 

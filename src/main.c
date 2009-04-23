@@ -13,10 +13,7 @@
 #include <fcntl.h>
 
 extern int8_t loglevel;
-uint8_t do_detach = 1;
-uint8_t do_recv = 0;
-uint8_t do_auto = 0;
-uint8_t do_descr = 0;
+uint32_t options = OPT_DAEMON;
 
 void usage();
 void queue_msg(int fd, short event);
@@ -77,14 +74,14 @@ int main(int argc, char *argv[]) {
     while ((ch = getopt(argc, argv, "adfhm:noru:vc:l:CEFN")) != -1) {
 	switch(ch) {
 	    case 'a':
-		do_auto = 1;
+		options |= OPT_AUTO | OPT_RECV;
 		break;
 	    case 'd':
 		loglevel = DEBUG;
-		do_detach = 0;
+		options &= ~OPT_DAEMON;
 		break;
 	    case 'f':
-		do_detach = 0;
+		options &= ~OPT_DAEMON;
 		break;
 	    case 'm':
 		if ( (inet_pton(AF_INET, optarg, &sysinfo.maddr4) != 1) &&
@@ -94,13 +91,13 @@ int main(int argc, char *argv[]) {
 		}
 		break;
 	    case 'n':
-		sysinfo.maddr_force = 1;
+		options |= OPT_MADDR;
 		break;
 	    case 'o':
-		run_once = 1;
+		options |= OPT_ONCE;
 		break;
 	    case 'r':
-		do_recv = 1;
+		options |= OPT_RECV;
 		break;
 	    case 'u':
 		username = optarg;
@@ -155,7 +152,7 @@ int main(int argc, char *argv[]) {
 
 #ifndef __APPLE__
     // open pidfile
-    if (do_detach == 1) {
+    if (options & OPT_DAEMON) {
 	fd = open(pidfile, O_WRONLY|O_CREAT, 0666);
 	if (fd == -1)
 	    my_fatal("failed to open pidfile %s: %s", pidfile, strerror(errno));
@@ -166,7 +163,7 @@ int main(int argc, char *argv[]) {
 
 #ifndef __APPLE__
     // daemonize
-    if (do_detach == 1) {
+    if (options & OPT_DAEMON) {
 	if (daemon(0,0) == -1)
 	    my_fatal("backgrounding failed: %s", strerror(errno));
 
@@ -253,7 +250,7 @@ int main(int argc, char *argv[]) {
 		for (p = 0; protos[p].name != NULL; p++) {
 
 		    // only enabled protos
-		    if (protos[p].enabled == 0)
+		    if (!(protos[p].enabled) && !(netif->protos & (1 << p)))
 			continue;
 
 		    // clear packet
@@ -284,7 +281,7 @@ sleep:
 	if (run_once == 1)
 	    return (EXIT_SUCCESS);
 
-	if (do_recv == 0) {
+	if ((options & OPT_RECV) == 0) {
 	    my_log(INFO, "sleeping for %d seconds", SLEEPTIME);
 	    sleep(SLEEPTIME);
 	    continue;
@@ -348,7 +345,7 @@ void queue_msg(int fd, short event) {
     TAILQ_INSERT_TAIL(&mqueue, nmsg, entries);
 
     // enable the received protocol
-    if (do_auto == 1) {
+    if (options & OPT_AUTO) {
 	if ((netif = netif_byindex(&netifs, msg->index)) != NULL)
 	    netif->protos |= (1 << msg->proto);
     }
