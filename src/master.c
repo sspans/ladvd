@@ -313,6 +313,13 @@ void master_cmd(int cmdfd, short event, int *rawfd) {
 	mreq.completed = 1;
 	write(cmdfd, &mreq, MASTER_MSG_SIZE);
 #endif /* HAVE_LINUX_ETHTOOL_H */
+#ifdef SIOCSIFDESCR
+    // update interface description
+    } else if (mreq.cmd == MASTER_DESCR) {
+	mreq.len = master_descr(*rawfd, &mreq);
+	mreq.completed = 1;
+	write(cmdfd, &mreq, MASTER_MSG_SIZE);
+#endif /* SIOCGIFDESCR */
     // invalid request
     } else {
 	my_fatal("invalid request received");
@@ -428,6 +435,13 @@ int master_rcheck(struct master_msg *mreq) {
 	    return(EXIT_SUCCESS);
     }
 #endif /* HAVE_LINUX_ETHTOOL_H */
+
+#ifdef SIOCSIFDESCR
+    if (mreq->cmd == MASTER_DESCR) {
+	if (mreq->len == IFDESCRSIZE)
+	    return(EXIT_SUCCESS);
+    }
+#endif /* SIOCSIFDESCR */
 
     return(EXIT_FAILURE);
 }
@@ -623,4 +637,22 @@ size_t master_ethtool(int s, struct master_msg *mreq) {
     }
 }
 #endif /* HAVE_LINUX_ETHTOOL_H */
+
+#ifdef SIOCSIFDESCR
+size_t master_descr(int s, struct master_msg *mreq) {
+
+    struct ifreq ifr;
+
+    // prepare ifr struct
+    memset(&ifr, 0, sizeof(ifr));
+    strlcpy(ifr.ifr_name, mreq->name, IFNAMSIZ);
+    ifr.ifr_data = (caddr_t)&mreq->msg;
+
+    if (ioctl(s, SIOCSIFDESCR, &ifr) >= 0) {
+	return(sizeof(ifr));
+    } else {
+	return(0);
+    }
+}
+#endif /* SIOCGIFDESCR */
 

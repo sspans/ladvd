@@ -8,6 +8,7 @@
 #define MASTER_SEND	0
 #define MASTER_RECV	1
 #define MASTER_ETHTOOL	2
+#define MASTER_DESCR	3
 
 struct master_msg {
     uint32_t index;
@@ -45,6 +46,9 @@ size_t master_rsend(int s, struct master_msg *mreq);
 #if HAVE_LINUX_ETHTOOL_H
 size_t master_ethtool(int s, struct master_msg *mreq);
 #endif /* HAVE_LINUX_ETHTOOL_H */
+#ifdef SIOCSIFDESCR
+size_t master_descr(int s, struct master_msg *mreq);
+#endif /* SIOCSIFDESCR */
 
 #define PCAP_MAGIC	0xA1B2C3D4
 
