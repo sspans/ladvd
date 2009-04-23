@@ -108,11 +108,11 @@
 
 extern uint32_t options;
 
-int netif_wireless(int sockfd, struct ifaddrs *ifaddr, struct ifreq *);
-int netif_type(int sockfd, struct ifaddrs *ifaddr, struct ifreq *);
-void netif_bond(int sockfd, struct nhead *, struct netif *, struct ifreq *);
-void netif_bridge(int sockfd, struct nhead *, struct netif *, struct ifreq *);
-int netif_addrs(struct ifaddrs *, struct nhead *, struct sysinfo *sysinfo);
+int netif_wireless(int, struct ifaddrs *ifaddr, struct ifreq *);
+int netif_type(int, struct ifaddrs *ifaddr, struct ifreq *);
+void netif_bond(int, struct nhead *, struct netif *, struct ifreq *);
+void netif_bridge(int, struct nhead *, struct netif *, struct ifreq *);
+void netif_addrs(struct ifaddrs *, struct nhead *, struct sysinfo *);
 void netif_forwarding(struct sysinfo *);
 
 
@@ -272,11 +272,7 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 
     // add addresses to netifs
     my_log(INFO, "fetching addresses for all interfaces");
-    if (netif_addrs(ifaddrs, netifs, sysinfo) == EXIT_FAILURE) {
-	my_log(CRIT, "unable fetch interface addresses");
-	count = 0;
-	goto cleanup;
-    }
+    netif_addrs(ifaddrs, netifs, sysinfo);
 
     // check for forwarding
     netif_forwarding(sysinfo);
@@ -800,7 +796,7 @@ void netif_bridge(int sockfd, struct nhead *netifs, struct netif *master,
 
 
 // perform address detection for all netifs
-int netif_addrs(struct ifaddrs *ifaddrs, struct nhead *netifs,
+void netif_addrs(struct ifaddrs *ifaddrs, struct nhead *netifs,
 		struct sysinfo *sysinfo) {
     struct ifaddrs *ifaddr;
     struct netif *netif;
@@ -870,7 +866,7 @@ int netif_addrs(struct ifaddrs *ifaddrs, struct nhead *netifs,
     // return when no management addresses are defined
     if ((sysinfo->maddr4 == 0) &&
 	(IN6_IS_ADDR_UNSPECIFIED((struct in6_addr *)sysinfo->maddr6)) )
-	return(EXIT_SUCCESS);
+	return;
 
     // use management address when unnumbered
     TAILQ_FOREACH(netif, netifs, entries) {
@@ -883,7 +879,7 @@ int netif_addrs(struct ifaddrs *ifaddrs, struct nhead *netifs,
 	    memcpy(&netif->ipaddr6, &sysinfo->maddr6, sizeof(sysinfo->maddr6));
     }
 
-    return(EXIT_SUCCESS);
+    return;
 }
 
 
