@@ -16,7 +16,7 @@ extern int8_t loglevel;
 uint32_t options = OPT_DAEMON;
 
 void usage();
-void queue_msg(int fd, short event);
+void queue_msg(int fd, short event, int *cfd);
 
 int main(int argc, char *argv[]) {
 
@@ -294,8 +294,8 @@ sleep:
 	if (gettimeofday(&tv, NULL) != 0)
 	    continue;
 	tv.tv_sec += SLEEPTIME;
-	
-	event_set(&evmsg, mfd, EV_READ|EV_PERSIST, (void *)queue_msg, NULL);
+
+	event_set(&evmsg, mfd, EV_READ|EV_PERSIST, (void *)queue_msg, &cfd);
 	event_add(&evmsg, &tv);
 	event_loop(EVLOOP_ONCE);
 
@@ -312,7 +312,7 @@ sleep:
 }
 
 
-void queue_msg(int fd, short event) {
+void queue_msg(int fd, short event, int *cfd) {
 
     struct master_msg rmsg, *msg = NULL, *nmsg = NULL;
     struct netif *netif = NULL;
@@ -347,10 +347,24 @@ void queue_msg(int fd, short event) {
     memcpy(nmsg, &rmsg, MASTER_MSG_SIZE);
     TAILQ_INSERT_TAIL(&mqueue, nmsg, entries);
 
+    if (options & (OPT_AUTO|OPT_DESCR))
+	netif = netif_byindex(&netifs, msg->index);
+
     // enable the received protocol
-    if (options & OPT_AUTO) {
-	if ((netif = netif_byindex(&netifs, msg->index)) != NULL)
+    if ((options & OPT_AUTO) && (netif != NULL))
 	    netif->protos |= (1 << msg->proto);
+
+    // save the received name to ifdescr
+    if ((options & OPT_DESCR) && (netif != NULL)) {
+	memset(&rmsg, 0, sizeof(rmsg));
+	rmsg.index = netif->index;
+	strlcpy(rmsg.name, netif->name, IFNAMSIZ);
+	rmsg.cmd = MASTER_DESCR;
+	rmsg.len = protos[nmsg->proto].fetch_name(nmsg->msg, rmsg.msg);
+
+	if (my_msend(*cfd, &rmsg) != rmsg.len) {
+	    my_log(CRIT, "ifdescr ioctl failed on %s", netif->name);
+	}
     }
 }
 
