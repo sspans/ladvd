@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
     argv = sargv;
 #endif
 
-    while ((ch = getopt(argc, argv, "adfhm:noru:vc:l:CEFN")) != -1) {
+    while ((ch = getopt(argc, argv, "adfhm:noru:vzc:l:CEFN")) != -1) {
 	switch(ch) {
 	    case 'a':
 		options |= OPT_AUTO | OPT_RECV;
@@ -104,6 +104,9 @@ int main(int argc, char *argv[]) {
 		break;
 	    case 'v':
 		loglevel++;
+		break;
+	    case 'z':
+		options |= OPT_RECV | OPT_DESCR;
 		break;
 	    case 'c':
 		// two-letter ISO 3166 country code
@@ -366,6 +369,7 @@ void usage() {
 	    "\t-r = Receive Packets\n"
 	    "\t-u <user> = Setuid User (defaults to %s)\n"
 	    "\t-v = Increase logging verbosity\n"
+	    "\t-z = Save received info in interface description\n"
 	    "\t-c <CC> = System Country Code\n"
 	    "\t-l <location> = System Location\n"
 	    "\t-C = Enable CDP\n"

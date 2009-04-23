@@ -246,8 +246,10 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 	netif->type = type;
 
 #ifdef SIOCGIFDESCR
-	ifr.ifr_data = (caddr_t)&netif->description;
-	ioctl(sockfd, SIOCGIFDESCR, &ifr);
+	if ((options & OPT_DESCR) == 0) {
+	    ifr.ifr_data = (caddr_t)&netif->description;
+	    ioctl(sockfd, SIOCGIFDESCR, &ifr);
+	}
 #endif
 
 	// update counters
