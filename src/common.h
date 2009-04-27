@@ -38,6 +38,11 @@
 
 #define LLDP_INVENTORY_SIZE 32
 
+#define HOSTNAME_CHARS	"ABCDEFGHIJKLMNOPQRSTUVWXYZ" \
+			"abcdefghijklmnopqrstuvwxyz" \
+			"0123456789" ".-"
+#define IS_HOSTNAME(s)	(strspn(s, HOSTNAME_CHARS) == strlen(s))
+
 struct netif {
     uint32_t index;
     char name[IFNAMSIZ];
@@ -117,7 +122,7 @@ struct proto {
     const char *name;
     uint8_t dst_addr[ETHER_ADDR_LEN];
     size_t (*build_msg) (void *, struct netif *, struct sysinfo *);
-    size_t (*fetch_name) (void *, char *);
+    size_t (*parse_name) (void *);
     uint8_t llc_org[3];
     uint16_t llc_pid;
 };

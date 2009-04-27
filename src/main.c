@@ -316,6 +316,7 @@ void queue_msg(int fd, short event, int *cfd) {
 
     struct master_msg rmsg, *msg = NULL, *nmsg = NULL;
     struct netif *netif = NULL;
+    char *name = NULL;
     unsigned int len;
 
     len = recv(fd, &rmsg, MASTER_MSG_SIZE, MSG_DONTWAIT);
@@ -348,23 +349,37 @@ void queue_msg(int fd, short event, int *cfd) {
     TAILQ_INSERT_TAIL(&mqueue, nmsg, entries);
 
     if (options & (OPT_AUTO|OPT_DESCR))
-	netif = netif_byindex(&netifs, msg->index);
+	if ((netif = netif_byindex(&netifs, msg->index)) == NULL)
+	    return;
+    else
+	return;
 
     // enable the received protocol
-    if ((options & OPT_AUTO) && (netif != NULL))
+    if (options & OPT_AUTO)
 	    netif->protos |= (1 << msg->proto);
 
     // save the received name to ifdescr
-    if ((options & OPT_DESCR) && (netif != NULL)) {
+    if (options & OPT_DESCR) {
+	name = protos[nmsg->proto].parse_name(nmsg->msg);
+	if (name == NULL)
+	    return;
+	if (!IS_HOSTNAME(name)) {
+	    free(name);
+	    return;
+	}
+
 	memset(&rmsg, 0, sizeof(rmsg));
 	rmsg.index = netif->index;
 	strlcpy(rmsg.name, netif->name, IFNAMSIZ);
 	rmsg.cmd = MASTER_DESCR;
-	rmsg.len = protos[nmsg->proto].fetch_name(nmsg->msg, rmsg.msg);
+	rmsg.len = snprintf(rmsg.msg, IFDESCRSIZE, "connected to %s (%s)", 
+			    name, protos[nmsg->proto].name);
 
 	if (my_msend(*cfd, &rmsg) != rmsg.len) {
 	    my_log(CRIT, "ifdescr ioctl failed on %s", netif->name);
 	}
+
+	free(name);
     }
 }
 
