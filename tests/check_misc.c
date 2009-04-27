@@ -7,109 +7,115 @@
 #include "../src/common.h"
 #include "../src/util.h"
 
+uint32_t options = OPT_DAEMON;
+
 START_TEST(test_netif) {
-    struct netif netifs[6];
+    struct nhead nqueue;
+    struct nhead *netifs = &nqueue;
+    struct netif tnetifs[6];
     struct netif *netif, *subif;
     int argc;
 
-    netifs[0].index = 0;
-    netifs[0].argv = 0;
-    netifs[0].slave = 0;
-    netifs[0].type = NETIF_BONDING;
-    netifs[0].next = &netifs[1];
-    netifs[0].subif = &netifs[1];
-    strlcpy(netifs[0].name, "bond0", IFNAMSIZ); 
+    TAILQ_INIT(netifs);
 
-    netifs[1].index = 1;
-    netifs[1].argv = 1;
-    netifs[1].slave = 1;
-    netifs[1].type = NETIF_REGULAR;
-    netifs[1].next = &netifs[2];
-    netifs[1].subif = &netifs[2];
-    strlcpy(netifs[1].name, "eth0", IFNAMSIZ); 
+    tnetifs[0].index = 0;
+    tnetifs[0].argv = 0;
+    tnetifs[0].slave = 0;
+    tnetifs[0].type = NETIF_BONDING;
+    tnetifs[0].subif = &tnetifs[1];
+    strlcpy(tnetifs[0].name, "bond0", IFNAMSIZ); 
 
-    netifs[2].index = 2;
-    netifs[2].argv = 0;
-    netifs[2].slave = 1;
-    netifs[2].type = NETIF_REGULAR;
-    netifs[2].next = &netifs[3];
-    netifs[2].subif = NULL,
-    strlcpy(netifs[2].name, "eth2", IFNAMSIZ); 
+    tnetifs[1].index = 1;
+    tnetifs[1].argv = 1;
+    tnetifs[1].slave = 1;
+    tnetifs[1].type = NETIF_REGULAR;
+    tnetifs[1].subif = &tnetifs[2];
+    strlcpy(tnetifs[1].name, "eth0", IFNAMSIZ); 
 
-    netifs[3].index = 4;
-    netifs[3].argv = 0;
-    netifs[3].slave = 0;
-    netifs[3].type = NETIF_BRIDGE;
-    netifs[3].next = &netifs[4],
-    netifs[3].subif = NULL,
-    strlcpy(netifs[3].name, "bridge0", IFNAMSIZ); 
+    tnetifs[2].index = 2;
+    tnetifs[2].argv = 0;
+    tnetifs[2].slave = 1;
+    tnetifs[2].type = NETIF_REGULAR;
+    tnetifs[2].subif = NULL,
+    strlcpy(tnetifs[2].name, "eth2", IFNAMSIZ); 
 
-    netifs[4].index = 5;
-    netifs[4].argv = 1;
-    netifs[4].slave = 0;
-    netifs[4].type = NETIF_BONDING;
-    netifs[4].next = &netifs[5],
-    netifs[4].subif = NULL,
-    strlcpy(netifs[4].name, "lagg0", IFNAMSIZ); 
+    tnetifs[3].index = 4;
+    tnetifs[3].argv = 0;
+    tnetifs[3].slave = 0;
+    tnetifs[3].type = NETIF_BRIDGE;
+    tnetifs[3].subif = NULL,
+    strlcpy(tnetifs[3].name, "bridge0", IFNAMSIZ); 
 
-    netifs[5].index = 3;
-    netifs[5].argv = 1;
-    netifs[5].slave = 0;
-    netifs[5].type = NETIF_REGULAR;
-    netifs[5].next = NULL;
-    netifs[5].subif = NULL,
-    strlcpy(netifs[5].name, "eth1", IFNAMSIZ); 
+    tnetifs[4].index = 5;
+    tnetifs[4].argv = 1;
+    tnetifs[4].slave = 0;
+    tnetifs[4].type = NETIF_BONDING;
+    tnetifs[4].subif = NULL,
+    strlcpy(tnetifs[4].name, "lagg0", IFNAMSIZ); 
 
+    tnetifs[5].index = 3;
+    tnetifs[5].argv = 1;
+    tnetifs[5].slave = 0;
+    tnetifs[5].type = NETIF_REGULAR;
+    tnetifs[5].subif = NULL,
+    strlcpy(tnetifs[5].name, "eth1", IFNAMSIZ); 
+
+    TAILQ_INSERT_TAIL(netifs, &tnetifs[0], entries);
+    TAILQ_INSERT_TAIL(netifs, &tnetifs[1], entries);
+    TAILQ_INSERT_TAIL(netifs, &tnetifs[2], entries);
+    TAILQ_INSERT_TAIL(netifs, &tnetifs[3], entries);
+    TAILQ_INSERT_TAIL(netifs, &tnetifs[4], entries);
+    TAILQ_INSERT_TAIL(netifs, &tnetifs[5], entries);
 
     // netif_iter checks
     netif = NULL;
     argc = 0;
-    fail_unless (netif_iter(netif, netif, argc) == NULL,
+    fail_unless (netif_iter(netif, NULL, argc) == NULL,
 	"NULL should be returned on invalid netifs");
 
     netif = NULL;
     argc = 0;
     netif = netif_iter(netif, netifs, argc);
-    fail_unless (netif == &netifs[0], "the first netif should be returned");
+    fail_unless (netif == &tnetifs[0], "the first netif should be returned");
     netif = netif_iter(netif, netifs, argc);
-    fail_unless (netif == &netifs[5], "the sixth netif should be returned");
+    fail_unless (netif == &tnetifs[5], "the sixth netif should be returned");
     netif = netif_iter(netif, netifs, argc);
     fail_unless (netif == NULL, "NULL should be returned");
 
     netif = NULL;
     argc = 2;
     netif = netif_iter(netif, netifs, argc);
-    fail_unless (netif == &netifs[1], "the second netif should be returned");
+    fail_unless (netif == &tnetifs[1], "the second netif should be returned");
     netif = netif_iter(netif, netifs, argc);
-    fail_unless (netif == &netifs[5], "the sixth netif should be returned");
+    fail_unless (netif == &tnetifs[5], "the sixth netif should be returned");
     netif = netif_iter(netif, netifs, argc);
     fail_unless (netif == NULL, "NULL should be returned");
 
 
     // subif_iter checks
-    netif = &netifs[0];
+    netif = &tnetifs[0];
     subif = NULL;
     subif = subif_iter(subif, netif);
-    fail_unless (subif == &netifs[1], "the second netif should be returned");
+    fail_unless (subif == &tnetifs[1], "the second netif should be returned");
     subif = subif_iter(subif, netif);
-    fail_unless (subif == &netifs[2], "the third netif should be returned");
+    fail_unless (subif == &tnetifs[2], "the third netif should be returned");
     subif = subif_iter(subif, netif);
     fail_unless (subif == NULL, "NULL should be returned");
 
-    netif = &netifs[3];
-    subif = NULL;
-    subif = subif_iter(subif, netif);
-    fail_unless (subif == NULL, "NULL should be returned");
-
-    netif = &netifs[4];
+    netif = &tnetifs[3];
     subif = NULL;
     subif = subif_iter(subif, netif);
     fail_unless (subif == NULL, "NULL should be returned");
 
-    netif = &netifs[5];
+    netif = &tnetifs[4];
     subif = NULL;
     subif = subif_iter(subif, netif);
-    fail_unless (subif == &netifs[5], "the sixth netif should be returned");
+    fail_unless (subif == NULL, "NULL should be returned");
+
+    netif = &tnetifs[5];
+    subif = NULL;
+    subif = subif_iter(subif, netif);
+    fail_unless (subif == &tnetifs[5], "the sixth netif should be returned");
     subif = subif_iter(subif, netif);
     fail_unless (subif == NULL, "NULL should be returned");
 
@@ -117,13 +123,13 @@ START_TEST(test_netif) {
     // netif_byindex checks
     fail_unless (netif_byindex(NULL, 0) == NULL,
 	"NULL should be returned on invalid netifs");
-    fail_unless (netif_byindex(netifs, 0) == &netifs[0],
+    fail_unless (netif_byindex(netifs, 0) == &tnetifs[0],
 	"incorrect netif struct returned");
-    fail_unless (netif_byindex(netifs, 1) == &netifs[1],
+    fail_unless (netif_byindex(netifs, 1) == &tnetifs[1],
 	"incorrect netif struct returned");
-    fail_unless (netif_byindex(netifs, 2) == &netifs[2],
+    fail_unless (netif_byindex(netifs, 2) == &tnetifs[2],
 	"incorrect netif struct returned");
-    fail_unless (netif_byindex(netifs, 3) == &netifs[5],
+    fail_unless (netif_byindex(netifs, 3) == &tnetifs[5],
 	"incorrect netif struct returned");
     fail_unless (netif_byindex(netifs, 6) == NULL,
 	"NULL should be returned on not found netif");
@@ -134,13 +140,13 @@ START_TEST(test_netif) {
 	"NULL should be returned on invalid netifs");
     fail_unless (netif_byname(netifs, NULL) == NULL,
 	"NULL should be returned on invalid name");
-    fail_unless (netif_byname(netifs, "bond0") == &netifs[0],
+    fail_unless (netif_byname(netifs, "bond0") == &tnetifs[0],
 	"incorrect netif struct returned");
-    fail_unless (netif_byname(netifs, "eth0") == &netifs[1],
+    fail_unless (netif_byname(netifs, "eth0") == &tnetifs[1],
 	"incorrect netif struct returned");
-    fail_unless (netif_byname(netifs, "eth2") == &netifs[2],
+    fail_unless (netif_byname(netifs, "eth2") == &tnetifs[2],
 	"incorrect netif struct returned");
-    fail_unless (netif_byname(netifs, "eth1") == &netifs[5],
+    fail_unless (netif_byname(netifs, "eth1") == &tnetifs[5],
 	"incorrect netif struct returned");
     fail_unless (netif_byname(netifs, "eth3") == NULL,
 	"NULL should be returned on not found netif");
