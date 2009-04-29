@@ -340,13 +340,13 @@ void queue_msg(int fd, short event, int *cfd) {
        break;
     }
 
-    if (nmsg != NULL)
-       TAILQ_REMOVE(&mqueue, msg, entries);
-    else
-       nmsg = my_malloc(MASTER_MSG_SIZE);
-
-    memcpy(nmsg, &rmsg, MASTER_MSG_SIZE);
-    TAILQ_INSERT_TAIL(&mqueue, nmsg, entries);
+    if (nmsg != NULL) {
+	memcpy(nmsg, &rmsg, MASTER_MSG_SIZE);
+    } else {
+	nmsg = my_malloc(MASTER_MSG_SIZE);
+	memcpy(nmsg, &rmsg, MASTER_MSG_SIZE);
+	TAILQ_INSERT_TAIL(&mqueue, nmsg, entries);
+    }
 
     if (options & (OPT_AUTO|OPT_DESCR))
 	if ((netif = netif_byindex(&netifs, msg->index)) == NULL)
