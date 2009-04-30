@@ -304,7 +304,6 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
     }
 
     // cleanup
-cleanup:
     freeifaddrs(ifaddrs);
     (void) close(sockfd);
 
