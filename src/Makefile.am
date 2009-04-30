@@ -1,6 +1,6 @@
 
 AM_CFLAGS = $(WARN_CFLAGS)
-AM_LDFLAGS = $(WARN_LIBS)
+AM_LDFLAGS = $(WARN_LDFLAGS)
 
 common_headers = common.h ether.h master.h util.h
 
