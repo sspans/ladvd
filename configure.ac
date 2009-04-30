@@ -5,7 +5,7 @@ AC_INIT([ladvd], [0.7-alpha], [sten@blinkenlights.nl])
 AC_CANONICAL_TARGET
 AC_CONFIG_SRCDIR([src/config.h.in])
 AC_CONFIG_HEADER([src/config.h])
-AM_INIT_AUTOMAKE([subdir-objects -Wall -Werror foreign])
+AM_INIT_AUTOMAKE([subdir-objects foreign])
 
 # Checks for programs.
 AC_PROG_CC
@@ -13,6 +13,16 @@ AC_GNU_SOURCE
 AC_PROG_INSTALL
 AC_PROG_LIBTOOL
 AM_PROG_CC_C_O
+
+# enable warnings/errors/security
+AX_CFLAGS_GCC_OPTION(-Wall -Werror, WFLAGS)
+AX_CFLAGS_GCC_OPTION(-Wformat -Wformat-security, WFLAGS)
+AX_CFLAGS_GCC_OPTION(-D_FORTIFY_SOURCE=2, WFLAGS)
+GCC_STACK_PROTECTOR
+AX_CFLAGS_GCC_OPTION("-fPIE", WFLAGS, [ WFLAGS="$WFLAGS -fPIE"; WLIBS="-lpie"])
+
+AC_SUBST(WARN_CFLAGS,"$WFLAGS")
+AC_SUBST(WARN_LIBS,"$WLIBS")
 
 # daemon user
 package_user="$PACKAGE_NAME"
@@ -60,7 +70,7 @@ AC_CHECK_LIB(event, event_init, AC_SUBST(EVENT_LIB,"-levent"),
 AC_HEADER_STDC
 AC_CHECK_HEADERS([fcntl.h grp.h pwd.h stdarg.h stdint.h stdio.h syslog.h \
 		  sys/file.h sys/utsname.h unistd.h sys/ioctl.h sys/types.h \
-		  sys/socket.h sys/time.h signal.h ctype.h event.h], 
+		  sys/socket.h sys/time.h signal.h ctype.h string.h event.h], 
 		 [], AC_MSG_ERROR([required header missing]))
 
 # bsd ifmedia
@@ -169,8 +179,9 @@ AC_TYPE_UINT32_T
 # Checks for library functions.
 AC_FUNC_VPRINTF
 AC_CHECK_FUNCS([asprintf memcpy memset snprintf strdup strerror uname \
-		socketpair vsyslog], [],
-		AC_MSG_ERROR([required function missing]))
+		socketpair vsyslog],
+		[], AC_MSG_ERROR([required function missing]))
+
 AC_CHECK_FUNCS([setproctitle strlcpy strlcat])
 
 AC_CONFIG_FILES([Makefile

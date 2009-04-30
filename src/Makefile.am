@@ -1,4 +1,7 @@
 
+AM_CFLAGS = $(WARN_CFLAGS)
+AM_LDFLAGS = $(WARN_LIBS)
+
 common_headers = common.h ether.h master.h util.h
 
 noinst_LTLIBRARIES = libcompat.la libproto.la libmisc.la
@@ -15,4 +18,4 @@ libmisc_la_SOURCES = $(common_headers) master.c \
 
 sbin_PROGRAMS = ladvd
 ladvd_SOURCES = $(common_headers) main.c main.h
-ladvd_LDADD = $(noinst_LTLIBRARIES) @EVENT_LIB@ @CAP_LIB@
+ladvd_LDADD = $(noinst_LTLIBRARIES) $(EVENT_LIB) $(CAP_LIB)
