@@ -197,8 +197,11 @@ int main(int argc, char *argv[]) {
 	close(cpair[0]);
 	close(mpair[0]);
 
+	cfd = cpair[1];
+	mfd = mpair[1];
+
 	// enter the master loop
-	master_init(&netifs, netifc, sargc, cpair[1], mpair[1]);
+	master_init(&netifs, netifc, sargc, cfd, mfd);
 
 	// not reached
 	my_fatal("master process failed");
@@ -325,6 +328,14 @@ void queue_msg(int fd, short event, int *cfd) {
     if (rmsg.cmd != MASTER_RECV)
 	return;
 
+    // fetch ttl and name
+    if ((name = protos[nmsg->proto].parse_min(&rmsg)) == NULL)
+	return;
+    if (!IS_HOSTNAME(name)) {
+	free(name);
+	return;
+    }
+
     TAILQ_FOREACH(msg, &mqueue, entries) {
 	// match ifindex
 	if (rmsg.index != msg->index)
@@ -348,11 +359,11 @@ void queue_msg(int fd, short event, int *cfd) {
 	TAILQ_INSERT_TAIL(&mqueue, nmsg, entries);
     }
 
-    if (options & (OPT_AUTO|OPT_DESCR))
-	if ((netif = netif_byindex(&netifs, msg->index)) == NULL)
-	    return;
-    else
+    if ((options & (OPT_AUTO|OPT_DESCR)) == 0 ||
+	(netif = netif_byindex(&netifs, msg->index)) == NULL) {
+	free(name);
 	return;
+    }
 
     // enable the received protocol
     if (options & OPT_AUTO)
@@ -360,13 +371,6 @@ void queue_msg(int fd, short event, int *cfd) {
 
     // save the received name to ifdescr
     if (options & OPT_DESCR) {
-	name = protos[nmsg->proto].parse_name(nmsg->msg);
-	if (name == NULL)
-	    return;
-	if (!IS_HOSTNAME(name)) {
-	    free(name);
-	    return;
-	}
 
 	memset(&rmsg, 0, sizeof(rmsg));
 	rmsg.index = netif->index;

@@ -122,7 +122,8 @@ struct proto {
     const char *name;
     uint8_t dst_addr[ETHER_ADDR_LEN];
     size_t (*build_msg) (void *, struct netif *, struct sysinfo *);
-    size_t (*parse_name) (void *);
+    char * (*parse_min) (void *);
+    size_t (*parse_full) (void *);
     uint8_t llc_org[3];
     uint16_t llc_pid;
 };
