@@ -212,7 +212,8 @@ void master_init(struct nhead *netifs, uint16_t netifc, int ac,
 	pcap_hdr.network = 1;
 
 	// send pcap global header
-	write(rawfd, &pcap_hdr, sizeof(pcap_hdr));
+	if (write(rawfd, &pcap_hdr, sizeof(pcap_hdr)) != sizeof(pcap_hdr))
+	    my_fatal("failed to write pcap global header");
     } else {
 
 	my_chroot(PACKAGE_CHROOT_DIR);
@@ -304,26 +305,24 @@ void master_cmd(int cmdfd, short event, int *rawfd) {
     // transmit packet
     if (mreq.cmd == MASTER_SEND) {
 	mreq.len = master_rsend(*rawfd, &mreq);
-	mreq.completed = 1;
-	write(cmdfd, &mreq, MASTER_MSG_SIZE);
 #if HAVE_LINUX_ETHTOOL_H
     // fetch ethtool details
     } else if (mreq.cmd == MASTER_ETHTOOL) {
 	mreq.len = master_ethtool(*rawfd, &mreq);
-	mreq.completed = 1;
-	write(cmdfd, &mreq, MASTER_MSG_SIZE);
 #endif /* HAVE_LINUX_ETHTOOL_H */
 #ifdef SIOCSIFDESCR
     // update interface description
     } else if (mreq.cmd == MASTER_DESCR) {
 	mreq.len = master_descr(*rawfd, &mreq);
-	mreq.completed = 1;
-	write(cmdfd, &mreq, MASTER_MSG_SIZE);
 #endif /* SIOCGIFDESCR */
     // invalid request
     } else {
 	my_fatal("invalid request received");
     }
+
+    mreq.completed = 1;
+    if (write(cmdfd, &mreq, MASTER_MSG_SIZE) != MASTER_MSG_SIZE)
+	    my_fatal("failed to return message to child");
 }
 
 
@@ -335,6 +334,7 @@ void master_recv(int fd, short event, struct master_rfd *rfd) {
     unsigned int p;
 
 
+    memset(&mrecv, 0, sizeof (mrecv));
     mrecv.index = rfd->index;
     mrecv.len = recv(rfd->fd, mrecv.msg, ETHER_MAX_LEN, MSG_DONTWAIT);
 
@@ -356,7 +356,8 @@ void master_recv(int fd, short event, struct master_rfd *rfd) {
 	break;
     }
 
-    write(rfd->cfd, mrecv.msg, mrecv.len);
+    if (write(rfd->cfd, mrecv.msg, MASTER_MSG_SIZE) != MASTER_MSG_SIZE)
+	    my_fatal("failed to send message to child");
     rcount++;
 }
 
@@ -377,6 +378,12 @@ int master_rcheck(struct master_msg *mreq) {
     }
 
     if (mreq->cmd == MASTER_SEND) {
+
+	if (mreq->len < ETHER_MIN_LEN) {
+	    my_log(CRIT, "invalid message length supplied");
+	    return(EXIT_FAILURE);
+	}
+
 	memcpy(&ether, mreq->msg, sizeof(ether));
 	memcpy(&llc, mreq->msg + sizeof(ether), sizeof(llc));
 
@@ -579,7 +586,9 @@ size_t master_rsend(int s, struct master_msg *mreq) {
 	    pcap_rec_hdr.incl_len = mreq->len;
 	    pcap_rec_hdr.orig_len = mreq->len;
 
-	    (void) write(s, &pcap_rec_hdr, sizeof(pcap_rec_hdr));
+	    if (write(s, &pcap_rec_hdr, sizeof(pcap_rec_hdr))
+		    != sizeof(pcap_rec_hdr))
+		my_fatal("failed to write pcap record header");
 	}
 
 	return(write(s, mreq->msg, mreq->len));
