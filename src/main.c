@@ -230,7 +230,7 @@ int main(int argc, char *argv[]) {
 
     while (cfd) {
 
-	// create netifs
+	// update netifs
 	my_log(INFO, "fetching all interfaces"); 
 	if (netif_fetch(sargc, sargv, &sysinfo, &netifs) == 0) {
 	    my_log(CRIT, "unable fetch interfaces");
