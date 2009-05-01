@@ -363,8 +363,10 @@ void master_recv(int fd, short event, struct master_rfd *rfd) {
 
 
 int master_rcheck(struct master_msg *mreq) {
-    struct ether_hdr ether;
-    struct ether_llc llc;
+
+    assert(mreq);
+    assert(mreq->len <= ETHER_MAX_LEN);
+    assert(mreq->cmd < MASTER_MAX);
 
     // validate ifindex
     if (if_indextoname(mreq->index, mreq->name) == NULL) {
@@ -372,81 +374,25 @@ int master_rcheck(struct master_msg *mreq) {
 	return(EXIT_FAILURE);
     }
 
-    if (mreq->len > ETHER_MAX_LEN) {
-	my_log(CRIT, "invalid message length supplied");
-	return(EXIT_FAILURE);
-    }
-
     if (mreq->cmd == MASTER_SEND) {
 
-	if (mreq->len < ETHER_MIN_LEN) {
-	    my_log(CRIT, "invalid message length supplied");
-	    return(EXIT_FAILURE);
-	}
-
-	memcpy(&ether, mreq->msg, sizeof(ether));
-	memcpy(&llc, mreq->msg + sizeof(ether), sizeof(llc));
-
-	// lldp
-	static uint8_t lldp_dst[] = LLDP_MULTICAST_ADDR;
-
-	if ((memcmp(ether.dst, lldp_dst, ETHER_ADDR_LEN) == 0) &&
-	    (ether.type == htons(ETHERTYPE_LLDP))) {
-	    return(EXIT_SUCCESS);
-	}
-
-	// cdp
-	const uint8_t cdp_dst[] = CDP_MULTICAST_ADDR;
-	const uint8_t cdp_org[] = LLC_ORG_CISCO;
-
-	if ((memcmp(ether.dst, cdp_dst, ETHER_ADDR_LEN) == 0) &&
-	    (memcmp(llc.org, cdp_org, sizeof(llc.org)) == 0) &&
-	    (llc.protoid == htons(LLC_PID_CDP))) {
-	    return(EXIT_SUCCESS);
-	}
-
-	// edp
-	const uint8_t edp_dst[] = EDP_MULTICAST_ADDR;
-	const uint8_t edp_org[] = LLC_ORG_EXTREME;
-
-	if ((memcmp(ether.dst, edp_dst, ETHER_ADDR_LEN) == 0) &&
-	    (memcmp(llc.org, edp_org, sizeof(llc.org)) == 0) &&
-	    (llc.protoid == htons(LLC_PID_EDP))) {
-	    return(EXIT_SUCCESS);
-	}
-
-	// fdp
-	const uint8_t fdp_dst[] = FDP_MULTICAST_ADDR;
-	const uint8_t fdp_org[] = LLC_ORG_FOUNDRY;
-
-	if ((memcmp(ether.dst, fdp_dst, ETHER_ADDR_LEN) == 0) &&
-	    (memcmp(llc.org, fdp_org, sizeof(llc.org)) == 0) &&
-	    (llc.protoid == htons(LLC_PID_FDP))) {
-	    return(EXIT_SUCCESS);
-	}
-
-	// ndp
-	const uint8_t ndp_dst[] = NDP_MULTICAST_ADDR;
-	const uint8_t ndp_org[] = LLC_ORG_NORTEL;
-
-	if ((memcmp(ether.dst, ndp_dst, ETHER_ADDR_LEN) == 0) &&
-	    (memcmp(llc.org, ndp_org, sizeof(llc.org)) == 0) &&
-	    (llc.protoid == htons(LLC_PID_NDP_HELLO))) {
-	    return(EXIT_SUCCESS);
-	}
+	assert(mreq->len >= ETHER_MIN_LEN);
+	assert(mreq->proto < PROTO_MAX);
+	assert(protos[mreq->proto].check(mreq->msg, mreq->len) != NULL);
+	return(EXIT_SUCCESS);
     }
 
 #if HAVE_LINUX_ETHTOOL_H
     if (mreq->cmd == MASTER_ETHTOOL) {
-	if (mreq->len == sizeof(struct ethtool_cmd)) 
-	    return(EXIT_SUCCESS);
+	assert(mreq->len == sizeof(struct ethtool_cmd));
+	return(EXIT_SUCCESS);
     }
 #endif /* HAVE_LINUX_ETHTOOL_H */
 
 #ifdef SIOCSIFDESCR
     if (mreq->cmd == MASTER_DESCR) {
-	if (mreq->len == IFDESCRSIZE)
-	    return(EXIT_SUCCESS);
+	assert(mreq->len <= IFDESCRSIZE);
+	return(EXIT_SUCCESS);
     }
 #endif /* SIOCSIFDESCR */
 

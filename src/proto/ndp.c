@@ -60,3 +60,23 @@ size_t ndp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
     return(VOIDP_DIFF(pos, packet));
 }
 
+char * ndp_check(void *packet, size_t length) {
+    struct ether_hdr ether;
+    struct ether_llc llc;
+    const uint8_t ndp_dst[] = NDP_MULTICAST_ADDR;
+    const uint8_t ndp_org[] = LLC_ORG_NORTEL;
+
+    assert(packet);
+    assert(length > (sizeof(ether) + sizeof(llc)));
+    assert(length <= ETHER_MAX_LEN);
+
+    memcpy(&ether, packet, sizeof(ether));
+    memcpy(&llc, packet + sizeof(ether), sizeof(llc));
+
+    if ((memcmp(ether.dst, ndp_dst, ETHER_ADDR_LEN) == 0) &&
+	(memcmp(llc.org, ndp_org, sizeof(llc.org)) == 0) &&
+	(llc.protoid == htons(LLC_PID_NDP_HELLO))) {
+	    return(packet + sizeof(ether) + sizeof(llc));
+    } 
+    return(NULL);
+}

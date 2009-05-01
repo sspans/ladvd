@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <errno.h>
+#include <assert.h>
 #include <arpa/inet.h>
 #include <sys/queue.h>
 #include <sys/types.h>
@@ -122,8 +123,8 @@ struct proto {
     const char *name;
     uint8_t dst_addr[ETHER_ADDR_LEN];
     size_t (*build_msg) (void *, struct netif *, struct sysinfo *);
+    char * (*check) (void *, size_t);
     char * (*parse_min) (void *);
-    size_t (*parse_full) (void *);
     uint8_t llc_org[3];
     uint16_t llc_pid;
 };
@@ -139,5 +140,11 @@ size_t cdp_packet(void *, struct netif *, struct sysinfo *);
 size_t edp_packet(void *, struct netif *, struct sysinfo *);
 size_t fdp_packet(void *, struct netif *, struct sysinfo *);
 size_t ndp_packet(void *, struct netif *, struct sysinfo *);
+
+char * lldp_check(void *, size_t);
+char * cdp_check(void *, size_t);
+char * edp_check(void *, size_t);
+char * fdp_check(void *, size_t);
+char * ndp_check(void *, size_t);
 
 #endif /* _common_h */

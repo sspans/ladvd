@@ -13,5 +13,6 @@
 #define PROTO_EDP   2
 #define PROTO_FDP   3
 #define PROTO_NDP   4
+#define PROTO_MAX   5
 
 #endif /* _protos_h */

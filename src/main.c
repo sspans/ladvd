@@ -329,8 +329,8 @@ void queue_msg(int fd, short event, int *cfd) {
 	return;
 
     // fetch ttl and name
-    if ((name = protos[nmsg->proto].parse_min(&rmsg)) == NULL)
-	return;
+    //if ((name = protos[nmsg->proto].parse_min(&rmsg)) == NULL)
+    //	return;
     if (!IS_HOSTNAME(name)) {
 	free(name);
 	return;

@@ -9,6 +9,7 @@
 #define MASTER_RECV	1
 #define MASTER_ETHTOOL	2
 #define MASTER_DESCR	3
+#define MASTER_MAX	4
 
 struct master_msg {
     uint32_t index;

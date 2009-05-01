@@ -330,3 +330,20 @@ size_t lldp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
     return(VOIDP_DIFF(pos, packet));
 }
 
+char * lldp_check(void *packet, size_t length) {
+    struct ether_hdr ether;
+    static uint8_t lldp_dst[] = LLDP_MULTICAST_ADDR;
+
+    assert(packet);
+    assert(length > sizeof(ether));
+    assert(length <= ETHER_MAX_LEN);
+
+    memcpy(&ether, packet, sizeof(ether));
+
+    if ((memcmp(ether.dst, lldp_dst, ETHER_ADDR_LEN) == 0) &&
+	(ether.type == htons(ETHERTYPE_LLDP))) {
+	return(packet + sizeof(ether));
+    }
+
+    return(NULL);
+}
