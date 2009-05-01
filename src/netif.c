@@ -239,8 +239,13 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 	    netif = my_malloc(sizeof(struct netif));
 	    memset(netif, 0, sizeof(struct netif));
 	    TAILQ_INSERT_TAIL(netifs, netif, entries);
+	} else {
+	    // reset everything but protos
+	    uint16_t protos = netif->protos;
+	    memset(netif, 0, sizeof(struct netif));
+	    netif->protos = protos;
 	}
-	
+
         // copy name, index and type
 #ifdef AF_PACKET
 	netif->index = saddrll.sll_ifindex;
