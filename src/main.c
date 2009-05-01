@@ -106,8 +106,13 @@ int main(int argc, char *argv[]) {
 		loglevel++;
 		break;
 	    case 'z':
+#ifdef SIOCSIFDESCR
 		options |= OPT_RECV | OPT_DESCR;
 		break;
+#else
+		my_log(CRIT, "ifdescr support not available");
+		usage();
+#endif /* SIOCSIFDESCR */
 	    case 'c':
 		// two-letter ISO 3166 country code
 		if (strlen(optarg) != 2)
@@ -402,7 +407,9 @@ void usage() {
 	    "\t-r = Receive Packets\n"
 	    "\t-u <user> = Setuid User (defaults to %s)\n"
 	    "\t-v = Increase logging verbosity\n"
+#ifdef SIOCSIFDESCR
 	    "\t-z = Save received info in interface description\n"
+#endif /* SIOCSIFDESCR */
 	    "\t-c <CC> = System Country Code\n"
 	    "\t-l <location> = System Location\n"
 	    "\t-C = Enable CDP\n"
