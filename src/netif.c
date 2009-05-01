@@ -134,7 +134,7 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 #endif
 
     // netifs
-    struct netif *netif = NULL;
+    struct netif *n_netif, *netif = NULL;
 
     sockfd = my_socket(af, SOCK_DGRAM, 0);
 
@@ -152,6 +152,11 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
     sysinfo->cap_active = CAP_HOST;
     // reset counter
     sysinfo->physif_count = 0;
+
+    // mark all interfaces
+    TAILQ_FOREACH(netif, netifs, entries) {
+	netif->type = NETIF_OLD;
+    }
 
     for (ifaddr = ifaddrs; ifaddr != NULL; ifaddr = ifaddr->ifa_next) {
 
@@ -232,6 +237,7 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 	// fetch / create netif
 	if ((netif = netif_byname(netifs, ifaddr->ifa_name)) == NULL) {
 	    netif = my_malloc(sizeof(struct netif));
+	    memset(netif, 0, sizeof(struct netif));
 	    TAILQ_INSERT_TAIL(netifs, netif, entries);
 	}
 	
@@ -256,6 +262,15 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 	count++;
     }
 
+    // remove old interfaces
+    TAILQ_FOREACH_SAFE(netif, netifs, entries, n_netif) {
+	if (netif->type != NETIF_OLD)
+	    continue;
+	my_log(INFO, "removing old interface %s", netif->name);
+	TAILQ_REMOVE(netifs, netif, entries);
+	free(netif);
+    }
+
     // add slave subif lists to each master
     TAILQ_FOREACH(netif, netifs, entries) {
 	switch(netif->type) {
@@ -277,6 +292,7 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
     netif_addrs(ifaddrs, netifs, sysinfo);
 
     // check for forwarding
+    my_log(INFO, "checking forwarding status");
     netif_forwarding(sysinfo);
 
     // use the first mac as chassis id

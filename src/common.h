@@ -108,6 +108,7 @@ struct sysinfo {
 #define NETIF_REGULAR	0
 #define NETIF_BONDING	1
 #define NETIF_BRIDGE	2
+#define NETIF_OLD	255
 
 
 #define OPT_DAEMON	(1 << 0)
