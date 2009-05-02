@@ -165,7 +165,7 @@ void master_init(struct nhead *netifs, uint16_t netifc, int ac,
 	my_fatal("opening raw socket failed");
 
     // open listen sockets
-    if (options & OPT_RECV) {
+    if ((options & OPT_RECV) && (!(options & OPT_DEBUG))) {
 
 	// init
 	rfds = my_calloc(netifc, sizeof(struct master_rfd));
@@ -199,7 +199,16 @@ void master_init(struct nhead *netifs, uint16_t netifc, int ac,
     }
 
     // debug
-    if (loglevel >= DEBUG) {
+    if (options & OPT_DEBUG) {
+
+	// listen for packets on stdin
+	if (options & OPT_RECV) {
+	    i = 0;
+	    rfds = my_calloc(1, sizeof(struct master_rfd));
+	    rfds[i].fd = rawfd;
+	    rfds[i].cfd = msgfd;
+	    netifc = 1;
+	}
 
 	// zero
 	memset(&pcap_hdr, 0, sizeof(pcap_hdr));
@@ -405,7 +414,7 @@ int master_rsocket(struct master_rfd *rfd, int mode) {
     int rsocket = -1;
 
     // return stdout on debug
-    if ((loglevel >= DEBUG) && (rfd == NULL))
+    if ((options & OPT_DEBUG) && (rfd == NULL))
 	return(1);
 
 #ifdef HAVE_NETPACKET_PACKET_H
@@ -523,7 +532,7 @@ size_t master_rsend(int s, struct master_msg *mreq) {
     struct timeval tv;
 
     // debug
-    if (loglevel >= DEBUG) {
+    if (options & OPT_DEBUG) {
 
 	// write a pcap record header
 	if (gettimeofday(&tv, NULL) == 0) {

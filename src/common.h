@@ -115,8 +115,9 @@ struct sysinfo {
 #define OPT_RECV	(1 << 1)
 #define OPT_AUTO	(1 << 2)
 #define OPT_ONCE	(1 << 3)
-#define OPT_MADDR	(1 << 4)
-#define OPT_DESCR	(1 << 5)
+#define OPT_DEBUG	(1 << 4)
+#define OPT_MADDR	(1 << 5)
+#define OPT_DESCR	(1 << 6)
 
 
 struct proto {
@@ -125,7 +126,7 @@ struct proto {
     uint8_t dst_addr[ETHER_ADDR_LEN];
     size_t (*build_msg) (void *, struct netif *, struct sysinfo *);
     char * (*check) (void *, size_t);
-    char * (*parse_min) (void *);
+    char * (*decode) (void *, size_t);
     uint8_t llc_org[3];
     uint16_t llc_pid;
 };
@@ -147,5 +148,11 @@ char * cdp_check(void *, size_t);
 char * edp_check(void *, size_t);
 char * fdp_check(void *, size_t);
 char * ndp_check(void *, size_t);
+
+char * lldp_decode(void *, size_t);
+char * cdp_decode(void *, size_t);
+char * edp_decode(void *, size_t);
+char * fdp_decode(void *, size_t);
+char * ndp_decode(void *, size_t);
 
 #endif /* _common_h */

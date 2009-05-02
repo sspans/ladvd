@@ -20,7 +20,7 @@ void queue_msg(int fd, short event, int *cfd);
 
 int main(int argc, char *argv[]) {
 
-    int ch, i, p, run_once = 0;
+    int ch, i, p;
     char *username = PACKAGE_USER;
 #ifndef __APPLE__
     char *pidfile = PACKAGE_PID_FILE;
@@ -77,7 +77,7 @@ int main(int argc, char *argv[]) {
 		options |= OPT_AUTO | OPT_RECV;
 		break;
 	    case 'd':
-		loglevel = DEBUG;
+		options |= OPT_DEBUG;
 		options &= ~OPT_DAEMON;
 		break;
 	    case 'f':
@@ -152,7 +152,7 @@ int main(int argc, char *argv[]) {
 	my_fatal("unable fetch interfaces");
 
     // validate username
-    if ((loglevel < DEBUG) && (pwd = getpwnam(username)) == NULL)
+    if (!(options & OPT_DEBUG) && (pwd = getpwnam(username)) == NULL)
 	my_fatal("user %s does not exist", username);
 
     // fetch system details
@@ -219,7 +219,7 @@ int main(int argc, char *argv[]) {
 	cfd = cpair[0];
 	mfd = mpair[0];
 
-	if (loglevel < DEBUG)
+	if (!(options & OPT_DEBUG))
 	    my_drop_privs(pwd);
 	setproctitle("child");
     }
@@ -289,7 +289,7 @@ int main(int argc, char *argv[]) {
 	}
 
 sleep:
-	if (run_once == 1)
+	if (options & OPT_ONCE)
 	    return (EXIT_SUCCESS);
 
 	if ((options & OPT_RECV) == 0) {
@@ -298,11 +298,14 @@ sleep:
 	    continue;
 	}
 
-	// fetch time
-	if (gettimeofday(&tv, NULL) != 0)
-	    continue;
-	tv.tv_sec += SLEEPTIME;
+	// prepare timeval
+	memset(&tv, 0, sizeof(tv));
+	tv.tv_sec = SLEEPTIME;
 
+	// initalize the event library
+	event_init();
+
+	// listen for requests from the master
 	event_set(&evmsg, mfd, EV_READ|EV_PERSIST, (void *)queue_msg, &cfd);
 	event_add(&evmsg, &tv);
 	event_loop(EVLOOP_ONCE);
@@ -327,6 +330,7 @@ void queue_msg(int fd, short event, int *cfd) {
     char *name = NULL;
     unsigned int len;
 
+    my_log(INFO, "fetching message from master");
     len = recv(fd, &rmsg, MASTER_MSG_SIZE, MSG_DONTWAIT);
     if (len < MASTER_MSG_SIZE)
 	return;
