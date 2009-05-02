@@ -342,7 +342,7 @@ void master_recv(int fd, short event, struct master_rfd *rfd) {
     static unsigned int rcount = 0;
     unsigned int p;
 
-
+    my_log(INFO, "receiving message");
     memset(&mrecv, 0, sizeof (mrecv));
     mrecv.index = rfd->index;
     mrecv.len = recv(rfd->fd, mrecv.msg, ETHER_MAX_LEN, MSG_DONTWAIT);
@@ -362,6 +362,7 @@ void master_recv(int fd, short event, struct master_rfd *rfd) {
 	    continue;
 
 	mrecv.proto = p;
+	my_log(INFO, "found protocol %s", protos[p].name);
 	break;
     }
 
