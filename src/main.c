@@ -305,10 +305,11 @@ sleep:
 	// initalize the event library
 	event_init();
 
-	// listen for requests from the master
+	// listen for messages from the master
 	event_set(&evmsg, mfd, EV_READ|EV_PERSIST, (void *)queue_msg, &cfd);
-	event_add(&evmsg, &tv);
-	event_loop(EVLOOP_ONCE);
+	event_add(&evmsg, NULL);
+	event_loopexit(&tv);
+	event_dispatch();
 
 	// remove expired messages
 	TAILQ_FOREACH_SAFE(msg, &mqueue, entries, nmsg) {
