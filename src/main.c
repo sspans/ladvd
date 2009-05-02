@@ -331,16 +331,19 @@ void queue_msg(int fd, short event, int *cfd) {
     char *name = NULL;
     unsigned int len;
 
-    my_log(INFO, "fetching message from master");
+    my_log(INFO, "receiving message from master");
     len = recv(fd, &rmsg, MASTER_MSG_SIZE, MSG_DONTWAIT);
-    if (len < MASTER_MSG_SIZE)
-	return;
-    if (rmsg.cmd != MASTER_RECV)
-	return;
 
-    // fetch ttl and name
-    //if ((name = protos[nmsg->proto].parse_min(&rmsg)) == NULL)
-    //	return;
+    assert(len == MASTER_MSG_SIZE);
+    assert(rmsg.cmd == MASTER_RECV);
+    assert(rmsg.proto < PROTO_MAX);
+    assert(rmsg.len >= ETHER_MIN_LEN);
+    assert(rmsg.len <= ETHER_MAX_LEN);
+
+    // decode message
+    my_log(INFO, "decoding message");
+    if ((name = protos[rmsg.proto].decode(rmsg.msg, rmsg.len)) == NULL)
+    	return;
     if (!IS_HOSTNAME(name)) {
 	free(name);
 	return;

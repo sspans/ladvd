@@ -344,6 +344,7 @@ void master_recv(int fd, short event, struct master_rfd *rfd) {
 
     my_log(INFO, "receiving message");
     memset(&mrecv, 0, sizeof (mrecv));
+    mrecv.cmd = MASTER_RECV;
     mrecv.index = rfd->index;
     if (options & OPT_DEBUG)
 	mrecv.len = read(rfd->fd, mrecv.msg, ETHER_MAX_LEN);
@@ -374,7 +375,7 @@ void master_recv(int fd, short event, struct master_rfd *rfd) {
     }
     my_log(INFO, "received %s message (%d bytes)", protos[p].name, mrecv.len);
 
-    if (write(rfd->cfd, mrecv.msg, MASTER_MSG_SIZE) != MASTER_MSG_SIZE)
+    if (write(rfd->cfd, &mrecv, MASTER_MSG_SIZE) != MASTER_MSG_SIZE)
 	    my_fatal("failed to send message to child");
     rcount++;
 }
