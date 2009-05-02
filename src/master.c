@@ -205,7 +205,7 @@ void master_init(struct nhead *netifs, uint16_t netifc, int ac,
 	if (options & OPT_RECV) {
 	    i = 0;
 	    rfds = my_calloc(1, sizeof(struct master_rfd));
-	    rfds[i].fd = rawfd;
+	    rfds[i].fd = 0;
 	    rfds[i].cfd = msgfd;
 	    netifc = 1;
 	}
@@ -345,7 +345,10 @@ void master_recv(int fd, short event, struct master_rfd *rfd) {
     my_log(INFO, "receiving message");
     memset(&mrecv, 0, sizeof (mrecv));
     mrecv.index = rfd->index;
-    mrecv.len = recv(rfd->fd, mrecv.msg, ETHER_MAX_LEN, MSG_DONTWAIT);
+    if (options & OPT_DEBUG)
+	mrecv.len = read(rfd->fd, mrecv.msg, ETHER_MAX_LEN);
+    else
+	mrecv.len = recv(rfd->fd, mrecv.msg, ETHER_MAX_LEN, MSG_DONTWAIT);
 
     // skip small packets
     if (mrecv.len < ETHER_MIN_LEN)
@@ -362,9 +365,14 @@ void master_recv(int fd, short event, struct master_rfd *rfd) {
 	    continue;
 
 	mrecv.proto = p;
-	my_log(INFO, "found protocol %s", protos[p].name);
 	break;
     }
+
+    if (protos[p].name == NULL) {
+	my_log(INFO, "unknown message type received");
+	return;
+    }
+    my_log(INFO, "received %s message (%d bytes)", protos[p].name, mrecv.len);
 
     if (write(rfd->cfd, mrecv.msg, MASTER_MSG_SIZE) != MASTER_MSG_SIZE)
 	    my_fatal("failed to send message to child");
