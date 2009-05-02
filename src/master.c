@@ -394,7 +394,6 @@ int master_rcheck(struct master_msg *mreq) {
     }
 
     if (mreq->cmd == MASTER_SEND) {
-
 	assert(mreq->len >= ETHER_MIN_LEN);
 	assert(mreq->proto < PROTO_MAX);
 	assert(protos[mreq->proto].check(mreq->msg, mreq->len) != NULL);

@@ -269,6 +269,7 @@ int main(int argc, char *argv[]) {
 
 		    my_log(INFO, "building %s packet for %s", 
 				  protos[p].name, subif->name);
+		    mreq.proto = p;
 		    mreq.len = protos[p].build_msg(mreq.msg, subif, &sysinfo);
 
 		    if (mreq.len == 0) {
