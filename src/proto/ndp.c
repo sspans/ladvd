@@ -80,3 +80,46 @@ char * ndp_check(void *packet, size_t length) {
     } 
     return(NULL);
 }
+
+size_t ndp_peer(struct master_msg *msg) {
+    char *packet = NULL;
+    size_t length;
+    struct ndp_header ndp;
+
+    char *tlv;
+    char *pos;
+
+    uint16_t tlv_type;
+    uint16_t tlv_length;
+
+    char *hostname = NULL;
+
+    assert(msg);
+
+    packet = msg->msg;
+    length = msg->len;
+
+    assert(packet);
+    assert((pos = ndp_check(packet, length)) != NULL);
+    length -= VOIDP_DIFF(pos, packet);
+    if (length < sizeof(ndp)) {
+	my_log(INFO, "missing NDP header");
+	return 0;
+    }
+
+    memcpy(&ndp, pos, sizeof(ndp));
+    if (!inet_ntop(AF_INET, ndp.addr, msg->peer, IFDESCRSIZE)) {
+	my_log(INFO, "failed to copy peer addr");
+	return 0;
+    }
+    // XXX: this should be improved
+    msg->ttl = LADVD_TTL;
+
+
+    // update tlv counters
+    pos += sizeof(ndp);
+    length -= sizeof(ndp);
+
+    // return the packet length
+    return(VOIDP_DIFF(pos, packet));
+}
