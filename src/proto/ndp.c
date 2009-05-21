@@ -86,13 +86,7 @@ size_t ndp_peer(struct master_msg *msg) {
     size_t length;
     struct ndp_header ndp;
 
-    char *tlv;
     char *pos;
-
-    uint16_t tlv_type;
-    uint16_t tlv_length;
-
-    char *hostname = NULL;
 
     assert(msg);
 
@@ -108,7 +102,7 @@ size_t ndp_peer(struct master_msg *msg) {
     }
 
     memcpy(&ndp, pos, sizeof(ndp));
-    if (!inet_ntop(AF_INET, ndp.addr, msg->peer, IFDESCRSIZE)) {
+    if (!inet_ntop(AF_INET, &ndp.addr, msg->peer, IFDESCRSIZE)) {
 	my_log(INFO, "failed to copy peer addr");
 	return 0;
     }
