@@ -2,7 +2,6 @@
 #ifndef _util_h
 #define _util_h
 
-#include "master.h"
 #include <pwd.h>
 
 #define FATAL	-1

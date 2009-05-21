@@ -16,6 +16,9 @@
 #include <sys/socket.h>
 #include <sys/utsname.h>
 
+#include <sys/time.h>
+#include <event.h>
+
 #if HAVE_NET_IF_H
 #include <net/if.h>
 #define _LINUX_IF_H
@@ -120,6 +123,28 @@ struct sysinfo {
 #define OPT_DESCR	(1 << 6)
 
 
+struct master_msg {
+    uint32_t index;
+    char name[IFNAMSIZ];
+    uint8_t cmd;
+    uint8_t completed;
+    char msg[ETHER_MAX_LEN];
+    size_t len;
+    uint8_t proto;
+    time_t ttl;
+    char peer[IFDESCRSIZE];
+    TAILQ_ENTRY(master_msg) entries;
+};
+
+TAILQ_HEAD(mhead, master_msg);
+
+#define MASTER_MSG_SIZE   sizeof(struct master_msg)
+#define MASTER_SEND	0
+#define MASTER_RECV	1
+#define MASTER_ETHTOOL	2
+#define MASTER_DESCR	3
+#define MASTER_MAX	4
+
 struct proto {
     uint8_t enabled;
     const char *name;
@@ -128,37 +153,13 @@ struct proto {
     uint16_t llc_pid;
     size_t (*build_msg) (void *, struct netif *, struct sysinfo *);
     char * (*check) (void *, size_t);
-    size_t (*peer) (void *, size_t);
+    size_t (*peer) (struct master_msg *);
     char * (*decode) (void *, size_t);
 };
+
 
 void sysinfo_fetch(struct sysinfo *);
 uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *, struct nhead *);
 int netif_media(int cfd, struct netif *session);
-
-
-size_t lldp_packet(void *, struct netif *, struct sysinfo *);
-size_t cdp_packet(void *, struct netif *, struct sysinfo *);
-size_t edp_packet(void *, struct netif *, struct sysinfo *);
-size_t fdp_packet(void *, struct netif *, struct sysinfo *);
-size_t ndp_packet(void *, struct netif *, struct sysinfo *);
-
-char * lldp_check(void *, size_t);
-char * cdp_check(void *, size_t);
-char * edp_check(void *, size_t);
-char * fdp_check(void *, size_t);
-char * ndp_check(void *, size_t);
-
-size_t lldp_peer(void *, size_t);
-size_t cdp_peer(void *, size_t);
-size_t edp_peer(void *, size_t);
-size_t fdp_peer(void *, size_t);
-size_t ndp_peer(void *, size_t);
-
-char * lldp_decode(void *, size_t);
-char * cdp_decode(void *, size_t);
-char * edp_decode(void *, size_t);
-char * fdp_decode(void *, size_t);
-char * ndp_decode(void *, size_t);
 
 #endif /* _common_h */

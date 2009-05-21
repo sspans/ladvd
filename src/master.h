@@ -3,30 +3,6 @@
 #define _master_h
 
 #include <sys/ioctl.h>
-#include <sys/time.h>
-#include <event.h>
-
-#define MASTER_SEND	0
-#define MASTER_RECV	1
-#define MASTER_ETHTOOL	2
-#define MASTER_DESCR	3
-#define MASTER_MAX	4
-
-struct master_msg {
-    uint32_t index;
-    char name[IFNAMSIZ];
-    uint8_t cmd;
-    uint8_t completed;
-    char msg[ETHER_MAX_LEN];
-    size_t len;
-    uint8_t proto;
-    time_t ttl;
-    char peer[IFDESCRSIZE];
-    TAILQ_ENTRY(master_msg) entries;
-};
-
-TAILQ_HEAD(mhead, master_msg);
-#define MASTER_MSG_SIZE   sizeof(struct master_msg)
 
 struct master_rfd {
     uint32_t index;
@@ -37,8 +13,6 @@ struct master_rfd {
     struct event event;
 };
 
-void master_init(struct nhead *, uint16_t netifc, int ac,
-		 int cmdfd, int msgfd);
 void master_signal(int fd, short event, void *p);
 void master_cmd(int fd, short event, int *rawfd);
 void master_recv(int fd, short event, struct master_rfd *rfd);
