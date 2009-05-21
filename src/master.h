@@ -2,6 +2,7 @@
 #ifndef _master_h
 #define _master_h
 
+#include <sys/ioctl.h>
 #include <sys/time.h>
 #include <event.h>
 
@@ -20,6 +21,7 @@ struct master_msg {
     size_t len;
     uint8_t proto;
     time_t ttl;
+    char peer[IFDESCRSIZE];
     TAILQ_ENTRY(master_msg) entries;
 };
 
