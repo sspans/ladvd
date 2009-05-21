@@ -13,8 +13,8 @@ size_t cdp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
     struct ether_llc llc;
     struct cdp_header cdp;
 
-    uint8_t *tlv;
-    uint8_t *pos = packet;
+    char *tlv;
+    char *pos = packet;
     size_t length = ETHER_MAX_LEN;
     tlv_t type;
 
@@ -222,6 +222,75 @@ char * cdp_check(void *packet, size_t length) {
 	(memcmp(llc.org, cdp_org, sizeof(llc.org)) == 0) &&
 	(llc.protoid == htons(LLC_PID_CDP))) {
 	    return(packet + sizeof(ether) + sizeof(llc));
-    } 
+    }
     return(NULL);
 }
+
+size_t cdp_peer(struct master_msg *msg) {
+    char *packet = NULL;
+    size_t length;
+    struct cdp_header cdp;
+
+    char *tlv;
+    char *pos;
+
+    uint16_t tlv_type;
+    uint16_t tlv_length;
+
+    char *hostname = NULL;
+
+    assert(msg);
+
+    packet = msg->msg;
+    length = msg->len;
+
+    assert(packet);
+    assert((pos = cdp_check(packet, length)) != NULL);
+    length -= VOIDP_DIFF(pos, packet);
+    if (length < sizeof(cdp)) {
+	my_log(INFO, "missing CDP header");
+	return 0;
+    }
+
+    memcpy(&cdp, pos, sizeof(cdp));
+    if ((cdp.version < 1) || (cdp.version > 2)) {
+	my_log(INFO, "invalid CDP version");
+	return 0;
+    }
+    msg->ttl = cdp.ttl;
+
+    // update tlv counters
+    pos += sizeof(cdp);
+    length -= sizeof(cdp);
+
+    while (length) {
+	if (!GRAB_CDP_TLV(tlv_type, tlv_length)) {
+	    my_log(INFO, "Corrupt CDP packet: invalid TLV");
+	    return 0;
+	}
+
+	switch(tlv_type) {
+	case CDP_TYPE_DEVICE_ID:
+	case CDP_TYPE_SYSTEM_NAME:
+		if (!GRAB_STRING(hostname, tlv_length)) {
+		    my_log(INFO, "Corrupt CDP packet: invalid System Name TLV");
+		    return 0;
+		}
+		strlcpy(msg->peer, hostname, IFDESCRSIZE);
+		free(hostname);
+		break;
+	default:
+		my_log(INFO, "unknown TLV: type %d, length %d, leaves %d",
+			    tlv_type, tlv_length, length);
+		if (!SKIP(tlv_length)) {
+		    my_log(INFO, "Corrupt CDP packet: invalid TLV length");
+		    return 0;
+		}
+		break;
+	}
+    }
+
+    // return the packet length
+    return(VOIDP_DIFF(pos, packet));
+}
+
