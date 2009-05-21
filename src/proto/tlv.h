@@ -4,6 +4,7 @@
  * PUSH, END_TLV: use memcpy to make them strict alignment compatible
  * added support for LLDP tlv's (7/9 bits)
  * added support for EDP tlv's (0x99 marker)
+ * added extended GRAB macros
  */
 
 #define VOIDP_DIFF(P, Q) ((uintptr_t)((char *)(P) - (char *)(Q)))
@@ -14,13 +15,13 @@ typedef union {
     uint32_t uint32;
 } tlv_t;
 
-#define PUSH(value, type, func) \
-	((length >= sizeof(type)) && \
+#define PUSH(v, t, func) \
+	((length >= sizeof(t)) && \
 	    ( \
-		type = func(value), \
-		memcpy(pos, &type, sizeof(type)), \
-		length -= sizeof(type), \
-		pos += sizeof(type), \
+		t = func(v), \
+		memcpy(pos, &t, sizeof(t)), \
+		length -= sizeof(t), \
+		pos += sizeof(t), \
 		1 \
 	    ))
 #define PUSH_UINT8(value) PUSH(value, type.uint8, )
@@ -35,21 +36,56 @@ typedef union {
 		1 \
 	    ))
 
-#define START_CDP_TLV(type) \
+#define GRAB(d, t, func) \
+	((length >= sizeof(t)) && \
+	    ( \
+		d = func(*((t *)pos)), \
+		length -= sizeof(t), \
+		pos += sizeof(t), \
+		1 \
+            ))
+#define GRAB_UINT8(d) GRAB(d, uint8_t, )
+#define GRAB_UINT16(d) GRAB(d, uint16_t, ntohs)
+#define GRAB_UINT32(d) GRAB(d, uint32_t, ntohl)
+#define GRAB_STRING(d, b) \
+	((length >= (b)) && \
+	    ( \
+		d = my_malloc((b) + 1), \
+		memcpy((d), pos, (b) * sizeof(char)), \
+		*(d + b) = '\0', \
+		length -= (b), \
+		pos += (b), \
+		1 \
+	    ))
+#define SKIP(b) \
+	((length >= (b)) && \
+	    ( \
+		length -= (b), \
+		pos += (b), \
+		1 \
+	    ))
+
+#define START_CDP_TLV(t) \
 	( \
 	    tlv = pos, \
-	    PUSH_UINT16(type) && PUSH_UINT16(0) \
+	    PUSH_UINT16(t) && PUSH_UINT16(0) \
 	)
 #define END_CDP_TLV \
 	( \
 	    type.uint16 = htons(pos - tlv), \
 	    memcpy((uint16_t *)tlv + 1, &type.uint16, sizeof(uint16_t)) \
 	)
-
-#define START_LLDP_TLV(type) \
+#define GRAB_CDP_TLV(t, l) \
 	( \
 	    tlv = pos, \
-	    PUSH_UINT16(type << 9) \
+	    GRAB_UINT16(t) && GRAB_UINT16(l) && \
+	    (l -= 2 * sizeof(uint16_t)) \
+	)
+
+#define START_LLDP_TLV(t) \
+	( \
+	    tlv = pos, \
+	    PUSH_UINT16(t << 9) \
 	)
 #define END_LLDP_TLV \
 	( \
@@ -57,27 +93,47 @@ typedef union {
 	    type.uint16 |= htons((pos - (tlv + 2)) & 0x01ff), \
 	    memcpy(tlv, &type.uint16, sizeof(uint16_t)) \
 	)
-
-#define EDP_TLV_MARKER   0x99
-#define START_EDP_TLV(type) \
+#define GRAB_LLDP_TLV(t, l) \
 	( \
 	    tlv = pos, \
-	    PUSH_UINT8(EDP_TLV_MARKER) && PUSH_UINT8(type) && PUSH_UINT16(0) \
+	    memcpy(&type.uint16, tlv, sizeof(uint16_t)), \
+	    t = ntohs(type.uint16) >> 9, \
+	    l = ntohs(type.uint16) & 0x01ff, \
+	    SKIP(2) \
+	)
+
+#define EDP_TLV_MARKER   0x99
+#define START_EDP_TLV(t) \
+	( \
+	    tlv = pos, \
+	    PUSH_UINT8(EDP_TLV_MARKER) && PUSH_UINT8(t) && PUSH_UINT16(0) \
 	)
 #define END_EDP_TLV \
 	( \
 	    type.uint16 = htons(pos - tlv), \
 	    memcpy((uint16_t *)tlv + 1, &type.uint16, sizeof(uint16_t)) \
 	)
-
-#define START_FDP_TLV(type) \
+#define GRAB_EDP_TLV(t, l) \
 	( \
 	    tlv = pos, \
-	    PUSH_UINT16(type) && PUSH_UINT16(0) \
+	    SKIP(1) && GRAB_UINT8(t) && GRAB_UINT16(l) &&\
+	    (l -= 2 * sizeof(uint16_t)) \
+	)
+
+#define START_FDP_TLV(t) \
+	( \
+	    tlv = pos, \
+	    PUSH_UINT16(t) && PUSH_UINT16(0) \
 	)
 #define END_FDP_TLV \
 	( \
 	    type.uint16 = htons(pos - tlv), \
 	    memcpy((uint16_t *)tlv + 1, &type.uint16, sizeof(uint16_t)) \
+	)
+#define GRAB_FDP_TLV(t, l) \
+	( \
+	    tlv = pos, \
+	    GRAB_UINT16(t) && GRAB_UINT16(l) &&\
+	    (l -= 2 * sizeof(uint16_t)) \
 	)
 
