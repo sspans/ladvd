@@ -12,8 +12,8 @@ size_t lldp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
 
     struct ether_hdr ether;
 
-    uint8_t *tlv;
-    uint8_t *pos = packet;
+    char *tlv;
+    char *pos = packet;
     size_t length = ETHER_MAX_LEN;
     tlv_t type;
 
@@ -326,7 +326,7 @@ size_t lldp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
     END_LLDP_TLV;
 
 
-    // return the  packet length
+    // return the packet length
     return(VOIDP_DIFF(pos, packet));
 }
 
@@ -347,3 +347,99 @@ char * lldp_check(void *packet, size_t length) {
 
     return(NULL);
 }
+
+size_t lldp_peer(struct master_msg *msg) {
+
+    char *packet = NULL;
+    size_t length;
+    char *tlv;
+    char *pos;
+    tlv_t type;
+
+    uint16_t tlv_type;
+    uint16_t tlv_length;
+
+    char *hostname = NULL;
+
+    assert(msg);
+
+    packet = msg->msg;
+    length = msg->len;
+
+    assert(packet);
+    assert((pos = lldp_check(packet, length)) != NULL);
+    length -= VOIDP_DIFF(pos, packet);
+
+    if (!GRAB_LLDP_TLV(tlv_type, tlv_length) ||
+	tlv_type != LLDP_TYPE_CHASSIS_ID) {
+	my_log(INFO, "Invalid LLDP packet: missing Chassis ID TLV");
+	return 0;
+    }
+    if (!SKIP(tlv_length))
+	return 0;
+
+    if (!GRAB_LLDP_TLV(tlv_type, tlv_length) ||
+	tlv_type != LLDP_TYPE_PORT_ID) {
+	my_log(INFO, "Invalid LLDP packet: missing Port ID TLV");
+	return 0;
+    }
+    if (!SKIP(tlv_length))
+	return 0;
+
+    if (!GRAB_LLDP_TLV(tlv_type, tlv_length) ||
+	tlv_type != LLDP_TYPE_TTL) {
+	my_log(INFO, "Invalid LLDP packet: missing TTL TLV");
+	return 0;
+    }
+    if (tlv_length != 2 || !GRAB_UINT16(msg->ttl)) {
+	my_log(INFO, "Invalid LLDP packet: invalid TTL TLV");
+	return 0;
+    }
+
+    while (length) {
+	if (!GRAB_LLDP_TLV(tlv_type, tlv_length)) {
+	    my_log(INFO, "Corrupt LLDP packet: invalid TLV");
+	    return 0;
+	}
+
+	switch(tlv_type) {
+	case LLDP_TYPE_END:
+	    if ((tlv_length != 0) || (length != 0)) {
+		my_log(INFO, "Corrupt LLDP packet: invalid END TLV");
+		return 0;
+	    }
+	    break;
+	case LLDP_TYPE_SYSTEM_NAME:
+	    if (strlen(msg->peer) != 0) {
+		my_log(INFO, "Corrupt LLDP packet: duplicate System Name TLV");
+		return 0;
+	    }
+	    if (!GRAB_STRING(hostname, tlv_length)) {
+		my_log(INFO, "Corrupt LLDP packet: invalid System Name TLV");
+		return 0;
+	    }
+	    strlcpy(msg->peer, hostname, IFDESCRSIZE);
+	    free(hostname);
+	    break;
+	default:
+	    if (8 < tlv_type && tlv_type < 127) {
+		my_log(INFO, "Corrupt LLDP packet: invalid TLV Type");
+		return 0;
+	    }
+	    if (!SKIP(tlv_length)) {
+		my_log(INFO, "Corrupt LLDP packet: invalid TLV Length");
+		return 0;
+	    }
+	    break;
+	}
+    }
+
+    if (tlv_type != 0) {
+	my_log(INFO, "Corrupt LLDP packet: missing END TLV");
+	return 0;
+    }
+
+    // return the packet length
+    return(VOIDP_DIFF(pos, packet));
+}
+
