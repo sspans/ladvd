@@ -16,7 +16,7 @@ struct proto protos[] = {
   { 0, "FDP",  FDP_MULTICAST_ADDR, LLC_ORG_FOUNDRY, LLC_PID_FDP,
     &fdp_packet, &fdp_check, NULL, NULL },
   { 0, "NDP",  NDP_MULTICAST_ADDR, LLC_ORG_NORTEL, LLC_PID_NDP_HELLO,
-    &ndp_packet, &ndp_check, NULL, NULL },
+    &ndp_packet, &ndp_check, &ndp_peer, NULL },
   { 0, NULL, {0}, {0}, 0, NULL, NULL, NULL, NULL }
 };
 
