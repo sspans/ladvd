@@ -34,7 +34,7 @@
 #define LADVD_TTL   180
 
 #ifndef IFDESCRSIZE
-#define IFDESCRSIZE 256
+#define IFDESCRSIZE 64
 #endif
 
 #define LLDP_INVENTORY_SIZE 32
@@ -124,13 +124,13 @@ struct proto {
     uint8_t enabled;
     const char *name;
     uint8_t dst_addr[ETHER_ADDR_LEN];
-    size_t (*build_msg) (void *, struct netif *, struct sysinfo *);
-    char * (*check) (void *, size_t);
-    char * (*decode) (void *, size_t);
     uint8_t llc_org[3];
     uint16_t llc_pid;
+    size_t (*build_msg) (void *, struct netif *, struct sysinfo *);
+    char * (*check) (void *, size_t);
+    size_t (*peer) (void *, size_t);
+    char * (*decode) (void *, size_t);
 };
-
 
 void sysinfo_fetch(struct sysinfo *);
 uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *, struct nhead *);
@@ -148,6 +148,12 @@ char * cdp_check(void *, size_t);
 char * edp_check(void *, size_t);
 char * fdp_check(void *, size_t);
 char * ndp_check(void *, size_t);
+
+size_t lldp_peer(void *, size_t);
+size_t cdp_peer(void *, size_t);
+size_t edp_peer(void *, size_t);
+size_t fdp_peer(void *, size_t);
+size_t ndp_peer(void *, size_t);
 
 char * lldp_decode(void *, size_t);
 char * cdp_decode(void *, size_t);

@@ -4,17 +4,17 @@
 
 // supported protocols
 struct proto protos[] = {
-  { 1, "LLDP", LLDP_MULTICAST_ADDR, &lldp_packet, &lldp_check, &lldp_decode,
-	       {0}, 0 },
-  { 0, "CDP",  CDP_MULTICAST_ADDR, &cdp_packet, &cdp_check, &cdp_decode,
-	       LLC_ORG_CISCO, LLC_PID_CDP },
-  { 0, "EDP",  EDP_MULTICAST_ADDR, &edp_packet, &edp_check, NULL,
-	       LLC_ORG_EXTREME, LLC_PID_EDP },
-  { 0, "FDP",  FDP_MULTICAST_ADDR, &fdp_packet, &fdp_check, NULL,
-	       LLC_ORG_FOUNDRY, LLC_PID_FDP },
-  { 0, "NDP",  NDP_MULTICAST_ADDR, &ndp_packet, &ndp_check, NULL,
-	       LLC_ORG_NORTEL, LLC_PID_NDP_HELLO },
-  { 0, NULL, {0}, NULL, NULL, NULL, {0}, 0 },
+  { 1, "LLDP", LLDP_MULTICAST_ADDR, {0}, 0,
+    &lldp_packet, &lldp_check, &lldp_peer, NULL },
+  { 0, "CDP",  CDP_MULTICAST_ADDR, LLC_ORG_CISCO, LLC_PID_CDP,
+    &cdp_packet, &cdp_check, &cdp_peer, NULL },
+  { 0, "EDP",  EDP_MULTICAST_ADDR, LLC_ORG_EXTREME, LLC_PID_EDP,
+    &edp_packet, &edp_check, NULL, NULL },
+  { 0, "FDP",  FDP_MULTICAST_ADDR, LLC_ORG_FOUNDRY, LLC_PID_FDP,
+    &fdp_packet, &fdp_check, NULL, NULL },
+  { 0, "NDP",  NDP_MULTICAST_ADDR, LLC_ORG_NORTEL, LLC_PID_NDP_HELLO,
+    &ndp_packet, &ndp_check, NULL, NULL },
+  { 0, NULL, {0}, {0}, 0, NULL, NULL, NULL, NULL }
 };
 
 struct nhead netifs;
