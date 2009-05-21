@@ -329,7 +329,6 @@ void queue_msg(int fd, short event, int *cfd) {
 
     struct master_msg rmsg, *msg = NULL, *qmsg = NULL;
     struct netif *netif = NULL;
-    char *name = NULL;
     unsigned int len;
 
     my_log(INFO, "receiving message from master");
