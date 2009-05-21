@@ -327,7 +327,7 @@ sleep:
 
 void queue_msg(int fd, short event, int *cfd) {
 
-    struct master_msg rmsg, *msg = NULL, *nmsg = NULL;
+    struct master_msg rmsg, *msg = NULL, *qmsg = NULL;
     struct netif *netif = NULL;
     char *name = NULL;
     unsigned int len;
@@ -342,40 +342,37 @@ void queue_msg(int fd, short event, int *cfd) {
     assert(rmsg.len <= ETHER_MAX_LEN);
 
     // decode message
-    my_log(INFO, "decoding message");
-    if ((name = protos[rmsg.proto].decode(rmsg.msg, rmsg.len)) == NULL)
+    my_log(INFO, "decoding peer name and ttl");
+    if (rmsg.len != protos[rmsg.proto].peer(&rmsg))
     	return;
-    if (!IS_HOSTNAME(name)) {
-	free(name);
+    if (!IS_HOSTNAME(rmsg.peer))
 	return;
-    }
 
-    TAILQ_FOREACH(msg, &mqueue, entries) {
+    TAILQ_FOREACH(qmsg, &mqueue, entries) {
 	// match ifindex
-	if (rmsg.index != msg->index)
+	if (rmsg.index != qmsg->index)
 	    continue;
 	// match protocol
-	if (rmsg.proto != msg->proto)
+	if (rmsg.proto != qmsg->proto)
 	    continue;
 	// identical source & destination
-	if (memcmp(rmsg.msg, msg->msg, ETHER_ADDR_LEN * 2) != 0)
+	if (memcmp(rmsg.msg, qmsg->msg, ETHER_ADDR_LEN * 2) != 0)
 	    continue;
 
-       nmsg = msg;
+       msg = qmsg;
        break;
     }
 
-    if (nmsg != NULL) {
-	memcpy(nmsg, &rmsg, MASTER_MSG_SIZE);
+    if (msg != NULL) {
+	memcpy(msg, &rmsg, MASTER_MSG_SIZE);
     } else {
-	nmsg = my_malloc(MASTER_MSG_SIZE);
-	memcpy(nmsg, &rmsg, MASTER_MSG_SIZE);
-	TAILQ_INSERT_TAIL(&mqueue, nmsg, entries);
+	msg = my_malloc(MASTER_MSG_SIZE);
+	memcpy(msg, &rmsg, MASTER_MSG_SIZE);
+	TAILQ_INSERT_TAIL(&mqueue, msg, entries);
     }
 
     if ((options & (OPT_AUTO|OPT_DESCR)) == 0 ||
 	(netif = netif_byindex(&netifs, msg->index)) == NULL) {
-	free(name);
 	return;
     }
 
@@ -391,13 +388,11 @@ void queue_msg(int fd, short event, int *cfd) {
 	strlcpy(rmsg.name, netif->name, IFNAMSIZ);
 	rmsg.cmd = MASTER_DESCR;
 	rmsg.len = snprintf(rmsg.msg, IFDESCRSIZE, "connected to %s (%s)", 
-			    name, protos[nmsg->proto].name);
+			    msg->peer, protos[msg->proto].name);
 
 	if (my_msend(*cfd, &rmsg) != rmsg.len) {
 	    my_log(CRIT, "ifdescr ioctl failed on %s", netif->name);
 	}
-
-	free(name);
     }
 }
 
