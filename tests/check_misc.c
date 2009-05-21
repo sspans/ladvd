@@ -200,24 +200,24 @@ START_TEST(test_my_cksum) {
     uint8_t cisco;
 
     cisco = 0;
-    sum = my_chksum(data, strlen(data), cisco);
-    fail_unless(sum == 10545,
-	"IP checksum result should be 10545 not %d", sum);
+    sum = ntohs(my_chksum(data, strlen(data), cisco));
+    fail_unless(sum == 12585,
+	"IP checksum result should be 12585 not %d", sum);
 
     cisco = 1;
-    sum = my_chksum(data, strlen(data), cisco);
-    fail_unless(sum == 10545,
-	"(Cisco) IP checksum result should be 10545 not %d", sum);
+    sum = ntohs(my_chksum(data, strlen(data), cisco));
+    fail_unless(sum == 12585,
+	"(Cisco) IP checksum result should be 12585 not %d", sum);
 
     cisco = 0;
-    sum = my_chksum(data, strlen(data) - 1, cisco);
-    fail_unless(sum == 28465,
-	"IP checksum result should be 28465 not %d", sum);
+    sum = ntohs(my_chksum(data, strlen(data) - 1, cisco));
+    fail_unless(sum == 12655,
+	"IP checksum result should be 12655 not %d", sum);
 
     cisco = 1;
-    sum = my_chksum(data, strlen(data) - 1, cisco);
-    fail_unless(sum ==  10870,
-	"(Cisco) IP checksum result should be 10870 not %d", sum);
+    sum = ntohs(my_chksum(data, strlen(data) - 1, cisco));
+    fail_unless(sum ==  30250,
+	"(Cisco) IP checksum result should be 30250 not %d", sum);
 }
 END_TEST
 
