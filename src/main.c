@@ -332,7 +332,7 @@ void queue_msg(int fd, short event, int *cfd) {
     unsigned int len;
 
     my_log(INFO, "receiving message from master");
-    len = recv(fd, &rmsg, MASTER_MSG_SIZE, MSG_DONTWAIT);
+    len = read(fd, &rmsg, MASTER_MSG_SIZE);
 
     assert(len == MASTER_MSG_SIZE);
     assert(rmsg.cmd == MASTER_RECV);

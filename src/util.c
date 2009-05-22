@@ -78,13 +78,13 @@ int my_socket(int af, int type, int proto) {
 }
 
 size_t my_msend(int s, struct master_msg *mreq) {
-    size_t count = 0;
+    ssize_t count = 0;
 
     count = write(s, mreq, MASTER_MSG_SIZE);
     if (count != MASTER_MSG_SIZE)
 	my_fatal("only %d bytes written: %s", count, strerror(errno));
 
-    count = recv(s, mreq, MASTER_MSG_SIZE, 0);
+    count = read(s, mreq, MASTER_MSG_SIZE);
     if (count != MASTER_MSG_SIZE)
 	my_fatal("invalid reply received from master");
 

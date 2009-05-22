@@ -129,7 +129,7 @@ struct master_msg {
     uint8_t cmd;
     uint8_t completed;
     char msg[ETHER_MAX_LEN];
-    size_t len;
+    ssize_t len;
     uint8_t proto;
     time_t ttl;
     char peer[IFDESCRSIZE];

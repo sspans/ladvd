@@ -294,13 +294,13 @@ void master_signal(int sig, short event, void *p) {
 
 void master_cmd(int cmdfd, short event, int *rawfd) {
     struct master_msg mreq;
-    size_t len;
+    ssize_t len;
 
 
     // receive request
-    len = recv(cmdfd, &mreq, MASTER_MSG_SIZE, MSG_DONTWAIT);
+    len = read(cmdfd, &mreq, MASTER_MSG_SIZE);
 
-    if (len == 0)
+    if (len <= 0)
 	return;
 
     // check request size
@@ -346,10 +346,8 @@ void master_recv(int fd, short event, struct master_rfd *rfd) {
     memset(&mrecv, 0, sizeof (mrecv));
     mrecv.cmd = MASTER_RECV;
     mrecv.index = rfd->index;
-    if (options & OPT_DEBUG)
-	mrecv.len = read(rfd->fd, mrecv.msg, ETHER_MAX_LEN);
-    else
-	mrecv.len = recv(rfd->fd, mrecv.msg, ETHER_MAX_LEN, MSG_DONTWAIT);
+
+    mrecv.len = read(rfd->fd, mrecv.msg, ETHER_MAX_LEN);
 
     // skip small packets
     if (mrecv.len < ETHER_MIN_LEN)
