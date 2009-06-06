@@ -95,6 +95,8 @@ START_TEST(test_netif) {
     // subif_iter checks
     netif = &tnetifs[0];
     subif = NULL;
+    subif = subif_iter(subif, subif);
+    fail_unless (subif == NULL, "NULL should be returned");
     subif = subif_iter(subif, netif);
     fail_unless (subif == &tnetifs[1], "the second netif should be returned");
     subif = subif_iter(subif, netif);
