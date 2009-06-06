@@ -226,8 +226,8 @@ START_TEST(test_my_cksum) {
 }
 END_TEST
 
-Suite * misc_suite (void) {
-    Suite *s = suite_create("misc");
+Suite * util_suite (void) {
+    Suite *s = suite_create("util");
 
     // util test case
     TCase *tc_util = tcase_create("util");
@@ -241,7 +241,7 @@ Suite * misc_suite (void) {
 
 int main (void) {
     int number_failed;
-    Suite *s = misc_suite ();
+    Suite *s = util_suite ();
     SRunner *sr = srunner_create (s);
     srunner_run_all (sr, CK_NORMAL);
     number_failed = srunner_ntests_failed (sr);
