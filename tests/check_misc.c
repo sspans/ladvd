@@ -160,10 +160,13 @@ START_TEST(test_read_line) {
     const char *file = "testfile";
 
     fail_unless (read_line(NULL, line, 0) == -1,
-	"-1 should be returned on a invalid path");
+	"-1 should be returned on an invalid path");
 
     fail_unless (read_line(file, NULL, 0) == -1,
 	"-1 should be returned on an invalid line");
+
+    fail_unless (read_line("non-existant", line, 0) == -1,
+	"-1 should be returned on a missing file");
 
     fail_unless (read_line(null, line, 10) == -1,
 	"-1 should be returned on a unreadable file");
