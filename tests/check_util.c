@@ -227,7 +227,7 @@ START_TEST(test_my_cksum) {
 END_TEST
 
 Suite * util_suite (void) {
-    Suite *s = suite_create("util");
+    Suite *s = suite_create("util.c");
 
     // util test case
     TCase *tc_util = tcase_create("util");
