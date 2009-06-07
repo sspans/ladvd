@@ -14,8 +14,8 @@ size_t edp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
     struct ether_llc llc;
     struct edp_header edp;
 
-    uint8_t *tlv;
-    uint8_t *pos = packet;
+    char *tlv;
+    char *pos = packet;
     size_t length = ETHER_MAX_LEN;
     tlv_t type;
 
@@ -136,3 +136,72 @@ char * edp_check(void *packet, size_t length) {
     } 
     return(NULL);
 }
+
+size_t edp_peer(struct master_msg *msg) {
+    char *packet = NULL;
+    size_t length;
+    struct edp_header edp;
+
+    char *tlv;
+    char *pos;
+
+    uint16_t tlv_type;
+    uint16_t tlv_length;
+
+    char *hostname = NULL;
+
+    assert(msg);
+
+    packet = msg->msg;
+    length = msg->len;
+
+    assert(packet);
+    assert((pos = edp_check(packet, length)) != NULL);
+    length -= VOIDP_DIFF(pos, packet);
+    if (length < sizeof(edp)) {
+	my_log(INFO, "missing EDP header");
+	return 0;
+    }
+
+    memcpy(&edp, pos, sizeof(edp));
+    if (edp.version != 1) {
+	my_log(INFO, "unsupported EDP version");
+	return 0;
+    }
+    // no ttl in edp available
+    msg->ttl = LADVD_TTL;
+
+    // update tlv counters
+    pos += sizeof(edp);
+    length -= sizeof(edp);
+
+    while (length) {
+	if (!GRAB_EDP_TLV(tlv_type, tlv_length)) {
+	    my_log(INFO, "Corrupt EDP packet: invalid TLV");
+	    return 0;
+	}
+
+	switch(tlv_type) {
+	case EDP_TYPE_DISPLAY:
+		if (!GRAB_STRING(hostname, tlv_length)) {
+		    my_log(INFO, "Corrupt EDP packet: invalid Display TLV");
+		    return 0;
+		}
+		strlcpy(msg->peer, hostname, IFDESCRSIZE);
+		free(hostname);
+		break;
+	default:
+		my_log(INFO, "unknown TLV: type %d, length %d, leaves %d",
+			    tlv_type, tlv_length, length);
+		if (!SKIP(tlv_length)) {
+		    my_log(INFO, "Corrupt EDP packet: invalid TLV length");
+		    return 0;
+		}
+		break;
+	}
+    }
+
+    // return the packet length
+    return(VOIDP_DIFF(pos, packet));
+}
+
