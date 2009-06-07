@@ -9,6 +9,8 @@ ladvd \- send link layer advertisements
 .B ladvd
 sends LLDP link layer advertisements on all available interfaces. This makes connected hosts visible on managed switches. By default it will run as a non-privileged user and daemonize. Additional protocols can be enabled using the -C, -E, -F and -N options. Optionally a list of interfaces on which ladvd should transmit can be supplied.
 .SH OPTIONS
+.IP -a
+Auto-enable protocols based on received packets.
 .IP -d
 Dump pcap-compatible packets to stdout which can be piped to tcpdump (via "| tcpdump -r -") or redirected to a file for further analysis.
 .IP -f
@@ -17,14 +19,18 @@ Run in the foreground and send logging to stderr.
 Print usage instructions.
 .IP "-m address"
 Management adress for unnumbered interfaces, can be specified for IPv4 and IPv6.
-.IP "-n"
+.IP -n
 Use management addresses specified via -m for all interfaces.
 .IP -o
 Run only once, useful for quick troubleshooting.
+.IP -r
+Receive packets, and use them for various features.
 .IP "-u user"
 Switch to this user (defaults to PACKAGE_USER)
 .IP -v
 Increase logging verbosity.
+.IP -z
+Save received peer information in interface description (requires SIOCSIFDESCR support)
 .IP "-c <CC>"
 Specify a two-letter ISO 3166 country code (required for LLDP location support).
 .IP "-l <location>"

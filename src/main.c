@@ -402,6 +402,7 @@ void usage() {
 
     fprintf(stderr, "%s version %s\n" 
 	"Usage: %s [-c] [-l] [-f] INTERFACE INTERFACE\n"
+	    "\t-a = Auto-enable protocols based on received packets\n"
 	    "\t-d = Dump pcap-compatible packets to stdout\n"
 	    "\t-f = Run in the foreground\n"
 	    "\t-h = Print this message\n"
