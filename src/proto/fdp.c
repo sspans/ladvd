@@ -14,8 +14,8 @@ size_t fdp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
     struct ether_llc llc;
     struct fdp_header fdp;
 
-    uint8_t *tlv;
-    uint8_t *pos = packet;
+    char *tlv;
+    char *pos = packet;
     size_t length = ETHER_MAX_LEN;
     tlv_t type;
 
@@ -187,3 +187,71 @@ char * fdp_check(void *packet, size_t length) {
     } 
     return(NULL);
 }
+
+size_t fdp_peer(struct master_msg *msg) {
+    char *packet = NULL;
+    size_t length;
+    struct fdp_header fdp;
+
+    char *tlv;
+    char *pos;
+
+    uint16_t tlv_type;
+    uint16_t tlv_length;
+
+    char *hostname = NULL;
+
+    assert(msg);
+
+    packet = msg->msg;
+    length = msg->len;
+
+    assert(packet);
+    assert((pos = fdp_check(packet, length)) != NULL);
+    length -= VOIDP_DIFF(pos, packet);
+    if (length < sizeof(fdp)) {
+	my_log(INFO, "missing FDP header");
+	return 0;
+    }
+
+    memcpy(&fdp, pos, sizeof(fdp));
+    if (fdp.version != 1) {
+	my_log(INFO, "unsupported FDP version");
+	return 0;
+    }
+    msg->ttl = fdp.ttl;
+
+    // update tlv counters
+    pos += sizeof(fdp);
+    length -= sizeof(fdp);
+
+    while (length) {
+	if (!GRAB_FDP_TLV(tlv_type, tlv_length)) {
+	    my_log(INFO, "Corrupt FDP packet: invalid TLV");
+	    return 0;
+	}
+
+	switch(tlv_type) {
+	case FDP_TYPE_DEVICE_ID:
+		if (!GRAB_STRING(hostname, tlv_length)) {
+		    my_log(INFO, "Corrupt FDP packet: invalid Device ID TLV");
+		    return 0;
+		}
+		strlcpy(msg->peer, hostname, IFDESCRSIZE);
+		free(hostname);
+		break;
+	default:
+		my_log(INFO, "unknown TLV: type %d, length %d, leaves %d",
+			    tlv_type, tlv_length, length);
+		if (!SKIP(tlv_length)) {
+		    my_log(INFO, "Corrupt FDP packet: invalid TLV length");
+		    return 0;
+		}
+		break;
+	}
+    }
+
+    // return the packet length
+    return(VOIDP_DIFF(pos, packet));
+}
+
