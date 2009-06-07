@@ -79,7 +79,7 @@ typedef union {
 	( \
 	    tlv = pos, \
 	    GRAB_UINT16(t) && GRAB_UINT16(l) && \
-	    (l -= 2 * sizeof(uint16_t)) \
+	    ((l -= 2 * sizeof(uint16_t)) || 1) \
 	)
 
 #define START_LLDP_TLV(t) \
@@ -117,7 +117,7 @@ typedef union {
 	( \
 	    tlv = pos, \
 	    SKIP(1) && GRAB_UINT8(t) && GRAB_UINT16(l) &&\
-	    (l -= 2 * sizeof(uint16_t)) \
+	    ((l -= 2 * sizeof(uint16_t)) || 1) \
 	)
 
 #define START_FDP_TLV(t) \
@@ -134,6 +134,6 @@ typedef union {
 	( \
 	    tlv = pos, \
 	    GRAB_UINT16(t) && GRAB_UINT16(l) &&\
-	    (l -= 2 * sizeof(uint16_t)) \
+	    ((l -= 2 * sizeof(uint16_t)) || 1) \
 	)
 
