@@ -39,14 +39,15 @@ typedef union {
 #define GRAB(d, t, func) \
 	((length >= sizeof(t)) && \
 	    ( \
-		d = func(*((t *)pos)), \
+		memcpy(&t, pos, sizeof(t)), \
+		d = func(t), \
 		length -= sizeof(t), \
 		pos += sizeof(t), \
 		1 \
             ))
-#define GRAB_UINT8(d) GRAB(d, uint8_t, )
-#define GRAB_UINT16(d) GRAB(d, uint16_t, ntohs)
-#define GRAB_UINT32(d) GRAB(d, uint32_t, ntohl)
+#define GRAB_UINT8(d) GRAB(d, type.uint8, )
+#define GRAB_UINT16(d) GRAB(d, type.uint16, ntohs)
+#define GRAB_UINT32(d) GRAB(d, type.uint32, ntohl)
 #define GRAB_STRING(d, b) \
 	((length >= (b)) && \
 	    ( \

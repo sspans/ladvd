@@ -227,12 +227,14 @@ char * cdp_check(void *packet, size_t length) {
 }
 
 size_t cdp_peer(struct master_msg *msg) {
+
     char *packet = NULL;
     size_t length;
     struct cdp_header cdp;
 
     char *tlv;
     char *pos;
+    tlv_t type;
 
     uint16_t tlv_type;
     uint16_t tlv_length;
