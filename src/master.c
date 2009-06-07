@@ -4,7 +4,7 @@
 
 #include "common.h"
 #include "util.h"
-#include "protos.h"
+#include "proto/protos.h"
 #include "master.h"
 #include <sys/ioctl.h>
 #include <sys/select.h>

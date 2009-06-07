@@ -4,7 +4,7 @@
 
 #include "common.h"
 #include "util.h"
-#include "protos.h"
+#include "proto/protos.h"
 #include "main.h"
 #include <ctype.h>
 #include <unistd.h>
