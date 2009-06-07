@@ -221,6 +221,51 @@ START_TEST(test_lldp_peer) {
 }
 END_TEST
 
+START_TEST(test_cdp_peer) {
+    struct master_msg msg;
+
+    read_packet(&msg, "proto/cdp/00.empty");
+    fail_unless (cdp_peer(&msg) == 0, "empty packets should return 0");
+
+    read_packet(&msg, "proto/cdp/01.header.broken");
+    fail_unless (cdp_peer(&msg) == 0, "broken packets should return 0");
+    read_packet(&msg, "proto/cdp/02.header.invalid");
+    fail_unless (cdp_peer(&msg) == 0, "broken packets should return 0");
+    read_packet(&msg, "proto/cdp/03.header.only");
+    fail_unless (cdp_peer(&msg) == 26, "packet length should be 26");
+
+    read_packet(&msg, "proto/cdp/21.device_id.broken");
+    fail_unless (cdp_peer(&msg) == 0, "broken packets should return 0");
+    read_packet(&msg, "proto/cdp/31.system_name.broken");
+    fail_unless (cdp_peer(&msg) == 0, "broken packets should return 0");
+
+    read_packet(&msg, "proto/cdp/96.tlv.unknown");
+    fail_unless (cdp_peer(&msg) == 305, "packet length should be 305");
+    read_packet(&msg, "proto/cdp/97.tlv.broken");
+    fail_unless (cdp_peer(&msg) == 0, "broken packets should return 0");
+
+    read_packet(&msg, "proto/cdp/41.good.small");
+    fail_unless (cdp_peer(&msg) == 32, "packet length should be 32");
+    fail_unless (msg.ttl == 180, "ttl should be 180");
+    fail_unless (strcmp(msg.peer, "R1") == 0, "system name should be 'R1'");
+    read_packet(&msg, "proto/cdp/42.good.medium");
+    fail_unless (cdp_peer(&msg) == 302, "packet length should be 300");
+    fail_unless (msg.ttl == 180, "ttl should be 180");
+    fail_unless (strcmp(msg.peer, "R2D2") == 0,
+		"system name should be 'R2D2'");
+    read_packet(&msg, "proto/cdp/43.good.big");
+    fail_unless (cdp_peer(&msg) == 422, "packet length should be 42");
+    fail_unless (msg.ttl == 180, "ttl should be 180");
+    fail_unless (strcmp(msg.peer, "xpfs1.yapkjn.network.bla.nl") == 0,
+		"system name should be 'xpfs1.yapkjn.network.bla.nl'");
+    read_packet(&msg, "proto/cdp/44.good.bcm");
+    fail_unless (cdp_peer(&msg) == 86, "packet length should be 86");
+    fail_unless (msg.ttl == 180, "ttl should be 180");
+    fail_unless (strcmp(msg.peer, "0060B9C14027") == 0,
+		"system name should be '0060B9C14027'");
+}
+END_TEST
+
 Suite * proto_suite (void) {
     Suite *s = suite_create("libproto");
     loglevel = DEBUG;
@@ -237,6 +282,7 @@ Suite * proto_suite (void) {
     // proto_peer test cases
     TCase *tc_peer = tcase_create("proto_peer");
     tcase_add_test(tc_peer, test_lldp_peer);
+    tcase_add_test(tc_peer, test_cdp_peer);
     suite_add_tcase(s, tc_peer);
 
     return s;
