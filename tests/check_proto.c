@@ -205,16 +205,16 @@ START_TEST(test_lldp_peer) {
     fail_unless (lldp_peer(&msg) == 0, "incomplete packets should return 0");
 
     read_packet(&msg, "proto/lldp/41.good.small");
-    fail_unless (lldp_peer(&msg) == 41, "packet length should be 41");
+    fail_unless (lldp_peer(&msg) == msg.len, "packet length incorrect");
     fail_unless (msg.ttl == 120, "ttl should be 120");
     fail_unless (strcmp(msg.peer, "test") == 0, "system name should be 'test'");
     read_packet(&msg, "proto/lldp/42.good.big");
-    fail_unless (lldp_peer(&msg) == 263, "packet length should be 263");
+    fail_unless (lldp_peer(&msg) == msg.len, "packet length incorrect");
     fail_unless (msg.ttl == 120, "ttl should be 120");
     fail_unless (strcmp(msg.peer, "Summit300-48") == 0,
 		"system name should be 'Summit300-48'");
     read_packet(&msg, "proto/lldp/43.good.lldpmed");
-    fail_unless (lldp_peer(&msg) == 268, "packet length should be 41");
+    fail_unless (lldp_peer(&msg) == msg.len, "packet length incorrect");
     fail_unless (msg.ttl == 120, "ttl should be 120");
     fail_unless (strcmp(msg.peer, "ProCurve Switch 2600-8-PWR") == 0,
 		"system name should be 'ProCurve Switch 2600-8-PWR'");
@@ -232,37 +232,107 @@ START_TEST(test_cdp_peer) {
     read_packet(&msg, "proto/cdp/02.header.invalid");
     fail_unless (cdp_peer(&msg) == 0, "broken packets should return 0");
     read_packet(&msg, "proto/cdp/03.header.only");
-    fail_unless (cdp_peer(&msg) == 26, "packet length should be 26");
+    fail_unless (cdp_peer(&msg) == msg.len, "packet length incorrect");
 
     read_packet(&msg, "proto/cdp/21.device_id.broken");
     fail_unless (cdp_peer(&msg) == 0, "broken packets should return 0");
-    read_packet(&msg, "proto/cdp/31.system_name.broken");
-    fail_unless (cdp_peer(&msg) == 0, "broken packets should return 0");
 
     read_packet(&msg, "proto/cdp/96.tlv.unknown");
-    fail_unless (cdp_peer(&msg) == 305, "packet length should be 305");
+    fail_unless (cdp_peer(&msg) == msg.len, "packet length incorrect");
     read_packet(&msg, "proto/cdp/97.tlv.broken");
     fail_unless (cdp_peer(&msg) == 0, "broken packets should return 0");
 
     read_packet(&msg, "proto/cdp/41.good.small");
-    fail_unless (cdp_peer(&msg) == 32, "packet length should be 32");
+    fail_unless (cdp_peer(&msg) == msg.len, "packet length incorrect");
     fail_unless (msg.ttl == 180, "ttl should be 180");
     fail_unless (strcmp(msg.peer, "R1") == 0, "system name should be 'R1'");
     read_packet(&msg, "proto/cdp/42.good.medium");
-    fail_unless (cdp_peer(&msg) == 302, "packet length should be 300");
+    fail_unless (cdp_peer(&msg) == msg.len, "packet length incorrect");
     fail_unless (msg.ttl == 180, "ttl should be 180");
     fail_unless (strcmp(msg.peer, "R2D2") == 0,
 		"system name should be 'R2D2'");
     read_packet(&msg, "proto/cdp/43.good.big");
-    fail_unless (cdp_peer(&msg) == 422, "packet length should be 42");
+    fail_unless (cdp_peer(&msg) == msg.len, "packet length incorrect");
     fail_unless (msg.ttl == 180, "ttl should be 180");
     fail_unless (strcmp(msg.peer, "xpfs1.yapkjn.network.bla.nl") == 0,
 		"system name should be 'xpfs1.yapkjn.network.bla.nl'");
     read_packet(&msg, "proto/cdp/44.good.bcm");
-    fail_unless (cdp_peer(&msg) == 86, "packet length should be 86");
+    fail_unless (cdp_peer(&msg) == msg.len, "packet length incorrect");
     fail_unless (msg.ttl == 180, "ttl should be 180");
     fail_unless (strcmp(msg.peer, "0060B9C14027") == 0,
 		"system name should be '0060B9C14027'");
+}
+END_TEST
+
+START_TEST(test_edp_peer) {
+    struct master_msg msg;
+
+    read_packet(&msg, "proto/edp/00.empty");
+    fail_unless (edp_peer(&msg) == 0, "empty packets should return 0");
+
+    read_packet(&msg, "proto/edp/01.header.broken");
+    fail_unless (edp_peer(&msg) == 0, "broken packets should return 0");
+    read_packet(&msg, "proto/edp/02.header.invalid");
+    fail_unless (edp_peer(&msg) == 0, "broken packets should return 0");
+    read_packet(&msg, "proto/edp/03.header.only");
+    fail_unless (edp_peer(&msg) == msg.len, "packet length incorrect");
+
+    read_packet(&msg, "proto/edp/21.display.broken");
+    fail_unless (edp_peer(&msg) == 0, "broken packets should return 0");
+
+    read_packet(&msg, "proto/edp/96.tlv.unknown");
+    fail_unless (edp_peer(&msg) == msg.len, "packet length incorrect");
+    read_packet(&msg, "proto/edp/97.tlv.broken");
+    fail_unless (edp_peer(&msg) == 0, "broken packets should return 0");
+
+    read_packet(&msg, "proto/edp/41.good.small");
+    fail_unless (edp_peer(&msg) == msg.len, "packet length incorrect");
+    fail_unless (msg.ttl == 180, "ttl should be 180");
+    fail_unless (strcmp(msg.peer, "HD000002") == 0,
+		"system name should be 'HD000002'");
+    read_packet(&msg, "proto/edp/42.good.medium");
+    fail_unless (edp_peer(&msg) == msg.len, "packet length incorrect");
+    fail_unless (msg.ttl == 180, "ttl should be 180");
+    fail_unless (strcmp(msg.peer, "SW1") == 0, "system name should be 'SW1'");
+}
+END_TEST
+
+START_TEST(test_fdp_peer) {
+    struct master_msg msg;
+
+    read_packet(&msg, "proto/fdp/00.empty");
+    fail_unless (fdp_peer(&msg) == 0, "empty packets should return 0");
+
+    read_packet(&msg, "proto/fdp/01.header.broken");
+    fail_unless (fdp_peer(&msg) == 0, "broken packets should return 0");
+    read_packet(&msg, "proto/fdp/02.header.invalid");
+    fail_unless (fdp_peer(&msg) == 0, "broken packets should return 0");
+    read_packet(&msg, "proto/fdp/03.header.only");
+    fail_unless (fdp_peer(&msg) == msg.len, "packet length incorrect");
+
+    read_packet(&msg, "proto/fdp/21.device_id.broken");
+    fail_unless (fdp_peer(&msg) == 0, "broken packets should return 0");
+
+    read_packet(&msg, "proto/fdp/96.tlv.unknown");
+    fail_unless (fdp_peer(&msg) == msg.len, "packet length incorrect");
+    read_packet(&msg, "proto/fdp/97.tlv.broken");
+    fail_unless (fdp_peer(&msg) == 0, "broken packets should return 0");
+
+    read_packet(&msg, "proto/fdp/41.good.bi");
+    fail_unless (fdp_peer(&msg) == msg.len, "packet length incorrect");
+    fail_unless (msg.ttl == 10, "ttl should be 10");
+    fail_unless (strcmp(msg.peer, "doetnix") == 0,
+		"system name should be 'doetnix'");
+    read_packet(&msg, "proto/fdp/42.good.rx");
+    fail_unless (fdp_peer(&msg) == msg.len, "packet length incorrect");
+    fail_unless (msg.ttl == 10, "ttl should be 10");
+    fail_unless (strcmp(msg.peer, "erix") == 0,
+		"system name should be 'erix'");
+    read_packet(&msg, "proto/fdp/43.good.mlx");
+    fail_unless (fdp_peer(&msg) == msg.len, "packet length incorrect");
+    fail_unless (msg.ttl == 10, "ttl should be 10");
+    fail_unless (strcmp(msg.peer, "emmerix") == 0,
+		"system name should be 'emmerix'");
 }
 END_TEST
 
@@ -283,6 +353,8 @@ Suite * proto_suite (void) {
     TCase *tc_peer = tcase_create("proto_peer");
     tcase_add_test(tc_peer, test_lldp_peer);
     tcase_add_test(tc_peer, test_cdp_peer);
+    tcase_add_test(tc_peer, test_edp_peer);
+    tcase_add_test(tc_peer, test_fdp_peer);
     suite_add_tcase(s, tc_peer);
 
     return s;
