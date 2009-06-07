@@ -12,9 +12,9 @@ struct proto protos[] = {
   { 0, "CDP",  CDP_MULTICAST_ADDR, LLC_ORG_CISCO, LLC_PID_CDP,
     &cdp_packet, &cdp_check, &cdp_peer, NULL },
   { 0, "EDP",  EDP_MULTICAST_ADDR, LLC_ORG_EXTREME, LLC_PID_EDP,
-    &edp_packet, &edp_check, NULL, NULL },
+    &edp_packet, &edp_check, &edp_peer, NULL },
   { 0, "FDP",  FDP_MULTICAST_ADDR, LLC_ORG_FOUNDRY, LLC_PID_FDP,
-    &fdp_packet, &fdp_check, NULL, NULL },
+    &fdp_packet, &fdp_check, &fdp_peer, NULL },
   { 0, "NDP",  NDP_MULTICAST_ADDR, LLC_ORG_NORTEL, LLC_PID_NDP_HELLO,
     &ndp_packet, &ndp_check, &ndp_peer, NULL },
   { 0, NULL, {0}, {0}, 0, NULL, NULL, NULL, NULL }
