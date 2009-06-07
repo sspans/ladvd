@@ -9,6 +9,7 @@
 #include <ctype.h>
 #include <unistd.h>
 #include <sys/file.h>
+#include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 
