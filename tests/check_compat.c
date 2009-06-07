@@ -5,6 +5,7 @@
 #include <string.h>
 #include <check.h>
 
+#include "../src/config.h"
 #include "../src/compat/compat.h"
 
 #ifndef HAVE_SETPROCTITLE
