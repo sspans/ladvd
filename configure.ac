@@ -51,7 +51,7 @@ AC_ARG_WITH([chroot_dir],
 	[chroot_dir="$withval"],[])
 
 AS_IF([test -n "$chroot_dir"],
-    [AC_DEFINE_UNQUOTED(PACKAGE_CHROOT_DIR,"$pid_dir",[location of chroot])],
+    [AC_DEFINE_UNQUOTED(PACKAGE_CHROOT_DIR,"$chroot_dir",[location of chroot])],
     [AC_DEFINE(PACKAGE_CHROOT_DIR,"/var/run/" PACKAGE_NAME,[location of chroot])]
 )
 
