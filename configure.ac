@@ -25,6 +25,16 @@ AX_CFLAGS_GCC_OPTION("-fPIE", WCFLAGS,
 AC_SUBST(WARN_CFLAGS,"$WCFLAGS")
 AC_SUBST(WARN_LDFLAGS,"$WLDFLAGS")
 
+# Enable gcov suport.
+AC_ARG_ENABLE([gcov],
+AC_HELP_STRING([--enable-gcov],
+    [build binaries with gcov support]), [use_gcov=yes], [use_gcov=no])
+AS_IF([test "$use_gcov" = yes], [
+    AM_CFLAGS="$AM_CFLAGS -fprofile-arcs -ftest-coverage"
+    AM_LDFLAGS="$AM_LDFLAGS -fprofile-arcs"
+])
+AM_CONDITIONAL(GCOV, test "$use_gcov" = yes)
+
 # daemon user
 package_user="$PACKAGE_NAME"
 
