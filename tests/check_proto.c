@@ -242,9 +242,11 @@ START_TEST(test_cdp_peer) {
     read_packet(&msg, "proto/cdp/21.device_id.broken");
     fail_unless (cdp_peer(&msg) == 0, "broken packets should return 0");
 
-    read_packet(&msg, "proto/cdp/96.tlv.unknown");
+    read_packet(&msg, "proto/cdp/91.tlv.unknown");
     fail_unless (cdp_peer(&msg) == msg.len, "packet length incorrect");
-    read_packet(&msg, "proto/cdp/97.tlv.broken");
+    read_packet(&msg, "proto/cdp/92.tlv.broken");
+    fail_unless (cdp_peer(&msg) == 0, "broken packets should return 0");
+    read_packet(&msg, "proto/cdp/93.tlv.long");
     fail_unless (cdp_peer(&msg) == 0, "broken packets should return 0");
 
     read_packet(&msg, "proto/cdp/41.good.small");
