@@ -195,10 +195,13 @@ START_TEST(test_lldp_peer) {
     read_packet(&msg, "proto/lldp/32.system_name.broken");
     fail_unless (lldp_peer(&msg) == 0, "broken packets should return 0");
 
-    read_packet(&msg, "proto/lldp/96.tlv.unknown");
+    read_packet(&msg, "proto/lldp/91.tlv.unknown");
     fail_unless (lldp_peer(&msg) == 0, "unknown tlv's should return 0");
-    read_packet(&msg, "proto/lldp/97.tlv.broken");
+    read_packet(&msg, "proto/lldp/92.tlv.broken");
     fail_unless (lldp_peer(&msg) == 0, "broken packets should return 0");
+    read_packet(&msg, "proto/lldp/93.tlv.long");
+    fail_unless (lldp_peer(&msg) == 0, "broken packets should return 0");
+
     read_packet(&msg, "proto/lldp/98.end.broken");
     fail_unless (lldp_peer(&msg) == 0, "broken packets should return 0");
     read_packet(&msg, "proto/lldp/99.end.missing");
