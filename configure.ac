@@ -33,7 +33,7 @@ AS_IF([test "$use_gcov" = yes], [
     AM_CFLAGS="$AM_CFLAGS -fprofile-arcs -ftest-coverage"
     AM_LDFLAGS="$AM_LDFLAGS -fprofile-arcs"
 ])
-AM_CONDITIONAL(GCOV, test "$use_gcov" = yes)
+AM_CONDITIONAL(GCOV_ENABLED, test "$use_gcov" = yes)
 
 # daemon user
 package_user="$PACKAGE_NAME"
