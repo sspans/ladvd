@@ -13,6 +13,101 @@
 extern uint8_t loglevel;
 uint32_t options = OPT_DEBUG;
 
+START_TEST(test_proto_packet) {
+    struct master_msg msg;
+    struct netif master, netif;
+    struct sysinfo sysinfo;
+
+    memset(&sysinfo, 0, sizeof(struct sysinfo));
+    sysinfo_fetch(&sysinfo);
+    sysinfo.cap_active = CAP_ROUTER;
+    sysinfo.country[0] = 'Z';
+    sysinfo.country[1] = 'Z';
+    strlcpy(sysinfo.location, "Towel", sizeof(sysinfo.location));
+    strlcpy(sysinfo.hw_revision, "lala", LLDP_INVENTORY_SIZE);  
+    strlcpy(sysinfo.fw_revision, "lala", LLDP_INVENTORY_SIZE);  
+    strlcpy(sysinfo.sw_revision, "lala", LLDP_INVENTORY_SIZE);  
+    strlcpy(sysinfo.serial_number, "lala", LLDP_INVENTORY_SIZE);  
+    strlcpy(sysinfo.manufacturer, "lala", LLDP_INVENTORY_SIZE);  
+    strlcpy(sysinfo.model_name, "lala", LLDP_INVENTORY_SIZE);  
+    strlcpy(sysinfo.asset_id, "lala", LLDP_INVENTORY_SIZE);  
+
+    master.index = 3;
+    master.argv = 1;
+    master.slave = 0;
+    master.lacp = 1;
+    master.type = NETIF_BONDING;
+    netif.mtu = 1500;
+    master.subif = &netif;
+    master.master = NULL;
+    master.ipaddr4 = htonl(0x7f000001);
+    memset(master.ipaddr6, 'a', sizeof(master.ipaddr6));
+    strlcpy(master.name, "bond0", IFNAMSIZ);
+
+    netif.index = 1;
+    netif.argv = 0;
+    netif.slave = 1;
+    netif.type = NETIF_REGULAR;
+    netif.mtu = 9000;
+    netif.subif = NULL;
+    netif.master = &master;
+    master.ipaddr4 = htonl(0xa0000001);
+    memset(master.ipaddr6, 'b', sizeof(master.ipaddr6));
+    strlcpy(netif.name, "eth0", IFNAMSIZ);
+    strlcpy(netif.description, "utp naar de buren", IFNAMSIZ);
+
+    memset(msg.msg, 0, ETHER_MAX_LEN);
+    msg.len = lldp_packet(msg.msg, &netif, &sysinfo);
+    fail_unless(msg.len == 308, "length should not be %d", msg.len);
+    msg.len = cdp_packet(msg.msg, &netif, &sysinfo);
+    fail_unless(msg.len == 235, "length should not be %d", msg.len);
+    msg.len = edp_packet(msg.msg, &netif, &sysinfo);
+    fail_unless(msg.len == 124, "length should not be %d", msg.len);
+    msg.len = fdp_packet(msg.msg, &netif, &sysinfo);
+    fail_unless(msg.len == 193, "length should not be %d", msg.len);
+    msg.len = ndp_packet(msg.msg, &netif, &sysinfo);
+    fail_unless(msg.len == 33, "length should not be %d", msg.len);
+
+    sysinfo.cap = CAP_HOST;
+    sysinfo.cap_active = CAP_HOST;
+    netif.master = NULL;
+    msg.len = lldp_packet(msg.msg, &netif, &sysinfo);
+    fail_unless(msg.len == 297, "length should not be %d", msg.len);
+    msg.len = cdp_packet(msg.msg, &netif, &sysinfo);
+    fail_unless(msg.len == 235, "length should not be %d", msg.len);
+    msg.len = edp_packet(msg.msg, &netif, &sysinfo);
+    fail_unless(msg.len == 124, "length should not be %d", msg.len);
+    msg.len = fdp_packet(msg.msg, &netif, &sysinfo);
+    fail_unless(msg.len == 191, "length should not be %d", msg.len);
+    msg.len = ndp_packet(msg.msg, &netif, &sysinfo);
+    fail_unless(msg.len == 33, "length should not be %d", msg.len);
+
+    sysinfo.cap_active = CAP_BRIDGE;
+    msg.len = lldp_packet(msg.msg, &netif, &sysinfo);
+    fail_unless(msg.len == 297, "length should not be %d", msg.len);
+    msg.len = cdp_packet(msg.msg, &netif, &sysinfo);
+    fail_unless(msg.len == 235, "length should not be %d", msg.len);
+    msg.len = edp_packet(msg.msg, &netif, &sysinfo);
+    fail_unless(msg.len == 124, "length should not be %d", msg.len);
+    msg.len = fdp_packet(msg.msg, &netif, &sysinfo);
+    fail_unless(msg.len == 193, "length should not be %d", msg.len);
+    msg.len = ndp_packet(msg.msg, &netif, &sysinfo);
+    fail_unless(msg.len == 33, "length should not be %d", msg.len);
+
+    sysinfo.cap_active = CAP_SWITCH;
+    msg.len = lldp_packet(msg.msg, &netif, &sysinfo);
+    fail_unless(msg.len == 297, "length should not be %d", msg.len);
+    msg.len = cdp_packet(msg.msg, &netif, &sysinfo);
+    fail_unless(msg.len == 235, "length should not be %d", msg.len);
+    msg.len = edp_packet(msg.msg, &netif, &sysinfo);
+    fail_unless(msg.len == 124, "length should not be %d", msg.len);
+    msg.len = fdp_packet(msg.msg, &netif, &sysinfo);
+    fail_unless(msg.len == 193, "length should not be %d", msg.len);
+    msg.len = ndp_packet(msg.msg, &netif, &sysinfo);
+    fail_unless(msg.len == 33, "length should not be %d", msg.len);
+}
+END_TEST
+
 START_TEST(test_lldp_check) {
     struct master_msg msg;
     struct ether_hdr ether;
@@ -350,6 +445,11 @@ END_TEST
 Suite * proto_suite (void) {
     Suite *s = suite_create("libproto");
     loglevel = DEBUG;
+
+    // proto_packet test cases
+    TCase *tc_packet = tcase_create("proto_packet");
+    tcase_add_test(tc_packet, test_proto_packet);
+    suite_add_tcase(s, tc_packet);
 
     // proto_check test cases
     TCase *tc_check = tcase_create("proto_check");
