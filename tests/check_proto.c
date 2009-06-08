@@ -322,9 +322,11 @@ START_TEST(test_fdp_peer) {
     read_packet(&msg, "proto/fdp/21.device_id.broken");
     fail_unless (fdp_peer(&msg) == 0, "broken packets should return 0");
 
-    read_packet(&msg, "proto/fdp/96.tlv.unknown");
+    read_packet(&msg, "proto/fdp/91.tlv.unknown");
     fail_unless (fdp_peer(&msg) == msg.len, "packet length incorrect");
-    read_packet(&msg, "proto/fdp/97.tlv.broken");
+    read_packet(&msg, "proto/fdp/92.tlv.invalid");
+    fail_unless (fdp_peer(&msg) == 0, "broken packets should return 0");
+    read_packet(&msg, "proto/fdp/93.tlv.long");
     fail_unless (fdp_peer(&msg) == 0, "broken packets should return 0");
 
     read_packet(&msg, "proto/fdp/41.good.bi");
