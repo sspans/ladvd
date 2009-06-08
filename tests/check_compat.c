@@ -19,11 +19,15 @@ START_TEST(test_setproctitle) {
     argv = calloc(argc + 1, sizeof(*argv));
 
     argv[0] = malloc(BUFSIZ);
-    memset(argv[0], 'a', BUFSIZ - 1);
+    memset(argv[0], 0, BUFSIZ);
+    memset(argv[0], 'a', 1);
     argv[1] = NULL;
 
     compat_init_setproctitle(0, argv);
+    compat_init_setproctitle(argc, argv);
+    setproctitle(str);
 
+    memset(argv[0], 'a', BUFSIZ - 1);
     compat_init_setproctitle(argc, argv);
     setproctitle(str);
 
