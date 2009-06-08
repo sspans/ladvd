@@ -1,4 +1,5 @@
 TESTS = check_compat check_proto check_util
+TESTS_ENVIRONMENT= LD_PRELOAD="`find -name libcheckwrap.so`"
 check_PROGRAMS = check_compat check_proto check_util
 
 check_compat_SOURCES = check_compat.c \
@@ -18,4 +19,8 @@ check_util_SOURCES = check_util.c \
 check_util_CFLAGS = @CHECK_CFLAGS@
 check_util_LDADD = @CHECK_LIBS@ $(top_builddir)/src/libmisc.la \
 	$(top_builddir)/src/libcompat.la
+
+noinst_LTLIBRARIES = libcheckwrap.la
+libcheckwrap_la_SOURCES = check_wrap.c
+libcheckwrap_la_LDFLAGS = -rpath `pwd` -shared -ldl -Xcompiler -nostartfiles
 

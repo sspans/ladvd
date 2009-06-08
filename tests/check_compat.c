@@ -24,6 +24,9 @@ START_TEST(test_setproctitle) {
     argv[1] = NULL;
 
     compat_init_setproctitle(0, argv);
+    setenv("CHECK_FAIL_CALLOC", NULL, 1);
+    compat_init_setproctitle(argc, argv);
+    unsetenv("CHECK_FAIL_CALLOC");
     compat_init_setproctitle(argc, argv);
     setproctitle(str);
 
