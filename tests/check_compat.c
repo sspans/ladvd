@@ -23,7 +23,6 @@ START_TEST(test_setproctitle) {
     argv[1] = NULL;
 
     compat_init_setproctitle(0, argv);
-    compat_init_setproctitle(argc, NULL);
 
     compat_init_setproctitle(argc, argv);
     setproctitle(str);
