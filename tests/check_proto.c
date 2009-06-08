@@ -287,9 +287,11 @@ START_TEST(test_edp_peer) {
     read_packet(&msg, "proto/edp/21.display.broken");
     fail_unless (edp_peer(&msg) == 0, "broken packets should return 0");
 
-    read_packet(&msg, "proto/edp/96.tlv.unknown");
+    read_packet(&msg, "proto/edp/91.tlv.unknown");
     fail_unless (edp_peer(&msg) == msg.len, "packet length incorrect");
-    read_packet(&msg, "proto/edp/97.tlv.broken");
+    read_packet(&msg, "proto/edp/92.tlv.invalid");
+    fail_unless (edp_peer(&msg) == 0, "broken packets should return 0");
+    read_packet(&msg, "proto/edp/93.tlv.long");
     fail_unless (edp_peer(&msg) == 0, "broken packets should return 0");
 
     read_packet(&msg, "proto/edp/41.good.small");
