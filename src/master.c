@@ -481,7 +481,7 @@ int master_rsocket(struct master_rfd *rfd, int mode) {
 void master_rconf(struct master_rfd *rfd, struct proto *protos) {
 
     struct ifreq ifr;
-    int p;
+    int s, p;
 
 #ifdef HAVE_LINUX_FILTER_H
     // install socket filter
@@ -510,11 +510,12 @@ void master_rconf(struct master_rfd *rfd, struct proto *protos) {
     // configure multicast recv
     memset(&ifr, 0, sizeof(ifr));
     strlcpy(ifr.ifr_name, rfd->name, IFNAMSIZ);
+    s = my_socket(AF_INET, SOCK_DGRAM, 0);
 
     for (p = 0; protos[p].name != NULL; p++) {
-	
+
 	// only enabled protos
-	if (protos[p].enabled == 0)
+	if ((protos[p].enabled == 0) || !(options & OPT_AUTO))
 	    continue;
 
 #ifdef AF_PACKET
@@ -529,6 +530,8 @@ void master_rconf(struct master_rfd *rfd, struct proto *protos) {
 	    my_fatal("unable to add %s multicast to %s: %s",
 		     protos[p].name, rfd->name, strerror(errno));
     }
+
+    close(s);
 }
 
 size_t master_rsend(int s, struct master_msg *mreq) {
