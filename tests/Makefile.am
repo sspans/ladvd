@@ -22,5 +22,6 @@ check_util_LDADD = @CHECK_LIBS@ $(top_builddir)/src/libmisc.la \
 
 noinst_LTLIBRARIES = libcheckwrap.la
 libcheckwrap_la_SOURCES = check_wrap.c
-libcheckwrap_la_LDFLAGS = -rpath `pwd` -shared -ldl -Xcompiler -nostartfiles
+libcheckwrap_la_LDFLAGS = -rpath `pwd` -shared $(DL_LIB) \
+		-Xcompiler -nostartfiles
 

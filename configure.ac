@@ -73,6 +73,9 @@ fi
 # check unit tests
 PKG_CHECK_MODULES([CHECK], [check >= 0.9.4], [], [true])
 
+# dlsym
+AC_CHECK_LIB(dl, dlsym, AC_SUBST(DL_LIB,"-ldl"))
+
 # libevent
 AC_CHECK_LIB(event, event_init, AC_SUBST(EVENT_LIB,"-levent"),
 				AC_MSG_ERROR([libevent is required]))
