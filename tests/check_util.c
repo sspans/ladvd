@@ -7,7 +7,7 @@
 #include "../src/common.h"
 #include "../src/util.h"
 
-uint32_t options = OPT_DAEMON;
+uint32_t options = OPT_DAEMON | OPT_CHECK;
 
 START_TEST(test_my) {
     char *ptr = NULL;

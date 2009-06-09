@@ -121,6 +121,7 @@ struct sysinfo {
 #define OPT_DEBUG	(1 << 4)
 #define OPT_MADDR	(1 << 5)
 #define OPT_DESCR	(1 << 6)
+#define OPT_CHECK	(1 << 31)
 
 
 struct master_msg {
