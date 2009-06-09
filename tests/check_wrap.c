@@ -14,6 +14,11 @@ static int (*libc_setuid) (uid_t uid);
 static int (*libc_setgroups) (int ngroups, const gid_t *gidset);
 static void (*libc_vsyslog) (int priority, const char *message, va_list args);
 
+int check_fail_malloc = 0;
+int check_fail_calloc = 0;
+int check_fail_exit = 0;
+int check_fail_priv = 0;
+
 void
 __attribute__ ((constructor))
 _init (void) {
@@ -27,51 +32,48 @@ _init (void) {
 }
 
 void *malloc(size_t size) {
-    if(getenv("CHECK_FAIL_MALLOC")) {
+    if(check_fail_malloc) {
 	return NULL;
     }
     return libc_malloc(size);
 }
 
 void *calloc(size_t nmemb, size_t size) {
-    if(getenv("CHECK_FAIL_CALLOC")) {
+    if(check_fail_calloc) {
 	return NULL;
     }
     return libc_calloc(nmemb, size);
 }
 
 void exit (int status) {
-    if(getenv("CHECK_FAIL_EXIT")) {
+    if(check_fail_exit) {
 	return;
     }
     libc_exit(status);
 }
 
 int setgid (gid_t gid) {
-    if(getenv("CHECK_FAIL_PRIV")) {
+    if(check_fail_priv) {
 	return -1;
     }
     return libc_setgid(gid);
 }
 
 int setuid (uid_t uid) {
-    if(getenv("CHECK_FAIL_PRIV")) {
+    if(check_fail_priv) {
 	return -1;
     }
     return libc_setuid(uid);
 }
 
 int setgroups (int ngroups, const gid_t *gidset) {
-    if(getenv("CHECK_FAIL_PRIV")) {
+    if(check_fail_priv) {
 	return -1;
     }
     return libc_setgroups(ngroups, gidset);
 }
 
-void vsyslog(int priority, const char *fmt, ...) {
-    va_list ap;
-    va_start(ap, fmt);
-
+void vsyslog(int priority, const char *fmt, va_list ap) {
     vfprintf(stderr, fmt, ap);
     fprintf(stderr, "\n");
 }

@@ -16,6 +16,8 @@ START_TEST(test_setproctitle) {
     char *ptitle = NULL;
     const char *str = "123456788ABCDEF";
 
+    extern int check_fail_calloc;
+
     argv = calloc(argc + 1, sizeof(*argv));
 
     argv[0] = malloc(BUFSIZ);
@@ -24,9 +26,9 @@ START_TEST(test_setproctitle) {
     argv[1] = NULL;
 
     compat_init_setproctitle(0, argv);
-    setenv("CHECK_FAIL_CALLOC", "1", 1);
+    check_fail_calloc = 1;
     compat_init_setproctitle(argc, argv);
-    unsetenv("CHECK_FAIL_CALLOC");
+    check_fail_calloc = 0;
     compat_init_setproctitle(argc, argv);
     setproctitle(str);
 

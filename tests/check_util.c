@@ -13,11 +13,13 @@ START_TEST(test_my) {
     char *ptr = NULL;
     int s = 0;
     struct passwd *pwd;
+    extern int check_fail_exit;
+    extern int check_fail_priv;
 
     my_log(INFO, "foo\n");
-    setenv("CHECK_FAIL_EXIT", "1", 1);
+    check_fail_exit = 1;
     my_fatal("test fatal");
-    unsetenv("CHECK_FAIL_EXIT");
+    check_fail_exit = 0;
 
     ptr = my_malloc(100);
     fail_unless (ptr != NULL, "a valid pointer should be returned");
@@ -47,11 +49,11 @@ START_TEST(test_my) {
     pwd = getpwnam("root");
     errno = EPERM;
 
-    setenv("CHECK_FAIL_EXIT", "1", 1);
-    setenv("CHECK_FAIL_PRIV", "1", 1);
+    check_fail_exit = 1;
+    check_fail_priv = 1;
     my_drop_privs(pwd);
-    unsetenv("CHECK_FAIL_PRIV");
-    unsetenv("CHECK_FAIL_EXIT");
+    check_fail_priv = 0;
+    check_fail_exit = 0;
 }
 END_TEST
 
