@@ -501,7 +501,7 @@ void master_rconf(struct master_rfd *rfd, struct proto *protos) {
 
     memset(&fprog, 0, sizeof(fprog));
     fprog.bf_insns = master_filter; 
-    fprog.bf_len = sizeof(master_filter) / sizeof(struct bpf_program);
+    fprog.bf_len = sizeof(master_filter) / sizeof(struct bpf_insn);
 
     if (ioctl(rfd->fd, BIOCSETF, (caddr_t)&fprog) < 0)
 	my_fatal("unable to configure bpf filter for %s", rfd->name);
