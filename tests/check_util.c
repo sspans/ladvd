@@ -280,6 +280,7 @@ START_TEST(test_my_priv) {
     struct passwd *pwd;
     extern int check_fail_priv;
     extern int check_fail_exit;
+    extern int check_fail_chdir;
 
     pwd = getpwnam("root");
     errno = EPERM;
@@ -291,7 +292,9 @@ START_TEST(test_my_priv) {
     check_fail_exit = 0;
 
     check_fail_exit = 1;
+    check_fail_chdir = 1;
     my_chroot("/nonexistent");
+    check_fail_chdir = 0;
     check_fail_exit = 0;
 }
 END_TEST
