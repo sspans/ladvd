@@ -39,6 +39,7 @@ START_TEST(test_proto_packet) {
     strlcpy(sysinfo.model_name, "lala", LLDP_INVENTORY_SIZE);  
     strlcpy(sysinfo.asset_id, "lala", LLDP_INVENTORY_SIZE);  
 
+    memset(&master, 0, sizeof(struct netif));
     master.index = 3;
     master.argv = 1;
     master.slave = 0;
@@ -51,11 +52,13 @@ START_TEST(test_proto_packet) {
     memset(master.ipaddr6, 'a', sizeof(master.ipaddr6));
     strlcpy(master.name, "bond0", IFNAMSIZ);
 
+    memset(&netif, 0, sizeof(struct netif));
     netif.index = 1;
     netif.argv = 0;
     netif.slave = 1;
     netif.type = NETIF_REGULAR;
     netif.mtu = 9000;
+    netif.duplex = 1;
     netif.subif = NULL;
     netif.master = &master;
     master.ipaddr4 = htonl(0xa0000001);
@@ -67,7 +70,7 @@ START_TEST(test_proto_packet) {
     msg.len = lldp_packet(msg.msg, &netif, &sysinfo);
     fail_unless(msg.len == 235, "length should not be %d", msg.len);
     msg.len = cdp_packet(msg.msg, &netif, &sysinfo);
-    fail_unless(msg.len == 149, "length should not be %d", msg.len);
+    fail_unless(msg.len == 154, "length should not be %d", msg.len);
     msg.len = edp_packet(msg.msg, &netif, &sysinfo);
     fail_unless(msg.len == 109, "length should not be %d", msg.len);
     msg.len = fdp_packet(msg.msg, &netif, &sysinfo);
@@ -79,37 +82,37 @@ START_TEST(test_proto_packet) {
     sysinfo.cap_active = CAP_HOST;
     netif.master = NULL;
     msg.len = lldp_packet(msg.msg, &netif, &sysinfo);
-    fail_unless(msg.len == 224, "length should not be %d", msg.len);
+    fail_unless(msg.len == 184, "length should not be %d", msg.len);
     msg.len = cdp_packet(msg.msg, &netif, &sysinfo);
-    fail_unless(msg.len == 149, "length should not be %d", msg.len);
-    msg.len = edp_packet(msg.msg, &netif, &sysinfo);
     fail_unless(msg.len == 109, "length should not be %d", msg.len);
+    msg.len = edp_packet(msg.msg, &netif, &sysinfo);
+    fail_unless(msg.len == 89, "length should not be %d", msg.len);
     msg.len = fdp_packet(msg.msg, &netif, &sysinfo);
-    fail_unless(msg.len == 120, "length should not be %d", msg.len);
+    fail_unless(msg.len == 75, "length should not be %d", msg.len);
     msg.len = ndp_packet(msg.msg, &netif, &sysinfo);
     fail_unless(msg.len == 33, "length should not be %d", msg.len);
 
     sysinfo.cap_active = CAP_BRIDGE;
     msg.len = lldp_packet(msg.msg, &netif, &sysinfo);
-    fail_unless(msg.len == 224, "length should not be %d", msg.len);
+    fail_unless(msg.len == 184, "length should not be %d", msg.len);
     msg.len = cdp_packet(msg.msg, &netif, &sysinfo);
-    fail_unless(msg.len == 149, "length should not be %d", msg.len);
-    msg.len = edp_packet(msg.msg, &netif, &sysinfo);
     fail_unless(msg.len == 109, "length should not be %d", msg.len);
+    msg.len = edp_packet(msg.msg, &netif, &sysinfo);
+    fail_unless(msg.len == 89, "length should not be %d", msg.len);
     msg.len = fdp_packet(msg.msg, &netif, &sysinfo);
-    fail_unless(msg.len == 122, "length should not be %d", msg.len);
+    fail_unless(msg.len == 77, "length should not be %d", msg.len);
     msg.len = ndp_packet(msg.msg, &netif, &sysinfo);
     fail_unless(msg.len == 33, "length should not be %d", msg.len);
 
     sysinfo.cap_active = CAP_SWITCH;
     msg.len = lldp_packet(msg.msg, &netif, &sysinfo);
-    fail_unless(msg.len == 224, "length should not be %d", msg.len);
+    fail_unless(msg.len == 184, "length should not be %d", msg.len);
     msg.len = cdp_packet(msg.msg, &netif, &sysinfo);
-    fail_unless(msg.len == 149, "length should not be %d", msg.len);
-    msg.len = edp_packet(msg.msg, &netif, &sysinfo);
     fail_unless(msg.len == 109, "length should not be %d", msg.len);
+    msg.len = edp_packet(msg.msg, &netif, &sysinfo);
+    fail_unless(msg.len == 89, "length should not be %d", msg.len);
     msg.len = fdp_packet(msg.msg, &netif, &sysinfo);
-    fail_unless(msg.len == 122, "length should not be %d", msg.len);
+    fail_unless(msg.len == 77, "length should not be %d", msg.len);
     msg.len = ndp_packet(msg.msg, &netif, &sysinfo);
     fail_unless(msg.len == 33, "length should not be %d", msg.len);
 }
