@@ -45,7 +45,7 @@ void * my_malloc(size_t size) {
     void *ptr;
 
     if ((ptr = malloc(size)) == NULL)
-	my_fatal("malloc failed: %s", strerror(errno));
+	my_fatal("malloc failed");
     memset(ptr, 0, size);
     return(ptr);
 }
@@ -54,7 +54,7 @@ void * my_calloc(size_t nmemb, size_t size) {
     void *ptr;
 
     if ((ptr = calloc(nmemb, size)) == NULL)
-	my_fatal("calloc failed: %s", strerror(errno));
+	my_fatal("calloc failed");
 
     return(ptr);
 }

@@ -12,9 +12,7 @@ uint32_t options = OPT_DAEMON;
 START_TEST(test_my) {
     char *ptr = NULL;
     int s = 0;
-    struct passwd *pwd;
     extern int check_fail_exit;
-    extern int check_fail_priv;
     extern int check_fail_malloc;
     extern int check_fail_calloc;
 
@@ -54,13 +52,8 @@ START_TEST(test_my) {
     close(s);
     s = 0;
 
-    pwd = getpwnam("root");
-    errno = EPERM;
-
     check_fail_exit = 1;
-    check_fail_priv = 1;
-    my_drop_privs(pwd);
-    check_fail_priv = 0;
+    s = my_socket(AF_MAX, 0, 0);
     check_fail_exit = 0;
 }
 END_TEST
@@ -282,6 +275,27 @@ START_TEST(test_my_cksum) {
 }
 END_TEST
 
+
+START_TEST(test_my_priv) {
+    struct passwd *pwd;
+    extern int check_fail_priv;
+    extern int check_fail_exit;
+
+    pwd = getpwnam("root");
+    errno = EPERM;
+
+    check_fail_exit = 1;
+    check_fail_priv = 1;
+    my_drop_privs(pwd);
+    check_fail_priv = 0;
+    check_fail_exit = 0;
+
+    check_fail_exit = 1;
+    my_chroot("/nonexistent");
+    check_fail_exit = 0;
+}
+END_TEST
+
 Suite * util_suite (void) {
     Suite *s = suite_create("util.c");
 
@@ -291,6 +305,7 @@ Suite * util_suite (void) {
     tcase_add_test(tc_util, test_netif);
     tcase_add_test(tc_util, test_read_line);
     tcase_add_test(tc_util, test_my_cksum);
+    tcase_add_test(tc_util, test_my_priv);
     suite_add_tcase(s, tc_util);
 
     return s;
