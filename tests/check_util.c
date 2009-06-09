@@ -15,6 +15,8 @@ START_TEST(test_my) {
     struct passwd *pwd;
     extern int check_fail_exit;
     extern int check_fail_priv;
+    extern int check_fail_malloc;
+    extern int check_fail_calloc;
 
     my_log(INFO, "foo\n");
     check_fail_exit = 1;
@@ -30,6 +32,12 @@ START_TEST(test_my) {
     fail_unless (ptr != NULL, "a valid pointer should be returned");
     free(ptr);
     ptr = NULL;
+
+    check_fail_exit = 1;
+    check_fail_calloc = 1;
+    ptr = my_calloc(10, 10);
+    check_fail_calloc = 0;
+    check_fail_exit = 0;
 
     ptr = my_strdup("foo");
     fail_unless (ptr != NULL, "a valid pointer should be returned");
