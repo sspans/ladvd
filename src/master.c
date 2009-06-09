@@ -526,8 +526,8 @@ void master_rconf(struct master_rfd *rfd, struct proto *protos) {
 #endif
 
 	if (ioctl(rfd->fd, SIOCADDMULTI, &ifr) < 0)
-	    my_fatal("unable to add %s multicast to %s",
-		     protos[p].name, rfd->name);
+	    my_fatal("unable to add %s multicast to %s: %s",
+		     protos[p].name, rfd->name, strerror(errno));
     }
 }
 
