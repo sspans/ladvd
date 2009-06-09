@@ -9,6 +9,52 @@
 
 uint32_t options = OPT_DAEMON;
 
+START_TEST(test_my) {
+    char *ptr = NULL;
+    int s = 0;
+    struct passwd *pwd;
+
+    my_log(INFO, "foo\n");
+    setenv("CHECK_FAIL_EXIT", "1", 1);
+    my_fatal("test fatal");
+    unsetenv("CHECK_FAIL_EXIT");
+
+    ptr = my_malloc(100);
+    fail_unless (ptr != NULL, "a valid pointer should be returned");
+    free(ptr);
+    ptr = NULL;
+
+    ptr = my_calloc(10, 10);
+    fail_unless (ptr != NULL, "a valid pointer should be returned");
+    free(ptr);
+    ptr = NULL;
+
+    ptr = my_strdup("foo");
+    fail_unless (ptr != NULL, "a valid pointer should be returned");
+    free(ptr);
+    ptr = NULL;
+
+    s = my_socket(AF_INET, SOCK_DGRAM, 0);
+    fail_unless (s != -1, "a valid socket should be returned");
+    close(s);
+    s = 0;
+
+    s = my_socket(AF_INET6, SOCK_DGRAM, 0);
+    fail_unless (s != -1, "a valid socket should be returned");
+    close(s);
+    s = 0;
+
+    pwd = getpwnam("root");
+    errno = EPERM;
+
+    setenv("CHECK_FAIL_EXIT", "1", 1);
+    setenv("CHECK_FAIL_PRIV", "1", 1);
+    my_drop_privs(pwd);
+    unsetenv("CHECK_FAIL_PRIV");
+    unsetenv("CHECK_FAIL_EXIT");
+}
+END_TEST
+
 START_TEST(test_netif) {
     struct nhead nqueue;
     struct nhead *netifs = &nqueue;
@@ -231,6 +277,7 @@ Suite * util_suite (void) {
 
     // util test case
     TCase *tc_util = tcase_create("util");
+    tcase_add_test(tc_util, test_my);
     tcase_add_test(tc_util, test_netif);
     tcase_add_test(tc_util, test_read_line);
     tcase_add_test(tc_util, test_my_cksum);
