@@ -526,7 +526,7 @@ void master_rconf(struct master_rfd *rfd, struct proto *protos) {
 	memcpy(ifr.ifr_addr.sa_data, protos[p].dst_addr, ETHER_ADDR_LEN);
 #endif
 
-	if (ioctl(rfd->fd, SIOCADDMULTI, &ifr) < 0)
+	if (ioctl(s, SIOCADDMULTI, &ifr) < 0)
 	    my_fatal("unable to add %s multicast to %s: %s",
 		     protos[p].name, rfd->name, strerror(errno));
     }
