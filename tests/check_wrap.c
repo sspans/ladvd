@@ -11,6 +11,7 @@
 
 static void *(*libc_malloc) (size_t size);
 static void *(*libc_calloc) (size_t nmemb, size_t size);
+static char *(*libc_strdup) (const char *s1);
 static void (*libc_exit) (int status);
 static int (*libc_setgid) (gid_t gid);
 static int (*libc_setuid) (uid_t uid);
@@ -28,6 +29,7 @@ __attribute__ ((constructor))
 _init (void) {
     libc_malloc = dlsym(RTLD_NEXT, "malloc");
     libc_calloc = dlsym(RTLD_NEXT, "calloc");
+    libc_strdup = dlsym(RTLD_NEXT, "strdup");
     libc_exit = dlsym(RTLD_NEXT, "exit");
     libc_setgid = dlsym(RTLD_NEXT, "setgid");
     libc_setuid = dlsym(RTLD_NEXT, "setuid");
@@ -47,6 +49,12 @@ void *calloc(size_t nmemb, size_t size) {
     if (check_wrap_opt & FAIL_CALLOC)
 	return NULL;
     return libc_calloc(nmemb, size);
+}
+
+char *strdup(const char *s1) {
+    if (check_wrap_opt & FAIL_STRDUP)
+	return NULL;
+    return libc_strdup(s1);
 }
 
 void exit (int status) {

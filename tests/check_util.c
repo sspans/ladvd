@@ -79,6 +79,14 @@ START_TEST(test_my) {
     free(ptr);
     ptr = NULL;
 
+    check_wrap_opt |= FAIL_STRDUP;
+    WRAP_FATAL_START();
+    ptr = my_strdup("bar");
+    WRAP_FATAL_END();
+    check_wrap_opt &= ~FAIL_STRDUP;
+    fail_unless (strcmp(check_wrap_errstr, "strdup failed") == 0,
+	"error not logged");
+
     mark_point();
     s = my_socket(AF_INET, SOCK_DGRAM, 0);
     fail_unless (s != -1, "a valid socket should be returned");

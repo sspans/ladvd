@@ -63,7 +63,7 @@ char * my_strdup(const char *str) {
     char *cstr;
 
     if ((cstr = strdup(str)) == NULL)
-	my_fatal("strdup failed: %s", strerror(errno));
+	my_fatal("strdup failed");
 
     return(cstr);
 }
