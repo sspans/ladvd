@@ -274,60 +274,127 @@ void read_packet(struct master_msg *msg, const char *path) {
 
 START_TEST(test_lldp_peer) {
     struct master_msg msg;
+    const char *errstr = NULL;
 
+    loglevel = INFO;
+
+    errstr = "Invalid LLDP packet: missing Chassis ID TLV";
     read_packet(&msg, "proto/lldp/00.empty");
     fail_unless (lldp_peer(&msg) == 0, "empty packets should return 0");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
 
+    errstr = "check";
+    my_log(CRIT, errstr);
     read_packet(&msg, "proto/lldp/01.chassis_id.broken");
     fail_unless (lldp_peer(&msg) == 0, "broken packets should return 0");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+    errstr = "Invalid LLDP packet: missing Port ID TLV";
     read_packet(&msg, "proto/lldp/02.chassis_id.only");
     fail_unless (lldp_peer(&msg) == 0, "incomplete packets should return 0");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+    errstr = "Invalid LLDP packet: missing Chassis ID TLV";
     read_packet(&msg, "proto/lldp/03.chassis_id.missing");
     fail_unless (lldp_peer(&msg) == 0, "incomplete packets should return 0");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
 
+    errstr = "check";
+    my_log(CRIT, errstr);
     read_packet(&msg, "proto/lldp/11.port_id.broken");
     fail_unless (lldp_peer(&msg) == 0, "broken packets should return 0");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+    errstr = "Invalid LLDP packet: missing TTL TLV";
     read_packet(&msg, "proto/lldp/12.port_id.only");
     fail_unless (lldp_peer(&msg) == 0, "incomplete packets should return 0");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+    errstr = "Invalid LLDP packet: missing Port ID TLV";
     read_packet(&msg, "proto/lldp/13.port_id.missing");
     fail_unless (lldp_peer(&msg) == 0, "incomplete packets should return 0");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
 
+    errstr = "Invalid LLDP packet: invalid TTL TLV";
     read_packet(&msg, "proto/lldp/21.ttl.broken");
     fail_unless (lldp_peer(&msg) == 0, "broken packets should return 0");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+    errstr = "Corrupt LLDP packet: missing END TLV";
     read_packet(&msg, "proto/lldp/22.ttl.only");
     fail_unless (lldp_peer(&msg) == 0, "incomplete packets should return 0");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+    errstr = "Invalid LLDP packet: missing TTL TLV";
     read_packet(&msg, "proto/lldp/23.ttl.missing");
     fail_unless (lldp_peer(&msg) == 0, "incomplete packets should return 0");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
 
+    errstr = "Corrupt LLDP packet: duplicate System Name TLV";
     read_packet(&msg, "proto/lldp/31.system_name.dup");
     fail_unless (lldp_peer(&msg) == 0, "broken packets should return 0");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+    errstr = "Corrupt LLDP packet: invalid System Name TLV";
     read_packet(&msg, "proto/lldp/32.system_name.broken");
     fail_unless (lldp_peer(&msg) == 0, "broken packets should return 0");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
 
+    errstr = "Corrupt LLDP packet: invalid TLV Type";
     read_packet(&msg, "proto/lldp/91.tlv.unknown");
     fail_unless (lldp_peer(&msg) == 0, "unknown tlv's should return 0");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+    errstr = "Corrupt LLDP packet: invalid TLV";
     read_packet(&msg, "proto/lldp/92.tlv.broken");
     fail_unless (lldp_peer(&msg) == 0, "broken packets should return 0");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+    errstr = "Corrupt LLDP packet: invalid TLV Length";
     read_packet(&msg, "proto/lldp/93.tlv.long");
     fail_unless (lldp_peer(&msg) == 0, "broken packets should return 0");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
 
+    errstr = "Corrupt LLDP packet: invalid END TLV";
     read_packet(&msg, "proto/lldp/97.end.invalid");
     fail_unless (lldp_peer(&msg) == 0, "invalid packets should return 0");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+    errstr = "Corrupt LLDP packet: invalid TLV";
     read_packet(&msg, "proto/lldp/98.end.broken");
     fail_unless (lldp_peer(&msg) == 0, "broken packets should return 0");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+    errstr = "Corrupt LLDP packet: missing END TLV";
     read_packet(&msg, "proto/lldp/99.end.missing");
     fail_unless (lldp_peer(&msg) == 0, "incomplete packets should return 0");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
 
+    errstr = "check";
+    my_log(CRIT, errstr);
     read_packet(&msg, "proto/lldp/41.good.small");
     fail_unless (lldp_peer(&msg) == msg.len, "packet length incorrect");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (msg.ttl == 120, "ttl should be 120");
     fail_unless (strcmp(msg.peer, "test") == 0, "system name should be 'test'");
     read_packet(&msg, "proto/lldp/42.good.big");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (lldp_peer(&msg) == msg.len, "packet length incorrect");
     fail_unless (msg.ttl == 120, "ttl should be 120");
     fail_unless (strcmp(msg.peer, "Summit300-48") == 0,
 		"system name should be 'Summit300-48'");
     read_packet(&msg, "proto/lldp/43.good.lldpmed");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (lldp_peer(&msg) == msg.len, "packet length incorrect");
     fail_unless (msg.ttl == 120, "ttl should be 120");
     fail_unless (strcmp(msg.peer, "ProCurve Switch 2600-8-PWR") == 0,
