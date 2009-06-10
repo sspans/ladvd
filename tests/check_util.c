@@ -107,6 +107,48 @@ START_TEST(test_my) {
 }
 END_TEST
 
+START_TEST(test_my_msend) {
+    struct master_msg mreq;
+    int s = -1;
+    int spair[2];
+    size_t ret;
+    const char *errstr = NULL;
+
+    socketpair(AF_UNIX, SOCK_STREAM, 0, spair);
+
+    errstr = "only -1 bytes written";
+    WRAP_FATAL_START();
+    my_msend(s, &mreq);
+    WRAP_FATAL_END();
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    errstr = "request failed";
+    write(spair[0], &mreq, MASTER_MSG_SIZE); 
+    ret = my_msend(spair[1], &mreq);
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    mreq.completed = 1;
+    mreq.len = ETHER_MIN_LEN; 
+    write(spair[0], &mreq, MASTER_MSG_SIZE); 
+    ret = my_msend(spair[1], &mreq);
+    fail_unless (ret == ETHER_MIN_LEN,
+	"incorrect size %lu returned from my_msend", ret);
+
+    errstr = "invalid reply received from master";
+    write(spair[0], &mreq, ETHER_MIN_LEN); 
+    WRAP_FATAL_START();
+    ret = my_msend(spair[1], &mreq);
+    WRAP_FATAL_END();
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    close(spair[0]);
+    close(spair[1]);
+}
+END_TEST
+
 START_TEST(test_netif) {
     struct nhead nqueue;
     struct nhead *netifs = &nqueue;
@@ -461,6 +503,7 @@ Suite * util_suite (void) {
     // util test case
     TCase *tc_util = tcase_create("util");
     tcase_add_test(tc_util, test_my);
+    tcase_add_test(tc_util, test_my_msend);
     tcase_add_test(tc_util, test_netif);
     tcase_add_test(tc_util, test_read_line);
     tcase_add_test(tc_util, test_my_cksum);
