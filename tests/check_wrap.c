@@ -54,20 +54,26 @@ void exit (int status) {
 }
 
 int setgid (gid_t gid) {
-    if (check_wrap_opt & FAIL_PRIV)
+    if (check_wrap_opt & FAIL_SETGID)
 	return -1;
+    if (check_wrap_opt & FAKE_SETGID)
+	return 0;
     return libc_setgid(gid);
 }
 
 int setuid (uid_t uid) {
-    if (check_wrap_opt & FAIL_PRIV)
+    if (check_wrap_opt & FAIL_SETUID)
 	return -1;
+    if (check_wrap_opt & FAKE_SETUID)
+	return 0;
     return libc_setuid(uid);
 }
 
 int setgroups (int ngroups, const gid_t *gidset) {
-    if (check_wrap_opt & FAIL_PRIV)
+    if (check_wrap_opt & FAIL_SETGRP)
 	return -1;
+    if (check_wrap_opt & FAKE_SETGRP)
+	return 0;
     return libc_setgroups(ngroups, gidset);
 }
 

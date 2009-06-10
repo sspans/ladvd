@@ -19,6 +19,7 @@ extern char check_wrap_errstr[];
 START_TEST(test_my) {
     char *ptr = NULL;
     int s = 0;
+    const char *errstr = NULL;
 
     mark_point();
     loglevel = DEBUG;
@@ -69,11 +70,12 @@ START_TEST(test_my) {
     close(s);
     s = 0;
 
+    errstr = "opening socket failed";
     WRAP_FATAL_START();
     s = my_socket(AF_MAX, 0, 0);
     WRAP_FATAL_END();
-    fail_unless (strncmp(check_wrap_errstr, "opening socket failed", 21) == 0,
-	"error not logged");
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
 }
 END_TEST
 
@@ -297,20 +299,42 @@ END_TEST
 
 START_TEST(test_my_priv) {
     struct passwd *pwd;
-    extern int check_fail_priv;
-    extern int check_fail_exit;
-    extern int check_fail_chdir;
+    const char *errstr = NULL;
 
     pwd = getpwnam("root");
     errno = EPERM;
 
-    check_wrap_opt |= FAIL_PRIV;
+    mark_point();
+    errstr = "unable to setgid";
+    check_wrap_opt |= FAIL_SETGID;
     WRAP_FATAL_START();
     my_drop_privs(pwd);
     WRAP_FATAL_END();
-    check_wrap_opt &= ~FAIL_PRIV;
-    // XXX: check message
+    check_wrap_opt &= ~FAIL_SETGID;
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
 
+    mark_point();
+    errstr = "unable to setgroups";
+    check_wrap_opt |= FAKE_SETGID|FAIL_SETGRP;
+    WRAP_FATAL_START();
+    my_drop_privs(pwd);
+    WRAP_FATAL_END();
+    check_wrap_opt &= ~FAIL_SETGRP;
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    mark_point();
+    errstr = "unable to setuid";
+    check_wrap_opt |= FAKE_SETGRP|FAIL_SETUID;
+    WRAP_FATAL_START();
+    my_drop_privs(pwd);
+    WRAP_FATAL_END();
+    check_wrap_opt = 0;
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    mark_point();
     check_wrap_opt |= FAIL_CHDIR;
     WRAP_FATAL_START();
     my_chroot("/nonexistent");
