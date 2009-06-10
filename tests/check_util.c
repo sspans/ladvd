@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <check.h>
+#include <sys/param.h>
 
 #include "../src/common.h"
 #include "../src/util.h"
@@ -22,10 +23,21 @@ START_TEST(test_my) {
     const char *errstr = NULL;
 
     mark_point();
+    loglevel = INFO;
+    errstr = "empty";
+    my_log(CRIT, errstr);
+    my_log(DEBUG, "0123456789");
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
     loglevel = DEBUG;
-    my_log(INFO, "0123456789");
-    fail_unless (strcmp(check_wrap_errstr, "0123456789") == 0,
-	"message not logged");
+    errstr = "0123456789";
+    my_log(INFO, errstr);
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0, "message not logged");
+
+    options &= ~OPT_DAEMON;
+    my_log(INFO, "debug");
+    options |= OPT_DAEMON;
 
     WRAP_FATAL_START();
     my_fatal("error");
@@ -300,6 +312,7 @@ END_TEST
 START_TEST(test_my_priv) {
     struct passwd *pwd;
     const char *errstr = NULL;
+    char path[MAXPATHLEN + 1];
 
     pwd = getpwnam("root");
     errno = EPERM;
@@ -330,17 +343,99 @@ START_TEST(test_my_priv) {
     WRAP_FATAL_START();
     my_drop_privs(pwd);
     WRAP_FATAL_END();
+    check_wrap_opt &= ~FAIL_SETUID;
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    mark_point();
+    errno = 0;
+    errstr = "success";
+    my_log(INFO, errstr);
+    check_wrap_opt |= FAKE_SETUID;
+    WRAP_FATAL_START();
+    my_drop_privs(pwd);
+    WRAP_FATAL_END();
     check_wrap_opt = 0;
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     mark_point();
+    errstr = "chroot path does not begin at root";
+    memset(path, 'a', MAXPATHLEN);
+    WRAP_FATAL_START();
+    my_chroot(path);
+    WRAP_FATAL_END();
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    mark_point();
+    errstr = "chroot path too long";
+    path[0] = '/';
+    WRAP_FATAL_START();
+    my_chroot(path);
+    WRAP_FATAL_END();
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    mark_point();
+    errstr = "stat(\"/nonexistent\"): ";
+    strlcpy(path, "/nonexistent", MAXPATHLEN);
+    WRAP_FATAL_START();
+    my_chroot(path);
+    WRAP_FATAL_END();
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    mark_point();
+    errstr = "bad ownership or modes for chroot";
+    strlcpy(path, "/dev/null", MAXPATHLEN);
+    WRAP_FATAL_START();
+    my_chroot(path);
+    WRAP_FATAL_END();
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    mark_point();
+    errstr = "chroot path \"/dev/mem\" is not a directory";
+    strlcpy(path, "/dev/mem", MAXPATHLEN);
+    WRAP_FATAL_START();
+    my_chroot(path);
+    WRAP_FATAL_END();
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    mark_point();
+    errstr = "unable to chdir to chroot path";
+    strlcpy(path, "/", MAXPATHLEN);
     check_wrap_opt |= FAIL_CHDIR;
     WRAP_FATAL_START();
-    my_chroot("/nonexistent");
+    my_chroot(path);
     WRAP_FATAL_END();
     check_wrap_opt &= ~FAIL_CHDIR;
-    // XXX: check message
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    mark_point();
+    errstr = "chroot(\"/\"):";
+    check_wrap_opt |= FAKE_CHDIR|FAIL_CHROOT;
+    WRAP_FATAL_START();
+    my_chroot(path);
+    WRAP_FATAL_END();
+    check_wrap_opt &= ~FAIL_CHROOT;
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    mark_point();
+    errno = 0;
+    errstr = "success";
+    my_log(INFO, errstr);
+    check_wrap_opt |= FAKE_CHROOT;
+    WRAP_FATAL_START();
+    my_chroot(path);
+    WRAP_FATAL_END();
+    check_wrap_opt = 0;
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
 }
 END_TEST
 

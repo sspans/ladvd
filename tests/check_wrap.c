@@ -16,6 +16,7 @@ static int (*libc_setgid) (gid_t gid);
 static int (*libc_setuid) (uid_t uid);
 static int (*libc_setgroups) (int ngroups, const gid_t *gidset);
 static int (*libc_chdir) (const char *path);
+static int (*libc_chroot) (const char *dirname);
 static void (*libc_vsyslog) (int priority, const char *message, va_list args);
 
 jmp_buf check_wrap_env;
@@ -32,6 +33,7 @@ _init (void) {
     libc_setuid = dlsym(RTLD_NEXT, "setuid");
     libc_setgroups = dlsym(RTLD_NEXT, "setgroups");
     libc_chdir = dlsym(RTLD_NEXT, "chdir");
+    libc_chroot = dlsym(RTLD_NEXT, "chroot");
     libc_vsyslog = dlsym(RTLD_NEXT, "vsyslog");
 }
 
@@ -80,7 +82,17 @@ int setgroups (int ngroups, const gid_t *gidset) {
 int chdir (const char *path) {
     if (check_wrap_opt & FAIL_CHDIR)
 	return -1;
+    if (check_wrap_opt & FAKE_CHDIR)
+	return 0;
     return libc_chdir(path);
+}
+
+int chroot (const char *dirname) {
+    if (check_wrap_opt & FAIL_CHROOT)
+	return -1;
+    if (check_wrap_opt & FAKE_CHROOT)
+	return 0;
+    return libc_chroot(dirname);
 }
 
 void vsyslog(int priority, const char *fmt, va_list ap) {
