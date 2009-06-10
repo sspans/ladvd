@@ -11,7 +11,7 @@
 #include "../src/proto/protos.h"
 
 extern uint8_t loglevel;
-uint32_t options = OPT_DEBUG | OPT_CHECK;
+uint32_t options = OPT_DAEMON | OPT_CHECK;
 
 START_TEST(test_proto_packet) {
     struct master_msg msg;
