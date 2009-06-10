@@ -51,6 +51,14 @@ START_TEST(test_my) {
     free(ptr);
     ptr = NULL;
 
+    check_wrap_opt |= FAIL_MALLOC;
+    WRAP_FATAL_START();
+    ptr = my_malloc(100);
+    WRAP_FATAL_END();
+    check_wrap_opt &= ~FAIL_MALLOC;
+    fail_unless (strcmp(check_wrap_errstr, "malloc failed") == 0,
+	"error not logged");
+
     mark_point();
     ptr = my_calloc(10, 10);
     fail_unless (ptr != NULL, "a valid pointer should be returned");
