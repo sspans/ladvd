@@ -481,34 +481,69 @@ END_TEST
 
 START_TEST(test_edp_peer) {
     struct master_msg msg;
+    const char *errstr = NULL;
 
+    loglevel = INFO;
+
+    errstr = "missing EDP header";
     read_packet(&msg, "proto/edp/00.empty");
     fail_unless (edp_peer(&msg) == 0, "empty packets should return 0");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
 
+    my_log(CRIT, "check");
     read_packet(&msg, "proto/edp/01.header.broken");
     fail_unless (edp_peer(&msg) == 0, "broken packets should return 0");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+    errstr = "unsupported EDP version";
     read_packet(&msg, "proto/edp/02.header.invalid");
     fail_unless (edp_peer(&msg) == 0, "broken packets should return 0");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+    errstr = "check";
+    my_log(CRIT, errstr);
     read_packet(&msg, "proto/edp/03.header.only");
     fail_unless (edp_peer(&msg) == msg.len, "packet length incorrect");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
 
+    errstr = "Corrupt EDP packet: invalid Display TLV";
     read_packet(&msg, "proto/edp/21.display.broken");
     fail_unless (edp_peer(&msg) == 0, "broken packets should return 0");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
 
+    errstr = "check";
+    my_log(CRIT, errstr);
     read_packet(&msg, "proto/edp/91.tlv.unknown");
     fail_unless (edp_peer(&msg) == msg.len, "packet length incorrect");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+    errstr = "Corrupt EDP packet: invalid TLV";
     read_packet(&msg, "proto/edp/92.tlv.invalid");
     fail_unless (edp_peer(&msg) == 0, "broken packets should return 0");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+    errstr = "Corrupt EDP packet: invalid TLV length";
     read_packet(&msg, "proto/edp/93.tlv.long");
     fail_unless (edp_peer(&msg) == 0, "broken packets should return 0");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
 
+    errstr = "check";
+    my_log(CRIT, errstr);
     read_packet(&msg, "proto/edp/41.good.small");
     fail_unless (edp_peer(&msg) == msg.len, "packet length incorrect");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (msg.ttl == 180, "ttl should be 180");
     fail_unless (strcmp(msg.peer, "HD000002") == 0,
 		"system name should be 'HD000002'");
     read_packet(&msg, "proto/edp/42.good.medium");
     fail_unless (edp_peer(&msg) == msg.len, "packet length incorrect");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (msg.ttl == 180, "ttl should be 180");
     fail_unless (strcmp(msg.peer, "SW1") == 0, "system name should be 'SW1'");
 }
