@@ -80,6 +80,8 @@ int my_socket(int af, int type, int proto) {
 size_t my_msend(int s, struct master_msg *mreq) {
     ssize_t count = 0;
 
+    assert(mreq != NULL);
+
     count = write(s, mreq, MASTER_MSG_SIZE);
     if (count != MASTER_MSG_SIZE)
 	my_fatal("only %d bytes written: %s", count, strerror(errno));
