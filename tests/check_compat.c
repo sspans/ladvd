@@ -7,7 +7,10 @@
 
 #include "../src/config.h"
 #include "../src/compat/compat.h"
+
 #include "check_wrap.h"
+
+extern uint32_t check_wrap_opt;
 
 #ifndef HAVE_SETPROCTITLE
 START_TEST(test_setproctitle) {
@@ -16,8 +19,6 @@ START_TEST(test_setproctitle) {
     extern char *__progname;
     char *ptitle = NULL;
     const char *str = "123456788ABCDEF";
-
-    extern uint32_t check_wrap_opt;
 
     argv = calloc(argc + 1, sizeof(*argv));
 

@@ -10,8 +10,12 @@
 #include "../src/util.h"
 #include "../src/proto/protos.h"
 
-extern uint8_t loglevel;
+#include "check_wrap.h"
+
 uint32_t options = OPT_DAEMON | OPT_CHECK;
+extern uint8_t loglevel;
+
+extern char check_wrap_errstr[];
 
 START_TEST(test_proto_packet) {
     struct master_msg msg;
@@ -333,42 +337,74 @@ END_TEST
 
 START_TEST(test_cdp_peer) {
     struct master_msg msg;
+    const char *errstr = NULL;
 
+    loglevel = INFO;
+
+    errstr = "missing CDP header";
     read_packet(&msg, "proto/cdp/00.empty");
     fail_unless (cdp_peer(&msg) == 0, "empty packets should return 0");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
 
+    errstr = "missing CDP header";
     read_packet(&msg, "proto/cdp/01.header.broken");
     fail_unless (cdp_peer(&msg) == 0, "broken packets should return 0");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    errstr = "invalid CDP version";
     read_packet(&msg, "proto/cdp/02.header.invalid");
     fail_unless (cdp_peer(&msg) == 0, "broken packets should return 0");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
     read_packet(&msg, "proto/cdp/03.header.only");
     fail_unless (cdp_peer(&msg) == msg.len, "packet length incorrect");
 
+    errstr = "Corrupt CDP packet: invalid System Name TLV";
     read_packet(&msg, "proto/cdp/21.device_id.broken");
     fail_unless (cdp_peer(&msg) == 0, "broken packets should return 0");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
 
     read_packet(&msg, "proto/cdp/91.tlv.unknown");
     fail_unless (cdp_peer(&msg) == msg.len, "packet length incorrect");
+    errstr = "Corrupt CDP packet: invalid TLV";
     read_packet(&msg, "proto/cdp/92.tlv.broken");
     fail_unless (cdp_peer(&msg) == 0, "broken packets should return 0");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+    errstr = "Corrupt CDP packet: invalid TLV length";
     read_packet(&msg, "proto/cdp/93.tlv.long");
     fail_unless (cdp_peer(&msg) == 0, "broken packets should return 0");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
 
+    errstr = "check";
+    my_log(CRIT, errstr);
     read_packet(&msg, "proto/cdp/41.good.small");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (cdp_peer(&msg) == msg.len, "packet length incorrect");
     fail_unless (msg.ttl == 180, "ttl should be 180");
     fail_unless (strcmp(msg.peer, "R1") == 0, "system name should be 'R1'");
     read_packet(&msg, "proto/cdp/42.good.medium");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (cdp_peer(&msg) == msg.len, "packet length incorrect");
     fail_unless (msg.ttl == 180, "ttl should be 180");
     fail_unless (strcmp(msg.peer, "R2D2") == 0,
 		"system name should be 'R2D2'");
     read_packet(&msg, "proto/cdp/43.good.big");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (cdp_peer(&msg) == msg.len, "packet length incorrect");
     fail_unless (msg.ttl == 180, "ttl should be 180");
     fail_unless (strcmp(msg.peer, "xpfs1.yapkjn.network.bla.nl") == 0,
 		"system name should be 'xpfs1.yapkjn.network.bla.nl'");
     read_packet(&msg, "proto/cdp/44.good.bcm");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (cdp_peer(&msg) == msg.len, "packet length incorrect");
     fail_unless (msg.ttl == 180, "ttl should be 180");
     fail_unless (strcmp(msg.peer, "0060B9C14027") == 0,
