@@ -1,10 +1,13 @@
 
 #include <stdio.h>
+#include <stdint.h>
 #include <stdarg.h>
 #include <unistd.h>
 
 #define __USE_GNU
 #include <dlfcn.h>
+
+#include "check_wrap.h"
 
 static void *(*libc_malloc) (size_t size);
 static void *(*libc_calloc) (size_t nmemb, size_t size);
@@ -15,11 +18,9 @@ static int (*libc_setgroups) (int ngroups, const gid_t *gidset);
 static int (*libc_chdir) (const char *path);
 static void (*libc_vsyslog) (int priority, const char *message, va_list args);
 
-int check_fail_malloc = 0;
-int check_fail_calloc = 0;
-int check_fail_exit = 0;
-int check_fail_priv = 0;
-int check_fail_chdir = 0;
+jmp_buf check_wrap_env;
+uint32_t check_wrap_opt = 0;
+char check_wrap_errstr[1024];
 
 void
 __attribute__ ((constructor))
@@ -35,49 +36,48 @@ _init (void) {
 }
 
 void *malloc(size_t size) {
-    if (check_fail_malloc)
+    if (check_wrap_opt & FAIL_MALLOC)
 	return NULL;
     return libc_malloc(size);
 }
 
 void *calloc(size_t nmemb, size_t size) {
-    if (check_fail_calloc)
+    if (check_wrap_opt & FAIL_CALLOC)
 	return NULL;
     return libc_calloc(nmemb, size);
 }
 
 void exit (int status) {
-    if (check_fail_exit)
-	return;
+    if (check_wrap_opt & FAIL_EXIT)
+	longjmp(check_wrap_env,1);
     libc_exit(status);
 }
 
 int setgid (gid_t gid) {
-    if (check_fail_priv)
+    if (check_wrap_opt & FAIL_PRIV)
 	return -1;
     return libc_setgid(gid);
 }
 
 int setuid (uid_t uid) {
-    if (check_fail_priv)
+    if (check_wrap_opt & FAIL_PRIV)
 	return -1;
     return libc_setuid(uid);
 }
 
 int setgroups (int ngroups, const gid_t *gidset) {
-    if (check_fail_priv)
+    if (check_wrap_opt & FAIL_PRIV)
 	return -1;
     return libc_setgroups(ngroups, gidset);
 }
 
 int chdir (const char *path) {
-    if (check_fail_chdir)
+    if (check_wrap_opt & FAIL_CHDIR)
 	return -1;
     return libc_chdir(path);
 }
 
 void vsyslog(int priority, const char *fmt, va_list ap) {
-    vfprintf(stderr, fmt, ap);
-    fprintf(stderr, "\n");
+    vsnprintf(check_wrap_errstr, 1024, fmt, ap);
 }
 

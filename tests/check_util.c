@@ -7,41 +7,58 @@
 #include "../src/common.h"
 #include "../src/util.h"
 
+#include "check_wrap.h"
+
 uint32_t options = OPT_DAEMON | OPT_CHECK;
+extern uint8_t loglevel;
+
+extern jmp_buf check_wrap_env;
+extern uint32_t check_wrap_opt;
+extern char check_wrap_errstr[];
 
 START_TEST(test_my) {
     char *ptr = NULL;
     int s = 0;
-    extern int check_fail_exit;
-    extern int check_fail_malloc;
-    extern int check_fail_calloc;
 
-    my_log(INFO, "foo\n");
-    check_fail_exit = 1;
-    my_fatal("test fatal");
-    check_fail_exit = 0;
+    mark_point();
+    loglevel = DEBUG;
+    my_log(INFO, "0123456789");
+    fail_unless (strcmp(check_wrap_errstr, "0123456789") == 0,
+	"message not logged");
 
+    WRAP_FATAL_START();
+    my_fatal("error");
+    WRAP_FATAL_END();
+    fail_unless (strcmp(check_wrap_errstr, "error") == 0,
+	"error not logged");
+
+    mark_point();
     ptr = my_malloc(100);
     fail_unless (ptr != NULL, "a valid pointer should be returned");
     free(ptr);
     ptr = NULL;
 
+    mark_point();
     ptr = my_calloc(10, 10);
     fail_unless (ptr != NULL, "a valid pointer should be returned");
     free(ptr);
     ptr = NULL;
 
-    check_fail_exit = 1;
-    check_fail_calloc = 1;
+    check_wrap_opt |= FAIL_CALLOC;
+    WRAP_FATAL_START();
     ptr = my_calloc(10, 10);
-    check_fail_calloc = 0;
-    check_fail_exit = 0;
+    WRAP_FATAL_END();
+    check_wrap_opt &= ~FAIL_CALLOC;
+    fail_unless (strcmp(check_wrap_errstr, "calloc failed") == 0,
+	"error not logged");
 
+    mark_point();
     ptr = my_strdup("foo");
     fail_unless (ptr != NULL, "a valid pointer should be returned");
     free(ptr);
     ptr = NULL;
 
+    mark_point();
     s = my_socket(AF_INET, SOCK_DGRAM, 0);
     fail_unless (s != -1, "a valid socket should be returned");
     close(s);
@@ -52,9 +69,12 @@ START_TEST(test_my) {
     close(s);
     s = 0;
 
-    check_fail_exit = 1;
+    WRAP_FATAL_START();
     s = my_socket(AF_MAX, 0, 0);
-    check_fail_exit = 0;
+    WRAP_FATAL_END();
+    fprintf(stderr, check_wrap_errstr);
+    fail_unless (strncmp(check_wrap_errstr, "opening socket failed", 21) == 0,
+	"error not logged");
 }
 END_TEST
 
@@ -285,17 +305,19 @@ START_TEST(test_my_priv) {
     pwd = getpwnam("root");
     errno = EPERM;
 
-    check_fail_exit = 1;
-    check_fail_priv = 1;
+    check_wrap_opt |= FAIL_PRIV;
+    WRAP_FATAL_START();
     my_drop_privs(pwd);
-    check_fail_priv = 0;
-    check_fail_exit = 0;
+    WRAP_FATAL_END();
+    check_wrap_opt &= ~FAIL_PRIV;
+    // XXX: check message
 
-    check_fail_exit = 1;
-    check_fail_chdir = 1;
+    check_wrap_opt |= FAIL_CHDIR;
+    WRAP_FATAL_START();
     my_chroot("/nonexistent");
-    check_fail_chdir = 0;
-    check_fail_exit = 0;
+    WRAP_FATAL_END();
+    check_wrap_opt &= ~FAIL_CHDIR;
+    // XXX: check message
 }
 END_TEST
 
