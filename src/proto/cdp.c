@@ -282,7 +282,7 @@ size_t cdp_peer(struct master_msg *msg) {
 		free(hostname);
 		break;
 	default:
-		my_log(INFO, "unknown TLV: type %d, length %d, leaves %d",
+		my_log(DEBUG, "unknown TLV: type %d, length %d, leaves %d",
 			    tlv_type, tlv_length, length);
 		if (!SKIP(tlv_length)) {
 		    my_log(INFO, "Corrupt CDP packet: invalid TLV length");
