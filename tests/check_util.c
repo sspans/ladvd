@@ -72,7 +72,6 @@ START_TEST(test_my) {
     WRAP_FATAL_START();
     s = my_socket(AF_MAX, 0, 0);
     WRAP_FATAL_END();
-    fprintf(stderr, check_wrap_errstr);
     fail_unless (strncmp(check_wrap_errstr, "opening socket failed", 21) == 0,
 	"error not logged");
 }
