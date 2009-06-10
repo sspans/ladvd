@@ -551,39 +551,76 @@ END_TEST
 
 START_TEST(test_fdp_peer) {
     struct master_msg msg;
+    const char *errstr = NULL;
 
+    loglevel = INFO;
+
+    errstr = "missing FDP header";
     read_packet(&msg, "proto/fdp/00.empty");
     fail_unless (fdp_peer(&msg) == 0, "empty packets should return 0");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
 
+    my_log(CRIT, "check");
     read_packet(&msg, "proto/fdp/01.header.broken");
     fail_unless (fdp_peer(&msg) == 0, "broken packets should return 0");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+    errstr = "unsupported FDP version";
     read_packet(&msg, "proto/fdp/02.header.invalid");
     fail_unless (fdp_peer(&msg) == 0, "broken packets should return 0");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+    errstr = "check";
+    my_log(CRIT, errstr);
     read_packet(&msg, "proto/fdp/03.header.only");
     fail_unless (fdp_peer(&msg) == msg.len, "packet length incorrect");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
 
+    errstr = "Corrupt FDP packet: invalid Device ID TLV";
     read_packet(&msg, "proto/fdp/21.device_id.broken");
     fail_unless (fdp_peer(&msg) == 0, "broken packets should return 0");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
 
+    errstr = "check";
+    my_log(CRIT, errstr);
     read_packet(&msg, "proto/fdp/91.tlv.unknown");
     fail_unless (fdp_peer(&msg) == msg.len, "packet length incorrect");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+    errstr = "Corrupt FDP packet: invalid TLV";
     read_packet(&msg, "proto/fdp/92.tlv.invalid");
     fail_unless (fdp_peer(&msg) == 0, "broken packets should return 0");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+    errstr = "Corrupt FDP packet: invalid TLV length";
     read_packet(&msg, "proto/fdp/93.tlv.long");
     fail_unless (fdp_peer(&msg) == 0, "broken packets should return 0");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
 
+    errstr = "check";
+    my_log(CRIT, errstr);
     read_packet(&msg, "proto/fdp/41.good.bi");
     fail_unless (fdp_peer(&msg) == msg.len, "packet length incorrect");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (msg.ttl == 10, "ttl should be 10");
     fail_unless (strcmp(msg.peer, "doetnix") == 0,
 		"system name should be 'doetnix'");
     read_packet(&msg, "proto/fdp/42.good.rx");
     fail_unless (fdp_peer(&msg) == msg.len, "packet length incorrect");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (msg.ttl == 10, "ttl should be 10");
     fail_unless (strcmp(msg.peer, "erix") == 0,
 		"system name should be 'erix'");
     read_packet(&msg, "proto/fdp/43.good.mlx");
     fail_unless (fdp_peer(&msg) == msg.len, "packet length incorrect");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (msg.ttl == 10, "ttl should be 10");
     fail_unless (strcmp(msg.peer, "emmerix") == 0,
 		"system name should be 'emmerix'");
