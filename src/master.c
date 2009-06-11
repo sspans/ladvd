@@ -229,7 +229,7 @@ void master_init(struct nhead *netifs, uint16_t netifc, int ac,
 
 #ifdef USE_CAPABILITIES
 	// keep CAP_NET_ADMIN
-	caps = cap_from_text("cap_net_admin=ep");
+	caps = cap_from_text("cap_net_admin=ep cap_kill=ep");
 
 	if (caps == NULL)
 	    my_fatal("unable to create capabilities: %s", strerror(errno));
