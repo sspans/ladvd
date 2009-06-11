@@ -65,10 +65,11 @@ AS_IF([test -n "$chroot_dir"],
     [AC_DEFINE(PACKAGE_CHROOT_DIR,"/var/run/" PACKAGE_NAME,[location of chroot])]
 )
 
-if test "$target_os" = "linux-gnu"; then
-    AC_DEFINE(HAVE_PROC_SYS_NET,1, [define if /proc/sys/net should be used])
-    AC_DEFINE(HAVE_SYSFS,1, [define if /sys should be used])
-fi
+case "$target_os" in
+    linux-gnu|linux-gnueabi)
+	AC_DEFINE(HAVE_PROC_SYS_NET,1, [define for /proc/sys/net])
+	AC_DEFINE(HAVE_SYSFS,1, [define for /sys])
+esac
 
 # check unit tests
 PKG_CHECK_MODULES([CHECK], [check >= 0.9.4], [], [true])
