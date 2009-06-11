@@ -182,12 +182,9 @@ int main(int argc, char *argv[]) {
     }
 #endif /* __APPLE__ */
 
-    // create cmd/msg socketpair
-    if (socketpair(AF_UNIX, SOCK_STREAM, 0, cpair) == -1)
-	my_fatal("cmd socketpair creation failed: %s", strerror(errno));
-
-    if (socketpair(AF_UNIX, SOCK_STREAM, 0, mpair) == -1)
-	my_fatal("msg socketpair creation failed: %s", strerror(errno));
+    // init cmd/msg socketpair
+    my_socketpair(cpair);
+    my_socketpair(mpair);
 
     // create privsep parent / child
     pid = fork();

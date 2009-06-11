@@ -77,6 +77,21 @@ int my_socket(int af, int type, int proto) {
     return(s);
 }
 
+void my_socketpair(int spair[2]) {
+    int i, rbuf = MASTER_MSG_SIZE * 10;
+
+    assert(spair != NULL);
+
+    if (socketpair(AF_UNIX, SOCK_DGRAM, 0, spair) == -1)
+	my_fatal("msg socketpair creation failed: %s", strerror(errno));
+
+    for (i = 0; i<2; i++) {
+	if (setsockopt(spair[i], SOL_SOCKET, SO_RCVBUF,
+		       &rbuf, sizeof(rbuf)) == -1)
+	    my_fatal("failed to set rcvbuf: %s", strerror(errno));
+    }
+}
+
 size_t my_msend(int s, struct master_msg *mreq) {
     ssize_t count = 0;
 

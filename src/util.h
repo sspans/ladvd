@@ -18,6 +18,7 @@ void *my_malloc(size_t size);
 void *my_calloc(size_t, size_t);
 char *my_strdup(const char *str);
 int my_socket(int af, int type, int proto);
+void my_socketpair(int spair[2]);
 
 size_t my_msend(int s, struct master_msg *mreq);
 

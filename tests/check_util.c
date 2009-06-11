@@ -114,8 +114,11 @@ START_TEST(test_my_msend) {
     size_t ret;
     const char *errstr = NULL;
 
-    socketpair(AF_UNIX, SOCK_STREAM, 0, spair);
+    loglevel = INFO;
+    
+    my_socketpair(spair);
 
+    mark_point();
     errstr = "only -1 bytes written";
     WRAP_FATAL_START();
     my_msend(s, &mreq);
@@ -123,12 +126,18 @@ START_TEST(test_my_msend) {
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
+    mark_point();
     errstr = "request failed";
     write(spair[0], &mreq, MASTER_MSG_SIZE); 
-    ret = my_msend(spair[1], &mreq);
+    WRAP_FATAL_START();
+    my_msend(spair[1], &mreq);
+    WRAP_FATAL_END();
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
+    mark_point();
+    errstr = "check";
+    my_log(CRIT, errstr);
     mreq.completed = 1;
     mreq.len = ETHER_MIN_LEN; 
     write(spair[0], &mreq, MASTER_MSG_SIZE); 
@@ -136,10 +145,11 @@ START_TEST(test_my_msend) {
     fail_unless (ret == ETHER_MIN_LEN,
 	"incorrect size %lu returned from my_msend", ret);
 
+    mark_point();
     errstr = "invalid reply received from master";
     write(spair[0], &mreq, ETHER_MIN_LEN); 
     WRAP_FATAL_START();
-    ret = my_msend(spair[1], &mreq);
+    my_msend(spair[1], &mreq);
     WRAP_FATAL_END();
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -372,6 +382,7 @@ START_TEST(test_my_priv) {
     const char *errstr = NULL;
     char path[MAXPATHLEN + 1];
 
+    loglevel = INFO;
     pwd = getpwnam("root");
     errno = EPERM;
 
@@ -407,8 +418,8 @@ START_TEST(test_my_priv) {
 
     mark_point();
     errno = 0;
-    errstr = "success";
-    my_log(INFO, errstr);
+    errstr = "check";
+    my_log(CRIT, errstr);
     check_wrap_opt |= FAKE_SETUID;
     WRAP_FATAL_START();
     my_drop_privs(pwd);
@@ -485,8 +496,8 @@ START_TEST(test_my_priv) {
 
     mark_point();
     errno = 0;
-    errstr = "success";
-    my_log(INFO, errstr);
+    errstr = "check";
+    my_log(CRIT, errstr);
     check_wrap_opt |= FAKE_CHROOT;
     WRAP_FATAL_START();
     my_chroot(path);
