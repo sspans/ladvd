@@ -13,7 +13,7 @@ struct master_rfd {
     struct event event;
 };
 
-void master_signal(int fd, short event, void *p);
+void master_signal(int fd, short event, void *pid);
 void master_cmd(int fd, short event, int *rawfd);
 void master_recv(int fd, short event, struct master_rfd *rfd);
 int master_rcheck(struct master_msg *mreq);

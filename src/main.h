@@ -3,7 +3,7 @@
 #define _main_h
 
 void master_init(struct nhead *, uint16_t netifc, int ac,
-		 int cmdfd, int msgfd);
+		 pid_t pid, int cmdfd, int msgfd);
 
 // supported protocols
 struct proto protos[] = {

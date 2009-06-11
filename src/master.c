@@ -132,7 +132,7 @@ extern uint8_t loglevel;
 extern uint32_t options;
 
 void master_init(struct nhead *netifs, uint16_t netifc, int ac,
-		 int cmdfd, int msgfd) {
+		 pid_t child, int cmdfd, int msgfd) {
 
     // raw socket
     int rawfd;
@@ -251,8 +251,8 @@ void master_init(struct nhead *netifs, uint16_t netifc, int ac,
 
     // handle signals
     signal_set(&ev_sigchld, SIGCHLD, master_signal, NULL);
-    signal_set(&ev_sigint, SIGINT, master_signal, NULL);
-    signal_set(&ev_sigterm, SIGTERM, master_signal, NULL);
+    signal_set(&ev_sigint, SIGINT, master_signal, &child);
+    signal_set(&ev_sigterm, SIGTERM, master_signal, &child);
     signal_set(&ev_sighup, SIGHUP, master_signal, NULL);
     signal_add(&ev_sigchld, NULL);
     signal_add(&ev_sigint, NULL);
@@ -277,14 +277,17 @@ void master_init(struct nhead *netifs, uint16_t netifc, int ac,
 }
 
 
-void master_signal(int sig, short event, void *p) {
+void master_signal(int sig, short event, void *pid) {
     switch (sig) {
 	case SIGCHLD:
 	    my_fatal("child has exited");
 	    break;
 	case SIGINT:
 	case SIGTERM:
+	    kill(*(pid_t *)pid, sig);
 	    my_fatal("quitting");
+	    break;
+	case SIGHUP:
 	    break;
 	default:
 	    my_fatal("unexpected signal");
