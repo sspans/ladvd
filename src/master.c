@@ -346,7 +346,6 @@ void master_recv(int fd, short event, struct master_rfd *rfd) {
     static unsigned int rcount = 0;
     unsigned int p;
 
-    my_log(INFO, "receiving message");
     memset(&mrecv, 0, sizeof (mrecv));
     mrecv.cmd = MASTER_RECV;
     mrecv.index = rfd->index;
