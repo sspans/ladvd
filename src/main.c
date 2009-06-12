@@ -370,8 +370,8 @@ void queue_msg(int fd, short event, int *cfd) {
 	memcpy(msg, &rmsg, MASTER_MSG_SIZE);
 	TAILQ_INSERT_TAIL(&mqueue, msg, entries);
 
-	my_log(WARN, "new peer %s (%s) on interface %s",
-		msg->peer, protos[msg->proto].name, netif->name);
+	//my_log(WARN, "new peer %s (%s) on interface %s",
+	//	msg->peer, protos[msg->proto].name, netif->name);
     }
 
     if ((options & (OPT_AUTO|OPT_DESCR)) == 0 ||
