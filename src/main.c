@@ -12,6 +12,7 @@
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <syslog.h>
 
 extern int8_t loglevel;
 uint32_t options = OPT_DAEMON;
@@ -168,9 +169,7 @@ int main(int argc, char *argv[]) {
 	if (flock(fd, LOCK_EX|LOCK_NB) == -1)
 	    my_fatal(PACKAGE_NAME " already running (%s locked)", pidfile);
     }
-#endif /* __APPLE__ */
 
-#ifndef __APPLE__
     // daemonize
     if (options & OPT_DAEMON) {
 	if (daemon(0,0) == -1)
@@ -181,6 +180,10 @@ int main(int argc, char *argv[]) {
 	    my_fatal("failed to write pidfile: %s", strerror(errno));
     }
 #endif /* __APPLE__ */
+
+    // call openlog before chrooting
+    if (options & OPT_DAEMON)
+	openlog(PACKAGE_NAME, LOG_NDELAY, LOG_DAEMON);
 
     // init cmd/msg socketpair
     my_socketpair(cpair);
