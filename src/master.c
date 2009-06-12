@@ -485,6 +485,9 @@ void master_rconf(struct master_rfd *rfd, struct proto *protos) {
 
     struct ifreq ifr;
     int s, p;
+#ifdef AF_PACKET
+    struct packet_mreq mreq;
+#endif
 
 #ifdef HAVE_LINUX_FILTER_H
     // install socket filter
@@ -518,20 +521,28 @@ void master_rconf(struct master_rfd *rfd, struct proto *protos) {
     for (p = 0; protos[p].name != NULL; p++) {
 
 	// only enabled protos
-	if ((protos[p].enabled == 0) || !(options & OPT_AUTO))
+	if ((protos[p].enabled == 0) && !(options & OPT_AUTO))
 	    continue;
 
 #ifdef AF_PACKET
-	memcpy(ifr.ifr_hwaddr.sa_data, protos[p].dst_addr, ETHER_ADDR_LEN);
-#endif
-#ifdef AF_LINK
+	// prepare a packet_mreq struct
+	mreq.mr_ifindex = rfd->index;
+	mreq.mr_type = PACKET_MR_MULTICAST;
+	mreq.mr_alen = ETHER_ADDR_LEN;
+	memcpy(mreq.mr_address, protos[p].dst_addr, ETHER_ADDR_LEN);
+
+	if (setsockopt(rfd->fd, SOL_PACKET, PACKET_ADD_MEMBERSHIP,
+		   &mreq, sizeof(mreq)) < 0)
+	    my_fatal("unable to add %s multicast to %s: %s",
+		     protos[p].name, rfd->name, strerror(errno));
+#elif AF_LINK
 	ifr.ifr_addr.sa_family = AF_UNSPEC;
 	memcpy(ifr.ifr_addr.sa_data, protos[p].dst_addr, ETHER_ADDR_LEN);
-#endif
 
 	if (ioctl(s, SIOCADDMULTI, &ifr) < 0)
 	    my_fatal("unable to add %s multicast to %s: %s",
 		     protos[p].name, rfd->name, strerror(errno));
+#endif
     }
 
     close(s);
