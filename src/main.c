@@ -341,15 +341,15 @@ void queue_msg(int fd, short event, int *cfd) {
     assert(rmsg.len >= ETHER_MIN_LEN);
     assert(rmsg.len <= ETHER_MAX_LEN);
 
-    // skip unknown interfaces
-    if ((netif = netif_byindex(&netifs, msg->index)) == NULL)
-	return;
-
     // decode message
     my_log(INFO, "decoding peer name and ttl");
     if (rmsg.len != protos[rmsg.proto].peer(&rmsg))
     	return;
     if (!IS_HOSTNAME(rmsg.peer))
+	return;
+
+    // skip unknown interfaces
+    if ((netif = netif_byindex(&netifs, rmsg.index)) == NULL)
 	return;
 
     TAILQ_FOREACH(qmsg, &mqueue, entries) {
