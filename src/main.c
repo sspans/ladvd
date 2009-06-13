@@ -374,13 +374,13 @@ void queue_msg(int fd, short event, int *cfd) {
 	memcpy(msg, &rmsg, MASTER_MSG_SIZE);
 	TAILQ_INSERT_TAIL(&mqueue, msg, entries);
 
-	my_log(WARN, "new peer %s (%s) on interface %s",
+	my_log(CRIT, "new peer %s (%s) on interface %s",
 		msg->peer, protos[msg->proto].name, netif->name);
     }
 
     // enable the received protocol
     if ((options & OPT_AUTO) && !(netif->protos & (1 << msg->proto))) {
-	    my_log(WARN, "enabling %s on interface %s",
+	    my_log(CRIT, "enabling %s on interface %s",
 		protos[msg->proto].name, netif->name);
 	    netif->protos |= (1 << msg->proto);
     }
