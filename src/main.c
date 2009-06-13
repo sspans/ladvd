@@ -341,6 +341,10 @@ void queue_msg(int fd, short event, int *cfd) {
     assert(rmsg.len >= ETHER_MIN_LEN);
     assert(rmsg.len <= ETHER_MAX_LEN);
 
+    // skip unknown interfaces
+    if ((netif = netif_byindex(&netifs, msg->index)) == NULL)
+	return;
+
     // decode message
     my_log(INFO, "decoding peer name and ttl");
     if (rmsg.len != protos[rmsg.proto].peer(&rmsg))
@@ -370,13 +374,8 @@ void queue_msg(int fd, short event, int *cfd) {
 	memcpy(msg, &rmsg, MASTER_MSG_SIZE);
 	TAILQ_INSERT_TAIL(&mqueue, msg, entries);
 
-	//my_log(WARN, "new peer %s (%s) on interface %s",
-	//	msg->peer, protos[msg->proto].name, netif->name);
-    }
-
-    if ((options & (OPT_AUTO|OPT_DESCR)) == 0 ||
-	(netif = netif_byindex(&netifs, msg->index)) == NULL) {
-	return;
+	my_log(WARN, "new peer %s (%s) on interface %s",
+		msg->peer, protos[msg->proto].name, netif->name);
     }
 
     // enable the received protocol
