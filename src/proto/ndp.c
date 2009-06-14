@@ -53,7 +53,7 @@ size_t ndp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
 
 
     // ethernet header
-    ether.length = htons(VOIDP_DIFF(pos, packet + sizeof(struct ether_hdr)));
+    ether.type = htons(VOIDP_DIFF(pos, packet + sizeof(struct ether_hdr)));
     memcpy(packet, &ether, sizeof(struct ether_hdr));
 
     // packet length

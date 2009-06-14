@@ -13,10 +13,7 @@
 struct ether_hdr {
     uint8_t dst[ETHER_ADDR_LEN];
     uint8_t src[ETHER_ADDR_LEN];
-    union {
-	uint16_t type;
-	uint16_t length;
-    };
+    uint16_t type;
 } __attribute__ ((__packed__));
 
 #ifndef ETHER_HDR_LEN
