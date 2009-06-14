@@ -539,7 +539,8 @@ void master_rconf(struct master_rfd *rfd, struct proto *protos) {
 	ifr.ifr_addr.sa_family = AF_UNSPEC;
 	memcpy(ifr.ifr_addr.sa_data, protos[p].dst_addr, ETHER_ADDR_LEN);
 
-	if (ioctl(s, SIOCADDMULTI, &ifr) < 0)
+	// XXX: EDP will fail with EINVAL
+	if ((ioctl(s, SIOCADDMULTI, &ifr) < 0) && (errno != EINVAL))
 	    my_fatal("unable to add %s multicast to %s: %s",
 		     protos[p].name, rfd->name, strerror(errno));
 #endif
