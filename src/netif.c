@@ -125,6 +125,7 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
     struct ifreq ifr;
     int j, count = 0;
     int type, enabled;
+    uint32_t index;
 
 #ifdef AF_PACKET
     struct sockaddr_ll saddrll;
@@ -186,8 +187,7 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 	    my_log(INFO, "skipping interface %s", ifaddr->ifa_name);
 	    continue;
 	}
-#endif
-#ifdef AF_LINK
+#elif AF_LINK
 	memcpy(&saddrdl, ifaddr->ifa_addr, sizeof(saddrdl));
 	if (saddrdl.sdl_type != IFT_ETHER) {
 	    my_log(INFO, "skipping interface %s", ifaddr->ifa_name);
@@ -235,8 +235,12 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 	my_log(INFO, "adding interface %s", ifaddr->ifa_name);
 
 	// fetch / create netif
-	// XXX: wouldn't ifindex be better ?
-	if ((netif = netif_byname(netifs, ifaddr->ifa_name)) == NULL) {
+#ifdef AF_PACKET
+	index = saddrll.sll_ifindex;
+#elif AF_LINK
+	index = saddrdl.sdl_index;
+#endif
+	if ((netif = netif_byindex(netifs, index)) == NULL) {
 	    netif = my_malloc(sizeof(struct netif));
 	    memset(netif, 0, sizeof(struct netif));
 	    TAILQ_INSERT_TAIL(netifs, netif, entries);
@@ -248,12 +252,7 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 	}
 
         // copy name, index and type
-#ifdef AF_PACKET
-	netif->index = saddrll.sll_ifindex;
-#endif
-#ifdef AF_LINK
-	netif->index = saddrdl.sdl_index;
-#endif
+	netif->index = index;
 	strlcpy(netif->name, ifaddr->ifa_name, sizeof(netif->name));
 	netif->type = type;
 
