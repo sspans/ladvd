@@ -47,17 +47,19 @@ int main(int argc, char *argv[]) {
 
     // packets
     struct master_msg mreq, *msg = NULL, *nmsg = NULL;
-    TAILQ_INIT(&mqueue);
 
     // interfaces
     struct netif *netif = NULL, *subif = NULL;
-    TAILQ_INIT(&netifs);
     uint16_t netifc = 0;
 
     // receiving
     struct event evmsg;
     struct timeval tv;
     time_t now;
+
+    // init the queues
+    TAILQ_INIT(&netifs);
+    TAILQ_INIT(&mqueue);
 
     // clear sysinfo
     memset(&sysinfo, 0, sizeof(struct sysinfo));
