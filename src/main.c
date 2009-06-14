@@ -13,6 +13,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <syslog.h>
+#include <time.h>
 
 extern int8_t loglevel;
 uint32_t options = OPT_DAEMON;
@@ -56,6 +57,7 @@ int main(int argc, char *argv[]) {
     // receiving
     struct event evmsg;
     struct timeval tv;
+    time_t now;
 
     // clear sysinfo
     memset(&sysinfo, 0, sizeof(struct sysinfo));
@@ -314,11 +316,17 @@ sleep:
 	event_dispatch();
 
 	// remove expired messages
+	if ((now = time(NULL)) == (time_t)-1)
+	    continue;
+
 	TAILQ_FOREACH_SAFE(msg, &mqueue, entries, nmsg) {
-	    if (msg->ttl < tv.tv_sec) {
-		TAILQ_REMOVE(&mqueue, msg, entries);
-		free(msg);
-	    }
+	    if (msg->ttl >= now)
+		continue;
+
+	    my_log(CRIT, "removing peer %s (%s)",
+		    msg->peer, protos[msg->proto].name);
+	    TAILQ_REMOVE(&mqueue, msg, entries);
+	    free(msg);
 	}
     }
 
@@ -330,7 +338,8 @@ void queue_msg(int fd, short event, int *cfd) {
 
     struct master_msg rmsg, *msg = NULL, *qmsg = NULL;
     struct netif *netif = NULL;
-    unsigned int len;
+    time_t now;
+    ssize_t len;
 
     my_log(INFO, "receiving message from master");
     len = read(fd, &rmsg, MASTER_MSG_SIZE);
@@ -347,6 +356,11 @@ void queue_msg(int fd, short event, int *cfd) {
     	return;
     if (!IS_HOSTNAME(rmsg.peer))
 	return;
+
+    // add current time to the ttl
+    if ((now = time(NULL)) == (time_t)-1)
+	return;
+    rmsg.ttl += now;
 
     // skip unknown interfaces
     if ((netif = netif_byindex(&netifs, rmsg.index)) == NULL)
@@ -368,7 +382,8 @@ void queue_msg(int fd, short event, int *cfd) {
     }
 
     if (msg != NULL) {
-	memcpy(msg, &rmsg, MASTER_MSG_SIZE);
+	// copy everything upto the tailq_entry
+	memcpy(msg, &rmsg, offsetof(struct master_msg, entries));
     } else {
 	msg = my_malloc(MASTER_MSG_SIZE);
 	memcpy(msg, &rmsg, MASTER_MSG_SIZE);

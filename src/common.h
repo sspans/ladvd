@@ -72,6 +72,7 @@ struct netif {
     struct netif *master;
     struct netif *subif;
 
+    // should be last
     TAILQ_ENTRY(netif) entries;
 };
 
@@ -134,6 +135,8 @@ struct master_msg {
     uint8_t proto;
     time_t ttl;
     char peer[IFDESCRSIZE];
+
+    // should be last
     TAILQ_ENTRY(master_msg) entries;
 };
 

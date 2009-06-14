@@ -235,14 +235,15 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 	my_log(INFO, "adding interface %s", ifaddr->ifa_name);
 
 	// fetch / create netif
+	// XXX: wouldn't ifindex be better ?
 	if ((netif = netif_byname(netifs, ifaddr->ifa_name)) == NULL) {
 	    netif = my_malloc(sizeof(struct netif));
 	    memset(netif, 0, sizeof(struct netif));
 	    TAILQ_INSERT_TAIL(netifs, netif, entries);
 	} else {
-	    // reset everything but protos
+	    // reset everything but protos and tailq_entry
 	    uint16_t protos = netif->protos;
-	    memset(netif, 0, sizeof(struct netif));
+	    memset(netif, 0, offsetof(struct netif, entries));
 	    netif->protos = protos;
 	}
 
