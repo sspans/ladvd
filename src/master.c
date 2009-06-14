@@ -158,8 +158,11 @@ void master_init(struct nhead *netifs, uint16_t netifc, int ac,
     // proctitle
     setproctitle("master [priv]");
 
-    // open a raw socket
-    rawfd = master_rsocket(NULL, O_WRONLY);
+    // open a raw socket or return stdout on debug
+    if !(options & OPT_DEBUG)
+	rawfd = master_rsocket(NULL, O_WRONLY);
+    else
+	rawfd = fileno(stdout);
 
     if (rawfd < 0)
 	my_fatal("opening raw socket failed");
@@ -423,11 +426,9 @@ int master_rsocket(struct master_rfd *rfd, int mode) {
 
     int rsocket = -1;
 
-    // return stdout on debug
-    if ((options & OPT_DEBUG) && (rfd == NULL))
-	return(1);
-
 #ifdef HAVE_NETPACKET_PACKET_H
+    struct sockaddr_ll sa;
+
     rsocket = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
 
     // socket open failed
@@ -439,7 +440,6 @@ int master_rsocket(struct master_rfd *rfd, int mode) {
 	return(rsocket);
 
     // bind the socket to rfd
-    struct sockaddr_ll sa;
     memset(&sa, 0, sizeof (sa));
 
     sa.sll_family = AF_PACKET;
@@ -452,6 +452,8 @@ int master_rsocket(struct master_rfd *rfd, int mode) {
 #elif HAVE_NET_BPF_H
     int n = 0;
     char dev[50];
+
+    struct ifreq ifr;
 
     do {
 	snprintf(dev, sizeof(dev), "/dev/bpf%d", n++);
@@ -466,13 +468,11 @@ int master_rsocket(struct master_rfd *rfd, int mode) {
     if (rfd == NULL)
 	return(rsocket);
 
-    // bind the socket to rfd
-    struct ifreq ifr;
-
     // prepare ifr struct
     memset(&ifr, 0, sizeof(ifr));
     strlcpy(ifr.ifr_name, rfd->name, IFNAMSIZ);
 
+    // bind the socket to rfd
     if (ioctl(rsocket, BIOCSETIF, (caddr_t)&ifr) < 0)
 	my_fatal("failed to bind socket to %s", rfd->name);
 #endif
