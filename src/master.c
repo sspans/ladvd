@@ -159,7 +159,7 @@ void master_init(struct nhead *netifs, uint16_t netifc, int ac,
     setproctitle("master [priv]");
 
     // open a raw socket or return stdout on debug
-    if !(options & OPT_DEBUG)
+    if (!(options & OPT_DEBUG))
 	rawfd = master_rsocket(NULL, O_WRONLY);
     else
 	rawfd = fileno(stdout);
