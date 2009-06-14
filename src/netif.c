@@ -491,7 +491,13 @@ void netif_bond(int sockfd, struct nhead *netifs, struct netif *master,
 #ifdef HAVE_LINUX_IF_BONDING_H
     struct ifbond ifbond;
     struct ifslave ifslave;
-#endif /* HAVE_LINUX_IF_BONDING_H */
+#elif HAVE_NET_IF_LAGG_H
+    struct lagg_reqport rpbuf[LAGG_MAX_PORTS];
+    struct lagg_reqall ra;
+#elif HAVE_NET_IF_TRUNK_H
+    struct trunk_reqport rpbuf[TRUNK_MAX_PORTS];
+    struct trunk_reqall ra;
+#endif
 
     // check for lacp
 
@@ -588,14 +594,6 @@ void netif_bond(int sockfd, struct nhead *netifs, struct netif *master,
 #endif /* HAVE_LINUX_IF_BONDING_H */
 
 #if defined(HAVE_NET_IF_LAGG_H) || defined(HAVE_NET_IF_TRUNK_H)
-#ifdef HAVE_NET_IF_LAGG_H
-    struct lagg_reqport rpbuf[LAGG_MAX_PORTS];
-    struct lagg_reqall ra;
-#elif HAVE_NET_IF_TRUNK_H
-    struct trunk_reqport rpbuf[TRUNK_MAX_PORTS];
-    struct trunk_reqall ra;
-#endif
-
     memset(&ra, 0, sizeof(ra));
 
     strlcpy(ra.ra_ifname, master->name, sizeof(ra.ra_ifname));
