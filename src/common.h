@@ -10,6 +10,9 @@
 #include <string.h>
 #include <errno.h>
 #include <assert.h>
+#if HAVE_NETINET_IN_H
+#include <netinet/in.h>
+#endif
 #include <arpa/inet.h>
 #include <sys/queue.h>
 #include <sys/types.h>
@@ -22,9 +25,6 @@
 #if HAVE_NET_IF_H
 #include <net/if.h>
 #define _LINUX_IF_H
-#endif
-#if HAVE_NETINET_IN_H
-#include <netinet/in.h>
 #endif
 #if HAVE_NETINET_IF_ETHER_H
 #include <netinet/if_ether.h>
