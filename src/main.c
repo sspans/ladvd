@@ -395,8 +395,9 @@ void queue_msg(int fd, short event, int *cfd) {
 
     // enable the received protocol
     if ((options & OPT_AUTO) && !(netif->protos & (1 << msg->proto))) {
-	    my_log(CRIT, "enabling %s on interface %s",
-		protos[msg->proto].name, netif->name);
+	    if (protos[msg->proto].enabled == 0)
+		my_log(CRIT, "enabling %s on interface %s",
+		    protos[msg->proto].name, netif->name);
 	    netif->protos |= (1 << msg->proto);
     }
 
