@@ -14,14 +14,39 @@ AC_PROG_INSTALL
 AC_PROG_LIBTOOL
 AM_PROG_CC_C_O
 
+# enable PIE by default
+use_pie=yes
+
+case "$target_os" in
+    linux-gnu*)
+	AC_DEFINE(HAVE_PROC_SYS_NET,1, [define for /proc/sys/net])
+	AC_DEFINE(HAVE_SYSFS,1, [define for /sys])
+	AC_DEFINE([TARGET_IS_LINUX], 1, [Define if target OS is Linux])
+	;;
+    freebsd*)
+	case "$target_cpu" in
+	    x86_64)
+		use_pie=no
+	esac
+	AC_DEFINE([TARGET_IS_FREEBSD], 1, [Define if target OS is FreeBSD])
+	;;
+    openbsd*)
+	AC_DEFINE([TARGET_IS_OPENBSD], 1, [Define if target OS is OpenBSD])
+	;;
+    *)
+	AC_MSG_ERROR([Unsupported operating system])
+	;;
+esac
+
 # enable warnings/errors/security
 AX_CFLAGS_GCC_OPTION(-Wall -Werror, WCFLAGS)
 AX_CFLAGS_GCC_OPTION(-Wformat -Wformat-security, WCFLAGS)
 AX_CFLAGS_GCC_OPTION(-D_FORTIFY_SOURCE=2, WCFLAGS)
 GCC_STACK_PROTECTOR
-AX_CFLAGS_GCC_OPTION("-fPIE", WCFLAGS, 
-    [ WCFLAGS="$WCFLAGS -fPIE"; WLDFLAGS="-pie"])
-
+AS_IF([test "$use_pie" = "yes"], [
+    AX_CFLAGS_GCC_OPTION("-fPIE", WCFLAGS, 
+	[ WCFLAGS="$WCFLAGS -fPIE"; WLDFLAGS="-pie"])
+])
 AC_SUBST(WARN_CFLAGS,"$WCFLAGS")
 AC_SUBST(WARN_LDFLAGS,"$WLDFLAGS")
 
@@ -64,12 +89,6 @@ AS_IF([test -n "$chroot_dir"],
     [AC_DEFINE_UNQUOTED(PACKAGE_CHROOT_DIR,"$chroot_dir",[location of chroot])],
     [AC_DEFINE(PACKAGE_CHROOT_DIR,"/var/run/" PACKAGE_NAME,[location of chroot])]
 )
-
-case "$target_os" in
-    linux-gnu|linux-gnueabi)
-	AC_DEFINE(HAVE_PROC_SYS_NET,1, [define for /proc/sys/net])
-	AC_DEFINE(HAVE_SYSFS,1, [define for /sys])
-esac
 
 # check unit tests
 PKG_CHECK_MODULES([CHECK], [check >= 0.9.4], [], [true])
