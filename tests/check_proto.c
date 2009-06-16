@@ -22,6 +22,7 @@ START_TEST(test_proto_packet) {
     struct netif master, netif;
     struct sysinfo sysinfo;
 
+    mark_point();
     memset(&sysinfo, 0, sizeof(struct sysinfo));
     sysinfo_fetch(&sysinfo);
     sysinfo.cap_active = CAP_ROUTER;
@@ -70,6 +71,7 @@ START_TEST(test_proto_packet) {
     strlcpy(netif.name, "eth0", IFNAMSIZ);
     strlcpy(netif.description, "utp naar de buren", IFNAMSIZ);
 
+    mark_point();
     memset(msg.msg, 0, ETHER_MAX_LEN);
     msg.len = lldp_packet(msg.msg, &netif, &sysinfo);
     fail_unless(msg.len == 235, "length should not be %d", msg.len);
@@ -82,6 +84,7 @@ START_TEST(test_proto_packet) {
     msg.len = ndp_packet(msg.msg, &netif, &sysinfo);
     fail_unless(msg.len == 33, "length should not be %d", msg.len);
 
+    mark_point();
     sysinfo.cap = CAP_HOST;
     sysinfo.cap_active = CAP_HOST;
     netif.master = NULL;
@@ -96,6 +99,7 @@ START_TEST(test_proto_packet) {
     msg.len = ndp_packet(msg.msg, &netif, &sysinfo);
     fail_unless(msg.len == 33, "length should not be %d", msg.len);
 
+    mark_point();
     sysinfo.cap_active = CAP_BRIDGE;
     msg.len = lldp_packet(msg.msg, &netif, &sysinfo);
     fail_unless(msg.len == 184, "length should not be %d", msg.len);
@@ -108,6 +112,7 @@ START_TEST(test_proto_packet) {
     msg.len = ndp_packet(msg.msg, &netif, &sysinfo);
     fail_unless(msg.len == 33, "length should not be %d", msg.len);
 
+    mark_point();
     sysinfo.cap_active = CAP_SWITCH;
     msg.len = lldp_packet(msg.msg, &netif, &sysinfo);
     fail_unless(msg.len == 184, "length should not be %d", msg.len);
@@ -127,15 +132,18 @@ START_TEST(test_lldp_check) {
     struct ether_hdr ether;
     static uint8_t lldp_dst[] = LLDP_MULTICAST_ADDR;
 
+    mark_point();
     msg.len = ETHER_MIN_LEN;
     fail_unless (lldp_check(msg.msg, msg.len) == NULL,
 	    "empty packets should generate a NULL");
 
+    mark_point();
     memcpy(ether.dst, lldp_dst, ETHER_ADDR_LEN);
     memcpy(msg.msg, &ether, sizeof(ether));
     fail_unless (lldp_check(msg.msg, msg.len) == NULL,
 	    "packets without an ethertype should generate a NULL");
 
+    mark_point();
     ether.type = htons(ETHERTYPE_LLDP);
     memcpy(msg.msg, &ether, sizeof(ether));
     fail_unless (lldp_check(msg.msg, msg.len) == msg.msg + sizeof(ether),
@@ -150,20 +158,24 @@ START_TEST(test_cdp_check) {
     static uint8_t cdp_dst[] = CDP_MULTICAST_ADDR;
     static uint8_t cdp_org[] = LLC_ORG_CISCO;
 
+    mark_point();
     msg.len = ETHER_MIN_LEN;
     fail_unless (cdp_check(msg.msg, msg.len) == NULL,
 	    "empty packets should generate a NULL");
 
+    mark_point();
     memcpy(ether.dst, cdp_dst, ETHER_ADDR_LEN);
     memcpy(msg.msg, &ether, sizeof(ether));
     fail_unless (cdp_check(msg.msg, msg.len) == NULL,
 	    "packets without an llc header should generate a NULL");
 
+    mark_point();
     memcpy(llc.org, cdp_org, sizeof(llc.org));
     memcpy(msg.msg + sizeof(ether), &llc, sizeof(llc));
     fail_unless (cdp_check(msg.msg, msg.len) == NULL,
 	    "packets with an invalid llc header should generate a NULL");
 
+    mark_point();
     llc.protoid = htons(LLC_PID_CDP);
     memcpy(msg.msg + sizeof(ether), &llc, sizeof(llc));
     fail_unless (cdp_check(msg.msg, msg.len) == 
@@ -179,20 +191,24 @@ START_TEST(test_edp_check) {
     static uint8_t edp_dst[] = EDP_MULTICAST_ADDR;
     static uint8_t edp_org[] = LLC_ORG_EXTREME;
 
+    mark_point();
     msg.len = ETHER_MIN_LEN;
     fail_unless (edp_check(msg.msg, msg.len) == NULL,
 	    "empty packets should generate a NULL");
 
+    mark_point();
     memcpy(ether.dst, edp_dst, ETHER_ADDR_LEN);
     memcpy(msg.msg, &ether, sizeof(ether));
     fail_unless (edp_check(msg.msg, msg.len) == NULL,
 	    "packets without an llc header should generate a NULL");
 
+    mark_point();
     memcpy(llc.org, edp_org, sizeof(llc.org));
     memcpy(msg.msg + sizeof(ether), &llc, sizeof(llc));
     fail_unless (edp_check(msg.msg, msg.len) == NULL,
 	    "packets with an invalid llc header should generate a NULL");
 
+    mark_point();
     llc.protoid = htons(LLC_PID_EDP);
     memcpy(msg.msg + sizeof(ether), &llc, sizeof(llc));
     fail_unless (edp_check(msg.msg, msg.len) == 
@@ -208,20 +224,24 @@ START_TEST(test_fdp_check) {
     static uint8_t fdp_dst[] = FDP_MULTICAST_ADDR;
     static uint8_t fdp_org[] = LLC_ORG_FOUNDRY;
 
+    mark_point();
     msg.len = ETHER_MIN_LEN;
     fail_unless (fdp_check(msg.msg, msg.len) == NULL,
 	    "empty packets should generate a NULL");
 
+    mark_point();
     memcpy(ether.dst, fdp_dst, ETHER_ADDR_LEN);
     memcpy(msg.msg, &ether, sizeof(ether));
     fail_unless (fdp_check(msg.msg, msg.len) == NULL,
 	    "packets without an llc header should generate a NULL");
 
+    mark_point();
     memcpy(llc.org, fdp_org, sizeof(llc.org));
     memcpy(msg.msg + sizeof(ether), &llc, sizeof(llc));
     fail_unless (fdp_check(msg.msg, msg.len) == NULL,
 	    "packets with an invalid llc header should generate a NULL");
 
+    mark_point();
     llc.protoid = htons(LLC_PID_FDP);
     memcpy(msg.msg + sizeof(ether), &llc, sizeof(llc));
     fail_unless (fdp_check(msg.msg, msg.len) == 
@@ -237,20 +257,24 @@ START_TEST(test_ndp_check) {
     static uint8_t ndp_dst[] = NDP_MULTICAST_ADDR;
     static uint8_t ndp_org[] = LLC_ORG_NORTEL;
 
+    mark_point();
     msg.len = ETHER_MIN_LEN;
     fail_unless (ndp_check(msg.msg, msg.len) == NULL,
 	    "empty packets should generate a NULL");
 
+    mark_point();
     memcpy(ether.dst, ndp_dst, ETHER_ADDR_LEN);
     memcpy(msg.msg, &ether, sizeof(ether));
     fail_unless (ndp_check(msg.msg, msg.len) == NULL,
 	    "packets without an llc header should generate a NULL");
 
+    mark_point();
     memcpy(llc.org, ndp_org, sizeof(llc.org));
     memcpy(msg.msg + sizeof(ether), &llc, sizeof(llc));
     fail_unless (ndp_check(msg.msg, msg.len) == NULL,
 	    "packets with an invalid llc header should generate a NULL");
 
+    mark_point();
     llc.protoid = htons(LLC_PID_NDP_HELLO);
     memcpy(msg.msg + sizeof(ether), &llc, sizeof(llc));
     fail_unless (ndp_check(msg.msg, msg.len) == 
@@ -267,8 +291,8 @@ void read_packet(struct master_msg *msg, const char *path) {
     msg->ttl = 0;
     memset(msg->peer, 0, IFDESCRSIZE);
 
-    if ((fd = open(path, O_RDONLY)) == -1)
-	my_fatal("failed to open %s", path);
+    mark_point();
+    fail_if((fd = open(path, O_RDONLY)) == -1, "failed to open %s", path);
     msg->len = read(fd, msg->msg, ETHER_MAX_LEN);
 }
 
