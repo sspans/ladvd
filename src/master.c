@@ -347,7 +347,7 @@ void master_cmd(int cmdfd, short event, int *rawfd) {
 #ifdef SIOCSIFDESCR
     // update interface description
     } else if (mreq.cmd == MASTER_DESCR) {
-	mreq.len = master_descr(*rawfd, &mreq);
+	mreq.len = master_descr(&mreq);
 #endif /* SIOCGIFDESCR */
     // invalid request
     } else {
@@ -706,20 +706,22 @@ size_t master_ethtool(int s, struct master_msg *mreq) {
 #endif /* HAVE_LINUX_ETHTOOL_H */
 
 #ifdef SIOCSIFDESCR
-size_t master_descr(int s, struct master_msg *mreq) {
+size_t master_descr(struct master_msg *mreq) {
 
     struct ifreq ifr;
+    int s, ret;
+
+    s = my_socket(AF_INET, SOCK_DGRAM, 0);
 
     // prepare ifr struct
     memset(&ifr, 0, sizeof(ifr));
     strlcpy(ifr.ifr_name, mreq->name, IFNAMSIZ);
     ifr.ifr_data = (caddr_t)&mreq->msg;
 
-    if (ioctl(s, SIOCSIFDESCR, &ifr) >= 0) {
-	return(sizeof(ifr));
-    } else {
-	return(0);
-    }
+    if ((ret = ioctl(s, SIOCSIFDESCR, &ifr)) == -1)
+	ret = 0;
+    close(s);
+    return(ret);
 }
 #endif /* SIOCGIFDESCR */
 
