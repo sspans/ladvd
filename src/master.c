@@ -7,6 +7,7 @@
 #include "proto/protos.h"
 #include "master.h"
 #include <sys/ioctl.h>
+#include <sys/param.h>
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -24,6 +25,10 @@
 #ifdef HAVE_NETPACKET_PACKET_H
 #include <netpacket/packet.h>
 #endif /* HAVE_NETPACKET_PACKET_H */
+#ifdef HAVE_NET_IF_DL_H
+#include <net/if_dl.h>
+#endif /* HAVE_NET_IF_DL_H */
+
 #ifdef HAVE_LINUX_FILTER_H
 #include <linux/filter.h>
 #endif /* HAVE_LINUX_FILTER_H */
@@ -127,6 +132,14 @@ struct sock_filter master_filter[] = {
     BPF_STMT(BPF_RET+BPF_K, 0)
 };
 
+
+#ifdef HAVE_NET_BPF_H
+struct bpf_buf {
+    int len;
+    char *data;
+} bpf_buf;
+#endif /* HAVE_NET_BPF_H */
+
 extern struct proto protos[];
 extern uint8_t loglevel;
 extern uint32_t options;
@@ -166,6 +179,11 @@ void master_init(struct nhead *netifs, uint16_t netifc, int ac,
 
     if (rawfd < 0)
 	my_fatal("opening raw socket failed");
+
+#ifdef HAVE_NET_BPF_H
+    bpf_buf.len = roundup(ETHER_MAX_LEN, getpagesize());
+    bpf_buf.data = my_malloc(bpf_buf.len);
+#endif /* HAVE_NET_BPF_H */
 
     // open listen sockets
     if ((options & OPT_RECV) && (!(options & OPT_DEBUG))) {
@@ -348,12 +366,40 @@ void master_recv(int fd, short event, struct master_rfd *rfd) {
     struct ether_hdr *ether;
     static unsigned int rcount = 0;
     unsigned int p;
+    ssize_t len = 0;
+#ifdef HAVE_NET_BPF_H
+    struct bpf_hdr *bhp;
+    void *endp;
+#endif /* HAVE_NET_BPF_H */
 
     memset(&mrecv, 0, sizeof (mrecv));
-    mrecv.cmd = MASTER_RECV;
-    mrecv.index = rfd->index;
 
-    mrecv.len = read(rfd->fd, mrecv.msg, ETHER_MAX_LEN);
+#ifdef HAVE_NET_BPF_H
+    if ((len = read(rfd->fd, bpf_buf.data, bpf_buf.len)) == -1) {
+	my_log(CRIT,"receiving message failed: %s", strerror(errno));
+	return;
+    }
+
+    bhp = (struct bpf_hdr *)bpf_buf.data;
+    endp = bpf_buf.data + len;
+
+    while ((void *)bhp < endp) {
+
+	// with valid sizes
+	if (bhp->bh_caplen < ETHER_MAX_LEN)
+	    mrecv.len = bhp->bh_caplen;
+	else
+	    mrecv.len = ETHER_MAX_LEN;
+
+	memcpy(mrecv.msg, bpf_buf.data + bhp->bh_hdrlen, mrecv.len);
+
+#elif HAVE_NETPACKET_PACKET_H
+    if ((len = read(rfd->fd, mrecv.msg, ETHER_MAX_LEN)) == -1) {
+	my_log(CRIT,"receiving message failed: %s", strerror(errno));
+	return;
+    }
+    mrecv.len = len;
+#endif /* HAVE_NETPACKET_PACKET_H */
 
     // skip small packets
     if (mrecv.len < ETHER_MIN_LEN)
@@ -363,6 +409,10 @@ void master_recv(int fd, short event, struct master_rfd *rfd) {
     ether = (struct ether_hdr *)mrecv.msg;
     if (memcmp(rfd->hwaddr, ether->src, ETHER_ADDR_LEN) == 0)
 	return;
+
+    // note the command and ifindex
+    mrecv.cmd = MASTER_RECV;
+    mrecv.index = rfd->index;
 
     // detect the protocol
     for (p = 0; protos[p].name != NULL; p++) {
@@ -382,6 +432,11 @@ void master_recv(int fd, short event, struct master_rfd *rfd) {
     if (write(rfd->cfd, &mrecv, MASTER_MSG_SIZE) != MASTER_MSG_SIZE)
 	    my_fatal("failed to send message to child");
     rcount++;
+
+#ifdef HAVE_NET_BPF_H
+	bhp += BPF_WORDALIGN(bhp->bh_hdrlen + bhp->bh_caplen);
+    }
+#endif /* HAVE_NET_BPF_H */
 }
 
 
@@ -487,6 +542,8 @@ void master_rconf(struct master_rfd *rfd, struct proto *protos) {
     int s, p;
 #ifdef AF_PACKET
     struct packet_mreq mreq;
+#elif TARGET_IS_FREEBSD
+    struct sockaddr_dl *saddrdl;
 #endif
 
 #ifdef HAVE_LINUX_FILTER_H
@@ -502,13 +559,21 @@ void master_rconf(struct master_rfd *rfd, struct proto *protos) {
 	my_fatal("unable to configure socket filter for %s", rfd->name);
 #elif HAVE_NET_BPF_H
 
-    // install bpf filter
+    // setup bpf receive
     struct bpf_program fprog;
+    int immediate = 1;
 
     memset(&fprog, 0, sizeof(fprog));
     fprog.bf_insns = master_filter; 
     fprog.bf_len = sizeof(master_filter) / sizeof(struct bpf_insn);
 
+    // read buffer length
+    if (ioctl(rfd->fd, BIOCGBLEN, (caddr_t)&bpf_buf.len) < 0)
+	my_fatal("unable to configure bufer length for %s", rfd->name);
+    // disable buffering
+    if (ioctl(rfd->fd, BIOCIMMEDIATE, (caddr_t)&immediate) < 0)
+	my_fatal("unable to configure immediate mode for %s", rfd->name);
+    // install bpf filter
     if (ioctl(rfd->fd, BIOCSETF, (caddr_t)&fprog) < 0)
 	my_fatal("unable to configure bpf filter for %s", rfd->name);
 #endif
@@ -536,11 +601,24 @@ void master_rconf(struct master_rfd *rfd, struct proto *protos) {
 	    my_fatal("unable to add %s multicast to %s: %s",
 		     protos[p].name, rfd->name, strerror(errno));
 #elif AF_LINK
+	// too bad for EDP
+	if (!ETHER_IS_MULTICAST(protos[p].dst_addr))
+	    continue;
+
+#ifdef TARGET_IS_FREEBSD
+	saddrdl = (struct sockaddr_dl *)&ifr.ifr_addr;
+	saddrdl->sdl_family = AF_LINK;
+	saddrdl->sdl_index = 0;
+	saddrdl->sdl_len = sizeof(struct sockaddr_dl);
+	saddrdl->sdl_alen = ETHER_ADDR_LEN;
+	saddrdl->sdl_nlen = 0;
+	saddrdl->sdl_slen = 0;
+	memcpy(LLADDR(saddrdl), protos[p].dst_addr, ETHER_ADDR_LEN);
+#else
 	ifr.ifr_addr.sa_family = AF_UNSPEC;
 	memcpy(ifr.ifr_addr.sa_data, protos[p].dst_addr, ETHER_ADDR_LEN);
-
-	// XXX: EDP will fail with EINVAL
-	if ((ioctl(s, SIOCADDMULTI, &ifr) < 0) && (errno != EINVAL))
+#endif
+	if ((ioctl(s, SIOCADDMULTI, &ifr) < 0) && (errno != EADDRINUSE))
 	    my_fatal("unable to add %s multicast to %s: %s",
 		     protos[p].name, rfd->name, strerror(errno));
 #endif
