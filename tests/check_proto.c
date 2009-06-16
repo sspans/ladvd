@@ -476,6 +476,20 @@ START_TEST(test_cdp_peer) {
     fail_unless (msg.ttl == 180, "ttl should be 180");
     fail_unless (strcmp(msg.peer, "0060B9C14027") == 0,
 		"system name should be '0060B9C14027'");
+    read_packet(&msg, "proto/cdp/45.good.6504");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+    fail_unless (cdp_peer(&msg) == msg.len, "packet length incorrect");
+    fail_unless (msg.ttl == 180, "ttl should be 180");
+    fail_unless (strcmp(msg.peer, "mpls-sbp-ams1.leazewep.nat") == 0,
+		"system name should be 'mpls-sbp-ams1.leazewep.nat'");
+    read_packet(&msg, "proto/cdp/46.good.2811");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+    fail_unless (cdp_peer(&msg) == msg.len, "packet length incorrect");
+    fail_unless (msg.ttl == 180, "ttl should be 180");
+    fail_unless (strcmp(msg.peer, "c2811.ttttrnal.lottlloou.nl") == 0,
+		"system name should be 'c2811.ttttrnal.lottlloou.nl'");
 }
 END_TEST
 
