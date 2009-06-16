@@ -24,8 +24,8 @@ case "$target_os" in
 	AC_DEFINE([TARGET_IS_LINUX], 1, [Define if target OS is Linux])
 	;;
     freebsd*)
-	case "$target_cpu" in
-	    x86_64)
+	case "$target" in
+	    x86_64-*-freebsd7.*)
 		use_pie=no
 	esac
 	AC_DEFINE([TARGET_IS_FREEBSD], 1, [Define if target OS is FreeBSD])
