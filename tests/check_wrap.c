@@ -18,6 +18,7 @@ static int (*libc_setuid) (uid_t uid);
 static int (*libc_setgroups) (int ngroups, const gid_t *gidset);
 static int (*libc_chdir) (const char *path);
 static int (*libc_chroot) (const char *dirname);
+static int (*libc_kill) (pid_t pid, int sig);
 
 jmp_buf check_wrap_env;
 uint32_t check_wrap_opt = 0;
@@ -111,6 +112,14 @@ int chroot (const char *dirname) {
     if (check_wrap_opt & FAKE_CHROOT)
 	return 0;
     return libc_chroot(dirname);
+}
+
+int kill (pid_t pid, int sig) {
+    libc_kill = dlsym(RTLD_NEXT, "kill");
+
+    if (check_wrap_opt & FAKE_KILL)
+	return 0;
+    return libc_kill(pid, sig);
 }
 
 void vsyslog(int priority, const char *fmt, va_list ap) {

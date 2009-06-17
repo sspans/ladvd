@@ -14,6 +14,7 @@
 #define FAKE_SETGRP	(1 << 18)
 #define FAKE_CHDIR	(1 << 19)
 #define FAKE_CHROOT	(1 << 20)
+#define FAKE_KILL	(1 << 21)
 #define FAIL_EXIT	(1 << 31)
 
 #define WRAP_FATAL_START() \

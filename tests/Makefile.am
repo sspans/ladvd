@@ -1,5 +1,5 @@
 TESTS = $(check_PROGRAMS)
-check_PROGRAMS = check_compat check_proto check_util
+check_PROGRAMS = check_compat check_master check_proto check_util
 
 EXTRA_DIST = proto testfile
 dist-hook:
@@ -7,13 +7,19 @@ dist-hook:
 
 
 AM_CPPFLAGS = -I$(top_srcdir)/src
-LDADD = @CHECK_LIBS@ $(check_LTLIBRARIES) \
-	$(top_builddir)/src/libmisc.la $(top_builddir)/src/libcompat.la \
-	$(top_builddir)/src/libproto.la
+LDADD =  @CHECK_LIBS@ $(check_LTLIBRARIES) \
+	$(top_builddir)/src/libproto.la $(top_builddir)/src/libmisc.la \
+	$(top_builddir)/src/libcompat.la
 
 check_compat_SOURCES = check_compat.c \
 	$(top_srcdir)/src/compat/compat.h
 check_compat_CFLAGS = @CHECK_CFLAGS@
+
+check_master_SOURCES = check_master.c \
+	$(top_srcdir)/src/common.h \
+	$(top_srcdir)/src/master.h \
+	$(top_srcdir)/src/util.h
+check_master_CFLAGS = @CHECK_CFLAGS@
 
 check_proto_SOURCES = check_proto.c \
 	$(top_srcdir)/src/proto/protos.h
