@@ -341,22 +341,26 @@ void master_cmd(int cmdfd, short event, int *rawfd) {
     if (master_rcheck(&mreq) != EXIT_SUCCESS)
 	my_fatal("invalid request supplied");
 
-    // transmit packet
-    if (mreq.cmd == MASTER_SEND) {
-	mreq.len = master_rsend(*rawfd, &mreq);
+    switch (mreq.cmd) {
+	// transmit packet
+	case MASTER_SEND:
+	    mreq.len = master_rsend(*rawfd, &mreq);
+	    break;
 #if HAVE_LINUX_ETHTOOL_H
-    // fetch ethtool details
-    } else if (mreq.cmd == MASTER_ETHTOOL) {
-	mreq.len = master_ethtool(&mreq);
+	// fetch ethtool details
+	case MASTER_ETHTOOL:
+	    mreq.len = master_ethtool(&mreq);
+	    break;
 #endif /* HAVE_LINUX_ETHTOOL_H */
 #ifdef SIOCSIFDESCR
-    // update interface description
-    } else if (mreq.cmd == MASTER_DESCR) {
-	mreq.len = master_descr(&mreq);
+	// update interface description
+	case MASTER_DESCR:
+	    mreq.len = master_descr(&mreq);
+	    break
 #endif /* SIOCGIFDESCR */
-    // invalid request
-    } else {
-	my_fatal("invalid request received");
+	// invalid request
+	default:
+	    my_fatal("invalid request received");
     }
 
     mreq.completed = 1;
