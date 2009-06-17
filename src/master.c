@@ -693,6 +693,8 @@ size_t master_ethtool(struct master_msg *mreq) {
     struct ifreq ifr;
     struct ethtool_cmd ecmd;
 
+    assert(mreq != NULL);
+
     // prepare ifr struct
     memset(&ifr, 0, sizeof(ifr));
     strlcpy(ifr.ifr_name, mreq->name, IFNAMSIZ);
@@ -716,6 +718,8 @@ size_t master_descr(struct master_msg *mreq) {
 
     struct ifreq ifr;
     int ret;
+
+    assert(mreq != NULL);
 
     // prepare ifr struct
     memset(&ifr, 0, sizeof(ifr));
