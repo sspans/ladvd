@@ -302,6 +302,7 @@ AC_CHECK_FUNCS([setproctitle strlcpy strlcat])
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile
-                 tests/Makefile])
+                 tests/Makefile
+                 doc/Makefile])
 AC_OUTPUT
 
