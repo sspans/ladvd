@@ -180,13 +180,13 @@ void master_init(struct nhead *netifs, uint16_t netifc, int ac,
     if (rawfd < 0)
 	my_fatal("opening raw socket failed");
 
-#ifdef HAVE_NET_BPF_H
-    bpf_buf.len = roundup(ETHER_MAX_LEN, getpagesize());
-    bpf_buf.data = my_malloc(bpf_buf.len);
-#endif /* HAVE_NET_BPF_H */
-
     // open listen sockets
     if ((options & OPT_RECV) && (!(options & OPT_DEBUG))) {
+
+#ifdef HAVE_NET_BPF_H
+	bpf_buf.len = roundup(ETHER_MAX_LEN, getpagesize());
+	bpf_buf.data = my_malloc(bpf_buf.len);
+#endif /* HAVE_NET_BPF_H */
 
 	// init
 	rfds = my_calloc(netifc, sizeof(struct master_rfd));
@@ -357,86 +357,6 @@ void master_cmd(int cmdfd, short event, int *rawfd) {
     mreq.completed = 1;
     if (write(cmdfd, &mreq, MASTER_MSG_SIZE) != MASTER_MSG_SIZE)
 	    my_fatal("failed to return message to child");
-}
-
-
-void master_recv(int fd, short event, struct master_rfd *rfd) {
-    // packet
-    struct master_msg mrecv;
-    struct ether_hdr *ether;
-    static unsigned int rcount = 0;
-    unsigned int p;
-    ssize_t len = 0;
-#ifdef HAVE_NET_BPF_H
-    struct bpf_hdr *bhp;
-    void *endp;
-#endif /* HAVE_NET_BPF_H */
-
-    memset(&mrecv, 0, sizeof (mrecv));
-
-#ifdef HAVE_NET_BPF_H
-    if ((len = read(rfd->fd, bpf_buf.data, bpf_buf.len)) == -1) {
-	my_log(CRIT,"receiving message failed: %s", strerror(errno));
-	return;
-    }
-
-    bhp = (struct bpf_hdr *)bpf_buf.data;
-    endp = bpf_buf.data + len;
-
-    while ((void *)bhp < endp) {
-
-	// with valid sizes
-	if (bhp->bh_caplen < ETHER_MAX_LEN)
-	    mrecv.len = bhp->bh_caplen;
-	else
-	    mrecv.len = ETHER_MAX_LEN;
-
-	memcpy(mrecv.msg, bpf_buf.data + bhp->bh_hdrlen, mrecv.len);
-
-#elif HAVE_NETPACKET_PACKET_H
-    if ((len = read(rfd->fd, mrecv.msg, ETHER_MAX_LEN)) == -1) {
-	my_log(CRIT,"receiving message failed: %s", strerror(errno));
-	return;
-    }
-    mrecv.len = len;
-#endif /* HAVE_NETPACKET_PACKET_H */
-
-    // skip small packets
-    if (mrecv.len < ETHER_MIN_LEN)
-	return;
-
-    // skip locally generated packets
-    ether = (struct ether_hdr *)mrecv.msg;
-    if (memcmp(rfd->hwaddr, ether->src, ETHER_ADDR_LEN) == 0)
-	return;
-
-    // note the command and ifindex
-    mrecv.cmd = MASTER_RECV;
-    mrecv.index = rfd->index;
-
-    // detect the protocol
-    for (p = 0; protos[p].name != NULL; p++) {
-	if (memcmp(protos[p].dst_addr, ether->dst, ETHER_ADDR_LEN) != 0)
-	    continue;
-
-	mrecv.proto = p;
-	break;
-    }
-
-    if (protos[p].name == NULL) {
-	my_log(INFO, "unknown message type received");
-	return;
-    }
-    my_log(INFO, "received %s message (%d bytes)", protos[p].name, mrecv.len);
-
-    if (write(rfd->cfd, &mrecv, MASTER_MSG_SIZE) != MASTER_MSG_SIZE)
-	    my_fatal("failed to send message to child");
-    rcount++;
-
-#ifdef HAVE_NET_BPF_H
-	bhp += BPF_WORDALIGN(bhp->bh_hdrlen + bhp->bh_caplen);
-    }
-#endif /* HAVE_NET_BPF_H */
 }
 
 
@@ -626,6 +546,87 @@ void master_rconf(struct master_rfd *rfd, struct proto *protos) {
 
     close(s);
 }
+
+
+void master_recv(int fd, short event, struct master_rfd *rfd) {
+    // packet
+    struct master_msg mrecv;
+    struct ether_hdr *ether;
+    static unsigned int rcount = 0;
+    unsigned int p;
+    ssize_t len = 0;
+#ifdef HAVE_NET_BPF_H
+    struct bpf_hdr *bhp;
+    void *endp;
+#endif /* HAVE_NET_BPF_H */
+
+    memset(&mrecv, 0, sizeof (mrecv));
+
+#ifdef HAVE_NET_BPF_H
+    if ((len = read(rfd->fd, bpf_buf.data, bpf_buf.len)) == -1) {
+	my_log(CRIT,"receiving message failed: %s", strerror(errno));
+	return;
+    }
+
+    bhp = (struct bpf_hdr *)bpf_buf.data;
+    endp = bpf_buf.data + len;
+
+    while ((void *)bhp < endp) {
+
+	// with valid sizes
+	if (bhp->bh_caplen < ETHER_MAX_LEN)
+	    mrecv.len = bhp->bh_caplen;
+	else
+	    mrecv.len = ETHER_MAX_LEN;
+
+	memcpy(mrecv.msg, bpf_buf.data + bhp->bh_hdrlen, mrecv.len);
+
+#elif HAVE_NETPACKET_PACKET_H
+    if ((len = read(rfd->fd, mrecv.msg, ETHER_MAX_LEN)) == -1) {
+	my_log(CRIT,"receiving message failed: %s", strerror(errno));
+	return;
+    }
+    mrecv.len = len;
+#endif /* HAVE_NETPACKET_PACKET_H */
+
+    // skip small packets
+    if (mrecv.len < ETHER_MIN_LEN)
+	return;
+
+    // skip locally generated packets
+    ether = (struct ether_hdr *)mrecv.msg;
+    if (memcmp(rfd->hwaddr, ether->src, ETHER_ADDR_LEN) == 0)
+	return;
+
+    // note the command and ifindex
+    mrecv.cmd = MASTER_RECV;
+    mrecv.index = rfd->index;
+
+    // detect the protocol
+    for (p = 0; protos[p].name != NULL; p++) {
+	if (memcmp(protos[p].dst_addr, ether->dst, ETHER_ADDR_LEN) != 0)
+	    continue;
+
+	mrecv.proto = p;
+	break;
+    }
+
+    if (protos[p].name == NULL) {
+	my_log(INFO, "unknown message type received");
+	return;
+    }
+    my_log(INFO, "received %s message (%d bytes)", protos[p].name, mrecv.len);
+
+    if (write(rfd->cfd, &mrecv, MASTER_MSG_SIZE) != MASTER_MSG_SIZE)
+	    my_fatal("failed to send message to child");
+    rcount++;
+
+#ifdef HAVE_NET_BPF_H
+	bhp += BPF_WORDALIGN(bhp->bh_hdrlen + bhp->bh_caplen);
+    }
+#endif /* HAVE_NET_BPF_H */
+}
+
 
 size_t master_rsend(int s, struct master_msg *mreq) {
 
