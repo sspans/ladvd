@@ -381,26 +381,25 @@ int master_rcheck(struct master_msg *mreq) {
 	return(EXIT_FAILURE);
     }
 
-    if (mreq->cmd == MASTER_SEND) {
-	assert(mreq->len >= ETHER_MIN_LEN);
-	assert(mreq->proto < PROTO_MAX);
-	assert(protos[mreq->proto].check(mreq->msg, mreq->len) != NULL);
-	return(EXIT_SUCCESS);
-    }
-
+    switch (mreq->cmd) {
+	case MASTER_SEND:
+	    assert(mreq->len >= ETHER_MIN_LEN);
+	    assert(mreq->proto < PROTO_MAX);
+	    assert(protos[mreq->proto].check(mreq->msg, mreq->len) != NULL);
+	    return(EXIT_SUCCESS);
 #if HAVE_LINUX_ETHTOOL_H
-    if (mreq->cmd == MASTER_ETHTOOL) {
-	assert(mreq->len == sizeof(struct ethtool_cmd));
-	return(EXIT_SUCCESS);
-    }
+	case MASTER_ETHTOOL:
+	    assert(mreq->len == sizeof(struct ethtool_cmd));
+	    return(EXIT_SUCCESS);
 #endif /* HAVE_LINUX_ETHTOOL_H */
-
 #ifdef SIOCSIFDESCR
-    if (mreq->cmd == MASTER_DESCR) {
-	assert(mreq->len <= IFDESCRSIZE);
-	return(EXIT_SUCCESS);
-    }
+	case MASTER_DESCR:
+	    assert(mreq->len <= IFDESCRSIZE);
+	    return(EXIT_SUCCESS);
 #endif /* SIOCSIFDESCR */
+	default:
+	    return(EXIT_FAILURE);
+    }
 
     return(EXIT_FAILURE);
 }
