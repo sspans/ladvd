@@ -547,8 +547,6 @@ void master_rconf(struct master_rfd *rfd, struct proto *protos) {
 		     protos[p].name, rfd->name, strerror(errno));
 #endif
     }
-
-    close(s);
 }
 
 
