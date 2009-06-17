@@ -19,7 +19,7 @@ check_util_SOURCES = check_util.c \
 check_util_CFLAGS = @CHECK_CFLAGS@
 
 noinst_LTLIBRARIES = libcheckwrap.la
-libcheckwrap_la_SOURCES = check_wrap.c
+libcheckwrap_la_SOURCES = check_wrap.h check_wrap.c
 libcheckwrap_la_LDFLAGS = -rpath `pwd` -shared $(DL_LIB) \
 		-Xcompiler -nostartfiles
 
