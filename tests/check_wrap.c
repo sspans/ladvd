@@ -18,52 +18,54 @@ static int (*libc_setuid) (uid_t uid);
 static int (*libc_setgroups) (int ngroups, const gid_t *gidset);
 static int (*libc_chdir) (const char *path);
 static int (*libc_chroot) (const char *dirname);
-static void (*libc_vsyslog) (int priority, const char *message, va_list args);
 
 jmp_buf check_wrap_env;
 uint32_t check_wrap_opt = 0;
 char check_wrap_errstr[1024];
 
-void
-__attribute__ ((constructor))
-_init (void) {
-    libc_malloc = dlsym(RTLD_NEXT, "malloc");
-    libc_calloc = dlsym(RTLD_NEXT, "calloc");
-    libc_strdup = dlsym(RTLD_NEXT, "strdup");
-    libc_exit = dlsym(RTLD_NEXT, "exit");
-    libc_setgid = dlsym(RTLD_NEXT, "setgid");
-    libc_setuid = dlsym(RTLD_NEXT, "setuid");
-    libc_setgroups = dlsym(RTLD_NEXT, "setgroups");
-    libc_chdir = dlsym(RTLD_NEXT, "chdir");
-    libc_chroot = dlsym(RTLD_NEXT, "chroot");
-    libc_vsyslog = dlsym(RTLD_NEXT, "vsyslog");
-}
-
 void *malloc(size_t size) {
+    libc_malloc = dlsym(RTLD_NEXT, "malloc");
+
     if (check_wrap_opt & FAIL_MALLOC)
 	return NULL;
     return libc_malloc(size);
 }
 
 void *calloc(size_t nmemb, size_t size) {
+    libc_calloc = dlsym(RTLD_NEXT, "calloc");
+
     if (check_wrap_opt & FAIL_CALLOC)
 	return NULL;
     return libc_calloc(nmemb, size);
 }
 
 char *strdup(const char *s1) {
+    libc_strdup = dlsym(RTLD_NEXT, "strdup");
+
+    if (check_wrap_opt & FAIL_STRDUP)
+	return NULL;
+    return libc_strdup(s1);
+}
+
+char *__strdup(const char *s1) {
+    libc_strdup = dlsym(RTLD_NEXT, "__strdup");
+
     if (check_wrap_opt & FAIL_STRDUP)
 	return NULL;
     return libc_strdup(s1);
 }
 
 void exit (int status) {
+    libc_exit = dlsym(RTLD_NEXT, "exit");
+
     if (check_wrap_opt & FAIL_EXIT)
 	longjmp(check_wrap_env,1);
     libc_exit(status);
 }
 
 int setgid (gid_t gid) {
+    libc_setgid = dlsym(RTLD_NEXT, "setgid");
+
     if (check_wrap_opt & FAIL_SETGID)
 	return -1;
     if (check_wrap_opt & FAKE_SETGID)
@@ -72,6 +74,8 @@ int setgid (gid_t gid) {
 }
 
 int setuid (uid_t uid) {
+    libc_setuid = dlsym(RTLD_NEXT, "setuid");
+
     if (check_wrap_opt & FAIL_SETUID)
 	return -1;
     if (check_wrap_opt & FAKE_SETUID)
@@ -80,6 +84,8 @@ int setuid (uid_t uid) {
 }
 
 int setgroups (int ngroups, const gid_t *gidset) {
+    libc_setgroups = dlsym(RTLD_NEXT, "setgroups");
+
     if (check_wrap_opt & FAIL_SETGRP)
 	return -1;
     if (check_wrap_opt & FAKE_SETGRP)
@@ -88,6 +94,8 @@ int setgroups (int ngroups, const gid_t *gidset) {
 }
 
 int chdir (const char *path) {
+    libc_chdir = dlsym(RTLD_NEXT, "chdir");
+
     if (check_wrap_opt & FAIL_CHDIR)
 	return -1;
     if (check_wrap_opt & FAKE_CHDIR)
@@ -96,6 +104,8 @@ int chdir (const char *path) {
 }
 
 int chroot (const char *dirname) {
+    libc_chroot = dlsym(RTLD_NEXT, "chroot");
+
     if (check_wrap_opt & FAIL_CHROOT)
 	return -1;
     if (check_wrap_opt & FAKE_CHROOT)
@@ -104,6 +114,10 @@ int chroot (const char *dirname) {
 }
 
 void vsyslog(int priority, const char *fmt, va_list ap) {
+    vsnprintf(check_wrap_errstr, 1024, fmt, ap);
+}
+
+void __vsyslog_chk(int priority, int __flag, const char *fmt, va_list ap) {
     vsnprintf(check_wrap_errstr, 1024, fmt, ap);
 }
 

@@ -6,9 +6,9 @@
 #include <fcntl.h>
 #include <check.h>
 
-#include "../src/common.h"
-#include "../src/util.h"
-#include "../src/proto/protos.h"
+#include "common.h"
+#include "util.h"
+#include "proto/protos.h"
 
 #include "check_wrap.h"
 
@@ -292,7 +292,9 @@ void read_packet(struct master_msg *msg, const char *suffix) {
     msg->ttl = 0;
     memset(msg->peer, 0, IFDESCRSIZE);
 
-    prefix = getenv("srcdir");
+    if ((prefix = getenv("srcdir")) == NULL)
+	prefix = ".";
+
     fail_if(asprintf(&path, "%s/%s", prefix, suffix) == -1,
 	    "asprintf failed");
 

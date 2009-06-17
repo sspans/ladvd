@@ -5,8 +5,8 @@
 #include <check.h>
 #include <sys/param.h>
 
-#include "../src/common.h"
-#include "../src/util.h"
+#include "common.h"
+#include "util.h"
 
 #include "check_wrap.h"
 
@@ -315,7 +315,9 @@ START_TEST(test_read_line) {
     fail_unless (read_line(NULL, line, 0) == -1,
 	"-1 should be returned on an invalid path");
 
-    prefix = getenv("srcdir");
+    if ((prefix = getenv("srcdir")) == NULL)
+	prefix = ".";
+
     fail_if(asprintf(&path, "%s/%s", prefix, file) == -1, "asprintf failed");
 
     fail_unless (read_line(path, NULL, 0) == -1,

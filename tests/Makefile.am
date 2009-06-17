@@ -3,7 +3,7 @@ check_PROGRAMS = check_compat check_proto check_util
 
 EXTRA_DIST = proto testfile
 dist-hook:
-	rm -rf `find $(distdir)/tests/proto -name .svn`
+	-rm -rf `find $(distdir)/proto -name .svn`
 
 
 AM_CPPFLAGS = -I$(top_srcdir)/src
@@ -26,6 +26,5 @@ check_util_CFLAGS = @CHECK_CFLAGS@
 
 check_LTLIBRARIES = libcheckwrap.la
 libcheckwrap_la_SOURCES = check_wrap.h check_wrap.c
-libcheckwrap_la_LDFLAGS = -rpath `pwd` -shared $(DL_LIB) \
-		-Xcompiler -nostartfiles
+libcheckwrap_la_LDFLAGS = $(DL_LIB)
 

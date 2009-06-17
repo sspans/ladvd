@@ -8,3 +8,6 @@ ladvd.8: ladvd.8.in
 	sed -e s/PACKAGE_USER/@PACKAGE_USER@/ \
 		< @top_srcdir@/doc/$@.in > $@
 
+clean-local:
+	-rm $(man_MANS)
+

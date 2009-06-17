@@ -5,8 +5,8 @@
 #include <string.h>
 #include <check.h>
 
-#include "../src/config.h"
-#include "../src/compat/compat.h"
+#include "config.h"
+#include "compat/compat.h"
 
 #include "check_wrap.h"
 
