@@ -55,8 +55,8 @@ AC_ARG_ENABLE([gcov],
 AC_HELP_STRING([--enable-gcov],
     [build binaries with gcov support]), [use_gcov=yes], [use_gcov=no])
 AS_IF([test "$use_gcov" = yes], [
-    AM_CFLAGS="$AM_CFLAGS -fprofile-arcs -ftest-coverage"
-    AM_LDFLAGS="$AM_LDFLAGS -fprofile-arcs"
+    CFLAGS="$CFLAGS -fprofile-arcs -ftest-coverage"
+    LDFLAGS="$LDFLAGS -fprofile-arcs"
 ])
 AM_CONDITIONAL(GCOV_ENABLED, test "$use_gcov" = yes)
 

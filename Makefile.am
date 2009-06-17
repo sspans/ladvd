@@ -14,7 +14,7 @@ lcov-report:
 	rm @top_builddir@/lcov.info.tmp
 	$(mkdir_p) @top_builddir@/lcov
 	revision=`svnversion | cut -f1 -d:`;\
-	genhtml --title "@PACKAGE_STRING@ - Revsion $$revision" \
+	genhtml --title "@PACKAGE_STRING@ - Rev $$revision" \
 		--output-directory @top_builddir@/lcov lcov.info
 	@echo
 	@echo 'lcov report can be found in:'
