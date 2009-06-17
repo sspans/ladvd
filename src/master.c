@@ -464,7 +464,7 @@ int master_rsocket(struct master_rfd *rfd, int mode) {
 void master_rconf(struct master_rfd *rfd, struct proto *protos) {
 
     struct ifreq ifr;
-    int s, p;
+    int p;
 #ifdef AF_PACKET
     struct packet_mreq mreq;
 #elif TARGET_IS_FREEBSD
@@ -506,7 +506,6 @@ void master_rconf(struct master_rfd *rfd, struct proto *protos) {
     // configure multicast recv
     memset(&ifr, 0, sizeof(ifr));
     strlcpy(ifr.ifr_name, rfd->name, IFNAMSIZ);
-    s = my_socket(AF_INET, SOCK_DGRAM, 0);
 
     for (p = 0; protos[p].name != NULL; p++) {
 
@@ -543,7 +542,7 @@ void master_rconf(struct master_rfd *rfd, struct proto *protos) {
 	ifr.ifr_addr.sa_family = AF_UNSPEC;
 	memcpy(ifr.ifr_addr.sa_data, protos[p].dst_addr, ETHER_ADDR_LEN);
 #endif
-	if ((ioctl(s, SIOCADDMULTI, &ifr) < 0) && (errno != EADDRINUSE))
+	if ((ioctl(sock, SIOCADDMULTI, &ifr) < 0) && (errno != EADDRINUSE))
 	    my_fatal("unable to add %s multicast to %s: %s",
 		     protos[p].name, rfd->name, strerror(errno));
 #endif
