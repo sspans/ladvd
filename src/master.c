@@ -147,8 +147,8 @@ extern uint32_t options;
 void master_init(struct nhead *netifs, uint16_t netifc, int ac,
 		 pid_t child, int cmdfd, int msgfd) {
 
-    // raw socket
-    int rawfd;
+    // sockets
+    int rawfd, s;
 
     // interfaces
     struct netif *netif = NULL, *subif = NULL;
@@ -170,6 +170,9 @@ void master_init(struct nhead *netifs, uint16_t netifc, int ac,
 
     // proctitle
     setproctitle("master [priv]");
+
+    // open a regular socket
+    s = my_socket(AF_INET, SOCK_DGRAM, 0);
 
     // open a raw socket or return stdout on debug
     if (!(options & OPT_DEBUG))
@@ -342,12 +345,12 @@ void master_cmd(int cmdfd, short event, int *rawfd) {
 #if HAVE_LINUX_ETHTOOL_H
     // fetch ethtool details
     } else if (mreq.cmd == MASTER_ETHTOOL) {
-	mreq.len = master_ethtool(*rawfd, &mreq);
+	mreq.len = master_ethtool(s, &mreq);
 #endif /* HAVE_LINUX_ETHTOOL_H */
 #ifdef SIOCSIFDESCR
     // update interface description
     } else if (mreq.cmd == MASTER_DESCR) {
-	mreq.len = master_descr(&mreq);
+	mreq.len = master_descr(s, &mreq);
 #endif /* SIOCGIFDESCR */
     // invalid request
     } else {
@@ -628,7 +631,7 @@ void master_recv(int fd, short event, struct master_rfd *rfd) {
 }
 
 
-size_t master_rsend(int s, struct master_msg *mreq) {
+size_t master_rsend(int fd, struct master_msg *mreq) {
 
     size_t count = 0;
 
@@ -645,12 +648,12 @@ size_t master_rsend(int s, struct master_msg *mreq) {
 	    pcap_rec_hdr.incl_len = mreq->len;
 	    pcap_rec_hdr.orig_len = mreq->len;
 
-	    if (write(s, &pcap_rec_hdr, sizeof(pcap_rec_hdr))
+	    if (write(fd, &pcap_rec_hdr, sizeof(pcap_rec_hdr))
 		    != sizeof(pcap_rec_hdr))
 		my_fatal("failed to write pcap record header");
 	}
 
-	return(write(s, mreq->msg, mreq->len));
+	return(write(fd, mreq->msg, mreq->len));
     }
 
 #ifdef HAVE_NETPACKET_PACKET_H
@@ -661,7 +664,7 @@ size_t master_rsend(int s, struct master_msg *mreq) {
     sa.sll_ifindex = mreq->index;
     sa.sll_protocol = htons(ETH_P_ALL);
 
-    count = sendto(s, mreq->msg, mreq->len, 0,
+    count = sendto(fd, mreq->msg, mreq->len, 0,
 		   (struct sockaddr *)&sa, sizeof (sa));
 #elif HAVE_NET_BPF_H
     struct ifreq ifr;
@@ -670,9 +673,9 @@ size_t master_rsend(int s, struct master_msg *mreq) {
     memset(&ifr, 0, sizeof(ifr));
     strlcpy(ifr.ifr_name, mreq->name, IFNAMSIZ);
 
-    if (ioctl(s, BIOCSETIF, (caddr_t)&ifr) < 0)
+    if (ioctl(fd, BIOCSETIF, (caddr_t)&ifr) < 0)
 	my_fatal("ioctl failed: %s", strerror(errno));
-    count = write(s, mreq->msg, mreq->len);
+    count = write(fd, mreq->msg, mreq->len);
 #endif
 
     if (count != mreq->len)
@@ -697,7 +700,7 @@ size_t master_ethtool(int s, struct master_msg *mreq) {
     ecmd.cmd = ETHTOOL_GSET;
     ifr.ifr_data = (caddr_t)&ecmd;
 
-    if (ioctl(s, SIOCETHTOOL, &ifr) >= 0) {
+    if (ioctl(s, SIOCETHTOOL, &ifr) != -1) {
 	memcpy(mreq->msg, &ecmd, sizeof(ecmd));
 	return(sizeof(ecmd));
     } else {
@@ -707,12 +710,10 @@ size_t master_ethtool(int s, struct master_msg *mreq) {
 #endif /* HAVE_LINUX_ETHTOOL_H */
 
 #ifdef SIOCSIFDESCR
-size_t master_descr(struct master_msg *mreq) {
+size_t master_descr(int s, struct master_msg *mreq) {
 
     struct ifreq ifr;
-    int s, ret;
-
-    s = my_socket(AF_INET, SOCK_DGRAM, 0);
+    int ret;
 
     // prepare ifr struct
     memset(&ifr, 0, sizeof(ifr));
@@ -721,7 +722,6 @@ size_t master_descr(struct master_msg *mreq) {
 
     if ((ret = ioctl(s, SIOCSIFDESCR, &ifr)) == -1)
 	ret = 0;
-    close(s);
     return(ret);
 }
 #endif /* SIOCGIFDESCR */
