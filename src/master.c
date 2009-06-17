@@ -140,6 +140,8 @@ struct bpf_buf {
 } bpf_buf;
 #endif /* HAVE_NET_BPF_H */
 
+int sock;
+
 extern struct proto protos[];
 extern uint8_t loglevel;
 extern uint32_t options;
@@ -147,8 +149,8 @@ extern uint32_t options;
 void master_init(struct nhead *netifs, uint16_t netifc, int ac,
 		 pid_t child, int cmdfd, int msgfd) {
 
-    // sockets
-    int rawfd, s;
+    // raw socket
+    int rawfd;
 
     // interfaces
     struct netif *netif = NULL, *subif = NULL;
@@ -172,7 +174,7 @@ void master_init(struct nhead *netifs, uint16_t netifc, int ac,
     setproctitle("master [priv]");
 
     // open a regular socket
-    s = my_socket(AF_INET, SOCK_DGRAM, 0);
+    sock = my_socket(AF_INET, SOCK_DGRAM, 0);
 
     // open a raw socket or return stdout on debug
     if (!(options & OPT_DEBUG))
@@ -345,12 +347,12 @@ void master_cmd(int cmdfd, short event, int *rawfd) {
 #if HAVE_LINUX_ETHTOOL_H
     // fetch ethtool details
     } else if (mreq.cmd == MASTER_ETHTOOL) {
-	mreq.len = master_ethtool(s, &mreq);
+	mreq.len = master_ethtool(&mreq);
 #endif /* HAVE_LINUX_ETHTOOL_H */
 #ifdef SIOCSIFDESCR
     // update interface description
     } else if (mreq.cmd == MASTER_DESCR) {
-	mreq.len = master_descr(s, &mreq);
+	mreq.len = master_descr(&mreq);
 #endif /* SIOCGIFDESCR */
     // invalid request
     } else {
@@ -686,7 +688,7 @@ size_t master_rsend(int fd, struct master_msg *mreq) {
 
 
 #if HAVE_LINUX_ETHTOOL_H
-size_t master_ethtool(int s, struct master_msg *mreq) {
+size_t master_ethtool(struct master_msg *mreq) {
 
     struct ifreq ifr;
     struct ethtool_cmd ecmd;
@@ -700,7 +702,7 @@ size_t master_ethtool(int s, struct master_msg *mreq) {
     ecmd.cmd = ETHTOOL_GSET;
     ifr.ifr_data = (caddr_t)&ecmd;
 
-    if (ioctl(s, SIOCETHTOOL, &ifr) != -1) {
+    if (ioctl(sock, SIOCETHTOOL, &ifr) != -1) {
 	memcpy(mreq->msg, &ecmd, sizeof(ecmd));
 	return(sizeof(ecmd));
     } else {
@@ -710,7 +712,7 @@ size_t master_ethtool(int s, struct master_msg *mreq) {
 #endif /* HAVE_LINUX_ETHTOOL_H */
 
 #ifdef SIOCSIFDESCR
-size_t master_descr(int s, struct master_msg *mreq) {
+size_t master_descr(struct master_msg *mreq) {
 
     struct ifreq ifr;
     int ret;
@@ -720,7 +722,7 @@ size_t master_descr(int s, struct master_msg *mreq) {
     strlcpy(ifr.ifr_name, mreq->name, IFNAMSIZ);
     ifr.ifr_data = (caddr_t)&mreq->msg;
 
-    if ((ret = ioctl(s, SIOCSIFDESCR, &ifr)) == -1)
+    if ((ret = ioctl(sock, SIOCSIFDESCR, &ifr)) == -1)
 	ret = 0;
     return(ret);
 }
