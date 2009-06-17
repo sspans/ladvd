@@ -127,24 +127,29 @@ START_TEST(test_master_rcheck) {
     mreq.len = ETHER_MIN_LEN;
     mreq.proto = PROTO_LLDP;
 
+    fail_unless(master_rcheck(&mreq) == EXIT_FAILURE,
+	"MASTER_SEND check failed");
+
+    // lo0 mostly
+    mreq.index = 1;
     memcpy(ether.dst, lldp_dst, ETHER_ADDR_LEN);
     ether.type = htons(ETHERTYPE_LLDP);
     memcpy(mreq.msg, &ether, sizeof(struct ether_hdr));
 
-    fail_unless(master_rcheck(&mreq) != EXIT_SUCCESS,
-	"MASTER_ETHTOOL check failed");
+    fail_unless(master_rcheck(&mreq) == EXIT_SUCCESS,
+	"MASTER_SEND check failed");
 
 #if HAVE_LINUX_ETHTOOL_H
     mreq.cmd = MASTER_ETHTOOL;
     mreq.len = sizeof(struct ethtool_cmd);
-    fail_unless(master_rcheck(&mreq) != EXIT_SUCCESS,
+    fail_unless(master_rcheck(&mreq) == EXIT_SUCCESS,
 	"MASTER_ETHTOOL check failed");
 #endif
 
 #ifdef SIOCSIFDESCR
     mreq.cmd = MASTER_DESCR;
     mreq.len = 0;
-    fail_unless(master_rcheck(&mreq) != EXIT_SUCCESS,
+    fail_unless(master_rcheck(&mreq) == EXIT_SUCCESS,
 	"MASTER_DESCR check failed");
 #endif
 
