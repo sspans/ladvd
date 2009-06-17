@@ -310,11 +310,15 @@ START_TEST(test_read_line) {
     const char *data = "0123456789ABCDEF";
     const char *null = "/dev/null";
     const char *file = "testfile";
+    char *prefix, *path = NULL;
 
     fail_unless (read_line(NULL, line, 0) == -1,
 	"-1 should be returned on an invalid path");
 
-    fail_unless (read_line(file, NULL, 0) == -1,
+    prefix = getenv("srcdir");
+    fail_if(asprintf(&path, "%s/%s", prefix, file) == -1, "asprintf failed");
+
+    fail_unless (read_line(path, NULL, 0) == -1,
 	"-1 should be returned on an invalid line");
 
     fail_unless (read_line("non-existant", line, 0) == -1,
@@ -323,25 +327,25 @@ START_TEST(test_read_line) {
     fail_unless (read_line(null, line, 10) == -1,
 	"-1 should be returned on a unreadable file");
 
-    fail_unless (read_line(file, line, 0) == -1,
+    fail_unless (read_line(path, line, 0) == -1,
 	"-1 should be returned on zero len request");
 
-    fail_unless (read_line(file, line, 1) == 0,
+    fail_unless (read_line(path, line, 1) == 0,
 	"0 bytes should be returned");
 
-    fail_unless (read_line(file, line, 2) == 1,
+    fail_unless (read_line(path, line, 2) == 1,
 	"1 bytes should be returned");
 
-    fail_unless (read_line(file, line, 10) == 9,
+    fail_unless (read_line(path, line, 10) == 9,
 	"9 bytes should be returned");
 
-    fail_unless (read_line(file, line, 17) == 16,
+    fail_unless (read_line(path, line, 17) == 16,
 	"16 bytes should be returned");
 
     fail_unless (strncmp(line, data, strlen(data)) == 0,
 	"invalid line returned");
 
-    fail_unless (read_line(file, line, 18) == 16,
+    fail_unless (read_line(path, line, 18) == 16,
 	"16 bytes should be returned");
 
     fail_unless (strncmp(line, data, strlen(data)) == 0,
