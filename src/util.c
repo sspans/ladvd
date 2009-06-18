@@ -113,7 +113,7 @@ size_t my_msend(int s, struct master_msg *mreq) {
     }
 };
 
-struct netif *netif_iter(struct netif *netif, struct nhead *netifs, int argc) {
+struct netif *netif_iter(struct netif *netif, struct nhead *netifs) {
 
     if (netifs == NULL)
 	return NULL;
@@ -125,11 +125,11 @@ struct netif *netif_iter(struct netif *netif, struct nhead *netifs, int argc) {
 
     for (; netif != NULL; netif = TAILQ_NEXT(netif, entries)) {
 	// skip autodetected slaves
-	if ((argc == 0) && (netif->slave == 1))
+	if (!(options & OPT_ARGV) && (netif->slave == 1))
 	    continue;
 
 	// skip unlisted interfaces
-	if ((argc > 0) && (netif->argv == 0))
+	if ((options & OPT_ARGV) && (netif->argv == 0))
 	    continue;
 
 	// skip masters without slaves

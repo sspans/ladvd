@@ -22,7 +22,7 @@ void my_socketpair(int spair[2]);
 
 size_t my_msend(int s, struct master_msg *mreq);
 
-struct netif *netif_iter(struct netif *netif, struct nhead *, int argc);
+struct netif *netif_iter(struct netif *netif, struct nhead *);
 struct netif *subif_iter(struct netif *subif, struct netif *netif);
 struct netif *netif_byindex(struct nhead *, uint32_t index);
 struct netif *netif_byname(struct nhead *, char *name);

@@ -119,9 +119,10 @@ struct sysinfo {
 #define OPT_RECV	(1 << 1)
 #define OPT_AUTO	(1 << 2)
 #define OPT_ONCE	(1 << 3)
-#define OPT_DEBUG	(1 << 4)
-#define OPT_MADDR	(1 << 5)
-#define OPT_DESCR	(1 << 6)
+#define OPT_ARGV	(1 << 4)
+#define OPT_DEBUG	(1 << 5)
+#define OPT_MADDR	(1 << 6)
+#define OPT_DESCR	(1 << 7)
 #define OPT_CHECK	(1 << 31)
 
 

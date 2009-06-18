@@ -152,6 +152,10 @@ int main(int argc, char *argv[]) {
     sargc -= optind;
     sargv += optind;
 
+    // set argv option
+    if (sargc)
+	options |= OPT_ARGV;
+
     // validate interfaces
     netifc = netif_fetch(sargc, sargv, &sysinfo, &netifs);
     if (netifc == 0)
@@ -233,6 +237,13 @@ int main(int argc, char *argv[]) {
     // startup message
     my_log(CRIT, PACKAGE_STRING " running");
 
+    // initalize the event library
+    if (options & OPT_RECV) {
+	event_init();
+	event_set(&evmsg, mfd, EV_READ|EV_PERSIST, (void *)queue_msg, &cfd);
+	event_add(&evmsg, NULL);
+    }
+
     while (cfd) {
 
 	// update netifs
@@ -243,7 +254,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	netif = NULL;
-	while ((netif = netif_iter(netif, &netifs, sargc)) != NULL) {
+	while ((netif = netif_iter(netif, &netifs)) != NULL) {
 
 	    my_log(INFO, "starting loop with interface %s", netif->name); 
 
@@ -298,7 +309,7 @@ sleep:
 	if (options & OPT_ONCE)
 	    return (EXIT_SUCCESS);
 
-	if ((options & OPT_RECV) == 0) {
+	if (!(options & OPT_RECV)) {
 	    my_log(INFO, "sleeping for %d seconds", SLEEPTIME);
 	    sleep(SLEEPTIME);
 	    continue;
@@ -308,12 +319,7 @@ sleep:
 	memset(&tv, 0, sizeof(tv));
 	tv.tv_sec = SLEEPTIME;
 
-	// initalize the event library
-	event_init();
-
 	// listen for messages from the master
-	event_set(&evmsg, mfd, EV_READ|EV_PERSIST, (void *)queue_msg, &cfd);
-	event_add(&evmsg, NULL);
 	event_loopexit(&tv);
 	event_dispatch();
 
@@ -339,7 +345,7 @@ sleep:
 void queue_msg(int fd, short event, int *cfd) {
 
     struct master_msg rmsg, *msg = NULL, *qmsg = NULL;
-    struct netif *netif = NULL;
+    struct netif *netif, *master;
     time_t now;
     ssize_t len;
 
@@ -395,14 +401,6 @@ void queue_msg(int fd, short event, int *cfd) {
 		msg->peer, protos[msg->proto].name, netif->name);
     }
 
-    // enable the received protocol
-    if ((options & OPT_AUTO) && !(netif->protos & (1 << msg->proto))) {
-	    if (protos[msg->proto].enabled == 0)
-		my_log(CRIT, "enabling %s on interface %s",
-		    protos[msg->proto].name, netif->name);
-	    netif->protos |= (1 << msg->proto);
-    }
-
     // save the received name to ifdescr
     if (options & OPT_DESCR) {
 
@@ -413,10 +411,28 @@ void queue_msg(int fd, short event, int *cfd) {
 	rmsg.len = snprintf(rmsg.msg, IFDESCRSIZE, "connected to %s (%s)", 
 			    msg->peer, protos[msg->proto].name);
 
-	if (my_msend(*cfd, &rmsg) != rmsg.len) {
+	if (my_msend(*cfd, &rmsg) != rmsg.len)
 	    my_log(CRIT, "ifdescr ioctl failed on %s", netif->name);
-	}
     }
+
+    // return unless we need to enable the received protocol
+    if (!(options & OPT_AUTO) || (netif->protos & (1 << msg->proto)))
+	return;
+
+    // only enable if netif or master are listed
+    if (options & OPT_ARGV) {
+	if (netif->master)
+	    master = netif->master;
+	else
+	    master = netif;
+
+	if (!(netif->argv) && !(master->argv))
+	    return;
+    }
+
+    my_log(CRIT, "enabling %s on interface %s",
+	    protos[msg->proto].name, netif->name);
+    netif->protos |= (1 << msg->proto);
 }
 
 
