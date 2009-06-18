@@ -2,7 +2,7 @@
 #ifndef _main_h
 #define _main_h
 
-void master_init(struct nhead *, uint16_t netifc, int ac,
+void master_init(struct nhead *, uint16_t netifc,
 		 pid_t pid, int cmdfd, int msgfd);
 
 // supported protocols

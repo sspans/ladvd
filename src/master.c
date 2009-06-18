@@ -146,7 +146,7 @@ extern struct proto protos[];
 extern uint8_t loglevel;
 extern uint32_t options;
 
-void master_init(struct nhead *netifs, uint16_t netifc, int ac,
+void master_init(struct nhead *netifs, uint16_t netifc,
 		 pid_t child, int cmdfd, int msgfd) {
 
     // raw socket
@@ -198,7 +198,7 @@ void master_init(struct nhead *netifs, uint16_t netifc, int ac,
 	i = 0;
 
 	netif = NULL;
-	while ((netif = netif_iter(netif, netifs, ac)) != NULL) {
+	while ((netif = netif_iter(netif, netifs)) != NULL) {
 	    my_log(INFO, "starting receive loop with interface %s",
 			 netif->name);
 
@@ -356,7 +356,7 @@ void master_cmd(int cmdfd, short event, int *rawfd) {
 	// update interface description
 	case MASTER_DESCR:
 	    mreq.len = master_descr(&mreq);
-	    break
+	    break;
 #endif /* SIOCGIFDESCR */
 	// invalid request
 	default:

@@ -215,7 +215,7 @@ int main(int argc, char *argv[]) {
 	mfd = mpair[1];
 
 	// enter the master loop
-	master_init(&netifs, netifc, sargc, pid, cfd, mfd);
+	master_init(&netifs, netifc, pid, cfd, mfd);
 
 	// not reached
 	my_fatal("master process failed");
