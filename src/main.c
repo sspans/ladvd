@@ -374,6 +374,12 @@ void queue_msg(int fd, short event, int *cfd) {
     if ((netif = netif_byindex(&netifs, rmsg.index)) == NULL)
 	return;
 
+    // fetch the master netif
+    if (netif->master)
+	master = netif->master;
+    else
+	master = netif;
+
     TAILQ_FOREACH(qmsg, &mqueue, entries) {
 	// match ifindex
 	if (rmsg.index != qmsg->index)
@@ -416,23 +422,18 @@ void queue_msg(int fd, short event, int *cfd) {
     }
 
     // return unless we need to enable the received protocol
-    if (!(options & OPT_AUTO) || (netif->protos & (1 << msg->proto)))
+    if (!(options & OPT_AUTO) || (master->protos & (1 << msg->proto)))
 	return;
 
     // only enable if netif or master are listed
     if (options & OPT_ARGV) {
-	if (netif->master)
-	    master = netif->master;
-	else
-	    master = netif;
-
 	if (!(netif->argv) && !(master->argv))
 	    return;
     }
 
     my_log(CRIT, "enabling %s on interface %s",
-	    protos[msg->proto].name, netif->name);
-    netif->protos |= (1 << msg->proto);
+	    protos[msg->proto].name, master->name);
+    master->protos |= (1 << msg->proto);
 }
 
 
