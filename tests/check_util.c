@@ -164,7 +164,6 @@ START_TEST(test_netif) {
     struct nhead *netifs = &nqueue;
     struct netif tnetifs[6];
     struct netif *netif, *subif;
-    int argc;
 
     TAILQ_INIT(netifs);
 
@@ -219,26 +218,24 @@ START_TEST(test_netif) {
 
     // netif_iter checks
     netif = NULL;
-    argc = 0;
-    fail_unless (netif_iter(netif, NULL, argc) == NULL,
+    fail_unless (netif_iter(netif, NULL) == NULL,
 	"NULL should be returned on invalid netifs");
 
     netif = NULL;
-    argc = 0;
-    netif = netif_iter(netif, netifs, argc);
+    netif = netif_iter(netif, netifs);
     fail_unless (netif == &tnetifs[0], "the first netif should be returned");
-    netif = netif_iter(netif, netifs, argc);
+    netif = netif_iter(netif, netifs);
     fail_unless (netif == &tnetifs[5], "the sixth netif should be returned");
-    netif = netif_iter(netif, netifs, argc);
+    netif = netif_iter(netif, netifs);
     fail_unless (netif == NULL, "NULL should be returned");
 
     netif = NULL;
-    argc = 2;
-    netif = netif_iter(netif, netifs, argc);
+    options |= OPT_ARGV;
+    netif = netif_iter(netif, netifs);
     fail_unless (netif == &tnetifs[1], "the second netif should be returned");
-    netif = netif_iter(netif, netifs, argc);
+    netif = netif_iter(netif, netifs);
     fail_unless (netif == &tnetifs[5], "the sixth netif should be returned");
-    netif = netif_iter(netif, netifs, argc);
+    netif = netif_iter(netif, netifs);
     fail_unless (netif == NULL, "NULL should be returned");
 
 
