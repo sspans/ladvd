@@ -116,6 +116,100 @@ START_TEST(test_master_signal) {
 }
 END_TEST
 
+START_TEST(test_master_cmd) {
+    struct master_msg mreq;
+    struct ether_hdr ether;
+    static uint8_t lldp_dst[] = LLDP_MULTICAST_ADDR;
+    const char *errstr = NULL;
+    int spair[2], fd = -1;
+    short event = 0;
+
+    // supply an invalid fd, resulting in a read error
+    mark_point();
+    errstr = "check";
+    my_log(CRIT, errstr);
+    master_cmd(fd, event, NULL);
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    // test a message with an incorrect size
+    mark_point();
+    my_socketpair(spair);
+    write(spair[0], &mreq, 1);
+    errstr = "invalid request received";
+    WRAP_FATAL_START();
+    master_cmd(spair[1], event, NULL);
+    WRAP_FATAL_END();
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    // test a message with incorrect content
+    mark_point();
+    memset(&mreq, 0, sizeof(struct master_msg));
+    mreq.cmd = MASTER_SEND;
+    mreq.len = ETHER_MIN_LEN;
+    mreq.proto = PROTO_LLDP;
+
+    write(spair[0], &mreq, MASTER_MSG_SIZE);
+
+    errstr = "invalid request supplied";
+    WRAP_FATAL_START();
+    master_cmd(spair[1], event, NULL);
+    WRAP_FATAL_END();
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    // test a correct MASTER_SEND
+    mark_point();
+    options |= OPT_DEBUG;
+    mreq.cmd = MASTER_SEND;
+    mreq.index = 1;
+    memcpy(ether.dst, lldp_dst, ETHER_ADDR_LEN);
+    ether.type = htons(ETHERTYPE_LLDP);
+    memcpy(mreq.msg, &ether, sizeof(struct ether_hdr));
+    write(spair[0], &mreq, MASTER_MSG_SIZE);
+
+    errstr = "check";
+    my_log(CRIT, errstr);
+    WRAP_FATAL_START();
+    master_cmd(spair[1], event, &spair[1]);
+    WRAP_FATAL_END();
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    // test a correct ETHTOOL / DESCR
+    mark_point();
+#ifdef HAVE_LINUX_ETHTOOL_H
+    mreq.cmd = MASTER_ETHTOOL;
+    mreq.len = sizeof(struct ethtool_cmd);
+#elif SIOCSIFDESCR
+    mreq.cmd = MASTER_DESCR;
+    mreq.len = 0;
+#endif
+    write(spair[0], &mreq, MASTER_MSG_SIZE);
+
+    errstr = "check";
+    my_log(CRIT, errstr);
+    WRAP_FATAL_START();
+    master_cmd(spair[1], event, NULL);
+    WRAP_FATAL_END();
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    // test a failing return message
+    mark_point();
+    write(spair[0], &mreq, MASTER_MSG_SIZE);
+    close(spair[0]);
+
+    errstr = "failed to return message to child";
+    WRAP_FATAL_START();
+    master_cmd(spair[1], event, NULL);
+    WRAP_FATAL_END();
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+}
+END_TEST
+
 START_TEST(test_master_rcheck) {
     struct master_msg mreq;
     struct ether_hdr ether;
@@ -139,7 +233,7 @@ START_TEST(test_master_rcheck) {
     fail_unless(master_rcheck(&mreq) == EXIT_SUCCESS,
 	"MASTER_SEND check failed");
 
-#if HAVE_LINUX_ETHTOOL_H
+#ifdef HAVE_LINUX_ETHTOOL_H
     mreq.cmd = MASTER_ETHTOOL;
     mreq.len = sizeof(struct ethtool_cmd);
     fail_unless(master_rcheck(&mreq) == EXIT_SUCCESS,
@@ -153,6 +247,13 @@ START_TEST(test_master_rcheck) {
 	"MASTER_DESCR check failed");
 #endif
 
+#ifdef HAVE_LINUX_ETHTOOL_H
+    mreq.cmd = MASTER_DESCR;
+#elif SIOCSIFDESCR
+    mreq.cmd = MASTER_ETHTOOL;
+#endif
+    fail_unless(master_rcheck(&mreq) == EXIT_FAILURE,
+	"master_rcheck should fail");
 }
 END_TEST
 
@@ -162,7 +263,7 @@ Suite * master_suite (void) {
     // master test case
     TCase *tc_master = tcase_create("master");
     tcase_add_test(tc_master, test_master_signal);
-    //tcase_add_test(tc_master, test_master_cmd);
+    tcase_add_test(tc_master, test_master_cmd);
     //tcase_add_test(tc_master, test_master_recv);
     tcase_add_test(tc_master, test_master_rcheck);
     //tcase_add_test(tc_master, test_master_rsocket);
