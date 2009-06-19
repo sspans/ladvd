@@ -565,6 +565,7 @@ void master_recv(int fd, short event, struct master_rfd *rfd) {
     void *endp;
 #endif /* HAVE_NET_BPF_H */
 
+    assert(rfd);
     memset(&mrecv, 0, sizeof (mrecv));
 
 #ifdef HAVE_NET_BPF_H

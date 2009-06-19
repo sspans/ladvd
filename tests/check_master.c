@@ -210,6 +210,86 @@ START_TEST(test_master_cmd) {
 }
 END_TEST
 
+START_TEST(test_master_recv) {
+    struct master_rfd rfd;
+    int spair[2];
+    short event = 0;
+    const char *errstr = NULL;
+    char msg[ETHER_MAX_LEN * 2];
+    struct ether_hdr ether;
+    static uint8_t lldp_dst[] = CDP_MULTICAST_ADDR;
+
+    loglevel = INFO;
+
+    // test a failing receive
+    mark_point();
+    errstr = "receiving message failed";
+    memset(&rfd, 0, sizeof(rfd));
+    rfd.fd = -1;
+    WRAP_FATAL_START();
+    master_recv(rfd.fd, event, &rfd);
+    WRAP_FATAL_END();
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    memset(&msg, 0, sizeof(msg));
+    my_socketpair(spair);
+    rfd.fd = spair[1];
+    rfd.cfd = spair[1];
+
+    // too short
+    mark_point();
+    errstr = "check";
+    my_log(CRIT, errstr);
+    write(spair[0], &msg, 1);
+    master_recv(rfd.fd, event, &rfd);
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    // too long
+    mark_point();
+    write(spair[0], &msg, ETHER_MAX_LEN * 2);
+    master_recv(rfd.fd, event, &rfd);
+
+    // local hwaddr
+    mark_point();
+    write(spair[0], &msg, ETHER_MIN_LEN);
+    master_recv(rfd.fd, event, &rfd);
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    // valid hwaddr
+    mark_point();
+    errstr = "unknown message type received";
+    memset(rfd.hwaddr, 'a', ETHER_ADDR_LEN);
+    write(spair[0], &msg, ETHER_MIN_LEN);
+    master_recv(rfd.fd, event, &rfd);
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    // valid message
+    mark_point();
+    errstr = "received CDP message (64 bytes)";
+    memcpy(ether.dst, lldp_dst, ETHER_ADDR_LEN);
+    memcpy(msg, &ether, sizeof(struct ether_hdr));
+    mark_point();
+    write(spair[0], &msg, ETHER_MIN_LEN);
+    master_recv(rfd.fd, event, &rfd);
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    // closed child socket
+    errstr = "failed to send message to child";
+    write(spair[0], &msg, ETHER_MIN_LEN);
+    close(spair[0]);
+    WRAP_FATAL_START();
+    master_recv(rfd.fd, event, &rfd);
+    WRAP_FATAL_END();
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+}
+END_TEST
+
 START_TEST(test_master_rcheck) {
     struct master_msg mreq;
     struct ether_hdr ether;
@@ -264,7 +344,7 @@ Suite * master_suite (void) {
     TCase *tc_master = tcase_create("master");
     tcase_add_test(tc_master, test_master_signal);
     tcase_add_test(tc_master, test_master_cmd);
-    //tcase_add_test(tc_master, test_master_recv);
+    tcase_add_test(tc_master, test_master_recv);
     tcase_add_test(tc_master, test_master_rcheck);
     //tcase_add_test(tc_master, test_master_rsocket);
     //tcase_add_test(tc_master, test_master_rconf);
