@@ -15,16 +15,27 @@
 uint32_t options = OPT_DAEMON | OPT_CHECK;
 extern uint8_t loglevel;
 
+extern jmp_buf check_wrap_env;
+extern uint32_t check_wrap_opt;
 extern char check_wrap_errstr[];
 
 START_TEST(test_proto_packet) {
     struct master_msg msg;
     struct netif master, netif;
     struct sysinfo sysinfo;
+    const char *errstr = NULL;
 
     mark_point();
     memset(&sysinfo, 0, sizeof(struct sysinfo));
+    errstr = "check";
+    my_log(CRIT, errstr);
+    WRAP_FATAL_START();
     sysinfo_fetch(&sysinfo);
+    WRAP_FATAL_END();
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+        "incorrect message logged: %s", check_wrap_errstr);
+
+    mark_point();
     sysinfo.cap_active = CAP_ROUTER;
     sysinfo.country[0] = 'Z';
     sysinfo.country[1] = 'Z';
