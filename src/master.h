@@ -19,7 +19,7 @@ void master_recv(int fd, short event, struct master_rfd *rfd);
 int master_rcheck(struct master_msg *mreq);
 int master_rsocket(struct master_rfd *rfd, int mode);
 void master_rconf(struct master_rfd *rfd, struct proto *protos);
-size_t master_rsend(int fd, struct master_msg *mreq);
+ssize_t master_rsend(int fd, struct master_msg *mreq);
 #if HAVE_LINUX_ETHTOOL_H
 size_t master_ethtool(struct master_msg *mreq);
 #endif /* HAVE_LINUX_ETHTOOL_H */

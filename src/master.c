@@ -486,8 +486,13 @@ void master_rconf(struct master_rfd *rfd, struct proto *protos) {
     fprog.bf_insns = master_filter; 
     fprog.bf_len = sizeof(master_filter) / sizeof(struct bpf_insn);
 
+    if (!bpf_buf.len) {
+	bpf_buf.len = roundup(ETHER_MAX_LEN, getpagesize());
+	bpf_buf.data = my_malloc(bpf_buf.len);
+    }
+
     // read buffer length
-    if (ioctl(rfd->fd, BIOCGBLEN, (caddr_t)&bpf_buf.len) < 0)
+    if (ioctl(rfd->fd, BIOCSBLEN, (caddr_t)&bpf_buf.len) < 0)
 	my_fatal("unable to configure bufer length for %s", rfd->name);
     // disable buffering
     if (ioctl(rfd->fd, BIOCIMMEDIATE, (caddr_t)&immediate) < 0)
@@ -630,9 +635,9 @@ void master_recv(int fd, short event, struct master_rfd *rfd) {
 }
 
 
-size_t master_rsend(int fd, struct master_msg *mreq) {
+ssize_t master_rsend(int fd, struct master_msg *mreq) {
 
-    size_t count = 0;
+    ssize_t count = 0;
 
     pcaprec_hdr_t pcap_rec_hdr;
     struct timeval tv;

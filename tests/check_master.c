@@ -310,6 +310,7 @@ START_TEST(test_master_recv) {
     master_recv(rfd.fd, event, &rfd);
 
     // closed child socket
+    mark_point();
     errstr = "failed to send message to child";
     write(spair[0], &buf, ETHER_MIN_LEN + hlen);
     close(spair[0]);
@@ -328,6 +329,7 @@ START_TEST(test_master_rcheck) {
 
     memset(&mreq, 0, sizeof(struct master_msg));
 
+    mark_point();
     mreq.cmd = MASTER_SEND;
     mreq.len = ETHER_MIN_LEN;
     mreq.proto = PROTO_LLDP;
@@ -336,6 +338,7 @@ START_TEST(test_master_rcheck) {
 	"MASTER_SEND check failed");
 
     // lo0 mostly
+    mark_point();
     mreq.index = 1;
     memcpy(ether.dst, lldp_dst, ETHER_ADDR_LEN);
     ether.type = htons(ETHERTYPE_LLDP);
@@ -345,6 +348,7 @@ START_TEST(test_master_rcheck) {
 	"MASTER_SEND check failed");
 
 #ifdef HAVE_LINUX_ETHTOOL_H
+    mark_point();
     mreq.cmd = MASTER_ETHTOOL;
     mreq.len = sizeof(struct ethtool_cmd);
     fail_unless(master_rcheck(&mreq) == EXIT_SUCCESS,
@@ -352,12 +356,14 @@ START_TEST(test_master_rcheck) {
 #endif
 
 #ifdef SIOCSIFDESCR
+    mark_point();
     mreq.cmd = MASTER_DESCR;
     mreq.len = 0;
     fail_unless(master_rcheck(&mreq) == EXIT_SUCCESS,
 	"MASTER_DESCR check failed");
 #endif
 
+    mark_point();
 #ifndef HAVE_LINUX_ETHTOOL_H
     mreq.cmd = MASTER_ETHTOOL;
 #elif !defined SIOCSIFDESCR
@@ -365,6 +371,93 @@ START_TEST(test_master_rcheck) {
 #endif
     fail_unless(master_rcheck(&mreq) == EXIT_FAILURE,
 	"master_rcheck should fail");
+}
+END_TEST
+
+START_TEST(test_master_rconf) {
+    struct master_rfd rfd;
+    const char *errstr;
+
+    rfd.fd = -1;
+    rfd.index = 1;
+    strlcpy(rfd.name, "lo0", IFNAMSIZ);
+
+#ifdef HAVE_LINUX_FILTER_H
+    mark_point();
+    errstr = "unable to configure socket filter for";
+    check_wrap_opt |= FAIL_SETSOCKOPT;
+    WRAP_FATAL_START();
+    master_rconf(&rfd, protos);
+    WRAP_FATAL_END();
+    check_wrap_opt &= ~FAIL_SETSOCKOPT;
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+#elif HAVE_NET_BPF_H
+    mark_point();
+    errstr = "unable to configure bufer length for";
+    check_wrap_opt |= FAIL_IOCTL;
+    WRAP_FATAL_START();
+    master_rconf(&rfd, protos);
+    WRAP_FATAL_END();
+    check_wrap_opt &= ~FAIL_IOCTL;
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+#endif
+
+#ifdef AF_PACKET
+    mark_point();
+    errstr = "check";
+    my_log(CRIT, errstr);
+    check_wrap_opt |= FAKE_SETSOCKOPT;
+    master_rconf(&rfd, protos);
+    check_wrap_opt &= ~FAKE_SETSOCKOPT;
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+#elif defined AF_LINK
+    mark_point();
+    errstr = "check";
+    my_log(CRIT, errstr);
+    check_wrap_opt |= FAKE_IOCTL;
+    master_rconf(&rfd, protos);
+    check_wrap_opt &= ~FAKE_IOCTL;
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+#endif
+}
+END_TEST
+
+START_TEST(test_master_rsend) {
+    struct master_msg mreq;
+    int spair[2];
+    ssize_t len;
+    const char *errstr;
+
+    loglevel = INFO;
+    my_socketpair(spair);
+    mreq.len = ETHER_MIN_LEN;
+
+    mark_point();
+    options |= OPT_DEBUG;
+    len = master_rsend(spair[1], &mreq);
+    fail_unless(len == ETHER_MIN_LEN,
+	"incorrect length returned: %ld", len);
+
+    mark_point();
+    errstr = "failed to write pcap record header";
+    spair[1] = -1;
+    WRAP_FATAL_START();
+    len = master_rsend(spair[1], &mreq);
+    WRAP_FATAL_END();
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    mark_point();
+    errstr = "only -1 bytes written";
+    options &= ~OPT_DEBUG;
+    check_wrap_opt |= FAKE_IOCTL;
+    master_rsend(spair[1], &mreq);
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
 }
 END_TEST
 
@@ -378,8 +471,8 @@ Suite * master_suite (void) {
     tcase_add_test(tc_master, test_master_recv);
     tcase_add_test(tc_master, test_master_rcheck);
     //tcase_add_test(tc_master, test_master_rsocket);
-    //tcase_add_test(tc_master, test_master_rconf);
-    //tcase_add_test(tc_master, test_master_rsend);
+    tcase_add_test(tc_master, test_master_rconf);
+    tcase_add_test(tc_master, test_master_rsend);
     suite_add_tcase(s, tc_master);
 
     return s;

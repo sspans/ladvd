@@ -19,6 +19,9 @@ static int (*libc_setgroups) (int ngroups, const gid_t *gidset);
 static int (*libc_chdir) (const char *path);
 static int (*libc_chroot) (const char *dirname);
 static int (*libc_kill) (pid_t pid, int sig);
+static int (*libc_ioctl) (int fd, unsigned long int request, ...);
+static int (*libc_setsockopt) (int s, int level, int optname,
+				const void *optval, socklen_t optlen);
 
 jmp_buf check_wrap_env;
 uint32_t check_wrap_opt = 0;
@@ -120,6 +123,34 @@ int kill (pid_t pid, int sig) {
     if (check_wrap_opt & FAKE_KILL)
 	return 0;
     return libc_kill(pid, sig);
+}
+
+int ioctl (int fd, unsigned long int request, ...) {
+    va_list ap;
+
+    libc_ioctl = dlsym(RTLD_NEXT, "ioctl");
+
+    if (check_wrap_opt & FAIL_IOCTL)
+	return -1;
+    if (check_wrap_opt & FAKE_IOCTL)
+	return 0;
+
+    va_start(ap, request);
+    return libc_ioctl(fd, request, va_arg(ap, char *));
+    va_end(ap);
+}
+
+int setsockopt(int s, int level, int optname,
+    const void *optval, socklen_t optlen) {
+
+    libc_setsockopt = dlsym(RTLD_NEXT, "setsockopt");
+
+    if (check_wrap_opt & FAIL_SETSOCKOPT)
+	return -1;
+    if (check_wrap_opt & FAKE_SETSOCKOPT)
+	return 0;
+
+    return libc_setsockopt(s, level, optname, optval, optlen);
 }
 
 void vsyslog(int priority, const char *fmt, va_list ap) {
