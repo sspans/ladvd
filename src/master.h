@@ -48,7 +48,7 @@ typedef struct pcaprec_hdr_s {
 
 #ifdef HAVE_NET_BPF_H
 struct bpf_buf {
-    int len;
+    unsigned int len;
     char *data;
 };
 #endif /* HAVE_NET_BPF_H */

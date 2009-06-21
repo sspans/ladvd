@@ -229,11 +229,18 @@ START_TEST(test_master_recv) {
 #ifdef HAVE_NET_BPF_H
     struct bpf_hdr *bhp, *ebhp;
     void *endp;
+    extern struct bpf_buf bpf_buf;
 #endif /* HAVE_NET_BPF_H */
     struct ether_hdr ether;
     static uint8_t lldp_dst[] = CDP_MULTICAST_ADDR;
 
     loglevel = INFO;
+
+#ifdef HAVE_NET_BPF_H
+    // create a sensible bpf buffer
+    bpf_buf.len = roundup(ETHER_MAX_LEN, getpagesize());
+    bpf_buf.data = my_malloc(bpf_buf.len);
+#endif
 
     // test a failing receive
     mark_point();
@@ -449,7 +456,7 @@ START_TEST(test_master_rconf) {
 	"incorrect message logged: %s", check_wrap_errstr);
 #elif HAVE_NET_BPF_H
     mark_point();
-    errstr = "unable to configure bufer length for";
+    errstr = "unable to configure immediate mode for";
     check_wrap_opt |= FAIL_IOCTL;
     WRAP_FATAL_START();
     master_rconf(&rfd, protos);

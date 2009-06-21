@@ -486,14 +486,15 @@ void master_rconf(struct master_rfd *rfd, struct proto *protos) {
     fprog.bf_insns = master_filter; 
     fprog.bf_len = sizeof(master_filter) / sizeof(struct bpf_insn);
 
+    // configure a reasonable buffer length
     if (!bpf_buf.len) {
 	bpf_buf.len = roundup(ETHER_MAX_LEN, getpagesize());
+	ioctl(rfd->fd, BIOCGBLEN, &bpf_buf.len);
+	if (!bpf_buf.len)
+	   my_fatal("unable to fetch bpf bufer length for %s", rfd->name);
 	bpf_buf.data = my_malloc(bpf_buf.len);
     }
 
-    // read buffer length
-    if (ioctl(rfd->fd, BIOCSBLEN, (caddr_t)&bpf_buf.len) < 0)
-	my_fatal("unable to configure bufer length for %s", rfd->name);
     // disable buffering
     if (ioctl(rfd->fd, BIOCIMMEDIATE, (caddr_t)&immediate) < 0)
 	my_fatal("unable to configure immediate mode for %s", rfd->name);
@@ -565,10 +566,7 @@ void master_recv(int fd, short event, struct master_rfd *rfd) {
     memset(&mrecv, 0, sizeof (mrecv));
 
 #ifdef HAVE_NET_BPF_H
-    if (!bpf_buf.len) {
-	bpf_buf.len = roundup(ETHER_MAX_LEN, getpagesize());
-	bpf_buf.data = my_malloc(bpf_buf.len);
-    }
+    assert(bpf_buf.len);
 
     if ((len = read(rfd->fd, bpf_buf.data, bpf_buf.len)) == -1) {
 	my_log(CRIT,"receiving message failed: %s", strerror(errno));
