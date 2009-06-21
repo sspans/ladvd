@@ -6,6 +6,9 @@
 #include <sys/param.h>
 #include <signal.h>
 
+#define _EVENT_H_
+struct event { };
+
 #include "common.h"
 #include "util.h"
 #include "proto/protos.h"
@@ -36,11 +39,7 @@ extern char check_wrap_errstr[];
 // stub functions
 // linking with libevent introduces threads which breaks check_wrap
 // so instead use stubs since we don't test library functions anyway
-#ifdef LIBEVENT_VERSION
-struct event_base *event_init(void) {
-#else
 void *event_init(void) {
-#endif
     return(NULL);
 }
 int event_dispatch(void) {
@@ -194,12 +193,13 @@ START_TEST(test_master_cmd) {
     mreq.len = 0;
 #endif
 
+#if defined(HAVE_LINUX_ETHTOOL_H) || defined(SIOCSIFDESCR)
     write(spair[0], &mreq, MASTER_MSG_SIZE);
 
     errstr = "check";
     my_log(CRIT, errstr);
     WRAP_FATAL_START();
-    master_cmd(spair[1], event, NULL);
+    master_cmd(spair[1], event, &spair[1]);
     WRAP_FATAL_END();
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -211,10 +211,11 @@ START_TEST(test_master_cmd) {
 
     errstr = "failed to return message to child";
     WRAP_FATAL_START();
-    master_cmd(spair[1], event, NULL);
+    master_cmd(spair[1], event, &spair[1]);
     WRAP_FATAL_END();
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
+#endif
 }
 END_TEST
 
