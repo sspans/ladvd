@@ -20,6 +20,9 @@
 #if HAVE_LINUX_ETHTOOL_H
 #include <linux/ethtool.h>
 #endif /* HAVE_LINUX_ETHTOOL_H */
+#ifdef HAVE_NET_BPF_H
+#include <net/bpf.h>
+#endif /* HAVE_NET_BPF_H */
 
 #include "check_wrap.h"
 
@@ -33,7 +36,11 @@ extern char check_wrap_errstr[];
 // stub functions
 // linking with libevent introduces threads which breaks check_wrap
 // so instead use stubs since we don't test library functions anyway
+#ifdef LIBEVENT_VERSION
+struct event_base *event_init(void) {
+#else
 void *event_init(void) {
+#endif
     return(NULL);
 }
 int event_dispatch(void) {
@@ -182,10 +189,11 @@ START_TEST(test_master_cmd) {
 #ifdef HAVE_LINUX_ETHTOOL_H
     mreq.cmd = MASTER_ETHTOOL;
     mreq.len = sizeof(struct ethtool_cmd);
-#elif SIOCSIFDESCR
+#elif defined SIOCSIFDESCR
     mreq.cmd = MASTER_DESCR;
     mreq.len = 0;
 #endif
+
     write(spair[0], &mreq, MASTER_MSG_SIZE);
 
     errstr = "check";
@@ -215,7 +223,13 @@ START_TEST(test_master_recv) {
     int spair[2];
     short event = 0;
     const char *errstr = NULL;
-    char msg[ETHER_MAX_LEN * 2];
+    char buf[ETHER_MAX_LEN * 2];
+    char *msg;
+    int hlen = 0;
+#ifdef HAVE_NET_BPF_H
+    struct bpf_hdr *bhp, *ebhp;
+    void *endp;
+#endif /* HAVE_NET_BPF_H */
     struct ether_hdr ether;
     static uint8_t lldp_dst[] = CDP_MULTICAST_ADDR;
 
@@ -232,7 +246,24 @@ START_TEST(test_master_recv) {
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
-    memset(&msg, 0, sizeof(msg));
+    memset(&buf, 0, sizeof(buf));
+#ifdef HAVE_NET_BPF_H
+    bhp = (struct bpf_hdr *)buf;
+    hlen = BPF_WORDALIGN(sizeof(struct bpf_hdr));
+    bhp->bh_hdrlen = hlen;
+    bhp->bh_caplen = ETHER_MIN_LEN;
+    msg = buf + hlen;
+
+    // create an end bhp covering the rest of buf
+    ebhp = (struct bpf_hdr *)buf;
+    ebhp += BPF_WORDALIGN(bhp->bh_hdrlen + bhp->bh_caplen);
+    ebhp->bh_hdrlen = hlen;
+    ebhp->bh_caplen = sizeof(buf);
+    ebhp->bh_caplen -= BPF_WORDALIGN(bhp->bh_hdrlen + bhp->bh_caplen);
+    ebhp->bh_caplen -= hlen;
+#elif defined HAVE_NETPACKET_PACKET_H
+    msg = buf;
+#endif
     my_socketpair(spair);
     rfd.fd = spair[1];
     rfd.cfd = spair[1];
@@ -241,19 +272,14 @@ START_TEST(test_master_recv) {
     mark_point();
     errstr = "check";
     my_log(CRIT, errstr);
-    write(spair[0], &msg, 1);
+    write(spair[0], &buf, 1 + hlen);
     master_recv(rfd.fd, event, &rfd);
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
-    // too long
-    mark_point();
-    write(spair[0], &msg, ETHER_MAX_LEN * 2);
-    master_recv(rfd.fd, event, &rfd);
-
     // local hwaddr
     mark_point();
-    write(spair[0], &msg, ETHER_MIN_LEN);
+    write(spair[0], &buf, ETHER_MIN_LEN + hlen);
     master_recv(rfd.fd, event, &rfd);
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -262,7 +288,7 @@ START_TEST(test_master_recv) {
     mark_point();
     errstr = "unknown message type received";
     memset(rfd.hwaddr, 'a', ETHER_ADDR_LEN);
-    write(spair[0], &msg, ETHER_MIN_LEN);
+    write(spair[0], &buf, ETHER_MIN_LEN + hlen);
     master_recv(rfd.fd, event, &rfd);
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -273,14 +299,19 @@ START_TEST(test_master_recv) {
     memcpy(ether.dst, lldp_dst, ETHER_ADDR_LEN);
     memcpy(msg, &ether, sizeof(struct ether_hdr));
     mark_point();
-    write(spair[0], &msg, ETHER_MIN_LEN);
+    write(spair[0], &buf, ETHER_MIN_LEN + hlen);
     master_recv(rfd.fd, event, &rfd);
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
+    // too long (or multiple messages with bpf)
+    mark_point();
+    write(spair[0], &buf, sizeof(buf));
+    master_recv(rfd.fd, event, &rfd);
+
     // closed child socket
     errstr = "failed to send message to child";
-    write(spair[0], &msg, ETHER_MIN_LEN);
+    write(spair[0], &buf, ETHER_MIN_LEN + hlen);
     close(spair[0]);
     WRAP_FATAL_START();
     master_recv(rfd.fd, event, &rfd);
@@ -327,10 +358,10 @@ START_TEST(test_master_rcheck) {
 	"MASTER_DESCR check failed");
 #endif
 
-#ifdef HAVE_LINUX_ETHTOOL_H
-    mreq.cmd = MASTER_DESCR;
-#elif SIOCSIFDESCR
+#ifndef HAVE_LINUX_ETHTOOL_H
     mreq.cmd = MASTER_ETHTOOL;
+#elif !defined SIOCSIFDESCR
+    mreq.cmd = MASTER_DESCR;
 #endif
     fail_unless(master_rcheck(&mreq) == EXIT_FAILURE,
 	"master_rcheck should fail");

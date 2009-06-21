@@ -134,13 +134,9 @@ struct sock_filter master_filter[] = {
 
 
 #ifdef HAVE_NET_BPF_H
-struct bpf_buf {
-    int len;
-    char *data;
-} bpf_buf;
+struct bpf_buf bpf_buf = { 0, NULL };
 #endif /* HAVE_NET_BPF_H */
-
-int sock;
+int sock = -1;
 
 extern struct proto protos[];
 extern uint8_t loglevel;
@@ -187,11 +183,6 @@ void master_init(struct nhead *netifs, uint16_t netifc,
 
     // open listen sockets
     if ((options & OPT_RECV) && (!(options & OPT_DEBUG))) {
-
-#ifdef HAVE_NET_BPF_H
-	bpf_buf.len = roundup(ETHER_MAX_LEN, getpagesize());
-	bpf_buf.data = my_malloc(bpf_buf.len);
-#endif /* HAVE_NET_BPF_H */
 
 	// init
 	rfds = my_calloc(netifc, sizeof(struct master_rfd));
@@ -432,7 +423,7 @@ int master_rsocket(struct master_rfd *rfd, int mode) {
     if (bind(rsocket, (struct sockaddr *)&sa, sizeof (sa)) != 0)
 	my_fatal("failed to bind socket to %s", rfd->name);
 
-#elif HAVE_NET_BPF_H
+#elif defined HAVE_NET_BPF_H
     int n = 0;
     char dev[50];
 
@@ -569,6 +560,11 @@ void master_recv(int fd, short event, struct master_rfd *rfd) {
     memset(&mrecv, 0, sizeof (mrecv));
 
 #ifdef HAVE_NET_BPF_H
+    if (!bpf_buf.len) {
+	bpf_buf.len = roundup(ETHER_MAX_LEN, getpagesize());
+	bpf_buf.data = my_malloc(bpf_buf.len);
+    }
+
     if ((len = read(rfd->fd, bpf_buf.data, bpf_buf.len)) == -1) {
 	my_log(CRIT,"receiving message failed: %s", strerror(errno));
 	return;

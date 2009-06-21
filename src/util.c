@@ -89,6 +89,10 @@ void my_socketpair(int spair[2]) {
 	if (setsockopt(spair[i], SOL_SOCKET, SO_RCVBUF,
 		       &rbuf, sizeof(rbuf)) == -1)
 	    my_fatal("failed to set rcvbuf: %s", strerror(errno));
+
+	if (setsockopt(spair[i], SOL_SOCKET, SO_SNDBUF,
+		       &rbuf, sizeof(rbuf)) == -1)
+	    my_fatal("failed to set sndbuf: %s", strerror(errno));
     }
 }
 

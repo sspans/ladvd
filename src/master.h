@@ -46,4 +46,11 @@ typedef struct pcaprec_hdr_s {
     uint32_t orig_len;       /* actual length of packet */
 } __attribute__ ((__packed__)) pcaprec_hdr_t;
 
+#ifdef HAVE_NET_BPF_H
+struct bpf_buf {
+    int len;
+    char *data;
+};
+#endif /* HAVE_NET_BPF_H */
+
 #endif /* _master_h */
