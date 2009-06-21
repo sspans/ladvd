@@ -47,7 +47,7 @@
 
 #ifdef HAVE_NET_BPF_H
 struct bpf_insn master_filter[] = {
-#elif HAVE_LINUX_FILTER_H
+#elif defined HAVE_LINUX_FILTER_H
 struct sock_filter master_filter[] = {
 #endif
     // lldp
@@ -461,7 +461,7 @@ void master_rconf(struct master_rfd *rfd, struct proto *protos) {
     int p;
 #ifdef AF_PACKET
     struct packet_mreq mreq;
-#elif TARGET_IS_FREEBSD
+#elif defined TARGET_IS_FREEBSD
     struct sockaddr_dl *saddrdl;
 #endif
 
@@ -476,7 +476,7 @@ void master_rconf(struct master_rfd *rfd, struct proto *protos) {
     if (setsockopt(rfd->fd, SOL_SOCKET, SO_ATTACH_FILTER,
 		   &fprog, sizeof(fprog)) < 0)
 	my_fatal("unable to configure socket filter for %s", rfd->name);
-#elif HAVE_NET_BPF_H
+#elif defined HAVE_NET_BPF_H
 
     // setup bpf receive
     struct bpf_program fprog;
@@ -523,7 +523,7 @@ void master_rconf(struct master_rfd *rfd, struct proto *protos) {
 		   &mreq, sizeof(mreq)) < 0)
 	    my_fatal("unable to add %s multicast to %s: %s",
 		     protos[p].name, rfd->name, strerror(errno));
-#elif AF_LINK
+#elif defined AF_LINK
 	// too bad for EDP
 	if (!ETHER_IS_MULTICAST(protos[p].dst_addr))
 	    continue;
@@ -588,7 +588,7 @@ void master_recv(int fd, short event, struct master_rfd *rfd) {
 
 	memcpy(mrecv.msg, bpf_buf.data + bhp->bh_hdrlen, mrecv.len);
 
-#elif HAVE_NETPACKET_PACKET_H
+#elif defined HAVE_NETPACKET_PACKET_H
     if ((len = read(rfd->fd, mrecv.msg, ETHER_MAX_LEN)) == -1) {
 	my_log(CRIT,"receiving message failed: %s", strerror(errno));
 	return;
@@ -670,7 +670,7 @@ ssize_t master_rsend(int fd, struct master_msg *mreq) {
 
     count = sendto(fd, mreq->msg, mreq->len, 0,
 		   (struct sockaddr *)&sa, sizeof (sa));
-#elif HAVE_NET_BPF_H
+#elif defined HAVE_NET_BPF_H
     struct ifreq ifr;
 
     // prepare ifr struct

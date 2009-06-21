@@ -374,6 +374,61 @@ START_TEST(test_master_rcheck) {
 }
 END_TEST
 
+START_TEST(test_master_rsocket) {
+    struct master_rfd rfd;
+    int sock;
+    const char *errstr;
+
+    rfd.fd = -1;
+    rfd.index = 1;
+    strlcpy(rfd.name, "lo0", IFNAMSIZ);
+
+    mark_point();
+    errno = EPERM;
+    errstr = "check";
+    my_log(CRIT, errstr);
+    check_wrap_opt |= (FAIL_SOCKET|FAIL_OPEN);
+    WRAP_FATAL_START();
+    sock = master_rsocket(NULL, 0);
+    WRAP_FATAL_END();
+    check_wrap_opt &= ~(FAIL_SOCKET|FAIL_OPEN);
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+    fail_unless (sock == -1, "incorrect socket returned: %d", sock);
+
+    mark_point();
+    check_wrap_opt |= FAKE_SOCKET|FAKE_OPEN;
+    WRAP_FATAL_START();
+    sock = master_rsocket(NULL, 0);
+    WRAP_FATAL_END();
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+    fail_unless (sock == 0, "incorrect socket returned: %d", sock);
+
+    mark_point();
+    errstr = "failed to bind socket to";
+    check_wrap_opt |= FAIL_BIND|FAIL_IOCTL;
+    WRAP_FATAL_START();
+    master_rsocket(&rfd, 0);
+    WRAP_FATAL_END();
+    check_wrap_opt &= ~(FAIL_BIND|FAIL_IOCTL);
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    mark_point();
+    errstr = "check";
+    my_log(CRIT, errstr);
+    check_wrap_opt |= FAKE_BIND|FAKE_IOCTL;
+    WRAP_FATAL_START();
+    sock = master_rsocket(&rfd, 0);
+    WRAP_FATAL_END();
+    check_wrap_opt = 0;
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+    fail_unless (sock == 0, "incorrect socket returned: %d", sock);
+}
+END_TEST
+
 START_TEST(test_master_rconf) {
     struct master_rfd rfd;
     const char *errstr;
@@ -470,7 +525,7 @@ Suite * master_suite (void) {
     tcase_add_test(tc_master, test_master_cmd);
     tcase_add_test(tc_master, test_master_recv);
     tcase_add_test(tc_master, test_master_rcheck);
-    //tcase_add_test(tc_master, test_master_rsocket);
+    tcase_add_test(tc_master, test_master_rsocket);
     tcase_add_test(tc_master, test_master_rconf);
     tcase_add_test(tc_master, test_master_rsend);
     suite_add_tcase(s, tc_master);

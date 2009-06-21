@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include <stdarg.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 
 #define __USE_GNU
 #include <dlfcn.h>
@@ -22,6 +24,10 @@ static int (*libc_kill) (pid_t pid, int sig);
 static int (*libc_ioctl) (int fd, unsigned long int request, ...);
 static int (*libc_setsockopt) (int s, int level, int optname,
 				const void *optval, socklen_t optlen);
+static int (*libc_socket) (int domain, int type, int protocol);
+static int (*libc_bind) (int sockfd, const struct sockaddr *addr,
+			    socklen_t addrlen);
+static int (*libc_open) (const char *pathname, int flags);
 
 jmp_buf check_wrap_env;
 uint32_t check_wrap_opt = 0;
@@ -151,6 +157,42 @@ int setsockopt(int s, int level, int optname,
 	return 0;
 
     return libc_setsockopt(s, level, optname, optval, optlen);
+}
+
+int socket(int domain, int type, int protocol) {
+
+    libc_socket = dlsym(RTLD_NEXT, "socket");
+
+    if (check_wrap_opt & FAIL_SOCKET)
+	return -1;
+    if (check_wrap_opt & FAKE_SOCKET)
+	return 0;
+
+    return libc_socket(domain, type, protocol);
+}
+
+int bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen) {
+
+    libc_bind = dlsym(RTLD_NEXT, "bind");
+
+    if (check_wrap_opt & FAIL_BIND)
+	return -1;
+    if (check_wrap_opt & FAKE_BIND)
+	return 0;
+
+    return libc_bind(sockfd, addr, addrlen);
+}
+
+int open(const char *pathname, int flags) {
+
+    libc_open = dlsym(RTLD_NEXT, "open");
+
+    if (check_wrap_opt & FAIL_OPEN)
+	return -1;
+    if (check_wrap_opt & FAKE_OPEN)
+	return 0;
+
+    return libc_open(pathname, flags);
 }
 
 void vsyslog(int priority, const char *fmt, va_list ap) {
