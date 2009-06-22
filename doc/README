@@ -1,15 +1,18 @@
 WHAT IS LADVD?
 --------------
 
-ladvd is a cdp / lldp sender for unix.
+ladvd is a lldp / cdp / edp / fdp / ndp sender for Unix.
 
-ladvd uses cdp / lldp frames to inform switches about connected hosts,
-which simplifies ethernet switch management. It does this by creating
-a raw socket at startup, and then switching to a non-privileged user for the
-remaining runtime. Every 30 seconds it will transmit CDP/LLDP packets 
-reflecting the current system state. Interfaces (bridge, bonding, wireless),
+ladvd uses link-layer advertisements to inform switches about connected
+hosts, which simplifies Ethernet switch management. It does this forking
+into a privileged master which handles all raw sockets (and certain ioctls),
+and an unprivileged child which creates and parses all packets.
+Every 30 seconds the child generates advertisement frames reflecting the
+current system state. Interfaces (bridge, bonding, wireless),
 capabilities (bridging, forwarding, wireless) and addresses (IPv4, IPv6) 
-are detected dynamically.
+are detected dynamically. Secondly ladvd can listen for incoming frames
+and utilize these for various features (protocol auto-enable, logging,
+interface descriptions).
 
 
 USAGE
