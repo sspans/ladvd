@@ -77,7 +77,7 @@ int main(int argc, char *argv[]) {
     argv = sargv;
 #endif
 
-    while ((ch = getopt(argc, argv, "adfhm:noru:vzc:l:CEFN")) != -1) {
+    while ((ch = getopt(argc, argv, "adfhm:noru:vwzc:l:CEFN")) != -1) {
 	switch(ch) {
 	    case 'a':
 		options |= OPT_AUTO | OPT_RECV;
@@ -110,6 +110,9 @@ int main(int argc, char *argv[]) {
 		break;
 	    case 'v':
 		loglevel++;
+		break;
+	    case 'w':
+		options |= OPT_WIRELESS;
 		break;
 	    case 'z':
 #ifdef SIOCSIFDESCR
@@ -452,6 +455,7 @@ void usage() {
 	    "\t-r = Receive Packets\n"
 	    "\t-u <user> = Setuid User (defaults to %s)\n"
 	    "\t-v = Increase logging verbosity\n"
+	    "\t-w = Use wireless interfaces\n"
 #ifdef SIOCSIFDESCR
 	    "\t-z = Save received info in interface description\n"
 #endif /* SIOCSIFDESCR */

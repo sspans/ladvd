@@ -29,6 +29,8 @@ Receive packets, and use them for various features.
 Switch to this user (defaults to PACKAGE_USER)
 .IP -v
 Increase logging verbosity.
+.IP -w
+Use wireless interfaces.
 .IP -z
 Save received peer information in interface description (requires SIOCSIFDESCR support)
 .IP "-c <CC>"

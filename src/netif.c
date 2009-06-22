@@ -199,12 +199,16 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 	if (ioctl(sockfd, SIOCGIFFLAGS, (caddr_t)&ifr) >= 0)
 	    enabled = (ifr.ifr_flags & IFF_UP) ? 1 : 0;
 
-	// skip wireless interfaces
+	// detect wireless interfaces
 	if (netif_wireless(sockfd, ifaddr, &ifr) == 0) {
-	    my_log(INFO, "skipping wireless interface %s", ifaddr->ifa_name);
 	    sysinfo->cap |= CAP_WLAN; 
 	    sysinfo->cap_active |= (enabled == 1) ? CAP_WLAN : 0;
-	    continue;
+
+	    if (!(options & OPT_WIRELESS)) {
+		my_log(INFO, "skipping wireless interface %s",
+			ifaddr->ifa_name);
+		continue;
+	    }
 	}
 
 	// detect interface type

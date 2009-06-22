@@ -122,7 +122,8 @@ struct sysinfo {
 #define OPT_ARGV	(1 << 4)
 #define OPT_DEBUG	(1 << 5)
 #define OPT_MADDR	(1 << 6)
-#define OPT_DESCR	(1 << 7)
+#define OPT_WIRELESS	(1 << 7)
+#define OPT_DESCR	(1 << 8)
 #define OPT_CHECK	(1 << 31)
 
 
