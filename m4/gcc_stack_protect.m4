@@ -62,7 +62,7 @@ AC_DEFUN([GCC_STACK_PROTECT_CC],[
        CFLAGS="$ssp_old_cflags"
       ])
     if test $ssp_cv_cc = yes; then
-      WFLAGS="$WFLAGS -fstack-protector"
+      WCFLAGS="$WCFLAGS -fstack-protector"
       AC_DEFINE([ENABLE_SSP_CC], 1, [Define if SSP C support is enabled.])
     fi
   fi

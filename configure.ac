@@ -38,6 +38,7 @@ esac
 # enable warnings/errors/security
 AX_CFLAGS_GCC_OPTION(-Wall -Werror, WCFLAGS)
 AX_CFLAGS_GCC_OPTION(-Wformat -Wformat-security, WCFLAGS)
+AX_CFLAGS_GCC_OPTION(-Wl,-z,relro, WCFLAGS)
 AX_CFLAGS_GCC_OPTION(-D_FORTIFY_SOURCE=2, WCFLAGS)
 GCC_STACK_PROTECTOR
 AS_IF([test "$use_pie" = "yes"], [
