@@ -191,6 +191,20 @@ struct netif *netif_byname(struct nhead *netifs, char *name) {
     return(netif);
 }
 
+void netif_protos(struct netif *netif, struct mhead *mqueue) {
+    struct netif *subif = NULL;
+    struct master_msg *qmsg = NULL;
+    uint16_t protos = 0;
+    
+    while ((subif = subif_iter(subif, netif)) != NULL) {
+	TAILQ_FOREACH(qmsg, mqueue, entries) {
+	    if (subif->index == qmsg->index)
+		protos |= (1 << qmsg->proto);
+	}
+    }
+    netif->protos = protos;
+}
+
 void netif_descr(int s, struct netif *netif, struct mhead *mqueue) {
     struct master_msg *qmsg = NULL, *dmsg = NULL;
     char *peer = NULL, *port = NULL;
