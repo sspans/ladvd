@@ -136,7 +136,9 @@ struct master_msg {
     ssize_t len;
     uint8_t proto;
     time_t ttl;
+
     char peer[IFDESCRSIZE];
+    char peer_port[IFDESCRSIZE];
 
     // should be last
     TAILQ_ENTRY(master_msg) entries;

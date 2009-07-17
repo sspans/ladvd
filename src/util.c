@@ -191,6 +191,58 @@ struct netif *netif_byname(struct nhead *netifs, char *name) {
     return(netif);
 }
 
+void netif_descr(int s, struct netif *netif, struct mhead *mqueue) {
+    struct master_msg *qmsg = NULL, *dmsg = NULL;
+    char *peer = NULL, *port = NULL;
+    char descr[IFDESCRSIZE], paddr[ETHER_ADDR_LEN];
+    uint16_t peers = 0;
+
+    TAILQ_FOREACH(qmsg, mqueue, entries) {
+	if (netif->index != qmsg->index)
+	    continue;
+
+	if (!peer && strlen(qmsg->peer))
+	    peer = qmsg->peer;
+	if (!port && strlen(qmsg->peer_port))
+	    port = qmsg->peer_port;
+
+	// this assumes a sorted queue
+	if (memcmp(paddr, qmsg->msg + ETHER_ADDR_LEN, ETHER_ADDR_LEN) == 0)
+	    continue;
+
+	memcpy(paddr, qmsg->msg + ETHER_ADDR_LEN, ETHER_ADDR_LEN);
+	peers++;
+    }
+
+    if (peers == 0)
+	memset(descr, 0, IFDESCRSIZE);
+    else if (peers == 1) {
+	if (peer && port)
+	    snprintf(descr, IFDESCRSIZE, "connected to %s (%s)", peer, port);
+	else if (peer)
+	    snprintf(descr, IFDESCRSIZE, "connected to %s", peer);
+	else
+	    memset(descr, 0, IFDESCRSIZE);
+    } else
+	snprintf(descr, IFDESCRSIZE, "connected to %d peers", peers);
+
+    // only update if changed
+    if (strncmp(descr, netif->description, IFDESCRSIZE) == 0)
+	return;
+
+    dmsg = my_malloc(sizeof(struct master_msg));
+    dmsg->index = netif->index;
+    strlcpy(dmsg->name, netif->name, IFNAMSIZ);
+    dmsg->cmd = MASTER_DESCR;
+    dmsg->len = strlen(descr);
+    strlcpy(dmsg->msg, descr, dmsg->len);
+
+    if (my_msend(s, dmsg) != dmsg->len)
+	my_log(CRIT, "ifdescr ioctl failed on %s", netif->name);
+
+    free(dmsg);
+}
+
 int read_line(const char *path, char *line, uint16_t len) {
     FILE *file;
     char *newline;
