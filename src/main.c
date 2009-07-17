@@ -326,18 +326,43 @@ sleep:
 	event_loopexit(&tv);
 	event_dispatch();
 
-	// remove expired messages
 	if ((now = time(NULL)) == (time_t)-1)
 	    continue;
 
+	// remove expired messages
 	TAILQ_FOREACH_SAFE(msg, &mqueue, entries, nmsg) {
 	    if (msg->ttl >= now)
 		continue;
 
 	    my_log(CRIT, "removing peer %s (%s)",
 		    msg->peer, protos[msg->proto].name);
-	    TAILQ_REMOVE(&mqueue, msg, entries);
+
+	    // mark the interface
+	    if ((subif = netif_byindex(&netifs, msg->index)) != NULL)
+		subif->update = 1;
 	    free(msg);
+	}
+
+	// update interfaces
+	TAILQ_FOREACH(subif, &netifs, entries) { 
+	    if (subif->update == 0)
+		continue;
+
+	    // fetch the parent netif
+	    if (subif->master)
+		netif = subif->master;
+	    else
+		netif = subif;
+
+	    // update protos
+	    if (options & OPT_AUTO)
+		netif_protos(netif, &mqueue);
+
+	    // update ifdescr
+	    if (options & OPT_DESCR)
+		netif_descr(cfd, subif, &mqueue);
+
+	    subif->update = 0;
 	}
     }
 
@@ -347,8 +372,8 @@ sleep:
 
 void queue_msg(int fd, short event, int *cfd) {
 
-    struct master_msg rmsg, *msg = NULL, *qmsg = NULL;
-    struct netif *netif, *master;
+    struct master_msg rmsg, *msg = NULL, *qmsg = NULL, *pmsg = NULL;
+    struct netif *subif, *netif;
     time_t now;
     ssize_t len;
 
@@ -374,16 +399,21 @@ void queue_msg(int fd, short event, int *cfd) {
     rmsg.ttl += now;
 
     // skip unknown interfaces
-    if ((netif = netif_byindex(&netifs, rmsg.index)) == NULL)
+    if ((subif = netif_byindex(&netifs, rmsg.index)) == NULL)
 	return;
 
-    // fetch the master netif
-    if (netif->master)
-	master = netif->master;
+    // fetch the parent netif
+    if (subif->master)
+	netif = subif->master;
     else
-	master = netif;
+	netif = subif;
 
     TAILQ_FOREACH(qmsg, &mqueue, entries) {
+	// save a pointer if the message peer matches
+	if ((pmsg == NULL) &&
+	    (memcmp(rmsg.msg + ETHER_ADDR_LEN, qmsg->msg + ETHER_ADDR_LEN,
+		    ETHER_ADDR_LEN) == 0))
+	    pmsg = qmsg;
 	// match ifindex
 	if (rmsg.index != qmsg->index)
 	    continue;
@@ -404,39 +434,33 @@ void queue_msg(int fd, short event, int *cfd) {
     } else {
 	msg = my_malloc(MASTER_MSG_SIZE);
 	memcpy(msg, &rmsg, MASTER_MSG_SIZE);
-	TAILQ_INSERT_TAIL(&mqueue, msg, entries);
+	// group messages per peer
+	if (pmsg)
+	    TAILQ_INSERT_AFTER(&mqueue, pmsg, msg, entries);
+	else
+	    TAILQ_INSERT_TAIL(&mqueue, msg, entries);
 
 	my_log(CRIT, "new peer %s (%s) on interface %s",
 		msg->peer, protos[msg->proto].name, netif->name);
     }
 
-    // save the received name to ifdescr
-    if (options & OPT_DESCR) {
-
-	memset(&rmsg, 0, sizeof(rmsg));
-	rmsg.index = netif->index;
-	strlcpy(rmsg.name, netif->name, IFNAMSIZ);
-	rmsg.cmd = MASTER_DESCR;
-	rmsg.len = snprintf(rmsg.msg, IFDESCRSIZE, "connected to %s (%s)", 
-			    msg->peer, protos[msg->proto].name);
-
-	if (my_msend(*cfd, &rmsg) != rmsg.len)
-	    my_log(CRIT, "ifdescr ioctl failed on %s", netif->name);
-    }
+    // update ifdescr
+    if (options & OPT_DESCR)
+	netif_descr(*cfd, subif, &mqueue);
 
     // return unless we need to enable the received protocol
-    if (!(options & OPT_AUTO) || (master->protos & (1 << msg->proto)))
+    if (!(options & OPT_AUTO) || (netif->protos & (1 << msg->proto)))
 	return;
 
-    // only enable if netif or master are listed
+    // only enable if subif or netif are listed
     if (options & OPT_ARGV) {
-	if (!(netif->argv) && !(master->argv))
+	if (!(subif->argv) && !(netif->argv))
 	    return;
     }
 
     my_log(CRIT, "enabling %s on interface %s",
-	    protos[msg->proto].name, master->name);
-    master->protos |= (1 << msg->proto);
+	    protos[msg->proto].name, netif->name);
+    netif->protos |= (1 << msg->proto);
 }
 
 

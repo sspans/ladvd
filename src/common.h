@@ -68,6 +68,7 @@ struct netif {
     uint8_t lacp_index;
 
     uint16_t protos;
+    uint8_t update;
 
     struct netif *master;
     struct netif *subif;
