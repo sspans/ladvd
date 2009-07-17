@@ -7,6 +7,7 @@
 #include "proto/lldp.h"
 #include "proto/tlv.h"
 
+extern uint32_t options;
 
 size_t lldp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
 
