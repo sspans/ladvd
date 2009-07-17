@@ -70,7 +70,7 @@ size_t lldp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
 
 
     // port description
-    if (strlen(netif->description) > 0) {
+    if (((options & OPT_DESCR) == 0) && (strlen(netif->description) > 0)) {
 	if (!(
 	    START_LLDP_TLV(LLDP_TYPE_PORT_DESCR) &&
 	    PUSH_BYTES(netif->description, strlen(netif->description))
