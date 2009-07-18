@@ -358,7 +358,7 @@ size_t lldp_peer(struct master_msg *msg) {
     uint16_t tlv_type;
     uint16_t tlv_length;
 
-    char *hostname = NULL;
+    char *tlv_str = NULL;
 
     assert(msg);
 
@@ -413,12 +413,29 @@ size_t lldp_peer(struct master_msg *msg) {
 		my_log(INFO, "Corrupt LLDP packet: duplicate System Name TLV");
 		return 0;
 	    }
-	    if (!GRAB_STRING(hostname, tlv_length)) {
+	    if (!GRAB_STRING(tlv_str, tlv_length)) {
 		my_log(INFO, "Corrupt LLDP packet: invalid System Name TLV");
 		return 0;
 	    }
-	    strlcpy(msg->peer.name, hostname, IFDESCRSIZE);
-	    free(hostname);
+	    strlcpy(msg->peer.name, tlv_str, IFDESCRSIZE);
+	    free(tlv_str);
+	    break;
+	case LLDP_TYPE_PORT_ID:
+	    if (strlen(msg->peer.port) != 0) {
+		my_log(INFO, "Corrupt LLDP packet: duplicate Port ID TLV");
+		return 0;
+	    }
+	    // skip the subtype
+	    if (!SKIP(1)) {
+		my_log(INFO, "Invalid LLDP packet: invalid Port ID TLV");
+		return 0;
+	    }
+	    if (!GRAB_STRING(tlv_str, tlv_length - 1)) {
+		my_log(INFO, "Corrupt LLDP packet: invalid Port ID TLV");
+		return 0;
+	    }
+	    strlcpy(msg->peer.port, tlv_str, IFDESCRSIZE);
+	    free(tlv_str);
 	    break;
 	default:
 	    if (8 < tlv_type && tlv_type < 127) {
