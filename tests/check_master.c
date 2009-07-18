@@ -30,11 +30,6 @@ struct event { };
 #include "check_wrap.h"
 
 uint32_t options = OPT_DAEMON | OPT_CHECK;
-extern uint8_t loglevel;
-
-extern jmp_buf check_wrap_env;
-extern uint32_t check_wrap_opt;
-extern char check_wrap_errstr[];
 
 // stub functions
 // linking with libevent introduces threads which breaks check_wrap

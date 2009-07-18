@@ -10,8 +10,6 @@
 
 #include "check_wrap.h"
 
-extern uint32_t check_wrap_opt;
-
 #ifndef HAVE_SETPROCTITLE
 START_TEST(test_setproctitle) {
     int argc = 1;

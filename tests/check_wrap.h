@@ -34,3 +34,7 @@
     } \
     check_wrap_opt &= ~FAIL_EXIT;
 
+extern jmp_buf check_wrap_env;
+extern uint32_t check_wrap_opt;
+extern char check_wrap_errstr[];
+

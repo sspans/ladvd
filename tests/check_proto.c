@@ -13,11 +13,6 @@
 #include "check_wrap.h"
 
 uint32_t options = OPT_DAEMON | OPT_CHECK;
-extern uint8_t loglevel;
-
-extern jmp_buf check_wrap_env;
-extern uint32_t check_wrap_opt;
-extern char check_wrap_errstr[];
 
 START_TEST(test_proto_packet) {
     struct master_msg msg;
@@ -301,7 +296,7 @@ void read_packet(struct master_msg *msg, const char *suffix) {
     memset(msg->msg, 0, ETHER_MAX_LEN);
     msg->len = 0;
     msg->ttl = 0;
-    memset(msg->peer, 0, IFDESCRSIZE);
+    memset(msg->peer.name, 0, IFDESCRSIZE);
 
     if ((prefix = getenv("srcdir")) == NULL)
 	prefix = ".";
@@ -428,20 +423,21 @@ START_TEST(test_lldp_peer) {
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (msg.ttl == 120, "ttl should be 120");
-    fail_unless (strcmp(msg.peer, "test") == 0, "system name should be 'test'");
+    fail_unless (strcmp(msg.peer.name, "test") == 0,
+	"system name should be 'test'");
     read_packet(&msg, "proto/lldp/42.good.big");
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (lldp_peer(&msg) == msg.len, "packet length incorrect");
     fail_unless (msg.ttl == 120, "ttl should be 120");
-    fail_unless (strcmp(msg.peer, "Summit300-48") == 0,
+    fail_unless (strcmp(msg.peer.name, "Summit300-48") == 0,
 		"system name should be 'Summit300-48'");
     read_packet(&msg, "proto/lldp/43.good.lldpmed");
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (lldp_peer(&msg) == msg.len, "packet length incorrect");
     fail_unless (msg.ttl == 120, "ttl should be 120");
-    fail_unless (strcmp(msg.peer, "ProCurve Switch 2600-8-PWR") == 0,
+    fail_unless (strcmp(msg.peer.name, "ProCurve Switch 2600-8-PWR") == 0,
 		"system name should be 'ProCurve Switch 2600-8-PWR'");
 }
 END_TEST
@@ -498,41 +494,42 @@ START_TEST(test_cdp_peer) {
 	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (cdp_peer(&msg) == msg.len, "packet length incorrect");
     fail_unless (msg.ttl == 180, "ttl should be 180");
-    fail_unless (strcmp(msg.peer, "R1") == 0, "system name should be 'R1'");
+    fail_unless (strcmp(msg.peer.name, "R1") == 0,
+	"system name should be 'R1'");
     read_packet(&msg, "proto/cdp/42.good.medium");
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (cdp_peer(&msg) == msg.len, "packet length incorrect");
     fail_unless (msg.ttl == 180, "ttl should be 180");
-    fail_unless (strcmp(msg.peer, "R2D2") == 0,
+    fail_unless (strcmp(msg.peer.name, "R2D2") == 0,
 		"system name should be 'R2D2'");
     read_packet(&msg, "proto/cdp/43.good.big");
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (cdp_peer(&msg) == msg.len, "packet length incorrect");
     fail_unless (msg.ttl == 180, "ttl should be 180");
-    fail_unless (strcmp(msg.peer, "xpfs1.yapkjn.network.bla.nl") == 0,
+    fail_unless (strcmp(msg.peer.name, "xpfs1.yapkjn.network.bla.nl") == 0,
 		"system name should be 'xpfs1.yapkjn.network.bla.nl'");
     read_packet(&msg, "proto/cdp/44.good.bcm");
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (cdp_peer(&msg) == msg.len, "packet length incorrect");
     fail_unless (msg.ttl == 180, "ttl should be 180");
-    fail_unless (strcmp(msg.peer, "0060B9C14027") == 0,
+    fail_unless (strcmp(msg.peer.name, "0060B9C14027") == 0,
 		"system name should be '0060B9C14027'");
     read_packet(&msg, "proto/cdp/45.good.6504");
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (cdp_peer(&msg) == msg.len, "packet length incorrect");
     fail_unless (msg.ttl == 180, "ttl should be 180");
-    fail_unless (strcmp(msg.peer, "mpls-sbp-ams1.leazewep.nat") == 0,
+    fail_unless (strcmp(msg.peer.name, "mpls-sbp-ams1.leazewep.nat") == 0,
 		"system name should be 'mpls-sbp-ams1.leazewep.nat'");
     read_packet(&msg, "proto/cdp/46.good.2811");
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (cdp_peer(&msg) == msg.len, "packet length incorrect");
     fail_unless (msg.ttl == 180, "ttl should be 180");
-    fail_unless (strcmp(msg.peer, "c2811.ttttrnal.lottlloou.nl") == 0,
+    fail_unless (strcmp(msg.peer.name, "c2811.ttttrnal.lottlloou.nl") == 0,
 		"system name should be 'c2811.ttttrnal.lottlloou.nl'");
 }
 END_TEST
@@ -596,14 +593,15 @@ START_TEST(test_edp_peer) {
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (msg.ttl == 180, "ttl should be 180");
-    fail_unless (strcmp(msg.peer, "HD000002") == 0,
+    fail_unless (strcmp(msg.peer.name, "HD000002") == 0,
 		"system name should be 'HD000002'");
     read_packet(&msg, "proto/edp/42.good.medium");
     fail_unless (edp_peer(&msg) == msg.len, "packet length incorrect");
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (msg.ttl == 180, "ttl should be 180");
-    fail_unless (strcmp(msg.peer, "SW1") == 0, "system name should be 'SW1'");
+    fail_unless (strcmp(msg.peer.name, "SW1") == 0,
+	"system name should be 'SW1'");
 }
 END_TEST
 
@@ -666,21 +664,21 @@ START_TEST(test_fdp_peer) {
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (msg.ttl == 10, "ttl should be 10");
-    fail_unless (strcmp(msg.peer, "doetnix") == 0,
+    fail_unless (strcmp(msg.peer.name, "doetnix") == 0,
 		"system name should be 'doetnix'");
     read_packet(&msg, "proto/fdp/42.good.rx");
     fail_unless (fdp_peer(&msg) == msg.len, "packet length incorrect");
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (msg.ttl == 10, "ttl should be 10");
-    fail_unless (strcmp(msg.peer, "erix") == 0,
+    fail_unless (strcmp(msg.peer.name, "erix") == 0,
 		"system name should be 'erix'");
     read_packet(&msg, "proto/fdp/43.good.mlx");
     fail_unless (fdp_peer(&msg) == msg.len, "packet length incorrect");
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (msg.ttl == 10, "ttl should be 10");
-    fail_unless (strcmp(msg.peer, "emmerix") == 0,
+    fail_unless (strcmp(msg.peer.name, "emmerix") == 0,
 		"system name should be 'emmerix'");
 }
 END_TEST
