@@ -239,7 +239,7 @@ size_t cdp_peer(struct master_msg *msg) {
     uint16_t tlv_type;
     uint16_t tlv_length;
 
-    char *hostname = NULL;
+    char *tlv_str = NULL;
 
     assert(msg);
 
@@ -274,12 +274,20 @@ size_t cdp_peer(struct master_msg *msg) {
 	switch(tlv_type) {
 	case CDP_TYPE_DEVICE_ID:
 	case CDP_TYPE_SYSTEM_NAME:
-		if (!GRAB_STRING(hostname, tlv_length)) {
+		if (!GRAB_STRING(tlv_str, tlv_length)) {
 		    my_log(INFO, "Corrupt CDP packet: invalid System Name TLV");
 		    return 0;
 		}
-		strlcpy(msg->peer.name, hostname, IFDESCRSIZE);
-		free(hostname);
+		strlcpy(msg->peer.name, tlv_str, IFDESCRSIZE);
+		free(tlv_str);
+		break;
+	case CDP_TYPE_PORT_ID:
+		if (!GRAB_STRING(tlv_str, tlv_length)) {
+		    my_log(INFO, "Corrupt CDP packet: invalid Port ID TLV");
+		    return 0;
+		}
+		strlcpy(msg->peer.port, tlv_str, IFDESCRSIZE);
+		free(tlv_str);
 		break;
 	default:
 		my_log(DEBUG, "unknown TLV: type %d, length %d, leaves %d",
