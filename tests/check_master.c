@@ -79,7 +79,7 @@ START_TEST(test_master_signal) {
 	"incorrect message logged: %s", check_wrap_errstr);
 
     mark_point();
-    check_wrap_opt |= FAKE_KILL;
+    check_wrap_fake |= FAKE_KILL;
     sig = SIGINT;
     errstr = "quitting";
     WRAP_FATAL_START();
@@ -96,7 +96,7 @@ START_TEST(test_master_signal) {
     WRAP_FATAL_END();
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
-    check_wrap_opt &= ~FAKE_KILL;
+    check_wrap_fake &= ~FAKE_KILL;
 
     mark_point();
     sig = SIGHUP;
@@ -390,17 +390,17 @@ START_TEST(test_master_rsocket) {
     errno = EPERM;
     errstr = "check";
     my_log(CRIT, errstr);
-    check_wrap_opt |= (FAIL_SOCKET|FAIL_OPEN);
+    check_wrap_fail |= (FAIL_SOCKET|FAIL_OPEN);
     WRAP_FATAL_START();
     sock = master_rsocket(NULL, 0);
     WRAP_FATAL_END();
-    check_wrap_opt &= ~(FAIL_SOCKET|FAIL_OPEN);
+    check_wrap_fail &= ~(FAIL_SOCKET|FAIL_OPEN);
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (sock == -1, "incorrect socket returned: %d", sock);
 
     mark_point();
-    check_wrap_opt |= FAKE_SOCKET|FAKE_OPEN;
+    check_wrap_fake |= FAKE_SOCKET|FAKE_OPEN;
     WRAP_FATAL_START();
     sock = master_rsocket(NULL, 0);
     WRAP_FATAL_END();
@@ -410,22 +410,23 @@ START_TEST(test_master_rsocket) {
 
     mark_point();
     errstr = "failed to bind socket to";
-    check_wrap_opt |= FAIL_BIND|FAIL_IOCTL;
+    check_wrap_fail |= FAIL_BIND|FAIL_IOCTL;
     WRAP_FATAL_START();
     master_rsocket(&rfd, 0);
     WRAP_FATAL_END();
-    check_wrap_opt &= ~(FAIL_BIND|FAIL_IOCTL);
+    check_wrap_fail &= ~(FAIL_BIND|FAIL_IOCTL);
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     mark_point();
     errstr = "check";
     my_log(CRIT, errstr);
-    check_wrap_opt |= FAKE_BIND|FAKE_IOCTL;
+    check_wrap_fake |= FAKE_BIND|FAKE_IOCTL;
     WRAP_FATAL_START();
     sock = master_rsocket(&rfd, 0);
     WRAP_FATAL_END();
-    check_wrap_opt = 0;
+    check_wrap_fail = 0;
+    check_wrap_fake = 0;
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (sock == 0, "incorrect socket returned: %d", sock);
@@ -443,21 +444,21 @@ START_TEST(test_master_rconf) {
 #ifdef HAVE_LINUX_FILTER_H
     mark_point();
     errstr = "unable to configure socket filter for";
-    check_wrap_opt |= FAIL_SETSOCKOPT;
+    check_wrap_fail |= FAIL_SETSOCKOPT;
     WRAP_FATAL_START();
     master_rconf(&rfd, protos);
     WRAP_FATAL_END();
-    check_wrap_opt &= ~FAIL_SETSOCKOPT;
+    check_wrap_fail &= ~FAIL_SETSOCKOPT;
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 #elif HAVE_NET_BPF_H
     mark_point();
     errstr = "unable to configure immediate mode for";
-    check_wrap_opt |= FAIL_IOCTL;
+    check_wrap_fail |= FAIL_IOCTL;
     WRAP_FATAL_START();
     master_rconf(&rfd, protos);
     WRAP_FATAL_END();
-    check_wrap_opt &= ~FAIL_IOCTL;
+    check_wrap_fail &= ~FAIL_IOCTL;
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 #endif
@@ -466,18 +467,18 @@ START_TEST(test_master_rconf) {
     mark_point();
     errstr = "check";
     my_log(CRIT, errstr);
-    check_wrap_opt |= FAKE_SETSOCKOPT;
+    check_wrap_fake |= FAKE_SETSOCKOPT;
     master_rconf(&rfd, protos);
-    check_wrap_opt &= ~FAKE_SETSOCKOPT;
+    check_wrap_fake &= ~FAKE_SETSOCKOPT;
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 #elif defined AF_LINK
     mark_point();
     errstr = "check";
     my_log(CRIT, errstr);
-    check_wrap_opt |= FAKE_IOCTL;
+    check_wrap_fake |= FAKE_IOCTL;
     master_rconf(&rfd, protos);
-    check_wrap_opt &= ~FAKE_IOCTL;
+    check_wrap_fake &= ~FAKE_IOCTL;
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 #endif
@@ -512,7 +513,7 @@ START_TEST(test_master_rsend) {
     mark_point();
     errstr = "only -1 bytes written";
     options &= ~OPT_DEBUG;
-    check_wrap_opt |= FAKE_IOCTL;
+    check_wrap_fake |= FAKE_IOCTL;
     master_rsend(spair[1], &mreq);
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);

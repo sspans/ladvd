@@ -30,13 +30,14 @@ static int (*libc_bind) (int sockfd, const struct sockaddr *addr,
 static int (*libc_open) (const char *pathname, int flags);
 
 jmp_buf check_wrap_env;
-uint32_t check_wrap_opt = 0;
+uint32_t check_wrap_fail = 0;
+uint32_t check_wrap_fake = 0;
 char check_wrap_errstr[1024];
 
 void *malloc(size_t size) {
     libc_malloc = dlsym(RTLD_NEXT, "malloc");
 
-    if (check_wrap_opt & FAIL_MALLOC)
+    if (check_wrap_fail & FAIL_MALLOC)
 	return NULL;
     return libc_malloc(size);
 }
@@ -44,7 +45,7 @@ void *malloc(size_t size) {
 void *calloc(size_t nmemb, size_t size) {
     libc_calloc = dlsym(RTLD_NEXT, "calloc");
 
-    if (check_wrap_opt & FAIL_CALLOC)
+    if (check_wrap_fail & FAIL_CALLOC)
 	return NULL;
     return libc_calloc(nmemb, size);
 }
@@ -52,7 +53,7 @@ void *calloc(size_t nmemb, size_t size) {
 char *strdup(const char *s1) {
     libc_strdup = dlsym(RTLD_NEXT, "strdup");
 
-    if (check_wrap_opt & FAIL_STRDUP)
+    if (check_wrap_fail & FAIL_STRDUP)
 	return NULL;
     return libc_strdup(s1);
 }
@@ -60,7 +61,7 @@ char *strdup(const char *s1) {
 char *__strdup(const char *s1) {
     libc_strdup = dlsym(RTLD_NEXT, "__strdup");
 
-    if (check_wrap_opt & FAIL_STRDUP)
+    if (check_wrap_fail & FAIL_STRDUP)
 	return NULL;
     return libc_strdup(s1);
 }
@@ -68,7 +69,7 @@ char *__strdup(const char *s1) {
 void exit (int status) {
     libc_exit = dlsym(RTLD_NEXT, "exit");
 
-    if (check_wrap_opt & FAIL_EXIT)
+    if (check_wrap_fail & FAIL_EXIT)
 	longjmp(check_wrap_env,1);
     libc_exit(status);
 }
@@ -76,9 +77,9 @@ void exit (int status) {
 int setgid (gid_t gid) {
     libc_setgid = dlsym(RTLD_NEXT, "setgid");
 
-    if (check_wrap_opt & FAIL_SETGID)
+    if (check_wrap_fail & FAIL_SETGID)
 	return -1;
-    if (check_wrap_opt & FAKE_SETGID)
+    if (check_wrap_fake & FAKE_SETGID)
 	return 0;
     return libc_setgid(gid);
 }
@@ -86,9 +87,9 @@ int setgid (gid_t gid) {
 int setuid (uid_t uid) {
     libc_setuid = dlsym(RTLD_NEXT, "setuid");
 
-    if (check_wrap_opt & FAIL_SETUID)
+    if (check_wrap_fail & FAIL_SETUID)
 	return -1;
-    if (check_wrap_opt & FAKE_SETUID)
+    if (check_wrap_fake & FAKE_SETUID)
 	return 0;
     return libc_setuid(uid);
 }
@@ -96,9 +97,9 @@ int setuid (uid_t uid) {
 int setgroups (int ngroups, const gid_t *gidset) {
     libc_setgroups = dlsym(RTLD_NEXT, "setgroups");
 
-    if (check_wrap_opt & FAIL_SETGRP)
+    if (check_wrap_fail & FAIL_SETGRP)
 	return -1;
-    if (check_wrap_opt & FAKE_SETGRP)
+    if (check_wrap_fake & FAKE_SETGRP)
 	return 0;
     return libc_setgroups(ngroups, gidset);
 }
@@ -106,9 +107,9 @@ int setgroups (int ngroups, const gid_t *gidset) {
 int chdir (const char *path) {
     libc_chdir = dlsym(RTLD_NEXT, "chdir");
 
-    if (check_wrap_opt & FAIL_CHDIR)
+    if (check_wrap_fail & FAIL_CHDIR)
 	return -1;
-    if (check_wrap_opt & FAKE_CHDIR)
+    if (check_wrap_fake & FAKE_CHDIR)
 	return 0;
     return libc_chdir(path);
 }
@@ -116,9 +117,9 @@ int chdir (const char *path) {
 int chroot (const char *dirname) {
     libc_chroot = dlsym(RTLD_NEXT, "chroot");
 
-    if (check_wrap_opt & FAIL_CHROOT)
+    if (check_wrap_fail & FAIL_CHROOT)
 	return -1;
-    if (check_wrap_opt & FAKE_CHROOT)
+    if (check_wrap_fake & FAKE_CHROOT)
 	return 0;
     return libc_chroot(dirname);
 }
@@ -126,7 +127,7 @@ int chroot (const char *dirname) {
 int kill (pid_t pid, int sig) {
     libc_kill = dlsym(RTLD_NEXT, "kill");
 
-    if (check_wrap_opt & FAKE_KILL)
+    if (check_wrap_fake & FAKE_KILL)
 	return 0;
     return libc_kill(pid, sig);
 }
@@ -136,9 +137,9 @@ int ioctl (int fd, unsigned long int request, ...) {
 
     libc_ioctl = dlsym(RTLD_NEXT, "ioctl");
 
-    if (check_wrap_opt & FAIL_IOCTL)
+    if (check_wrap_fail & FAIL_IOCTL)
 	return -1;
-    if (check_wrap_opt & FAKE_IOCTL)
+    if (check_wrap_fake & FAKE_IOCTL)
 	return 0;
 
     va_start(ap, request);
@@ -151,9 +152,9 @@ int setsockopt(int s, int level, int optname,
 
     libc_setsockopt = dlsym(RTLD_NEXT, "setsockopt");
 
-    if (check_wrap_opt & FAIL_SETSOCKOPT)
+    if (check_wrap_fail & FAIL_SETSOCKOPT)
 	return -1;
-    if (check_wrap_opt & FAKE_SETSOCKOPT)
+    if (check_wrap_fake & FAKE_SETSOCKOPT)
 	return 0;
 
     return libc_setsockopt(s, level, optname, optval, optlen);
@@ -163,9 +164,9 @@ int socket(int domain, int type, int protocol) {
 
     libc_socket = dlsym(RTLD_NEXT, "socket");
 
-    if (check_wrap_opt & FAIL_SOCKET)
+    if (check_wrap_fail & FAIL_SOCKET)
 	return -1;
-    if (check_wrap_opt & FAKE_SOCKET)
+    if (check_wrap_fake & FAKE_SOCKET)
 	return 0;
 
     return libc_socket(domain, type, protocol);
@@ -175,9 +176,9 @@ int bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen) {
 
     libc_bind = dlsym(RTLD_NEXT, "bind");
 
-    if (check_wrap_opt & FAIL_BIND)
+    if (check_wrap_fail & FAIL_BIND)
 	return -1;
-    if (check_wrap_opt & FAKE_BIND)
+    if (check_wrap_fake & FAKE_BIND)
 	return 0;
 
     return libc_bind(sockfd, addr, addrlen);
@@ -187,9 +188,9 @@ int open(const char *pathname, int flags) {
 
     libc_open = dlsym(RTLD_NEXT, "open");
 
-    if (check_wrap_opt & FAIL_OPEN)
+    if (check_wrap_fail & FAIL_OPEN)
 	return -1;
-    if (check_wrap_opt & FAKE_OPEN)
+    if (check_wrap_fake & FAKE_OPEN)
 	return 0;
 
     return libc_open(pathname, flags);

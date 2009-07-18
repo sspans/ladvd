@@ -14,27 +14,29 @@
 #define FAIL_SOCKET	(1 << 10)
 #define FAIL_BIND	(1 << 11)
 #define FAIL_OPEN	(1 << 12)
-#define FAKE_SETGID	(1 << 16)
-#define FAKE_SETUID	(1 << 17)
-#define FAKE_SETGRP	(1 << 18)
-#define FAKE_CHDIR	(1 << 19)
-#define FAKE_CHROOT	(1 << 20)
-#define FAKE_SETSOCKOPT	(1 << 21)
-#define FAKE_IOCTL	(1 << 22)
-#define FAKE_SOCKET	(1 << 23)
-#define FAKE_BIND	(1 << 24)
-#define FAKE_OPEN	(1 << 25)
+
+#define FAKE_SETGID	(1 << 0)
+#define FAKE_SETUID	(1 << 1)
+#define FAKE_SETGRP	(1 << 2)
+#define FAKE_CHDIR	(1 << 3)
+#define FAKE_CHROOT	(1 << 4)
+#define FAKE_SETSOCKOPT	(1 << 5)
+#define FAKE_IOCTL	(1 << 6)
+#define FAKE_SOCKET	(1 << 7)
+#define FAKE_BIND	(1 << 8)
+#define FAKE_OPEN	(1 << 9)
 #define FAKE_KILL	(1 << 30)
 #define FAIL_EXIT	(1 << 31)
 
 #define WRAP_FATAL_START() \
     if (!setjmp(check_wrap_env)) { \
-	check_wrap_opt |= FAIL_EXIT;
+	check_wrap_fail |= FAIL_EXIT;
 #define WRAP_FATAL_END() \
     } \
-    check_wrap_opt &= ~FAIL_EXIT;
+    check_wrap_fail &= ~FAIL_EXIT;
 
 extern jmp_buf check_wrap_env;
-extern uint32_t check_wrap_opt;
+extern uint32_t check_wrap_fake;
+extern uint32_t check_wrap_fail;
 extern char check_wrap_errstr[];
 

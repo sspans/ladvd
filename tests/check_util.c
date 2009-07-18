@@ -46,11 +46,11 @@ START_TEST(test_my) {
     free(ptr);
     ptr = NULL;
 
-    check_wrap_opt |= FAIL_MALLOC;
+    check_wrap_fail |= FAIL_MALLOC;
     WRAP_FATAL_START();
     ptr = my_malloc(100);
     WRAP_FATAL_END();
-    check_wrap_opt &= ~FAIL_MALLOC;
+    check_wrap_fail &= ~FAIL_MALLOC;
     fail_unless (strcmp(check_wrap_errstr, "malloc failed") == 0,
 	"error not logged");
 
@@ -60,11 +60,11 @@ START_TEST(test_my) {
     free(ptr);
     ptr = NULL;
 
-    check_wrap_opt |= FAIL_CALLOC;
+    check_wrap_fail |= FAIL_CALLOC;
     WRAP_FATAL_START();
     ptr = my_calloc(10, 10);
     WRAP_FATAL_END();
-    check_wrap_opt &= ~FAIL_CALLOC;
+    check_wrap_fail &= ~FAIL_CALLOC;
     fail_unless (strcmp(check_wrap_errstr, "calloc failed") == 0,
 	"error not logged");
 
@@ -74,11 +74,11 @@ START_TEST(test_my) {
     free(ptr);
     ptr = NULL;
 
-    check_wrap_opt |= FAIL_STRDUP;
+    check_wrap_fail |= FAIL_STRDUP;
     WRAP_FATAL_START();
     ptr = my_strdup("bar");
     WRAP_FATAL_END();
-    check_wrap_opt &= ~FAIL_STRDUP;
+    check_wrap_fail &= ~FAIL_STRDUP;
     fail_unless (strcmp(check_wrap_errstr, "strdup failed") == 0,
 	"error not logged");
 
@@ -386,31 +386,33 @@ START_TEST(test_my_priv) {
 
     mark_point();
     errstr = "unable to setgid";
-    check_wrap_opt |= FAIL_SETGID;
+    check_wrap_fail |= FAIL_SETGID;
     WRAP_FATAL_START();
     my_drop_privs(pwd);
     WRAP_FATAL_END();
-    check_wrap_opt &= ~FAIL_SETGID;
+    check_wrap_fail &= ~FAIL_SETGID;
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     mark_point();
     errstr = "unable to setgroups";
-    check_wrap_opt |= FAKE_SETGID|FAIL_SETGRP;
+    check_wrap_fail |= FAIL_SETGRP;
+    check_wrap_fake |= FAKE_SETGID;
     WRAP_FATAL_START();
     my_drop_privs(pwd);
     WRAP_FATAL_END();
-    check_wrap_opt &= ~FAIL_SETGRP;
+    check_wrap_fail &= ~FAIL_SETGRP;
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     mark_point();
     errstr = "unable to setuid";
-    check_wrap_opt |= FAKE_SETGRP|FAIL_SETUID;
+    check_wrap_fail |= FAIL_SETUID;
+    check_wrap_fake |= FAKE_SETGRP;
     WRAP_FATAL_START();
     my_drop_privs(pwd);
     WRAP_FATAL_END();
-    check_wrap_opt &= ~FAIL_SETUID;
+    check_wrap_fail &= ~FAIL_SETUID;
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
@@ -418,11 +420,12 @@ START_TEST(test_my_priv) {
     errno = 0;
     errstr = "check";
     my_log(CRIT, errstr);
-    check_wrap_opt |= FAKE_SETUID;
+    check_wrap_fake |= FAKE_SETUID;
     WRAP_FATAL_START();
     my_drop_privs(pwd);
     WRAP_FATAL_END();
-    check_wrap_opt = 0;
+    check_wrap_fail = 0;
+    check_wrap_fake = 0;
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
@@ -474,21 +477,22 @@ START_TEST(test_my_priv) {
     mark_point();
     errstr = "unable to chdir to chroot path";
     strlcpy(path, "/", MAXPATHLEN);
-    check_wrap_opt |= FAIL_CHDIR;
+    check_wrap_fail |= FAIL_CHDIR;
     WRAP_FATAL_START();
     my_chroot(path);
     WRAP_FATAL_END();
-    check_wrap_opt &= ~FAIL_CHDIR;
+    check_wrap_fail &= ~FAIL_CHDIR;
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     mark_point();
     errstr = "chroot(\"/\"):";
-    check_wrap_opt |= FAKE_CHDIR|FAIL_CHROOT;
+    check_wrap_fail |= FAIL_CHROOT;
+    check_wrap_fake |= FAKE_CHDIR;
     WRAP_FATAL_START();
     my_chroot(path);
     WRAP_FATAL_END();
-    check_wrap_opt &= ~FAIL_CHROOT;
+    check_wrap_fail &= ~FAIL_CHROOT;
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
@@ -496,11 +500,12 @@ START_TEST(test_my_priv) {
     errno = 0;
     errstr = "check";
     my_log(CRIT, errstr);
-    check_wrap_opt |= FAKE_CHROOT;
+    check_wrap_fake |= FAKE_CHROOT;
     WRAP_FATAL_START();
     my_chroot(path);
     WRAP_FATAL_END();
-    check_wrap_opt = 0;
+    check_wrap_fail = 0;
+    check_wrap_fake = 0;
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 }

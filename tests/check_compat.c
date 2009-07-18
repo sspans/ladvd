@@ -26,9 +26,9 @@ START_TEST(test_setproctitle) {
     argv[1] = NULL;
 
     compat_init_setproctitle(0, argv);
-    check_wrap_opt |= FAIL_CALLOC;
+    check_wrap_fail |= FAIL_CALLOC;
     compat_init_setproctitle(argc, argv);
-    check_wrap_opt &= ~FAIL_CALLOC;
+    check_wrap_fail &= ~FAIL_CALLOC;
     compat_init_setproctitle(argc, argv);
     setproctitle(str);
 
