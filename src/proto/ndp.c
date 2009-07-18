@@ -102,7 +102,7 @@ size_t ndp_peer(struct master_msg *msg) {
     }
 
     memcpy(&ndp, pos, sizeof(ndp));
-    if (!inet_ntop(AF_INET, &ndp.addr, msg->peer, IFDESCRSIZE)) {
+    if (!inet_ntop(AF_INET, &ndp.addr, msg->peer.name, IFDESCRSIZE)) {
 	my_log(INFO, "failed to copy peer addr");
 	return 0;
     }

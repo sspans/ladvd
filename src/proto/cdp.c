@@ -278,7 +278,7 @@ size_t cdp_peer(struct master_msg *msg) {
 		    my_log(INFO, "Corrupt CDP packet: invalid System Name TLV");
 		    return 0;
 		}
-		strlcpy(msg->peer, hostname, IFDESCRSIZE);
+		strlcpy(msg->peer.name, hostname, IFDESCRSIZE);
 		free(hostname);
 		break;
 	default:

@@ -15,7 +15,6 @@
 #include <syslog.h>
 #include <time.h>
 
-extern int8_t loglevel;
 uint32_t options = OPT_DAEMON;
 
 void usage();
@@ -335,7 +334,7 @@ sleep:
 		continue;
 
 	    my_log(CRIT, "removing peer %s (%s)",
-		    msg->peer, protos[msg->proto].name);
+		    msg->peer.name, protos[msg->proto].name);
 
 	    // mark the interface
 	    if ((subif = netif_byindex(&netifs, msg->index)) != NULL)
@@ -390,7 +389,7 @@ void queue_msg(int fd, short event, int *cfd) {
     my_log(INFO, "decoding peer name and ttl");
     if (rmsg.len != protos[rmsg.proto].peer(&rmsg))
     	return;
-    if (!IS_HOSTNAME(rmsg.peer))
+    if (!IS_HOSTNAME(rmsg.peer.name))
 	return;
 
     // add current time to the ttl
@@ -441,7 +440,7 @@ void queue_msg(int fd, short event, int *cfd) {
 	    TAILQ_INSERT_TAIL(&mqueue, msg, entries);
 
 	my_log(CRIT, "new peer %s (%s) on interface %s",
-		msg->peer, protos[msg->proto].name, netif->name);
+		msg->peer.name, protos[msg->proto].name, netif->name);
     }
 
     // update ifdescr

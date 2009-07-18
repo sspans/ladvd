@@ -238,7 +238,7 @@ size_t fdp_peer(struct master_msg *msg) {
 		    my_log(INFO, "Corrupt FDP packet: invalid Device ID TLV");
 		    return 0;
 		}
-		strlcpy(msg->peer, hostname, IFDESCRSIZE);
+		strlcpy(msg->peer.name, hostname, IFDESCRSIZE);
 		free(hostname);
 		break;
 	default:

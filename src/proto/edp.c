@@ -188,7 +188,7 @@ size_t edp_peer(struct master_msg *msg) {
 		    my_log(INFO, "Corrupt EDP packet: invalid Display TLV");
 		    return 0;
 		}
-		strlcpy(msg->peer, hostname, IFDESCRSIZE);
+		strlcpy(msg->peer.name, hostname, IFDESCRSIZE);
 		free(hostname);
 		break;
 	default:

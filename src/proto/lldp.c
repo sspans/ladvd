@@ -7,8 +7,6 @@
 #include "proto/lldp.h"
 #include "proto/tlv.h"
 
-extern uint32_t options;
-
 size_t lldp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
 
     struct ether_hdr ether;
@@ -411,7 +409,7 @@ size_t lldp_peer(struct master_msg *msg) {
 	    }
 	    break;
 	case LLDP_TYPE_SYSTEM_NAME:
-	    if (strlen(msg->peer) != 0) {
+	    if (strlen(msg->peer.name) != 0) {
 		my_log(INFO, "Corrupt LLDP packet: duplicate System Name TLV");
 		return 0;
 	    }
@@ -419,7 +417,7 @@ size_t lldp_peer(struct master_msg *msg) {
 		my_log(INFO, "Corrupt LLDP packet: invalid System Name TLV");
 		return 0;
 	    }
-	    strlcpy(msg->peer, hostname, IFDESCRSIZE);
+	    strlcpy(msg->peer.name, hostname, IFDESCRSIZE);
 	    free(hostname);
 	    break;
 	default:

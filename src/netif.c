@@ -106,8 +106,6 @@
 #define NETIF_AF    AF_LINK
 #endif
 
-extern uint32_t options;
-
 int netif_wireless(int, struct ifaddrs *ifaddr, struct ifreq *);
 int netif_type(int, struct ifaddrs *ifaddr, struct ifreq *);
 void netif_bond(int, struct nhead *, struct netif *, struct ifreq *);

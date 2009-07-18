@@ -17,7 +17,6 @@
 #include <unistd.h>
 
 int8_t loglevel = CRIT;
-extern uint32_t options;
 
 void __my_log(const char *func, int8_t prio, const char *fmt, ...) {
 
@@ -215,10 +214,10 @@ void netif_descr(int s, struct netif *netif, struct mhead *mqueue) {
 	if (netif->index != qmsg->index)
 	    continue;
 
-	if (!peer && strlen(qmsg->peer))
-	    peer = qmsg->peer;
-	if (!port && strlen(qmsg->peer_port))
-	    port = qmsg->peer_port;
+	if (!peer && strlen(qmsg->peer.name))
+	    peer = qmsg->peer.name;
+	if (!port && strlen(qmsg->peer.port))
+	    port = qmsg->peer.port;
 
 	// this assumes a sorted queue
 	if (memcmp(paddr, qmsg->msg + ETHER_ADDR_LEN, ETHER_ADDR_LEN) == 0)

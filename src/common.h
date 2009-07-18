@@ -127,6 +127,7 @@ struct sysinfo {
 #define OPT_DESCR	(1 << 8)
 #define OPT_CHECK	(1 << 31)
 
+extern uint32_t options;
 
 struct master_msg {
     uint32_t index;
@@ -138,8 +139,10 @@ struct master_msg {
     uint8_t proto;
     time_t ttl;
 
-    char peer[IFDESCRSIZE];
-    char peer_port[IFDESCRSIZE];
+    struct {
+	char name[IFDESCRSIZE];
+	char port[IFDESCRSIZE];
+    } peer;
 
     // should be last
     TAILQ_ENTRY(master_msg) entries;

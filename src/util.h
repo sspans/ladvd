@@ -10,6 +10,8 @@
 #define INFO	2
 #define DEBUG	3
 
+extern int8_t loglevel;
+
 #define my_log(p, ...)	    __my_log(__func__, p, __VA_ARGS__)
 #define my_fatal(...)	    __my_log(__func__, FATAL, __VA_ARGS__)
 void __my_log(const char *func, int8_t prio, const char *fmt, ...);

@@ -139,8 +139,6 @@ struct bpf_buf bpf_buf = { 0, NULL };
 int sock = -1;
 
 extern struct proto protos[];
-extern uint8_t loglevel;
-extern uint32_t options;
 
 void master_init(struct nhead *netifs, uint16_t netifc,
 		 pid_t child, int cmdfd, int msgfd) {
