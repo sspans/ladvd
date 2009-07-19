@@ -391,7 +391,7 @@ void queue_msg(int fd, short event, int *cfd) {
     	return;
     if (!IS_HOSTNAME(rmsg.peer.name))
 	return;
-    if (!strisascii(rmgs.peer.port))
+    if (!strisascii(rmsg.peer.port))
 	return;
 
     // add current time to the ttl
