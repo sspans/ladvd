@@ -52,7 +52,7 @@ typedef union {
 	((length >= (b)) && \
 	    ( \
 		d = my_malloc((b) + 1), \
-		memcpy((d), pos, (b) * sizeof(char)), \
+		memcpy((d), pos, (b)), \
 		*(d + b) = '\0', \
 		length -= (b), \
 		pos += (b), \
