@@ -297,6 +297,7 @@ void read_packet(struct master_msg *msg, const char *suffix) {
     msg->len = 0;
     msg->ttl = 0;
     memset(msg->peer.name, 0, IFDESCRSIZE);
+    memset(msg->peer.port, 0, IFDESCRSIZE);
 
     if ((prefix = getenv("srcdir")) == NULL)
 	prefix = ".";
@@ -426,7 +427,7 @@ START_TEST(test_lldp_peer) {
     fail_unless (strcmp(msg.peer.name, "test") == 0,
 	"system name should be 'test'");
     fail_unless (strcmp(msg.peer.port, "1/3") == 0,
-	"port id should be '1/3'");
+	"port id should be '1/3' not '%s'", msg.peer.port);
     read_packet(&msg, "proto/lldp/42.good.big");
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -435,7 +436,7 @@ START_TEST(test_lldp_peer) {
     fail_unless (strcmp(msg.peer.name, "Summit300-48") == 0,
 		"system name should be 'Summit300-48'");
     fail_unless (strcmp(msg.peer.port, "1/1") == 0,
-	"port id should be '1/1'");
+	"port id should be '1/1' not '%s'", msg.peer.port);
     read_packet(&msg, "proto/lldp/43.good.lldpmed");
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -444,7 +445,7 @@ START_TEST(test_lldp_peer) {
     fail_unless (strcmp(msg.peer.name, "ProCurve Switch 2600-8-PWR") == 0,
 		"system name should be 'ProCurve Switch 2600-8-PWR'");
     fail_unless (strcmp(msg.peer.port, "1") == 0,
-	"port id should be '1'");
+	"port id should be '1' not '%s'", msg.peer.port);
 }
 END_TEST
 
@@ -502,6 +503,8 @@ START_TEST(test_cdp_peer) {
     fail_unless (msg.ttl == 180, "ttl should be 180");
     fail_unless (strcmp(msg.peer.name, "R1") == 0,
 	"system name should be 'R1'");
+    fail_unless (strlen(msg.peer.port) == 0,
+	"port id should be empty, not '%s'", msg.peer.port);
     read_packet(&msg, "proto/cdp/42.good.medium");
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -509,6 +512,8 @@ START_TEST(test_cdp_peer) {
     fail_unless (msg.ttl == 180, "ttl should be 180");
     fail_unless (strcmp(msg.peer.name, "R2D2") == 0,
 		"system name should be 'R2D2'");
+    fail_unless (strcmp(msg.peer.port, "Ethernet0") == 0,
+	"port id should be 'Ethernet0' not '%s'", msg.peer.port);
     read_packet(&msg, "proto/cdp/43.good.big");
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -516,6 +521,8 @@ START_TEST(test_cdp_peer) {
     fail_unless (msg.ttl == 180, "ttl should be 180");
     fail_unless (strcmp(msg.peer.name, "xpfs1.yapkjn.network.bla.nl") == 0,
 		"system name should be 'xpfs1.yapkjn.network.bla.nl'");
+    fail_unless (strcmp(msg.peer.port, "FastEthernet6/20") == 0,
+	"port id should be 'FastEthernet6/20' not '%s'", msg.peer.port);
     read_packet(&msg, "proto/cdp/44.good.bcm");
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -523,6 +530,8 @@ START_TEST(test_cdp_peer) {
     fail_unless (msg.ttl == 180, "ttl should be 180");
     fail_unless (strcmp(msg.peer.name, "0060B9C14027") == 0,
 		"system name should be '0060B9C14027'");
+    fail_unless (strlen(msg.peer.port) == 0,
+	"port id should be empty, not '%s'", msg.peer.port);
     read_packet(&msg, "proto/cdp/45.good.6504");
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -530,6 +539,8 @@ START_TEST(test_cdp_peer) {
     fail_unless (msg.ttl == 180, "ttl should be 180");
     fail_unless (strcmp(msg.peer.name, "mpls-sbp-ams1.leazewep.nat") == 0,
 		"system name should be 'mpls-sbp-ams1.leazewep.nat'");
+    fail_unless (strcmp(msg.peer.port, "FastEthernet4/11") == 0,
+	"port id should be 'FastEthernet4/11' not '%s'", msg.peer.port);
     read_packet(&msg, "proto/cdp/46.good.2811");
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -537,6 +548,8 @@ START_TEST(test_cdp_peer) {
     fail_unless (msg.ttl == 180, "ttl should be 180");
     fail_unless (strcmp(msg.peer.name, "c2811.ttttrnal.lottlloou.nl") == 0,
 		"system name should be 'c2811.ttttrnal.lottlloou.nl'");
+    fail_unless (strcmp(msg.peer.port, "FastEthernet0/0") == 0,
+	"port id should be 'FastEthernet0/0' not '%s'", msg.peer.port);
 }
 END_TEST
 
@@ -601,6 +614,8 @@ START_TEST(test_edp_peer) {
     fail_unless (msg.ttl == 180, "ttl should be 180");
     fail_unless (strcmp(msg.peer.name, "HD000002") == 0,
 		"system name should be 'HD000002'");
+    fail_unless (strlen(msg.peer.port) == 0,
+	"port id should be empty, not '%s'", msg.peer.port);
     read_packet(&msg, "proto/edp/42.good.medium");
     fail_unless (edp_peer(&msg) == msg.len, "packet length incorrect");
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
@@ -608,6 +623,8 @@ START_TEST(test_edp_peer) {
     fail_unless (msg.ttl == 180, "ttl should be 180");
     fail_unless (strcmp(msg.peer.name, "SW1") == 0,
 	"system name should be 'SW1'");
+    fail_unless (strlen(msg.peer.port) == 0,
+	"port id should be empty, not '%s'", msg.peer.port);
 }
 END_TEST
 
@@ -672,6 +689,8 @@ START_TEST(test_fdp_peer) {
     fail_unless (msg.ttl == 10, "ttl should be 10");
     fail_unless (strcmp(msg.peer.name, "doetnix") == 0,
 		"system name should be 'doetnix'");
+    fail_unless (strcmp(msg.peer.port, "ethernet3/1") == 0,
+	"port id should be 'ethernet3/1' not '%s'", msg.peer.port);
     read_packet(&msg, "proto/fdp/42.good.rx");
     fail_unless (fdp_peer(&msg) == msg.len, "packet length incorrect");
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
@@ -679,6 +698,8 @@ START_TEST(test_fdp_peer) {
     fail_unless (msg.ttl == 10, "ttl should be 10");
     fail_unless (strcmp(msg.peer.name, "erix") == 0,
 		"system name should be 'erix'");
+    fail_unless (strcmp(msg.peer.port, "ethernet1/1") == 0,
+	"port id should be 'ethernet1/1' not '%s'", msg.peer.port);
     read_packet(&msg, "proto/fdp/43.good.mlx");
     fail_unless (fdp_peer(&msg) == msg.len, "packet length incorrect");
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
@@ -686,6 +707,8 @@ START_TEST(test_fdp_peer) {
     fail_unless (msg.ttl == 10, "ttl should be 10");
     fail_unless (strcmp(msg.peer.name, "emmerix") == 0,
 		"system name should be 'emmerix'");
+    fail_unless (strcmp(msg.peer.port, "ethernet1/1") == 0,
+	"port id should be 'ethernet1/1' not '%s'", msg.peer.port);
 }
 END_TEST
 
