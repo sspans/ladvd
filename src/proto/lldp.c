@@ -374,6 +374,10 @@ size_t lldp_peer(struct master_msg *msg) {
 	my_log(INFO, "Invalid LLDP packet: missing Chassis ID TLV");
 	return 0;
     }
+    if ((tlv_length <= 1) || (tlv_length > 256)) {
+	my_log(INFO, "Invalid LLDP packet: invalid Chassis ID TLV");
+	return 0;
+    }
     if (!SKIP(tlv_length))
 	return 0;
 
@@ -382,6 +386,21 @@ size_t lldp_peer(struct master_msg *msg) {
 	my_log(INFO, "Invalid LLDP packet: missing Port ID TLV");
 	return 0;
     }
+    if ((tlv_length <= 1) || (tlv_length > 256)) {
+	my_log(INFO, "Corrupt LLDP packet: invalid Port ID TLV");
+	return 0;
+    }
+    // skip the subtype
+    if (!SKIP(1)) {
+	my_log(INFO, "Corrupt LLDP packet: invalid Port ID TLV");
+	return 0;
+    }
+    if (!GRAB_STRING(tlv_str, tlv_length - 1)) {
+	my_log(INFO, "Corrupt LLDP packet: invalid Port ID TLV");
+	return 0;
+    }
+    strlcpy(msg->peer.port, tlv_str, IFDESCRSIZE);
+    free(tlv_str);
     if (!SKIP(tlv_length))
 	return 0;
 
@@ -409,6 +428,10 @@ size_t lldp_peer(struct master_msg *msg) {
 	    }
 	    break;
 	case LLDP_TYPE_SYSTEM_NAME:
+	    if (tlv_length > 255) {
+		my_log(INFO, "Corrupt LLDP packet: invalid System Name TLV");
+		return 0;
+	    }
 	    if (strlen(msg->peer.name) != 0) {
 		my_log(INFO, "Corrupt LLDP packet: duplicate System Name TLV");
 		return 0;
@@ -418,23 +441,6 @@ size_t lldp_peer(struct master_msg *msg) {
 		return 0;
 	    }
 	    strlcpy(msg->peer.name, tlv_str, IFDESCRSIZE);
-	    free(tlv_str);
-	    break;
-	case LLDP_TYPE_PORT_ID:
-	    if (strlen(msg->peer.port) != 0) {
-		my_log(INFO, "Corrupt LLDP packet: duplicate Port ID TLV");
-		return 0;
-	    }
-	    // skip the subtype
-	    if (!SKIP(1)) {
-		my_log(INFO, "Invalid LLDP packet: invalid Port ID TLV");
-		return 0;
-	    }
-	    if (!GRAB_STRING(tlv_str, tlv_length - 1)) {
-		my_log(INFO, "Corrupt LLDP packet: invalid Port ID TLV");
-		return 0;
-	    }
-	    strlcpy(msg->peer.port, tlv_str, IFDESCRSIZE);
 	    free(tlv_str);
 	    break;
 	default:
