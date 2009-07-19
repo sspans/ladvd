@@ -247,7 +247,7 @@ void netif_descr(int s, struct netif *netif, struct mhead *mqueue) {
     dmsg->index = netif->index;
     strlcpy(dmsg->name, netif->name, IFNAMSIZ);
     dmsg->cmd = MASTER_DESCR;
-    dmsg->len = strlen(descr);
+    dmsg->len = IFDESCRSIZE;
     strlcpy(dmsg->msg, descr, dmsg->len);
 
     if (my_msend(s, dmsg) != dmsg->len)
