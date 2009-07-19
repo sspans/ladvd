@@ -425,6 +425,8 @@ START_TEST(test_lldp_peer) {
     fail_unless (msg.ttl == 120, "ttl should be 120");
     fail_unless (strcmp(msg.peer.name, "test") == 0,
 	"system name should be 'test'");
+    fail_unless (strcmp(msg.peer.port, "1/3") == 0,
+	"port id should be '1/3'");
     read_packet(&msg, "proto/lldp/42.good.big");
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -432,6 +434,8 @@ START_TEST(test_lldp_peer) {
     fail_unless (msg.ttl == 120, "ttl should be 120");
     fail_unless (strcmp(msg.peer.name, "Summit300-48") == 0,
 		"system name should be 'Summit300-48'");
+    fail_unless (strcmp(msg.peer.port, "1/1") == 0,
+	"port id should be '1/1'");
     read_packet(&msg, "proto/lldp/43.good.lldpmed");
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -439,6 +443,8 @@ START_TEST(test_lldp_peer) {
     fail_unless (msg.ttl == 120, "ttl should be 120");
     fail_unless (strcmp(msg.peer.name, "ProCurve Switch 2600-8-PWR") == 0,
 		"system name should be 'ProCurve Switch 2600-8-PWR'");
+    fail_unless (strcmp(msg.peer.port, "1") == 0,
+	"port id should be '1'");
 }
 END_TEST
 
