@@ -339,6 +339,8 @@ sleep:
 	    // mark the interface
 	    if ((subif = netif_byindex(&netifs, msg->index)) != NULL)
 		subif->update = 1;
+
+	    TAILQ_REMOVE(&mqueue, msg, entries);
 	    free(msg);
 	}
 
