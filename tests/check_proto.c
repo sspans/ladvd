@@ -340,7 +340,7 @@ START_TEST(test_lldp_peer) {
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
-    errstr = "check";
+    errstr = "Corrupt LLDP packet: invalid Port ID TLV";
     my_log(CRIT, errstr);
     read_packet(&msg, "proto/lldp/11.port_id.broken");
     fail_unless (lldp_peer(&msg) == 0, "broken packets should return 0");
