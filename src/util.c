@@ -280,7 +280,7 @@ int read_line(const char *path, char *line, uint16_t len) {
     return(strlen(line));
 }
 
-int strisascii(char *str) {
+int strisascii(const char *str) {
     int i;
     if (!str)
 	return 0;

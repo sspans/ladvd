@@ -32,6 +32,7 @@ void netif_protos(struct netif *netif, struct mhead *mqueue);
 void netif_descr(int s, struct netif *netif, struct mhead *mqueue);
 
 int read_line(const char *path, char *line, uint16_t len);
+int strisascii(const char *str);
 
 void my_chroot(const char *path);
 void my_drop_privs(struct passwd *pwd);
