@@ -1,4 +1,4 @@
-.TH ladvd 8 "October 26 2008" ladvd
+.TH ladvd 8 "July 19 2009" ladvd
 .SH NAME
 ladvd \- send link layer advertisements
 .SH SYNOPSIS
@@ -7,7 +7,16 @@ ladvd \- send link layer advertisements
 .B ...
 .SH DESCRIPTION
 .B ladvd
-sends LLDP link layer advertisements on all available interfaces. This makes connected hosts visible on managed switches. By default it will run as a non-privileged user and daemonize. Additional protocols can be enabled using the -C, -E, -F and -N options. Optionally a list of interfaces on which ladvd should transmit can be supplied.
+sends LLDP link layer advertisements on all available interfaces. This makes connected hosts visible on managed switches. By default it will run as a privilege-separated daemon. Additional protocols can be enabled using the -C, -E, -F and -N options. Optionally a list of interfaces which
+.B ladvd
+should utilize can be supplied.
+.SH INTERFACES
+.B ladvd
+detects and uses all configured (UP) physical Ethernet interfaces by default, wireless interfaces can be enabled via the -w option. Additionally
+.B ladvd
+will recognize bundled interfaces (bridges, bonding) and use these to transmit additional information. The result is that normally it should not be necessary to specify interfaces on the
+.B ladvd
+command-line. The only reason for specifying interfaces is to explicitly exclude a particular interface.
 .SH OPTIONS
 .IP -a
 Auto-enable protocols based on received packets.
@@ -18,7 +27,7 @@ Run in the foreground and send logging to stderr.
 .IP -h
 Print usage instructions.
 .IP "-m address"
-Management adress for unnumbered interfaces, can be specified for IPv4 and IPv6.
+Management address for unnumbered interfaces, can be specified for IPv4 and IPv6.
 .IP -n
 Use management addresses specified via -m for all interfaces.
 .IP -o
@@ -32,7 +41,7 @@ Increase logging verbosity.
 .IP -w
 Use wireless interfaces.
 .IP -z
-Save received peer information in interface description (requires SIOCSIFDESCR support)
+Save received peer information in interface descriptions (requires SIOCSIFDESCR support)
 .IP "-c <CC>"
 Specify a two-letter ISO 3166 country code (required for LLDP location support).
 .IP "-l <location>"
