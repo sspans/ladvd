@@ -401,7 +401,7 @@ size_t lldp_peer(struct master_msg *msg) {
     }
     strlcpy(msg->peer.port, tlv_str, IFDESCRSIZE);
     free(tlv_str);
-    if (!SKIP(tlv_length))
+    if (!SKIP(tlv_length - 1))
 	return 0;
 
     if (!GRAB_LLDP_TLV(tlv_type, tlv_length) ||
