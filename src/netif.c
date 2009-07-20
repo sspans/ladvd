@@ -618,7 +618,7 @@ void netif_bond(int sockfd, struct nhead *netifs, struct netif *master,
 	    my_log(INFO, "found slave %s", subif->name);
 	    subif->slave = 1;
 	    subif->master = master;
-	    subif->lacp_index = i++;
+	    subif->lacp_index = i;
 	    csubif->subif = subif;
 	    csubif = subif;
 	}
