@@ -249,7 +249,6 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 #endif
 	if ((netif = netif_byindex(netifs, index)) == NULL) {
 	    netif = my_malloc(sizeof(struct netif));
-	    memset(netif, 0, sizeof(struct netif));
 	    TAILQ_INSERT_TAIL(netifs, netif, entries);
 	} else {
 	    // reset everything but protos and tailq_entry
@@ -404,6 +403,12 @@ int netif_type(int sockfd, struct ifaddrs *ifaddr, struct ifreq *ifr) {
     memset(&drvinfo, 0, sizeof(drvinfo));
 #endif
 
+#elif HAVE_NET_IF_LAGG_H
+    struct lagg_reqall ra;
+#elif HAVE_NET_IF_TRUNK_H
+    struct trunk_reqall ra;
+#endif
+
 #ifdef HAVE_SYSFS
     if (snprintf(path, SYSFS_PATH_MAX,
 	    SYSFS_CLASS_NET "/%s/device", ifaddr->ifa_name) > 0) {
@@ -447,12 +452,16 @@ int netif_type(int sockfd, struct ifaddrs *ifaddr, struct ifreq *ifr) {
     if (if_data->ifi_type == IFT_ETHER) {
 
 	// bonding
+#if defined(HAVE_NET_IF_LAGG_H) || defined(HAVE_NET_IF_TRUNK_H)
+	memset(&ra, 0, sizeof(ra));
+	strlcpy(ra.ra_ifname, ifaddr->ifa_name, sizeof(ra.ra_ifname));
 #ifdef HAVE_NET_IF_LAGG_H
-	if (ioctl(sockfd, SIOCGLAGG, (caddr_t)ifr) >= 0)
+	if (ioctl(sockfd, SIOCGLAGG, &ra) >= 0)
 	    return(NETIF_BONDING);
 #elif HAVE_NET_IF_TRUNK_H
-	if (ioctl(sockfd, SIOCGTRUNK, (caddr_t)ifr) == 0)
+	if (ioctl(sockfd, SIOCGTRUNK, &ra) == 0)
 	    return(NETIF_BONDING);
+#endif
 #endif
 
 	// accept regular devices
