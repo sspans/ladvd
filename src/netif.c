@@ -403,7 +403,7 @@ int netif_type(int sockfd, struct ifaddrs *ifaddr, struct ifreq *ifr) {
     memset(&drvinfo, 0, sizeof(drvinfo));
 #endif
 
-#elif HAVE_NET_IF_LAGG_H
+#ifdef HAVE_NET_IF_LAGG_H
     struct lagg_reqall ra;
 #elif HAVE_NET_IF_TRUNK_H
     struct trunk_reqall ra;
