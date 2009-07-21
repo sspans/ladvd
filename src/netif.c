@@ -459,8 +459,9 @@ int netif_type(int sockfd, struct ifaddrs *ifaddr, struct ifreq *ifr) {
 	return(NETIF_BRIDGE);
 #endif
 #ifdef IFT_IEEE8023ADLAG
+    // trunk ports have a special type
     } else if (if_data->ifi_type == IFT_IEEE8023ADLAG) {
-	return(NETIF_BONDING);
+	return(NETIF_REGULAR);
 #endif
     }
 
