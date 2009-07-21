@@ -770,6 +770,8 @@ void netif_bridge(int sockfd, struct nhead *netifs, struct netif *master,
     ifd.ifd_cmd = BRDGGIFS;
     ifd.ifd_len = sizeof(bifc);
     ifd.ifd_data = &bifc;
+#elif HAVE_NET_IF_BRIDGE_H
+    strlcpy(bifc.ifbic_name, master->name, sizeof(bifc.ifbic_name));
 #endif /* HAVE_NET_IF_BRIDGEVAR_H */
 
     for (;;) {
