@@ -187,7 +187,12 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 	}
 #elif AF_LINK
 	memcpy(&saddrdl, ifaddr->ifa_addr, sizeof(saddrdl));
+#ifdef IFT_BRIDGE
+	if ((saddrdl.sdl_type != IFT_BRIDGE) &&
+	    (saddrdl.sdl_type != IFT_ETHER)) {
+#else
 	if (saddrdl.sdl_type != IFT_ETHER) {
+#endif
 	    my_log(INFO, "skipping interface %s", ifaddr->ifa_name);
 	    continue;
 	}
