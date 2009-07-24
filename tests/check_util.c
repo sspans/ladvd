@@ -385,19 +385,8 @@ START_TEST(test_my_priv) {
     errno = EPERM;
 
     mark_point();
-    errstr = "unable to setgid";
-    check_wrap_fail |= FAIL_SETGID;
-    WRAP_FATAL_START();
-    my_drop_privs(pwd);
-    WRAP_FATAL_END();
-    check_wrap_fail &= ~FAIL_SETGID;
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
-	"incorrect message logged: %s", check_wrap_errstr);
-
-    mark_point();
     errstr = "unable to setgroups";
     check_wrap_fail |= FAIL_SETGRP;
-    check_wrap_fake |= FAKE_SETGID;
     WRAP_FATAL_START();
     my_drop_privs(pwd);
     WRAP_FATAL_END();
@@ -406,13 +395,24 @@ START_TEST(test_my_priv) {
 	"incorrect message logged: %s", check_wrap_errstr);
 
     mark_point();
-    errstr = "unable to setuid";
-    check_wrap_fail |= FAIL_SETUID;
+    errstr = "unable to setresgid";
+    check_wrap_fail |= FAIL_SETRESGID;
     check_wrap_fake |= FAKE_SETGRP;
     WRAP_FATAL_START();
     my_drop_privs(pwd);
     WRAP_FATAL_END();
-    check_wrap_fail &= ~FAIL_SETUID;
+    check_wrap_fail &= ~FAIL_SETRESGID;
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    mark_point();
+    errstr = "unable to setresuid";
+    check_wrap_fail |= FAIL_SETRESUID;
+    check_wrap_fake |= FAKE_SETRESGID;
+    WRAP_FATAL_START();
+    my_drop_privs(pwd);
+    WRAP_FATAL_END();
+    check_wrap_fail &= ~FAIL_SETRESUID;
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
@@ -420,7 +420,7 @@ START_TEST(test_my_priv) {
     errno = 0;
     errstr = "check";
     my_log(CRIT, errstr);
-    check_wrap_fake |= FAKE_SETUID;
+    check_wrap_fake |= FAKE_SETRESUID;
     WRAP_FATAL_START();
     my_drop_privs(pwd);
     WRAP_FATAL_END();

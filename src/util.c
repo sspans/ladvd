@@ -333,15 +333,14 @@ void my_chroot(const char *path) {
 }
 
 void my_drop_privs(struct passwd *pwd) {
-    // setuid & setgid
-    if (setgid(pwd->pw_gid) == -1)
-	my_fatal("unable to setgid: %s", strerror(errno));
-
     if (setgroups(0, NULL) == -1)
 	my_fatal("unable to setgroups: %s", strerror(errno));
 
-    if (setuid(pwd->pw_uid) == -1)
-   	my_fatal("unable to setuid: %s", strerror(errno));
+    if (setresgid(pwd->pw_gid, pwd->pw_gid, pwd->pw_gid) == -1)
+	my_fatal("unable to setresgid: %s", strerror(errno));
+
+    if (setresuid(pwd->pw_uid, pwd->pw_uid, pwd->pw_uid) == -1)
+   	my_fatal("unable to setresuid: %s", strerror(errno));
 }
 
 /*

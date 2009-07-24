@@ -15,8 +15,8 @@ static void *(*libc_malloc) (size_t size);
 static void *(*libc_calloc) (size_t nmemb, size_t size);
 static char *(*libc_strdup) (const char *s1);
 static void (*libc_exit) (int status);
-static int (*libc_setgid) (gid_t gid);
-static int (*libc_setuid) (uid_t uid);
+static int (*libc_setresgid) (gid_t rgid, gid_t egid, gid_t sgid);
+static int (*libc_setresuid) (uid_t ruid, uid_t euid, uid_t suid);
 static int (*libc_setgroups) (int ngroups, const gid_t *gidset);
 static int (*libc_chdir) (const char *path);
 static int (*libc_chroot) (const char *dirname);
@@ -74,24 +74,24 @@ void exit (int status) {
     libc_exit(status);
 }
 
-int setgid (gid_t gid) {
-    libc_setgid = dlsym(RTLD_NEXT, "setgid");
+int setresgid (gid_t rgid, gid_t egid, gid_t sgid) {
+    libc_setresgid = dlsym(RTLD_NEXT, "setresgid");
 
-    if (check_wrap_fail & FAIL_SETGID)
+    if (check_wrap_fail & FAIL_SETRESGID)
 	return -1;
-    if (check_wrap_fake & FAKE_SETGID)
+    if (check_wrap_fake & FAKE_SETRESGID)
 	return 0;
-    return libc_setgid(gid);
+    return libc_setresgid(rgid, egid, sgid);
 }
 
-int setuid (uid_t uid) {
-    libc_setuid = dlsym(RTLD_NEXT, "setuid");
+int setresuid (uid_t ruid, uid_t euid, uid_t suid) {
+    libc_setresuid = dlsym(RTLD_NEXT, "setresuid");
 
-    if (check_wrap_fail & FAIL_SETUID)
+    if (check_wrap_fail & FAIL_SETRESUID)
 	return -1;
-    if (check_wrap_fake & FAKE_SETUID)
+    if (check_wrap_fake & FAKE_SETRESUID)
 	return 0;
-    return libc_setuid(uid);
+    return libc_setresuid(ruid, euid, suid);
 }
 
 int setgroups (int ngroups, const gid_t *gidset) {
