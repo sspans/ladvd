@@ -446,6 +446,15 @@ START_TEST(test_lldp_peer) {
 		"system name should be 'ProCurve Switch 2600-8-PWR'");
     fail_unless (strcmp(msg.peer.port, "1") == 0,
 	"port id should be '1' not '%s'", msg.peer.port);
+    read_packet(&msg, "proto/lldp/44.good.spaces");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+    fail_unless (lldp_peer(&msg) == msg.len, "packet length incorrect");
+    fail_unless (msg.ttl == 120, "ttl should be 120");
+    fail_unless (strcmp(msg.peer.name, "HP ProCurve Switch 2626") == 0,
+		"system name should be 'HP ProCurve Switch 2626'");
+    fail_unless (strcmp(msg.peer.port, "25") == 0,
+	"port id should be '25' not '%s'", msg.peer.port);
 }
 END_TEST
 
