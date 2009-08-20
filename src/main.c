@@ -170,30 +170,25 @@ int main(int argc, char *argv[]) {
     // fetch system details
     sysinfo_fetch(&sysinfo);
 
-#ifndef __APPLE__
-    // open pidfile
     if (options & OPT_DAEMON) {
+	// run in the background
+	if (daemon(0,0) == -1)
+	    my_fatal("backgrounding failed: %s", strerror(errno));
+
+	// create pidfile
 	fd = open(pidfile, O_WRONLY|O_CREAT, 0666);
 	if (fd == -1)
 	    my_fatal("failed to open pidfile %s: %s", pidfile, strerror(errno));
 	if (flock(fd, LOCK_EX|LOCK_NB) == -1)
 	    my_fatal(PACKAGE_NAME " already running (%s locked)", pidfile);
-    }
-
-    // daemonize
-    if (options & OPT_DAEMON) {
-	if (daemon(0,0) == -1)
-	    my_fatal("backgrounding failed: %s", strerror(errno));
 
 	if ((snprintf(pidstr, sizeof(pidstr), "%d\n", (int)getpid()) <= 0) ||
 	    (write(fd, pidstr, strlen(pidstr)) <= 0))
 	    my_fatal("failed to write pidfile: %s", strerror(errno));
-    }
-#endif /* __APPLE__ */
-
-    // call openlog before chrooting
-    if (options & OPT_DAEMON)
+    
+	// call openlog before chrooting
 	openlog(PACKAGE_NAME, LOG_NDELAY, LOG_DAEMON);
+    }
 
     // init cmd/msg socketpair
     my_socketpair(cpair);
@@ -251,7 +246,7 @@ int main(int argc, char *argv[]) {
 	// update netifs
 	my_log(INFO, "fetching all interfaces"); 
 	if (netif_fetch(sargc, sargv, &sysinfo, &netifs) == 0) {
-	    my_log(CRIT, "unable fetch interfaces");
+	    my_log(CRIT, "unable to fetch interfaces");
 	    goto sleep;
 	}
 
