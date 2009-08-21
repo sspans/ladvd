@@ -370,6 +370,7 @@ void queue_msg(int fd, short event, int *cfd) {
 
     struct master_msg rmsg, *msg = NULL, *qmsg = NULL, *pmsg = NULL;
     struct netif *subif, *netif;
+    char buf[IFDESCRSIZE];
     time_t now;
     ssize_t len;
 
@@ -386,10 +387,13 @@ void queue_msg(int fd, short event, int *cfd) {
     my_log(INFO, "decoding peer name and ttl");
     if (rmsg.len != protos[rmsg.proto].peer(&rmsg))
     	return;
-    if (!IS_HOSTNAME(rmsg.peer.name))
-	return;
-    if (!strisascii(rmsg.peer.port))
-	return;
+
+    memcpy(buf, rmsg.peer.name, sizeof(rmsg.peer.name));
+    strnvis(rmsg.peer.name, buf, sizeof(rmsg.peer.name),
+	VIS_CSTYLE|VIS_NL|VIS_TAB|VIS_OCTAL);
+    memcpy(buf, rmsg.peer.port, sizeof(rmsg.peer.name));
+    strnvis(rmsg.peer.port, buf, sizeof(rmsg.peer.port),
+	VIS_CSTYLE|VIS_NL|VIS_TAB|VIS_OCTAL);
 
     // add current time to the ttl
     if ((now = time(NULL)) == (time_t)-1)

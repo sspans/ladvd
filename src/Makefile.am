@@ -7,7 +7,7 @@ common_headers = config.h common.h ether.h master.h util.h \
 
 noinst_LTLIBRARIES = libcompat.la libproto.la libmisc.la
 libcompat_la_SOURCES = config.h compat/compat.h \
-	compat/strlcpy.c compat/strlcat.c compat/setproctitle.c
+	compat/strlcpy.c compat/strlcat.c compat/setproctitle.c compat/vis.c
 libproto_la_SOURCES = config.h proto/protos.h proto/tlv.h \
 	proto/lldp.c proto/lldp.h \
 	proto/cdp.c proto/cdp.h \

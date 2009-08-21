@@ -41,11 +41,6 @@
 
 #define LLDP_INVENTORY_SIZE 32
 
-#define HOSTNAME_CHARS	"ABCDEFGHIJKLMNOPQRSTUVWXYZ" \
-			"abcdefghijklmnopqrstuvwxyz" \
-			"0123456789" ".- "
-#define IS_HOSTNAME(s)	(strspn(s, HOSTNAME_CHARS) == strlen(s))
-
 struct netif {
     uint32_t index;
     char name[IFNAMSIZ];

@@ -280,18 +280,6 @@ int read_line(const char *path, char *line, uint16_t len) {
     return(strlen(line));
 }
 
-int strisascii(const char *str) {
-    int i;
-    if (!str)
-	return 0;
-
-    for (i=0; i < strlen(str); i++) {
-	if (str[i] & ~0x7f)
-	    return 0;
-    }
-    return 1;
-}
-
 // adapted from openssh's safely_chroot
 void my_chroot(const char *path) {
     const char *cp;

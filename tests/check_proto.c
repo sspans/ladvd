@@ -424,8 +424,6 @@ START_TEST(test_lldp_peer) {
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (msg.ttl == 120, "ttl should be 120");
-    fail_unless (IS_HOSTNAME(msg.peer.name), "system name should valid");
-    fail_unless (strisascii(msg.peer.port), "port id should be ascii");
     fail_unless (strcmp(msg.peer.name, "test") == 0,
 	"system name should be 'test'");
     fail_unless (strcmp(msg.peer.port, "1/3") == 0,
@@ -435,8 +433,6 @@ START_TEST(test_lldp_peer) {
 	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (lldp_peer(&msg) == msg.len, "packet length incorrect");
     fail_unless (msg.ttl == 120, "ttl should be 120");
-    fail_unless (IS_HOSTNAME(msg.peer.name), "system name should valid");
-    fail_unless (strisascii(msg.peer.port), "port id should be ascii");
     fail_unless (strcmp(msg.peer.name, "Summit300-48") == 0,
 		"system name should be 'Summit300-48'");
     fail_unless (strcmp(msg.peer.port, "1/1") == 0,
@@ -446,8 +442,6 @@ START_TEST(test_lldp_peer) {
 	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (lldp_peer(&msg) == msg.len, "packet length incorrect");
     fail_unless (msg.ttl == 120, "ttl should be 120");
-    fail_unless (IS_HOSTNAME(msg.peer.name), "system name should valid");
-    fail_unless (strisascii(msg.peer.port), "port id should be ascii");
     fail_unless (strcmp(msg.peer.name, "ProCurve Switch 2600-8-PWR") == 0,
 		"system name should be 'ProCurve Switch 2600-8-PWR'");
     fail_unless (strcmp(msg.peer.port, "1") == 0,
@@ -457,8 +451,6 @@ START_TEST(test_lldp_peer) {
 	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (lldp_peer(&msg) == msg.len, "packet length incorrect");
     fail_unless (msg.ttl == 120, "ttl should be 120");
-    fail_unless (IS_HOSTNAME(msg.peer.name), "system name should valid");
-    fail_unless (strisascii(msg.peer.port), "port id should be ascii");
     fail_unless (strcmp(msg.peer.name, "HP ProCurve Switch 2626") == 0,
 		"system name should be 'HP ProCurve Switch 2626'");
     fail_unless (strcmp(msg.peer.port, "25") == 0,
@@ -518,8 +510,6 @@ START_TEST(test_cdp_peer) {
 	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (cdp_peer(&msg) == msg.len, "packet length incorrect");
     fail_unless (msg.ttl == 180, "ttl should be 180");
-    fail_unless (IS_HOSTNAME(msg.peer.name), "system name should valid");
-    fail_unless (strisascii(msg.peer.port), "port id should be ascii");
     fail_unless (strcmp(msg.peer.name, "R1") == 0,
 	"system name should be 'R1'");
     fail_unless (strlen(msg.peer.port) == 0,
@@ -529,8 +519,6 @@ START_TEST(test_cdp_peer) {
 	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (cdp_peer(&msg) == msg.len, "packet length incorrect");
     fail_unless (msg.ttl == 180, "ttl should be 180");
-    fail_unless (IS_HOSTNAME(msg.peer.name), "system name should valid");
-    fail_unless (strisascii(msg.peer.port), "port id should be ascii");
     fail_unless (strcmp(msg.peer.name, "R2D2") == 0,
 		"system name should be 'R2D2'");
     fail_unless (strcmp(msg.peer.port, "Ethernet0") == 0,
@@ -540,8 +528,6 @@ START_TEST(test_cdp_peer) {
 	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (cdp_peer(&msg) == msg.len, "packet length incorrect");
     fail_unless (msg.ttl == 180, "ttl should be 180");
-    fail_unless (IS_HOSTNAME(msg.peer.name), "system name should valid");
-    fail_unless (strisascii(msg.peer.port), "port id should be ascii");
     fail_unless (strcmp(msg.peer.name, "xpfs1.yapkjn.network.bla.nl") == 0,
 		"system name should be 'xpfs1.yapkjn.network.bla.nl'");
     fail_unless (strcmp(msg.peer.port, "FastEthernet6/20") == 0,
@@ -551,8 +537,6 @@ START_TEST(test_cdp_peer) {
 	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (cdp_peer(&msg) == msg.len, "packet length incorrect");
     fail_unless (msg.ttl == 180, "ttl should be 180");
-    fail_unless (IS_HOSTNAME(msg.peer.name), "system name should valid");
-    fail_unless (strisascii(msg.peer.port), "port id should be ascii");
     fail_unless (strcmp(msg.peer.name, "0060B9C14027") == 0,
 		"system name should be '0060B9C14027'");
     fail_unless (strlen(msg.peer.port) == 0,
@@ -562,8 +546,6 @@ START_TEST(test_cdp_peer) {
 	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (cdp_peer(&msg) == msg.len, "packet length incorrect");
     fail_unless (msg.ttl == 180, "ttl should be 180");
-    fail_unless (IS_HOSTNAME(msg.peer.name), "system name should valid");
-    fail_unless (strisascii(msg.peer.port), "port id should be ascii");
     fail_unless (strcmp(msg.peer.name, "mpls-sbp-ams1.leazewep.nat") == 0,
 		"system name should be 'mpls-sbp-ams1.leazewep.nat'");
     fail_unless (strcmp(msg.peer.port, "FastEthernet4/11") == 0,
@@ -573,8 +555,6 @@ START_TEST(test_cdp_peer) {
 	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (cdp_peer(&msg) == msg.len, "packet length incorrect");
     fail_unless (msg.ttl == 180, "ttl should be 180");
-    fail_unless (IS_HOSTNAME(msg.peer.name), "system name should valid");
-    fail_unless (strisascii(msg.peer.port), "port id should be ascii");
     fail_unless (strcmp(msg.peer.name, "c2811.ttttrnal.lottlloou.nl") == 0,
 		"system name should be 'c2811.ttttrnal.lottlloou.nl'");
     fail_unless (strcmp(msg.peer.port, "FastEthernet0/0") == 0,
@@ -641,8 +621,6 @@ START_TEST(test_edp_peer) {
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (msg.ttl == 180, "ttl should be 180");
-    fail_unless (IS_HOSTNAME(msg.peer.name), "system name should valid");
-    fail_unless (strisascii(msg.peer.port), "port id should be ascii");
     fail_unless (strcmp(msg.peer.name, "HD000002") == 0,
 		"system name should be 'HD000002'");
     fail_unless (strlen(msg.peer.port) == 0,
@@ -652,8 +630,6 @@ START_TEST(test_edp_peer) {
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (msg.ttl == 180, "ttl should be 180");
-    fail_unless (IS_HOSTNAME(msg.peer.name), "system name should valid");
-    fail_unless (strisascii(msg.peer.port), "port id should be ascii");
     fail_unless (strcmp(msg.peer.name, "SW1") == 0,
 	"system name should be 'SW1'");
     fail_unless (strlen(msg.peer.port) == 0,
@@ -720,8 +696,6 @@ START_TEST(test_fdp_peer) {
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (msg.ttl == 10, "ttl should be 10");
-    fail_unless (IS_HOSTNAME(msg.peer.name), "system name should valid");
-    fail_unless (strisascii(msg.peer.port), "port id should be ascii");
     fail_unless (strcmp(msg.peer.name, "doetnix") == 0,
 		"system name should be 'doetnix'");
     fail_unless (strcmp(msg.peer.port, "ethernet3/1") == 0,
@@ -731,8 +705,6 @@ START_TEST(test_fdp_peer) {
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (msg.ttl == 10, "ttl should be 10");
-    fail_unless (IS_HOSTNAME(msg.peer.name), "system name should valid");
-    fail_unless (strisascii(msg.peer.port), "port id should be ascii");
     fail_unless (strcmp(msg.peer.name, "erix") == 0,
 		"system name should be 'erix'");
     fail_unless (strcmp(msg.peer.port, "ethernet1/1") == 0,
@@ -742,8 +714,6 @@ START_TEST(test_fdp_peer) {
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (msg.ttl == 10, "ttl should be 10");
-    fail_unless (IS_HOSTNAME(msg.peer.name), "system name should valid");
-    fail_unless (strisascii(msg.peer.port), "port id should be ascii");
     fail_unless (strcmp(msg.peer.name, "emmerix") == 0,
 		"system name should be 'emmerix'");
     fail_unless (strcmp(msg.peer.port, "ethernet1/1") == 0,

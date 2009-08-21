@@ -15,6 +15,10 @@ size_t strlcpy(char *dst, const char *src, size_t siz);
 size_t strlcat(char *dst, const char *src, size_t siz);
 #endif
 
+#ifndef HAVE_STRNVIS
+#include <compat/vis.h>
+#endif
+
 #include <compat/sys-queue.h>
 #ifndef TAILQ_FOREACH_SAFE
 #define	TAILQ_FOREACH_SAFE(var, head, field, tvar)			\

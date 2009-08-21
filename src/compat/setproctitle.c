@@ -123,7 +123,7 @@ setproctitle(const char *fmt, ...)
 {
 #if SPT_TYPE != SPT_NONE
 	va_list ap;
-	char ptitle[1024];
+	char buf[1024], ptitle[1024];
 	size_t len;
 	extern char *__progname;
 #if SPT_TYPE == SPT_PSTAT
@@ -135,22 +135,24 @@ setproctitle(const char *fmt, ...)
 		return;
 #endif
 
-	strlcpy(ptitle, __progname, sizeof(ptitle));
+	strlcpy(buf, __progname, sizeof(buf));
 
 	va_start(ap, fmt);
 	if (fmt != NULL) {
-		len = strlcat(ptitle, ": ", sizeof(ptitle));
-		if (len < sizeof(ptitle))
-			vsnprintf(ptitle + len, sizeof(ptitle) - len , fmt, ap);
+		len = strlcat(buf, ": ", sizeof(buf));
+		if (len < sizeof(buf))
+			vsnprintf(buf + len, sizeof(buf) - len , fmt, ap);
 	}
 	va_end(ap);
+	strnvis(ptitle, buf, sizeof(ptitle),
+	    VIS_CSTYLE|VIS_NL|VIS_TAB|VIS_OCTAL);
 
 #if SPT_TYPE == SPT_PSTAT
 	pst.pst_command = ptitle;
 	pstat(PSTAT_SETCMD, pst, strlen(ptitle), 0, 0);
 #elif SPT_TYPE == SPT_REUSEARGV
 /*	debug("setproctitle: copy \"%s\" into len %d", 
-	    ptitle, argv_env_len); */
+	    buf, argv_env_len); */
 	len = strlcpy(argv_start, ptitle, argv_env_len);
 	for(; len < argv_env_len; len++)
 		argv_start[len] = SPT_PADCHAR;
