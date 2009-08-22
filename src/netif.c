@@ -1018,7 +1018,6 @@ int netif_media(int cfd, struct netif *netif) {
 #if HAVE_LINUX_ETHTOOL_H
     memset(&mreq, 0, sizeof(mreq));
     mreq.index = netif->index;
-    strlcpy(mreq.name, netif->name, IFNAMSIZ);
     mreq.cmd = MASTER_ETHTOOL;
     mreq.len = sizeof(ecmd);
 

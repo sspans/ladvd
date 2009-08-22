@@ -261,7 +261,6 @@ int main(int argc, char *argv[]) {
 		// populate mreq
 		memset(&mreq, 0, sizeof(mreq));
 		mreq.index = subif->index;
-		strlcpy(mreq.name, subif->name, IFNAMSIZ);
 		mreq.cmd = MASTER_SEND;
 
 		// fetch interface media status
