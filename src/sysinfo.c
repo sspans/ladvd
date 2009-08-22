@@ -17,6 +17,13 @@
 #define SYSFS_MODEL_NAME	SYSFS_CLASS_DMI "/product_name"
 #endif
 
+#ifdef HAVE_PROC_SYS_NET
+#define PROCFS_FORWARD_IPV4	"/proc/sys/net/ipv4/conf/all/forwarding"
+#define PROCFS_FORWARD_IPV6	"/proc/sys/net/ipv6/conf/all/forwarding"
+#endif
+
+void sysinfo_forwarding(struct sysinfo *);
+
 void sysinfo_fetch(struct sysinfo *sysinfo) {
 
     int i;
@@ -83,6 +90,74 @@ void sysinfo_fetch(struct sysinfo *sysinfo) {
     mib[1] = HW_PRODUCT;
     sysctl(mib, 2, sysinfo->model_name, &len, NULL, 0);
 #endif
+#endif
+
+    // check for forwarding
+    my_log(INFO, "checking forwarding status");
+    sysinfo_forwarding(sysinfo);
+}
+
+
+// detect forwarding capability
+void sysinfo_forwarding(struct sysinfo *sysinfo) {
+
+#ifdef HAVE_PROC_SYS_NET
+    char line[256];
+#endif
+
+#ifdef CTL_NET
+    int mib[4], n;
+    size_t len;
+
+    len = sizeof(n);
+
+    mib[0] = CTL_NET;
+#endif
+
+#ifdef HAVE_PROC_SYS_NET
+    if (read_line(PROCFS_FORWARD_IPV4, line, sizeof(line)) != -1) {
+	sysinfo->cap |= CAP_ROUTER; 
+
+        if (atoi(line) == 1) {
+	    sysinfo->cap_active |= CAP_ROUTER; 
+	    return;
+	}
+    }
+
+    if (read_line(PROCFS_FORWARD_IPV6, line, sizeof(line)) != -1) {
+	sysinfo->cap |= CAP_ROUTER; 
+
+        if (atoi(line) == 1) {
+	    sysinfo->cap_active |= CAP_ROUTER; 
+	    return;
+	}
+    }
+#endif
+
+#ifdef CTL_NET
+    mib[1] = PF_INET;
+    mib[2] = IPPROTO_IP;
+    mib[3] = IPCTL_FORWARDING;
+
+    if (sysctl(mib, 4, &n, &len, NULL, 0) != -1) {
+	sysinfo->cap |= CAP_ROUTER; 
+	if (n == 1) {
+	    sysinfo->cap_active |= CAP_ROUTER; 
+	    return;
+	}
+    }
+
+    mib[1] = PF_INET6;
+    mib[2] = IPPROTO_IPV6;
+    mib[3] = IPV6CTL_FORWARDING;
+
+    if (sysctl(mib, 4, &n, &len, NULL, 0) != -1) {
+	sysinfo->cap |= CAP_ROUTER; 
+	if (n == 1) {
+	    sysinfo->cap_active |= CAP_ROUTER; 
+	    return;
+	}
+    }
 #endif
 }
 

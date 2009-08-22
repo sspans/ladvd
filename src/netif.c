@@ -95,11 +95,6 @@
 #define SYSFS_PATH_MAX		256
 #endif
 
-#ifdef HAVE_PROC_SYS_NET
-#define PROCFS_FORWARD_IPV4	"/proc/sys/net/ipv4/conf/all/forwarding"
-#define PROCFS_FORWARD_IPV6	"/proc/sys/net/ipv6/conf/all/forwarding"
-#endif
-
 #ifdef AF_PACKET
 #define NETIF_AF    AF_PACKET
 #elif defined(AF_LINK)
@@ -111,7 +106,6 @@ int netif_type(int, struct ifaddrs *ifaddr, struct ifreq *);
 void netif_bond(int, struct nhead *, struct netif *, struct ifreq *);
 void netif_bridge(int, struct nhead *, struct netif *, struct ifreq *);
 void netif_addrs(struct ifaddrs *, struct nhead *, struct sysinfo *);
-void netif_forwarding(struct sysinfo *);
 
 
 // create netifs for a list of interfaces
@@ -299,10 +293,6 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
     // add addresses to netifs
     my_log(INFO, "fetching addresses for all interfaces");
     netif_addrs(ifaddrs, netifs, sysinfo);
-
-    // check for forwarding
-    my_log(INFO, "checking forwarding status");
-    netif_forwarding(sysinfo);
 
     // use the first mac as chassis id
     if ((netif = TAILQ_FIRST(netifs)) != NULL)
@@ -917,70 +907,6 @@ void netif_addrs(struct ifaddrs *ifaddrs, struct nhead *netifs,
     }
 
     return;
-}
-
-
-// detect forwarding capability
-void netif_forwarding(struct sysinfo *sysinfo) {
-
-#ifdef HAVE_PROC_SYS_NET
-    char line[256];
-#endif
-
-#ifdef CTL_NET
-    int mib[4], n;
-    size_t len;
-
-    len = sizeof(n);
-
-    mib[0] = CTL_NET;
-#endif
-
-#ifdef HAVE_PROC_SYS_NET
-    if (read_line(PROCFS_FORWARD_IPV4, line, sizeof(line)) != -1) {
-	sysinfo->cap |= CAP_ROUTER; 
-
-        if (atoi(line) == 1) {
-	    sysinfo->cap_active |= CAP_ROUTER; 
-	    return;
-	}
-    }
-
-    if (read_line(PROCFS_FORWARD_IPV6, line, sizeof(line)) != -1) {
-	sysinfo->cap |= CAP_ROUTER; 
-
-        if (atoi(line) == 1) {
-	    sysinfo->cap_active |= CAP_ROUTER; 
-	    return;
-	}
-    }
-#endif
-
-#ifdef CTL_NET
-    mib[1] = PF_INET;
-    mib[2] = IPPROTO_IP;
-    mib[3] = IPCTL_FORWARDING;
-
-    if (sysctl(mib, 4, &n, &len, NULL, 0) != -1) {
-	sysinfo->cap |= CAP_ROUTER; 
-	if (n == 1) {
-	    sysinfo->cap_active |= CAP_ROUTER; 
-	    return;
-	}
-    }
-
-    mib[1] = PF_INET6;
-    mib[2] = IPPROTO_IPV6;
-    mib[3] = IPV6CTL_FORWARDING;
-
-    if (sysctl(mib, 4, &n, &len, NULL, 0) != -1) {
-	sysinfo->cap |= CAP_ROUTER; 
-	if (n == 1) {
-	    sysinfo->cap_active |= CAP_ROUTER; 
-	    return;
-	}
-    }
-#endif
 }
 
 
