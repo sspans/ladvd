@@ -37,4 +37,8 @@ struct ether_llc {
 #define ETHERTYPE_LLDP  0x88cc
 #endif
 
+#ifndef ETHER_IS_MULTICAST
+#define ETHER_IS_MULTICAST(addr) (*(addr) & 0x01) /* is address mcast/bcast? */
+#endif
+
 #endif /* _ether_h */
