@@ -369,6 +369,7 @@ void queue_msg(int fd, short event, int *cfd) {
 
     struct master_msg rmsg, *msg = NULL, *qmsg = NULL, *pmsg = NULL;
     struct netif *subif, *netif;
+    struct ether_hdr *ether;
     char buf[IFDESCRSIZE];
     time_t now;
     ssize_t len;
@@ -381,6 +382,15 @@ void queue_msg(int fd, short event, int *cfd) {
     assert(rmsg.proto < PROTO_MAX);
     assert(rmsg.len >= ETHER_MIN_LEN);
     assert(rmsg.len <= ETHER_MAX_LEN);
+
+    // skip unknown interfaces
+    if ((subif = netif_byindex(&netifs, rmsg.index)) == NULL)
+	return;
+
+    // skip locally generated packets
+    ether = (struct ether_hdr *)rmsg.msg;
+    if (memcmp(subif->hwaddr, ether->src, ETHER_ADDR_LEN) == 0)
+	return;
 
     // decode message
     my_log(INFO, "decoding peer name and ttl");
@@ -398,10 +408,6 @@ void queue_msg(int fd, short event, int *cfd) {
     if ((now = time(NULL)) == (time_t)-1)
 	return;
     rmsg.ttl += now;
-
-    // skip unknown interfaces
-    if ((subif = netif_byindex(&netifs, rmsg.index)) == NULL)
-	return;
 
     // fetch the parent netif
     if (subif->master)

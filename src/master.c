@@ -197,7 +197,6 @@ void master_init(struct nhead *netifs, uint16_t netifc,
 
 		rfds[i].index = subif->index;
 		strlcpy(rfds[i].name, subif->name, IFNAMSIZ);
-		memcpy(rfds[i].hwaddr, subif->hwaddr, ETHER_ADDR_LEN);
 		rfds[i].fd = master_rsocket(&rfds[i], O_RDONLY);
 		rfds[i].cfd = msgfd;
 
@@ -596,15 +595,11 @@ void master_recv(int fd, short event, struct master_rfd *rfd) {
     if (mrecv.len < ETHER_MIN_LEN)
 	return;
 
-    // skip locally generated packets
-    ether = (struct ether_hdr *)mrecv.msg;
-    if (memcmp(rfd->hwaddr, ether->src, ETHER_ADDR_LEN) == 0)
-	return;
-
     // note the command and ifindex
     mrecv.cmd = MASTER_RECV;
     mrecv.index = rfd->index;
 
+    ether = (struct ether_hdr *)mrecv.msg;
     // detect the protocol
     for (p = 0; protos[p].name != NULL; p++) {
 	if (memcmp(protos[p].dst_addr, ether->dst, ETHER_ADDR_LEN) != 0)
