@@ -27,7 +27,7 @@ static int (*libc_setsockopt) (int s, int level, int optname,
 static int (*libc_socket) (int domain, int type, int protocol);
 static int (*libc_bind) (int sockfd, const struct sockaddr *addr,
 			    socklen_t addrlen);
-static int (*libc_open) (const char *pathname, int flags);
+static int (*libc_open) (const char *pathname, int flags, ...);
 
 jmp_buf check_wrap_env;
 uint32_t check_wrap_fail = 0;
@@ -184,7 +184,8 @@ int bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen) {
     return libc_bind(sockfd, addr, addrlen);
 }
 
-int open(const char *pathname, int flags) {
+int open(const char *pathname, int flags, ...) {
+    va_list ap;
 
     libc_open = dlsym(RTLD_NEXT, "open");
 
@@ -193,7 +194,9 @@ int open(const char *pathname, int flags) {
     if (check_wrap_fake & FAKE_OPEN)
 	return 0;
 
-    return libc_open(pathname, flags);
+    va_start(ap, flags);
+    return libc_open(pathname, flags, va_arg(ap, char *));
+    va_end(ap);
 }
 
 void vsyslog(int priority, const char *fmt, va_list ap) {
