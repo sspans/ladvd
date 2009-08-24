@@ -93,7 +93,6 @@ void sysinfo_fetch(struct sysinfo *sysinfo) {
 #endif
 
     // check for forwarding
-    my_log(INFO, "checking forwarding status");
     sysinfo_forwarding(sysinfo);
 }
 

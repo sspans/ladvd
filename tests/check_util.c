@@ -104,8 +104,8 @@ END_TEST
 
 START_TEST(test_my_msend) {
     struct master_msg mreq;
-    int s = -1;
     int spair[2];
+    extern int msock;
     size_t ret;
     const char *errstr = NULL;
 
@@ -114,18 +114,20 @@ START_TEST(test_my_msend) {
     my_socketpair(spair);
 
     mark_point();
+    msock = -1;
     errstr = "only -1 bytes written";
     WRAP_FATAL_START();
-    my_msend(s, &mreq);
+    my_msend(&mreq);
     WRAP_FATAL_END();
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     mark_point();
+    msock = spair[1];
     errstr = "request failed";
     write(spair[0], &mreq, MASTER_MSG_SIZE); 
     WRAP_FATAL_START();
-    my_msend(spair[1], &mreq);
+    my_msend(&mreq);
     WRAP_FATAL_END();
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -136,7 +138,7 @@ START_TEST(test_my_msend) {
     mreq.completed = 1;
     mreq.len = ETHER_MIN_LEN; 
     write(spair[0], &mreq, MASTER_MSG_SIZE); 
-    ret = my_msend(spair[1], &mreq);
+    ret = my_msend(&mreq);
     fail_unless (ret == ETHER_MIN_LEN,
 	"incorrect size %lu returned from my_msend", ret);
 
@@ -144,7 +146,7 @@ START_TEST(test_my_msend) {
     errstr = "invalid reply received from master";
     write(spair[0], &mreq, ETHER_MIN_LEN); 
     WRAP_FATAL_START();
-    my_msend(spair[1], &mreq);
+    my_msend(&mreq);
     WRAP_FATAL_END();
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);

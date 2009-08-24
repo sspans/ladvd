@@ -17,6 +17,7 @@
 #include <unistd.h>
 
 int8_t loglevel = CRIT;
+int msock = -1;
 
 void __my_log(const char *func, int8_t prio, const char *fmt, ...) {
 
@@ -70,7 +71,7 @@ char * my_strdup(const char *str) {
 int my_socket(int af, int type, int proto) {
     int s;
 
-    if ((s = socket(af, type, proto)) < 0)
+    if ((s = socket(af, type, proto)) == -1)
 	my_fatal("opening socket failed: %s", strerror(errno));
 
     return(s);
@@ -95,16 +96,16 @@ void my_socketpair(int spair[2]) {
     }
 }
 
-size_t my_msend(int s, struct master_msg *mreq) {
+size_t my_msend(struct master_msg *mreq) {
     ssize_t count = 0;
 
     assert(mreq != NULL);
 
-    count = write(s, mreq, MASTER_MSG_SIZE);
+    count = write(msock, mreq, MASTER_MSG_SIZE);
     if (count != MASTER_MSG_SIZE)
 	my_fatal("only %d bytes written: %s", count, strerror(errno));
 
-    count = read(s, mreq, MASTER_MSG_SIZE);
+    count = read(msock, mreq, MASTER_MSG_SIZE);
     if (count != MASTER_MSG_SIZE)
 	my_fatal("invalid reply received from master");
 
@@ -204,7 +205,7 @@ void netif_protos(struct netif *netif, struct mhead *mqueue) {
     netif->protos = protos;
 }
 
-void netif_descr(int s, struct netif *netif, struct mhead *mqueue) {
+void netif_descr(struct netif *netif, struct mhead *mqueue) {
     struct master_msg *qmsg = NULL, *dmsg = NULL;
     char *peer = NULL, *port = NULL;
     char descr[IFDESCRSIZE], paddr[ETHER_ADDR_LEN];
@@ -250,7 +251,7 @@ void netif_descr(int s, struct netif *netif, struct mhead *mqueue) {
     dmsg->len = IFDESCRSIZE;
     strlcpy(dmsg->msg, descr, dmsg->len);
 
-    if (my_msend(s, dmsg) != dmsg->len)
+    if (my_msend(dmsg) != dmsg->len)
 	my_log(CRIT, "ifdescr ioctl failed on %s", netif->name);
 
     free(dmsg);

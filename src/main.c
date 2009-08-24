@@ -18,7 +18,7 @@
 uint32_t options = OPT_DAEMON;
 
 void usage();
-void queue_msg(int fd, short event, int *cfd);
+void queue_msg(int fd, short event);
 
 int main(int argc, char *argv[]) {
 
@@ -39,7 +39,8 @@ int main(int argc, char *argv[]) {
     struct sysinfo sysinfo;
 
     // sockets
-    int cpair[2], mpair[2], cfd, mfd;
+    int cpair[2], mpair[2], rsock = -1;
+    extern int msock;
 
     // pids
     pid_t pid;
@@ -208,11 +209,8 @@ int main(int argc, char *argv[]) {
 	close(cpair[0]);
 	close(mpair[0]);
 
-	cfd = cpair[1];
-	mfd = mpair[1];
-
 	// enter the master loop
-	master_init(&netifs, netifc, pid, cfd, mfd);
+	master_init(&netifs, netifc, pid, cpair[1], mpair[1]);
 
 	// not reached
 	my_fatal("master process failed");
@@ -222,8 +220,8 @@ int main(int argc, char *argv[]) {
 	close(cpair[1]);
 	close(mpair[1]);
 
-	cfd = cpair[0];
-	mfd = mpair[0];
+	msock = cpair[0];
+	rsock = mpair[0];
 
 	if (!(options & OPT_DEBUG))
 	    my_drop_privs(pwd);
@@ -237,11 +235,11 @@ int main(int argc, char *argv[]) {
     // initalize the event library
     if (options & OPT_RECV) {
 	event_init();
-	event_set(&evmsg, mfd, EV_READ|EV_PERSIST, (void *)queue_msg, &cfd);
+	event_set(&evmsg, rsock, EV_READ|EV_PERSIST, (void *)queue_msg, NULL);
 	event_add(&evmsg, NULL);
     }
 
-    while (cfd) {
+    while (msock) {
 
 	// update netifs
 	my_log(INFO, "fetching all interfaces"); 
@@ -265,7 +263,7 @@ int main(int argc, char *argv[]) {
 
 		// fetch interface media status
 		my_log(INFO, "fetching %s media details", subif->name);
-		if (netif_media(cfd, subif) == EXIT_FAILURE) {
+		if (netif_media(subif) == EXIT_FAILURE) {
 		    my_log(CRIT, "error fetching interface media details");
 		}
 
@@ -293,7 +291,7 @@ int main(int argc, char *argv[]) {
 		    // write it to the wire.
 		    my_log(INFO, "sending %s packet (%d bytes) on %s",
 				  protos[p].name, mreq.len, subif->name);
-		    if (my_msend(cfd, &mreq) != mreq.len) {
+		    if (my_msend(&mreq) != mreq.len) {
 			my_log(CRIT, "network transmit error on %s",
 				  subif->name);
 		    }
@@ -355,7 +353,7 @@ sleep:
 
 	    // update ifdescr
 	    if (options & OPT_DESCR)
-		netif_descr(cfd, subif, &mqueue);
+		netif_descr(subif, &mqueue);
 
 	    subif->update = 0;
 	}
@@ -365,7 +363,7 @@ sleep:
 }
 
 
-void queue_msg(int fd, short event, int *cfd) {
+void queue_msg(int fd, short event) {
 
     struct master_msg rmsg, *msg = NULL, *qmsg = NULL, *pmsg = NULL;
     struct netif *subif, *netif;
@@ -453,7 +451,7 @@ void queue_msg(int fd, short event, int *cfd) {
 
     // update ifdescr
     if (options & OPT_DESCR)
-	netif_descr(*cfd, subif, &mqueue);
+	netif_descr(subif, &mqueue);
 
     // return unless we need to enable the received protocol
     if (!(options & OPT_AUTO) || (netif->protos & (1 << msg->proto)))

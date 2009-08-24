@@ -166,6 +166,6 @@ struct proto {
 
 void sysinfo_fetch(struct sysinfo *);
 uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *, struct nhead *);
-int netif_media(int cfd, struct netif *session);
+int netif_media(struct netif *session);
 
 #endif /* _common_h */

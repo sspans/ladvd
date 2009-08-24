@@ -911,7 +911,7 @@ void netif_addrs(struct ifaddrs *ifaddrs, struct nhead *netifs,
 
 
 // perform media detection on physical interfaces
-int netif_media(int cfd, struct netif *netif) {
+int netif_media(struct netif *netif) {
     int sockfd, af = AF_INET;
     struct ifreq ifr;
 
@@ -947,7 +947,7 @@ int netif_media(int cfd, struct netif *netif) {
     mreq.cmd = MASTER_ETHTOOL;
     mreq.len = sizeof(ecmd);
 
-    if (my_msend(cfd, &mreq) == sizeof(ecmd)) {
+    if (my_msend(&mreq) == sizeof(ecmd)) {
 
 	// copy ecmd struct
 	memcpy(&ecmd, mreq.msg, sizeof(ecmd));

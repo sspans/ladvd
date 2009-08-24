@@ -22,14 +22,14 @@ char *my_strdup(const char *str);
 int my_socket(int af, int type, int proto);
 void my_socketpair(int spair[2]);
 
-size_t my_msend(int s, struct master_msg *mreq);
+size_t my_msend(struct master_msg *mreq);
 
 struct netif *netif_iter(struct netif *netif, struct nhead *);
 struct netif *subif_iter(struct netif *subif, struct netif *netif);
 struct netif *netif_byindex(struct nhead *, uint32_t index);
 struct netif *netif_byname(struct nhead *, char *name);
 void netif_protos(struct netif *netif, struct mhead *mqueue);
-void netif_descr(int s, struct netif *netif, struct mhead *mqueue);
+void netif_descr(struct netif *netif, struct mhead *mqueue);
 
 int read_line(const char *path, char *line, uint16_t len);
 

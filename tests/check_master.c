@@ -280,17 +280,9 @@ START_TEST(test_master_recv) {
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
-    // local hwaddr
-    mark_point();
-    write(spair[0], &buf, ETHER_MIN_LEN + hlen);
-    master_recv(rfd.fd, event, &rfd);
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
-	"incorrect message logged: %s", check_wrap_errstr);
-
-    // valid hwaddr
+    // empty message
     mark_point();
     errstr = "unknown message type received";
-    memset(rfd.hwaddr, 'a', ETHER_ADDR_LEN);
     write(spair[0], &buf, ETHER_MIN_LEN + hlen);
     master_recv(rfd.fd, event, &rfd);
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
