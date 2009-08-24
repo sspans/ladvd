@@ -101,6 +101,26 @@ START_TEST(test_strlcpy) {
 END_TEST
 #endif /* HAVE_STRLCPY */
 
+#ifndef HAVE_STRLCAT
+START_TEST(test_strnvis) {
+    char dst[BUFSIZ];
+    const char *src = "0123456789ABCDEF\n\t\r\b\a\v\f1234\\";
+
+    mark_point();
+    strvis(dst, src, VIS_CSTYLE|VIS_NL|VIS_TAB|VIS_OCTAL);
+    fail_unless (strlen(dst) == 40, "length should be equal to 40");
+
+    mark_point();
+    strvisx(dst, src, strlen(src), VIS_CSTYLE|VIS_NL|VIS_TAB|VIS_OCTAL);
+    fail_unless (strlen(dst) == 40, "length should be equal to 40");
+
+    mark_point();
+    strnvis(dst, src, BUFSIZ, VIS_CSTYLE|VIS_NL|VIS_TAB|VIS_OCTAL|VIS_NOSLASH);
+    fail_unless (strlen(dst) == 39, "length should be equal to 39");
+}
+END_TEST
+#endif  /* HAVE_STRLCAT */
+
 Suite * compat_suite (void) {
     Suite *s = suite_create("libcompat");
 
@@ -115,6 +135,9 @@ Suite * compat_suite (void) {
 #ifndef HAVE_STRLCPY
     tcase_add_test(tc_compat, test_strlcpy);
 #endif /* HAVE_STRLCPY */
+#ifndef HAVE_STRNVIS
+    tcase_add_test(tc_compat, test_strnvis);
+#endif /* HAVE_STRNVIS */
     suite_add_tcase(s, tc_compat);
 
     return s;
