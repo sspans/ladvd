@@ -134,7 +134,6 @@ int kill (pid_t pid, int sig) {
 
 int ioctl (int fd, unsigned long int request, ...) {
     va_list ap;
-    int ret;
 
     libc_ioctl = dlsym(RTLD_NEXT, "ioctl");
 
@@ -144,10 +143,8 @@ int ioctl (int fd, unsigned long int request, ...) {
 	return 0;
 
     va_start(ap, request);
-    ret = libc_ioctl(fd, request, ap);
+    return libc_ioctl(fd, request, va_arg(ap, char *));
     va_end(ap);
-
-    return(ret);
 }
 
 int setsockopt(int s, int level, int optname,
@@ -189,7 +186,6 @@ int bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen) {
 
 int open(const char *pathname, int flags, ...) {
     va_list ap;
-    int ret;
 
     libc_open = dlsym(RTLD_NEXT, "open");
 
@@ -199,10 +195,8 @@ int open(const char *pathname, int flags, ...) {
 	return 0;
 
     va_start(ap, flags);
-    ret = libc_open(pathname, flags, ap);
+    return libc_open(pathname, flags, va_arg(ap, char *));
     va_end(ap);
-
-    return(ret);
 }
 
 void vsyslog(int priority, const char *fmt, va_list ap) {
