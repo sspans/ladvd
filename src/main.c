@@ -50,7 +50,6 @@ int main(int argc, char *argv[]) {
 
     // interfaces
     struct netif *netif = NULL, *subif = NULL;
-    uint16_t netifc = 0;
 
     // receiving
     struct event evmsg;
@@ -159,11 +158,6 @@ int main(int argc, char *argv[]) {
     if (sargc)
 	options |= OPT_ARGV;
 
-    // validate interfaces
-    netifc = netif_fetch(sargc, sargv, &sysinfo, &netifs);
-    if (netifc == 0)
-	my_fatal("unable fetch interfaces");
-
     // validate username
     if (!(options & OPT_DEBUG) && (pwd = getpwnam(username)) == NULL)
 	my_fatal("user %s does not exist", username);
@@ -210,7 +204,7 @@ int main(int argc, char *argv[]) {
 	close(mpair[0]);
 
 	// enter the master loop
-	master_init(&netifs, netifc, pid, cpair[1], mpair[1]);
+	master_init(pid, cpair[1], mpair[1]);
 
 	// not reached
 	my_fatal("master process failed");
@@ -223,8 +217,10 @@ int main(int argc, char *argv[]) {
 	msock = cpair[0];
 	rsock = mpair[0];
 
-	if (!(options & OPT_DEBUG))
+	if (!(options & OPT_DEBUG)) {
+	    //my_chroot(PACKAGE_CHROOT_DIR);
 	    my_drop_privs(pwd);
+	}
 	setproctitle("child");
     }
 
@@ -248,12 +244,10 @@ int main(int argc, char *argv[]) {
 	    goto sleep;
 	}
 
-	netif = NULL;
 	while ((netif = netif_iter(netif, &netifs)) != NULL) {
 
 	    my_log(INFO, "starting loop with interface %s", netif->name); 
 
-	    subif = NULL;
 	    while ((subif = subif_iter(subif, netif)) != NULL) {
 
 		// populate mreq

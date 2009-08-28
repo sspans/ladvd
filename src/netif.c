@@ -118,6 +118,7 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
     int j, count = 0;
     int type, enabled;
     uint32_t index;
+    struct master_msg mreq;
 
 #ifdef AF_PACKET
     struct sockaddr_ll saddrll;
@@ -269,7 +270,13 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
     TAILQ_FOREACH_SAFE(netif, netifs, entries, n_netif) {
 	if (netif->type != NETIF_OLD)
 	    continue;
+
 	my_log(INFO, "removing old interface %s", netif->name);
+
+	mreq.cmd = MASTER_CLOSE;
+	mreq.index = netif->index;
+	my_msend(&mreq);
+
 	TAILQ_REMOVE(netifs, netif, entries);
 	free(netif);
     }

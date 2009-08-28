@@ -149,7 +149,8 @@ TAILQ_HEAD(mhead, master_msg);
 #define MASTER_RECV	1
 #define MASTER_ETHTOOL	2
 #define MASTER_DESCR	3
-#define MASTER_MAX	4
+#define MASTER_CLOSE	4
+#define MASTER_MAX	5
 
 struct proto {
     uint8_t enabled;
@@ -163,7 +164,7 @@ struct proto {
     char * (*decode) (void *, size_t);
 };
 
-
+void master_init(pid_t pid, int cmdfd, int msgfd);
 void sysinfo_fetch(struct sysinfo *);
 uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *, struct nhead *);
 int netif_media(struct netif *session);

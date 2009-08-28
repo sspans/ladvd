@@ -228,17 +228,18 @@ void netif_descr(struct netif *netif, struct mhead *mqueue) {
 	peers++;
     }
 
-    if (peers == 0)
+    if (peers == 0) {
 	memset(descr, 0, IFDESCRSIZE);
-    else if (peers == 1) {
+    } else if (peers == 1) {
 	if (peer && port)
 	    snprintf(descr, IFDESCRSIZE, "connected to %s (%s)", peer, port);
 	else if (peer)
 	    snprintf(descr, IFDESCRSIZE, "connected to %s", peer);
 	else
 	    memset(descr, 0, IFDESCRSIZE);
-    } else
+    } else {
 	snprintf(descr, IFDESCRSIZE, "connected to %d peers", peers);
+    }
 
     // only update if changed
     if (strncmp(descr, netif->description, IFDESCRSIZE) == 0)

@@ -4,27 +4,36 @@
 
 #include <sys/ioctl.h>
 
-struct master_rfd {
+struct rawfd {
     uint32_t index;
     char name[IFNAMSIZ];
     int fd;
-    int cfd;
     struct event event;
+
+    // should be last
+    TAILQ_ENTRY(rawfd) entries;
 };
 
+TAILQ_HEAD(rfdhead, rawfd);
+
 void master_signal(int fd, short event, void *pid);
-void master_cmd(int fd, short event, int *rawfd);
-void master_recv(int fd, short event, struct master_rfd *rfd);
-int master_rcheck(struct master_msg *mreq);
-int master_rsocket(struct master_rfd *rfd, int mode);
-void master_rconf(struct master_rfd *rfd, struct proto *protos);
-ssize_t master_rsend(int fd, struct master_msg *mreq);
+void master_cmd(int fd, short event);
+void master_recv(int fd, short event, struct rawfd *rfd);
+
+ssize_t master_send(struct master_msg *mreq);
+void master_open(struct master_msg *mreq);
 #if HAVE_LINUX_ETHTOOL_H
 size_t master_ethtool(struct master_msg *mreq);
 #endif /* HAVE_LINUX_ETHTOOL_H */
 #ifdef SIOCSIFDESCR
 size_t master_descr(struct master_msg *mreq);
 #endif /* SIOCSIFDESCR */
+void master_close(struct master_msg *mreq);
+
+int master_check(struct master_msg *mreq);
+int master_socket(struct rawfd *rfd);
+void master_multi(struct rawfd *rfd, struct proto *protos, int op);
+struct rawfd *rfd_byindex(struct rfdhead *, uint32_t index);
 
 #define PCAP_MAGIC	0xA1B2C3D4
 

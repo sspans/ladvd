@@ -46,9 +46,17 @@
 
 
 #ifdef HAVE_NET_BPF_H
-struct bpf_insn master_filter[] = {
+struct bpf_insn reject_filter[] = {
+    // reject
+    BPF_STMT(BPF_RET+BPF_K, 0)
+};
+struct bpf_insn proto_filter[] = {
 #elif defined HAVE_LINUX_FILTER_H
-struct sock_filter master_filter[] = {
+struct sock_filter reject_filter[] = {
+    // reject
+    BPF_STMT(BPF_RET+BPF_K, 0)
+};
+struct sock_filter proto_filter[] = {
 #endif
     // lldp
     // ether 01:80:c2:00:00:0e
@@ -132,24 +140,23 @@ struct sock_filter master_filter[] = {
     BPF_STMT(BPF_RET+BPF_K, 0)
 };
 
+struct rfdhead rawfds;
 
 #ifdef HAVE_NET_BPF_H
 struct bpf_buf bpf_buf = { 0, NULL };
 #endif /* HAVE_NET_BPF_H */
+
 int sock = -1;
+int mfd = -1;
+int dfd = -1;
 
 extern struct proto protos[];
 
-void master_init(struct nhead *netifs, uint16_t netifc,
-		 pid_t child, int cmdfd, int msgfd) {
+void master_init(pid_t child, int cmdfd, int msgfd) {
 
-    // raw socket
-    int rawfd;
-
-    // interfaces
-    struct netif *netif = NULL, *subif = NULL;
-    struct master_rfd *rfds = NULL;
-    unsigned int i;
+    // events
+    struct event ev_cmd;
+    struct event ev_sigchld, ev_sigint, ev_sigterm,  ev_sighup;
 
     // pcap
     pcap_hdr_t pcap_hdr;
@@ -159,71 +166,18 @@ void master_init(struct nhead *netifs, uint16_t netifc,
     cap_t caps;
 #endif /* USE_CAPABILITIES */
 
-    // events
-    struct event ev_cmd;
-    struct event ev_sigchld, ev_sigint, ev_sigterm,  ev_sighup;
-
+    // init the queues
+    TAILQ_INIT(&rawfds);
 
     // proctitle
     setproctitle("master [priv]");
 
-    // open a regular socket
+    // setup global sockets
     sock = my_socket(AF_INET, SOCK_DGRAM, 0);
-
-    // open a raw socket or return stdout on debug
-    if (!(options & OPT_DEBUG))
-	rawfd = master_rsocket(NULL, O_WRONLY);
-    else
-	rawfd = fileno(stdout);
-
-    if (rawfd < 0)
-	my_fatal("opening raw socket failed");
-
-    // open listen sockets
-    if ((options & OPT_RECV) && (!(options & OPT_DEBUG))) {
-
-	// init
-	rfds = my_calloc(netifc, sizeof(struct master_rfd));
-	i = 0;
-
-	netif = NULL;
-	while ((netif = netif_iter(netif, netifs)) != NULL) {
-	    my_log(INFO, "starting receive loop with interface %s",
-			 netif->name);
-
-	    subif = NULL;
-	    while ((subif = subif_iter(subif, netif)) != NULL) {
-		my_log(INFO, "listening on %s", subif->name);
-
-		rfds[i].index = subif->index;
-		strlcpy(rfds[i].name, subif->name, IFNAMSIZ);
-		rfds[i].fd = master_rsocket(&rfds[i], O_RDONLY);
-		rfds[i].cfd = msgfd;
-
-		if (rfds[i].fd < 0)
-		    my_fatal("opening raw socket failed");
-
-		master_rconf(&rfds[i], protos);
-
-		i++;
-	    }
-	}
-
-	netifc = i;
-    }
+    mfd = msgfd;
 
     // debug
     if (options & OPT_DEBUG) {
-
-	// listen for packets on stdin
-	if (options & OPT_RECV) {
-	    i = 0;
-	    rfds = my_calloc(1, sizeof(struct master_rfd));
-	    rfds[i].fd = 0;
-	    rfds[i].cfd = msgfd;
-	    netifc = 1;
-	}
-
 	// zero
 	memset(&pcap_hdr, 0, sizeof(pcap_hdr));
 
@@ -235,11 +189,12 @@ void master_init(struct nhead *netifs, uint16_t netifc,
 	pcap_hdr.network = 1;
 
 	// send pcap global header
-	if (write(rawfd, &pcap_hdr, sizeof(pcap_hdr)) != sizeof(pcap_hdr))
+	dfd = fileno(stdout);
+
+	if (write(dfd, &pcap_hdr, sizeof(pcap_hdr))
+	    != sizeof(pcap_hdr))
 	    my_fatal("failed to write pcap global header");
     } else {
-
-	my_chroot(PACKAGE_CHROOT_DIR);
 
 #ifdef USE_CAPABILITIES
 	// keep CAP_NET_ADMIN
@@ -261,7 +216,7 @@ void master_init(struct nhead *netifs, uint16_t netifc,
     event_init();
 
     // listen for requests from the child
-    event_set(&ev_cmd, cmdfd, EV_READ|EV_PERSIST, (void *)master_cmd, &rawfd);
+    event_set(&ev_cmd, cmdfd, EV_READ|EV_PERSIST, (void *)master_cmd, NULL);
     event_add(&ev_cmd, NULL);
 
     // handle signals
@@ -273,16 +228,6 @@ void master_init(struct nhead *netifs, uint16_t netifc,
     signal_add(&ev_sigint, NULL);
     signal_add(&ev_sigterm, NULL);
     signal_add(&ev_sighup, NULL);
-
-
-    // listen for received packets
-    if (options & OPT_RECV) {
-	for (i = 0; i < netifc; i++) {
-	    event_set(&rfds[i].event, rfds[i].fd, EV_READ|EV_PERSIST,
-		(void *)master_recv, &rfds[i]);
-	    event_add(&rfds[i].event, NULL);
-	}
-    }
 
     // wait for events
     event_dispatch();
@@ -310,7 +255,7 @@ void master_signal(int sig, short event, void *pid) {
 }
 
 
-void master_cmd(int cmdfd, short event, int *rawfd) {
+void master_cmd(int cmdfd, short event) {
     struct master_msg mreq;
     ssize_t len;
 
@@ -326,13 +271,15 @@ void master_cmd(int cmdfd, short event, int *rawfd) {
 	my_fatal("invalid request received");
 
     // validate request
-    if (master_rcheck(&mreq) != EXIT_SUCCESS)
+    if (master_check(&mreq) != EXIT_SUCCESS)
 	my_fatal("invalid request supplied");
 
     switch (mreq.cmd) {
 	// transmit packet
 	case MASTER_SEND:
-	    mreq.len = master_rsend(*rawfd, &mreq);
+	    if (rfd_byindex(&rawfds, mreq.index) == NULL)
+		master_open(&mreq);
+	    mreq.len = master_send(&mreq);
 	    break;
 #if HAVE_LINUX_ETHTOOL_H
 	// fetch ethtool details
@@ -346,6 +293,11 @@ void master_cmd(int cmdfd, short event, int *rawfd) {
 	    mreq.len = master_descr(&mreq);
 	    break;
 #endif /* SIOCGIFDESCR */
+	// close sockets
+	case MASTER_CLOSE:
+	    if (rfd_byindex(&rawfds, mreq.index) != NULL)
+		master_close(&mreq);
+	    break;
 	// invalid request
 	default:
 	    my_fatal("invalid request received");
@@ -357,7 +309,7 @@ void master_cmd(int cmdfd, short event, int *rawfd) {
 }
 
 
-int master_rcheck(struct master_msg *mreq) {
+int master_check(struct master_msg *mreq) {
 
     assert(mreq);
     assert(mreq->len <= ETHER_MAX_LEN);
@@ -385,6 +337,8 @@ int master_rcheck(struct master_msg *mreq) {
 	    assert(mreq->len <= IFDESCRSIZE);
 	    return(EXIT_SUCCESS);
 #endif /* SIOCSIFDESCR */
+	case MASTER_CLOSE:
+	    return(EXIT_SUCCESS);
 	default:
 	    return(EXIT_FAILURE);
     }
@@ -393,22 +347,23 @@ int master_rcheck(struct master_msg *mreq) {
 }
 
 
-int master_rsocket(struct master_rfd *rfd, int mode) {
+int master_socket(struct rawfd *rfd) {
 
-    int rsocket = -1;
+#ifdef TARGET_IS_FREEBSD
+    struct sockaddr_dl *saddrdl;
+#endif
+
+    int fd = -1;
 
 #ifdef HAVE_NETPACKET_PACKET_H
     struct sockaddr_ll sa;
 
-    rsocket = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
+    assert(rfd);
+    fd = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
 
     // socket open failed
-    if (rsocket < 0)
-	return(rsocket);
-
-    // return unbound socket if requested
-    if (rfd == NULL)
-	return(rsocket);
+    if (fd < 0)
+	return(fd);
 
     // bind the socket to rfd
     memset(&sa, 0, sizeof (sa));
@@ -417,97 +372,113 @@ int master_rsocket(struct master_rfd *rfd, int mode) {
     sa.sll_ifindex = rfd->index;
     sa.sll_protocol = htons(ETH_P_ALL);
 
-    if (bind(rsocket, (struct sockaddr *)&sa, sizeof (sa)) != 0)
+    if (bind(fd, (struct sockaddr *)&sa, sizeof (sa)) != 0)
 	my_fatal("failed to bind socket to %s", rfd->name);
-
-#elif defined HAVE_NET_BPF_H
-    int n = 0;
-    char dev[50];
-
-    struct ifreq ifr;
-
-    do {
-	snprintf(dev, sizeof(dev), "/dev/bpf%d", n++);
-	rsocket = open(dev, mode);
-    } while (rsocket < 0 && errno == EBUSY);
-
-    // no free bpf available
-    if (rsocket < 0)
-	return(rsocket);
-
-    // return unbound socket if requested
-    if (rfd == NULL)
-	return(rsocket);
-
-    // prepare ifr struct
-    memset(&ifr, 0, sizeof(ifr));
-    strlcpy(ifr.ifr_name, rfd->name, IFNAMSIZ);
-
-    // bind the socket to rfd
-    if (ioctl(rsocket, BIOCSETIF, (caddr_t)&ifr) < 0)
-	my_fatal("failed to bind socket to %s", rfd->name);
-#endif
-
-    return(rsocket);
-}
-
-
-void master_rconf(struct master_rfd *rfd, struct proto *protos) {
-
-    struct ifreq ifr;
-    int p;
-#ifdef AF_PACKET
-    struct packet_mreq mreq;
-#elif defined TARGET_IS_FREEBSD
-    struct sockaddr_dl *saddrdl;
-#endif
 
 #ifdef HAVE_LINUX_FILTER_H
     // install socket filter
     struct sock_fprog fprog;
 
     memset(&fprog, 0, sizeof(fprog));
-    fprog.filter = master_filter; 
-    fprog.len = sizeof(master_filter) / sizeof(struct sock_filter);
+    if (options & OPT_RECV) {
+	fprog.filter = proto_filter; 
+	fprog.len = sizeof(proto_filter) / sizeof(struct sock_filter);
+    } else {
+	fprog.filter = reject_filter; 
+	fprog.len = sizeof(reject_filter) / sizeof(struct sock_filter);
+    }
 
-    if (setsockopt(rfd->fd, SOL_SOCKET, SO_ATTACH_FILTER,
+    if (setsockopt(fd, SOL_SOCKET, SO_ATTACH_FILTER,
 		   &fprog, sizeof(fprog)) < 0)
 	my_fatal("unable to configure socket filter for %s", rfd->name);
-#elif defined HAVE_NET_BPF_H
+#endif
 
-    // setup bpf receive
+#elif defined HAVE_NET_BPF_H
+    int n = 0;
+    char dev[50];
+
+    struct ifreq ifr;
     struct bpf_program fprog;
     int immediate = 1;
 
-    memset(&fprog, 0, sizeof(fprog));
-    fprog.bf_insns = master_filter; 
-    fprog.bf_len = sizeof(master_filter) / sizeof(struct bpf_insn);
+    assert(rfd);
 
-    // configure a reasonable buffer length
+    do {
+	snprintf(dev, sizeof(dev), "/dev/bpf%d", n++);
+	fd = open(dev, O_RDWR);
+    } while (fd < 0 && errno == EBUSY);
+
+    // no free bpf available
+    if (fd < 0)
+	return(fd);
+
+    // prepare ifr struct
+    memset(&ifr, 0, sizeof(ifr));
+    strlcpy(ifr.ifr_name, rfd->name, IFNAMSIZ);
+
+    // bind the socket to rfd
+    if (ioctl(fd, BIOCSETIF, (caddr_t)&ifr) < 0)
+	my_fatal("failed to bind socket to %s", rfd->name);
+
+    // setup bpf receive
+    memset(&fprog, 0, sizeof(fprog));
+    if (options & OPT_RECV) {
+	fprog.bf_insns = proto_filter; 
+	fprog.bf_len = sizeof(proto_filter) / sizeof(struct bpf_insn);
+    } else {
+	fprog.bf_insns = reject_filter; 
+	fprog.bf_len = sizeof(reject_filter) / sizeof(struct bpf_insn);
+    }
+
+    // configure a reasonable receive buffer length
     if (!bpf_buf.len) {
 	bpf_buf.len = roundup(ETHER_MAX_LEN, getpagesize());
-	ioctl(rfd->fd, BIOCGBLEN, &bpf_buf.len);
+	ioctl(fd, BIOCGBLEN, &bpf_buf.len);
 	if (!bpf_buf.len)
 	   my_fatal("unable to fetch bpf bufer length for %s", rfd->name);
 	bpf_buf.data = my_malloc(bpf_buf.len);
     }
 
     // disable buffering
-    if (ioctl(rfd->fd, BIOCIMMEDIATE, (caddr_t)&immediate) < 0)
+    if (ioctl(fd, BIOCIMMEDIATE, (caddr_t)&immediate) < 0)
 	my_fatal("unable to configure immediate mode for %s", rfd->name);
     // install bpf filter
-    if (ioctl(rfd->fd, BIOCSETF, (caddr_t)&fprog) < 0)
+    if (ioctl(fd, BIOCSETF, (caddr_t)&fprog) < 0)
 	my_fatal("unable to configure bpf filter for %s", rfd->name);
 #endif
 
-    // configure multicast recv
+    return(fd);
+}
+
+
+void master_multi(struct rawfd *rfd, struct proto *protos, int op) {
+
+#ifdef AF_PACKET
+    struct packet_mreq mreq;
+#endif
+    struct ifreq ifr;
+    int p;
+
+    if (options & OPT_DEBUG)
+	return;
+
     memset(&ifr, 0, sizeof(ifr));
     strlcpy(ifr.ifr_name, rfd->name, IFNAMSIZ);
+
+#ifdef AF_PACKET
+    op = (op) ? PACKET_ADD_MEMBERSHIP:PACKET_DROP_MEMBERSHIP;
+#elif defined AF_LINK
+    op = (op) ? SIOCADDMULTI: SIOCDELMULTI;
+#endif
 
     for (p = 0; protos[p].name != NULL; p++) {
 
 	// only enabled protos
 	if ((protos[p].enabled == 0) && !(options & OPT_AUTO))
+	    continue;
+
+	// too bad for EDP
+	if (!ETHER_IS_MULTICAST(protos[p].dst_addr))
 	    continue;
 
 #ifdef AF_PACKET
@@ -517,15 +488,11 @@ void master_rconf(struct master_rfd *rfd, struct proto *protos) {
 	mreq.mr_alen = ETHER_ADDR_LEN;
 	memcpy(mreq.mr_address, protos[p].dst_addr, ETHER_ADDR_LEN);
 
-	if (setsockopt(rfd->fd, SOL_PACKET, PACKET_ADD_MEMBERSHIP,
-		   &mreq, sizeof(mreq)) < 0)
-	    my_fatal("unable to add %s multicast to %s: %s",
+	if (setsockopt(rfd->fd, SOL_PACKET, op, &mreq, sizeof(mreq)) < 0)
+	    my_fatal("unable to change %s multicast on %s: %s",
 		     protos[p].name, rfd->name, strerror(errno));
-#elif defined AF_LINK
-	// too bad for EDP
-	if (!ETHER_IS_MULTICAST(protos[p].dst_addr))
-	    continue;
 
+#elif defined AF_LINK
 #ifdef TARGET_IS_FREEBSD
 	saddrdl = (struct sockaddr_dl *)&ifr.ifr_addr;
 	saddrdl->sdl_family = AF_LINK;
@@ -539,7 +506,7 @@ void master_rconf(struct master_rfd *rfd, struct proto *protos) {
 	ifr.ifr_addr.sa_family = AF_UNSPEC;
 	memcpy(ifr.ifr_addr.sa_data, protos[p].dst_addr, ETHER_ADDR_LEN);
 #endif
-	if ((ioctl(sock, SIOCADDMULTI, &ifr) < 0) && (errno != EADDRINUSE))
+	if ((ioctl(sock, op, &ifr) < 0) && (errno != EADDRINUSE))
 	    my_fatal("unable to add %s multicast to %s: %s",
 		     protos[p].name, rfd->name, strerror(errno));
 #endif
@@ -547,7 +514,7 @@ void master_rconf(struct master_rfd *rfd, struct proto *protos) {
 }
 
 
-void master_recv(int fd, short event, struct master_rfd *rfd) {
+void master_recv(int fd, short event, struct rawfd *rfd) {
     // packet
     struct master_msg mrecv;
     struct ether_hdr *ether;
@@ -615,7 +582,7 @@ void master_recv(int fd, short event, struct master_rfd *rfd) {
     }
     my_log(INFO, "received %s message (%d bytes)", protos[p].name, mrecv.len);
 
-    if (write(rfd->cfd, &mrecv, MASTER_MSG_SIZE) != MASTER_MSG_SIZE)
+    if (write(mfd, &mrecv, MASTER_MSG_SIZE) != MASTER_MSG_SIZE)
 	    my_fatal("failed to send message to child");
     rcount++;
 
@@ -626,8 +593,9 @@ void master_recv(int fd, short event, struct master_rfd *rfd) {
 }
 
 
-ssize_t master_rsend(int fd, struct master_msg *mreq) {
+ssize_t master_send(struct master_msg *mreq) {
 
+    struct rawfd *rfd = NULL;
     ssize_t count = 0;
 
     pcaprec_hdr_t pcap_rec_hdr;
@@ -643,35 +611,16 @@ ssize_t master_rsend(int fd, struct master_msg *mreq) {
 	    pcap_rec_hdr.incl_len = mreq->len;
 	    pcap_rec_hdr.orig_len = mreq->len;
 
-	    if (write(fd, &pcap_rec_hdr, sizeof(pcap_rec_hdr))
+	    if (write(dfd, &pcap_rec_hdr, sizeof(pcap_rec_hdr))
 		    != sizeof(pcap_rec_hdr))
 		my_fatal("failed to write pcap record header");
 	}
 
-	return(write(fd, mreq->msg, mreq->len));
+	return(write(dfd, mreq->msg, mreq->len));
     }
 
-#ifdef HAVE_NETPACKET_PACKET_H
-    struct sockaddr_ll sa;
-    memset(&sa, 0, sizeof (sa));
-
-    sa.sll_family = AF_PACKET;
-    sa.sll_ifindex = mreq->index;
-    sa.sll_protocol = htons(ETH_P_ALL);
-
-    count = sendto(fd, mreq->msg, mreq->len, 0,
-		   (struct sockaddr *)&sa, sizeof (sa));
-#elif defined HAVE_NET_BPF_H
-    struct ifreq ifr;
-
-    // prepare ifr struct
-    memset(&ifr, 0, sizeof(ifr));
-    strlcpy(ifr.ifr_name, mreq->name, IFNAMSIZ);
-
-    if (ioctl(fd, BIOCSETIF, (caddr_t)&ifr) < 0)
-	my_fatal("ioctl failed: %s", strerror(errno));
-    count = write(fd, mreq->msg, mreq->len);
-#endif
+    assert((rfd = rfd_byindex(&rawfds, mreq->index)) != NULL);
+    count = write(rfd->fd, mreq->msg, mreq->len);
 
     if (count != mreq->len)
 	my_log(WARN, "only %d bytes written: %s", count, strerror(errno));
@@ -679,6 +628,59 @@ ssize_t master_rsend(int fd, struct master_msg *mreq) {
     return(count);
 }
 
+
+void master_open(struct master_msg *mreq) {
+    struct rawfd *rfd = NULL;
+
+    if (options & OPT_DEBUG)
+	return;
+
+    rfd = my_malloc(sizeof(struct rawfd));
+    TAILQ_INSERT_TAIL(&rawfds, rfd, entries);
+
+    rfd->index = mreq->index;
+    strlcpy(rfd->name, mreq->name, IFNAMSIZ);
+
+    rfd->fd = master_socket(rfd);
+    if (rfd->fd < 0)
+	my_fatal("opening raw socket failed");
+
+    if (!(options & OPT_RECV))
+	return;
+
+    // register multicast membership
+    master_multi(rfd, protos, 1);
+
+    // listen for received packets
+    event_set(&rfd->event, rfd->fd, EV_READ|EV_PERSIST,
+	(void *)master_recv, rfd);
+    event_add(&rfd->event, NULL);
+
+    return;
+}
+
+void master_close(struct master_msg *mreq) {
+    struct rawfd *rfd = NULL;
+
+    if (options & OPT_DEBUG)
+	return;
+
+    assert((rfd = rfd_byindex(&rawfds, mreq->index)) != NULL);
+
+    if (options & OPT_RECV) {
+	// unregister multicast membership
+	master_multi(rfd, protos, 0);
+	// delete event
+	event_del(&rfd->event);
+    }
+
+    // cleanup
+    TAILQ_REMOVE(&rawfds, rfd, entries);
+    close(rfd->fd);
+    free(rfd);
+
+    return;
+}
 
 #if HAVE_LINUX_ETHTOOL_H
 size_t master_ethtool(struct master_msg *mreq) {
@@ -724,4 +726,17 @@ size_t master_descr(struct master_msg *mreq) {
     return(ret);
 }
 #endif /* SIOCGIFDESCR */
+
+struct rawfd *rfd_byindex(struct rfdhead *rawfds, uint32_t index) {
+    struct rawfd *rfd = NULL;
+
+    if (rawfds == NULL)
+	return NULL;
+
+    TAILQ_FOREACH(rfd, rawfds, entries) {
+	if (rfd->index == index)
+	    break;
+    }
+    return(rfd);
+}
 
