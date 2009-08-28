@@ -30,6 +30,7 @@
 #endif /* HAVE_NET_IF_DL_H */
 
 #ifdef HAVE_LINUX_FILTER_H
+#include <linux/types.h>
 #include <linux/filter.h>
 #endif /* HAVE_LINUX_FILTER_H */
 #ifdef HAVE_NET_BPF_H
