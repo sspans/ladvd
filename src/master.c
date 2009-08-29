@@ -49,9 +49,6 @@ void master_init(pid_t child, int cmdfd, int msgfd) {
     struct event ev_cmd;
     struct event ev_sigchld, ev_sigint, ev_sigterm,  ev_sighup;
 
-    // pcap
-    pcap_hdr_t pcap_hdr;
-
 #ifdef USE_CAPABILITIES
     // capabilities
     cap_t caps;
@@ -69,6 +66,9 @@ void master_init(pid_t child, int cmdfd, int msgfd) {
 
     // debug
     if (options & OPT_DEBUG) {
+	// pcap
+	pcap_hdr_t pcap_hdr;
+
 	// zero
 	memset(&pcap_hdr, 0, sizeof(pcap_hdr));
 
@@ -85,9 +85,8 @@ void master_init(pid_t child, int cmdfd, int msgfd) {
 	if (write(dfd, &pcap_hdr, sizeof(pcap_hdr))
 	    != sizeof(pcap_hdr))
 	    my_fatal("failed to write pcap global header");
-    } else {
-
 #ifdef USE_CAPABILITIES
+    } else {
 	// keep CAP_NET_ADMIN
 	caps = cap_from_text("cap_net_admin=ep "
 		"cap_net_broadcast=ep cap_kill=ep");
@@ -172,6 +171,11 @@ void master_cmd(int cmdfd, short event) {
 		master_open(&mreq);
 	    mreq.len = master_send(&mreq);
 	    break;
+	// close socket
+	case MASTER_CLOSE:
+	    if (rfd_byindex(&rawfds, mreq.index) != NULL)
+		master_close(&mreq);
+	    break;
 #if HAVE_LINUX_ETHTOOL_H
 	// fetch ethtool details
 	case MASTER_ETHTOOL:
@@ -184,11 +188,6 @@ void master_cmd(int cmdfd, short event) {
 	    mreq.len = master_descr(&mreq);
 	    break;
 #endif /* SIOCGIFDESCR */
-	// close sockets
-	case MASTER_CLOSE:
-	    if (rfd_byindex(&rawfds, mreq.index) != NULL)
-		master_close(&mreq);
-	    break;
 	// invalid request
 	default:
 	    my_fatal("invalid request received");
@@ -218,6 +217,8 @@ int master_check(struct master_msg *mreq) {
 	    assert(mreq->proto < PROTO_MAX);
 	    assert(protos[mreq->proto].check(mreq->msg, mreq->len) != NULL);
 	    return(EXIT_SUCCESS);
+	case MASTER_CLOSE:
+	    return(EXIT_SUCCESS);
 #if HAVE_LINUX_ETHTOOL_H
 	case MASTER_ETHTOOL:
 	    assert(mreq->len == sizeof(struct ethtool_cmd));
@@ -228,14 +229,147 @@ int master_check(struct master_msg *mreq) {
 	    assert(mreq->len <= IFDESCRSIZE);
 	    return(EXIT_SUCCESS);
 #endif /* SIOCSIFDESCR */
-	case MASTER_CLOSE:
-	    return(EXIT_SUCCESS);
 	default:
 	    return(EXIT_FAILURE);
     }
 
     return(EXIT_FAILURE);
 }
+
+
+ssize_t master_send(struct master_msg *mreq) {
+
+    struct rawfd *rfd = NULL;
+    ssize_t count = 0;
+
+    pcaprec_hdr_t pcap_rec_hdr;
+    struct timeval tv;
+
+    // debug
+    if (options & OPT_DEBUG) {
+
+	// write a pcap record header
+	if (gettimeofday(&tv, NULL) == 0) {
+	    pcap_rec_hdr.ts_sec = tv.tv_sec;
+	    pcap_rec_hdr.ts_usec = tv.tv_usec;
+	    pcap_rec_hdr.incl_len = mreq->len;
+	    pcap_rec_hdr.orig_len = mreq->len;
+
+	    if (write(dfd, &pcap_rec_hdr, sizeof(pcap_rec_hdr))
+		    != sizeof(pcap_rec_hdr))
+		my_fatal("failed to write pcap record header");
+	}
+
+	return(write(dfd, mreq->msg, mreq->len));
+    }
+
+    assert((rfd = rfd_byindex(&rawfds, mreq->index)) != NULL);
+    count = write(rfd->fd, mreq->msg, mreq->len);
+
+    if (count != mreq->len)
+	my_log(WARN, "only %d bytes written: %s", count, strerror(errno));
+
+    return(count);
+}
+
+
+void master_open(struct master_msg *mreq) {
+    struct rawfd *rfd = NULL;
+
+    if (options & OPT_DEBUG)
+	return;
+
+    rfd = my_malloc(sizeof(struct rawfd));
+    TAILQ_INSERT_TAIL(&rawfds, rfd, entries);
+
+    rfd->index = mreq->index;
+    strlcpy(rfd->name, mreq->name, IFNAMSIZ);
+
+    rfd->fd = master_socket(rfd);
+    if (rfd->fd < 0)
+	my_fatal("opening raw socket failed");
+
+    if (!(options & OPT_RECV))
+	return;
+
+    // register multicast membership
+    master_multi(rfd, protos, 1);
+
+    // listen for received packets
+    event_set(&rfd->event, rfd->fd, EV_READ|EV_PERSIST,
+	(void *)master_recv, rfd);
+    event_add(&rfd->event, NULL);
+
+    return;
+}
+
+void master_close(struct master_msg *mreq) {
+    struct rawfd *rfd = NULL;
+
+    if (options & OPT_DEBUG)
+	return;
+
+    assert((rfd = rfd_byindex(&rawfds, mreq->index)) != NULL);
+
+    if (options & OPT_RECV) {
+	// unregister multicast membership
+	master_multi(rfd, protos, 0);
+	// delete event
+	event_del(&rfd->event);
+    }
+
+    // cleanup
+    TAILQ_REMOVE(&rawfds, rfd, entries);
+    close(rfd->fd);
+    free(rfd);
+
+    return;
+}
+
+#if HAVE_LINUX_ETHTOOL_H
+size_t master_ethtool(struct master_msg *mreq) {
+
+    struct ifreq ifr;
+    struct ethtool_cmd ecmd;
+
+    assert(mreq != NULL);
+
+    // prepare ifr struct
+    memset(&ifr, 0, sizeof(ifr));
+    strlcpy(ifr.ifr_name, mreq->name, IFNAMSIZ);
+
+    // prepare ecmd struct
+    memset(&ecmd, 0, sizeof(ecmd));
+    ecmd.cmd = ETHTOOL_GSET;
+    ifr.ifr_data = (caddr_t)&ecmd;
+
+    if (ioctl(sock, SIOCETHTOOL, &ifr) != -1) {
+	memcpy(mreq->msg, &ecmd, sizeof(ecmd));
+	return(sizeof(ecmd));
+    } else {
+	return(0);
+    }
+}
+#endif /* HAVE_LINUX_ETHTOOL_H */
+
+#ifdef SIOCSIFDESCR
+size_t master_descr(struct master_msg *mreq) {
+
+    struct ifreq ifr;
+    int ret;
+
+    assert(mreq != NULL);
+
+    // prepare ifr struct
+    memset(&ifr, 0, sizeof(ifr));
+    strlcpy(ifr.ifr_name, mreq->name, IFNAMSIZ);
+    ifr.ifr_data = (caddr_t)&mreq->msg;
+
+    if ((ret = ioctl(sock, SIOCSIFDESCR, &ifr)) == -1)
+	ret = 0;
+    return(ret);
+}
+#endif /* SIOCGIFDESCR */
 
 
 int master_socket(struct rawfd *rfd) {
@@ -484,141 +618,7 @@ void master_recv(int fd, short event, struct rawfd *rfd) {
 }
 
 
-ssize_t master_send(struct master_msg *mreq) {
-
-    struct rawfd *rfd = NULL;
-    ssize_t count = 0;
-
-    pcaprec_hdr_t pcap_rec_hdr;
-    struct timeval tv;
-
-    // debug
-    if (options & OPT_DEBUG) {
-
-	// write a pcap record header
-	if (gettimeofday(&tv, NULL) == 0) {
-	    pcap_rec_hdr.ts_sec = tv.tv_sec;
-	    pcap_rec_hdr.ts_usec = tv.tv_usec;
-	    pcap_rec_hdr.incl_len = mreq->len;
-	    pcap_rec_hdr.orig_len = mreq->len;
-
-	    if (write(dfd, &pcap_rec_hdr, sizeof(pcap_rec_hdr))
-		    != sizeof(pcap_rec_hdr))
-		my_fatal("failed to write pcap record header");
-	}
-
-	return(write(dfd, mreq->msg, mreq->len));
-    }
-
-    assert((rfd = rfd_byindex(&rawfds, mreq->index)) != NULL);
-    count = write(rfd->fd, mreq->msg, mreq->len);
-
-    if (count != mreq->len)
-	my_log(WARN, "only %d bytes written: %s", count, strerror(errno));
-
-    return(count);
-}
-
-
-void master_open(struct master_msg *mreq) {
-    struct rawfd *rfd = NULL;
-
-    if (options & OPT_DEBUG)
-	return;
-
-    rfd = my_malloc(sizeof(struct rawfd));
-    TAILQ_INSERT_TAIL(&rawfds, rfd, entries);
-
-    rfd->index = mreq->index;
-    strlcpy(rfd->name, mreq->name, IFNAMSIZ);
-
-    rfd->fd = master_socket(rfd);
-    if (rfd->fd < 0)
-	my_fatal("opening raw socket failed");
-
-    if (!(options & OPT_RECV))
-	return;
-
-    // register multicast membership
-    master_multi(rfd, protos, 1);
-
-    // listen for received packets
-    event_set(&rfd->event, rfd->fd, EV_READ|EV_PERSIST,
-	(void *)master_recv, rfd);
-    event_add(&rfd->event, NULL);
-
-    return;
-}
-
-void master_close(struct master_msg *mreq) {
-    struct rawfd *rfd = NULL;
-
-    if (options & OPT_DEBUG)
-	return;
-
-    assert((rfd = rfd_byindex(&rawfds, mreq->index)) != NULL);
-
-    if (options & OPT_RECV) {
-	// unregister multicast membership
-	master_multi(rfd, protos, 0);
-	// delete event
-	event_del(&rfd->event);
-    }
-
-    // cleanup
-    TAILQ_REMOVE(&rawfds, rfd, entries);
-    close(rfd->fd);
-    free(rfd);
-
-    return;
-}
-
-#if HAVE_LINUX_ETHTOOL_H
-size_t master_ethtool(struct master_msg *mreq) {
-
-    struct ifreq ifr;
-    struct ethtool_cmd ecmd;
-
-    assert(mreq != NULL);
-
-    // prepare ifr struct
-    memset(&ifr, 0, sizeof(ifr));
-    strlcpy(ifr.ifr_name, mreq->name, IFNAMSIZ);
-
-    // prepare ecmd struct
-    memset(&ecmd, 0, sizeof(ecmd));
-    ecmd.cmd = ETHTOOL_GSET;
-    ifr.ifr_data = (caddr_t)&ecmd;
-
-    if (ioctl(sock, SIOCETHTOOL, &ifr) != -1) {
-	memcpy(mreq->msg, &ecmd, sizeof(ecmd));
-	return(sizeof(ecmd));
-    } else {
-	return(0);
-    }
-}
-#endif /* HAVE_LINUX_ETHTOOL_H */
-
-#ifdef SIOCSIFDESCR
-size_t master_descr(struct master_msg *mreq) {
-
-    struct ifreq ifr;
-    int ret;
-
-    assert(mreq != NULL);
-
-    // prepare ifr struct
-    memset(&ifr, 0, sizeof(ifr));
-    strlcpy(ifr.ifr_name, mreq->name, IFNAMSIZ);
-    ifr.ifr_data = (caddr_t)&mreq->msg;
-
-    if ((ret = ioctl(sock, SIOCSIFDESCR, &ifr)) == -1)
-	ret = 0;
-    return(ret);
-}
-#endif /* SIOCGIFDESCR */
-
-struct rawfd *rfd_byindex(struct rfdhead *rawfds, uint32_t index) {
+inline struct rawfd *rfd_byindex(struct rfdhead *rawfds, uint32_t index) {
     struct rawfd *rfd = NULL;
 
     if (rawfds == NULL)
