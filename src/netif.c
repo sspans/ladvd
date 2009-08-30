@@ -444,8 +444,8 @@ int netif_type(int sockfd, uint32_t index,
 	// vlan
 #ifdef HAVE_NET_IF_VLAN_VAR_H
 	memset(&vreq, 0, sizeof(struct vlanreq));
-	ifr.ifr_data = (caddr_t)&vreq;
-	if (ioctl(s, SIOCGETVLAN, (caddr_t)&ifr) >= 0)
+	ifr->ifr_data = (caddr_t)&vreq;
+	if (ioctl(sockfd, SIOCGETVLAN, (caddr_t)&ifr) >= 0)
 	    return(NETIF_INVALID);
 #endif /* HAVE_NET_IF_VLAN_VAR_H */
 

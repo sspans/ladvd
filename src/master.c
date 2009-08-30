@@ -406,10 +406,6 @@ ssize_t master_device(struct master_msg *mreq) {
 
 int master_socket(struct rawfd *rfd) {
 
-#ifdef TARGET_IS_FREEBSD
-    struct sockaddr_dl *saddrdl;
-#endif
-
     int fd = -1;
 
 #ifdef HAVE_NETPACKET_PACKET_H
@@ -512,6 +508,9 @@ void master_multi(struct rawfd *rfd, struct proto *protos, int op) {
 
 #ifdef AF_PACKET
     struct packet_mreq mreq;
+#endif
+#ifdef TARGET_IS_FREEBSD
+    struct sockaddr_dl *saddrdl;
 #endif
     struct ifreq ifr;
     int p;
