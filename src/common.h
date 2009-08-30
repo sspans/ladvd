@@ -10,6 +10,9 @@
 #include <string.h>
 #include <errno.h>
 #include <assert.h>
+#ifdef HAVE_STRNVIS
+#include <vis.h>
+#endif
 #if HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
