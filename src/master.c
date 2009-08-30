@@ -96,7 +96,7 @@ void master_init(pid_t child, int cmdfd, int msgfd) {
 #ifdef USE_CAPABILITIES
     } else {
 	// keep CAP_NET_ADMIN
-	caps = cap_from_text("cap_net_admin=ep "
+	caps = cap_from_text("cap_net_admin=ep cap_net_raw=ep "
 		"cap_net_broadcast=ep cap_kill=ep");
 
 	if (caps == NULL)
