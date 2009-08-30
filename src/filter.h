@@ -2,16 +2,19 @@
 #ifndef _filter_h
 #define _filter_h
 
+#ifdef HAVE_NET_BPF_H
+#include <sys/types.h>
+#include <sys/time.h>
+#include <sys/ioctl.h>
+#include <net/bpf.h>
+#endif /* HAVE_NET_BPF_H */
 #ifdef HAVE_LINUX_FILTER_H
 #include <linux/types.h>
 #include <linux/filter.h>
 #endif /* HAVE_LINUX_FILTER_H */
-#ifdef HAVE_NET_BPF_H
-#include <net/bpf.h>
-#endif /* HAVE_NET_BPF_H */
 
 #ifdef HAVE_NET_BPF_H
-#define SOCKET_FILTER	    struct bpf_isn
+#define SOCKET_FILTER	    struct bpf_insn
 #elif defined HAVE_LINUX_FILTER_H
 #define SOCKET_FILTER	    struct sock_filter
 #endif
