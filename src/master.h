@@ -42,11 +42,14 @@ void master_recv(int fd, short event, struct rawfd *rfd);
 ssize_t master_send(struct master_msg *mreq);
 void master_open(struct master_msg *mreq);
 #if HAVE_LINUX_ETHTOOL_H
-size_t master_ethtool(struct master_msg *mreq);
+ssize_t master_ethtool(struct master_msg *mreq);
 #endif /* HAVE_LINUX_ETHTOOL_H */
 #ifdef SIOCSIFDESCR
-size_t master_descr(struct master_msg *mreq);
+ssize_t master_descr(struct master_msg *mreq);
 #endif /* SIOCSIFDESCR */
+#ifdef HAVE_SYSFS
+ssize_t master_device(struct master_msg *mreq);
+#endif /* HAVE_SYSFS */
 void master_close(struct master_msg *mreq);
 
 int master_check(struct master_msg *mreq);
