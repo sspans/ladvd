@@ -431,7 +431,6 @@ int master_socket(struct rawfd *rfd) {
 
     if (bind(fd, (struct sockaddr *)&sa, sizeof (sa)) != 0)
 	my_fatal("failed to bind socket to %s", rfd->name);
-#endif /* HAVE_NETPACKET_PACKET_H */
 
 #ifdef HAVE_LINUX_FILTER_H
     // install socket filter
