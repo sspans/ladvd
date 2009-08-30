@@ -6,6 +6,7 @@
 #include "util.h"
 #include "proto/protos.h"
 #include "master.h"
+#include "filter.h"
 #include <sys/ioctl.h>
 #include <sys/param.h>
 #include <sys/select.h>
@@ -36,6 +37,8 @@
 #if HAVE_LINUX_ETHTOOL_H
 #include <linux/ethtool.h>
 #endif /* HAVE_LINUX_ETHTOOL_H */
+
+struct rfdhead rawfds;
 
 int sock = -1;
 int mfd = -1;
