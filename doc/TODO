@@ -1,6 +1,5 @@
 
 FOR 0.8.1:
-- openbsd vlan detect
 - create freebsd lagg pr
 - fix reported RHEL 4 issues
 

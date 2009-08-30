@@ -45,6 +45,11 @@
 #endif /* HAVE_NET_IF_TYPES_H */
 
 
+#ifdef HAVE_NET_IF_VLAN_VAR_H
+#include <net/if_vlan_var.h>
+#endif /* HAVE_NET_IF_VLAN_VAR_H */
+
+
 #ifdef HAVE_NET_IF_LAGG_H
 #include <net/if_lagg.h>
 #endif /* HAVE_NET_IF_LAGG_H */
@@ -385,6 +390,9 @@ int netif_type(int sockfd, uint32_t index,
     memset(&drvinfo, 0, sizeof(drvinfo));
 #endif
 
+#ifdef HAVE_NET_IF_VLAN_VAR_H
+    struct vlanreq  vreq;
+#endif /* HAVE_NET_IF_VLAN_VAR_H */
 #ifdef HAVE_NET_IF_LAGG_H
     struct lagg_reqall ra;
 #elif HAVE_NET_IF_TRUNK_H
@@ -429,6 +437,14 @@ int netif_type(int sockfd, uint32_t index,
     struct if_data *if_data = ifaddr->ifa_data;
 
     if (if_data->ifi_type == IFT_ETHER) {
+
+	// vlan
+#ifdef HAVE_NET_IF_VLAN_VAR_H
+	memset(&vreq, 0, sizeof(struct vlanreq));
+	ifr.ifr_data = (caddr_t)&vreq;
+	if (ioctl(s, SIOCGETVLAN, (caddr_t)&ifr) >= 0)
+	    return(NETIF_INVALID);
+#endif /* HAVE_NET_IF_VLAN_VAR_H */
 
 	// bonding
 #if defined(HAVE_NET_IF_LAGG_H) || defined(HAVE_NET_IF_TRUNK_H)

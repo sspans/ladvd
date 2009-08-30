@@ -222,14 +222,14 @@ AC_CHECK_HEADERS([netinet/if_ether.h], [], [],
 AC_CHECK_HEADERS([net/if_types.h])
 AC_CHECK_HEADERS([linux/filter.h])
 
-# bridge / bonding
+# vlan / bridge / bonding
 AC_CHECK_HEADERS([linux/if_bridge.h linux/if_bonding.h], [], [],
 [
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <linux/netdevice.h>
 ])
-AC_CHECK_HEADERS([net/if_bridge.h net/if_bridgevar.h \
+AC_CHECK_HEADERS([net/if_vlan_var.h net/if_bridge.h net/if_bridgevar.h \
 		  net/if_lagg.h net/if_trunk.h net/if_bond_var.h], [], [],
 [
 #include <sys/types.h>
