@@ -257,30 +257,6 @@ void netif_descr(struct netif *netif, struct mhead *mqueue) {
     free(dmsg);
 }
 
-int read_line(const char *path, char *line, uint16_t len) {
-    FILE *file;
-    char *newline;
-
-    if (path == NULL || line == NULL)
-	return(-1);
-
-    if ((file = fopen(path, "r")) == NULL)
-	return(-1);
-
-    if (fgets(line, len, file) == NULL) {
-	(void) fclose(file);
-	return(-1);
-    }
-    (void) fclose(file);
-
-    // remove newline
-    newline = strchr(line, '\n');
-    if (newline != NULL)
-	*newline = '\0';
-
-    return(strlen(line));
-}
-
 // adapted from openssh's safely_chroot
 void my_chroot(const char *path) {
     const char *cp;
