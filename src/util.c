@@ -247,7 +247,6 @@ void netif_descr(struct netif *netif, struct mhead *mqueue) {
 
     dmsg = my_malloc(sizeof(struct master_msg));
     dmsg->index = netif->index;
-    strlcpy(dmsg->name, netif->name, IFNAMSIZ);
     dmsg->cmd = MASTER_DESCR;
     dmsg->len = IFDESCRSIZE;
     strlcpy(dmsg->msg, descr, dmsg->len);

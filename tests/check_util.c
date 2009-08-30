@@ -7,6 +7,7 @@
 
 #include "common.h"
 #include "util.h"
+#include "proto/protos.h"
 
 #include "check_wrap.h"
 
@@ -161,8 +162,15 @@ START_TEST(test_netif) {
     struct nhead *netifs = &nqueue;
     struct netif tnetifs[6];
     struct netif *netif, *subif;
+    struct mhead mqueue;
+    struct master_msg *msg = NULL;
+    char *descr = NULL;
+    int spair[2];
+    extern int msock;
 
     TAILQ_INIT(netifs);
+    TAILQ_INIT(&mqueue);
+    my_socketpair(spair);
 
     tnetifs[0].index = 0;
     tnetifs[0].argv = 0;
@@ -170,6 +178,7 @@ START_TEST(test_netif) {
     tnetifs[0].type = NETIF_BONDING;
     tnetifs[0].subif = &tnetifs[1];
     strlcpy(tnetifs[0].name, "bond0", IFNAMSIZ); 
+    strlcpy(tnetifs[0].description, "bond0", IFDESCRSIZE); 
 
     tnetifs[1].index = 1;
     tnetifs[1].argv = 1;
@@ -177,6 +186,7 @@ START_TEST(test_netif) {
     tnetifs[1].type = NETIF_REGULAR;
     tnetifs[1].subif = &tnetifs[2];
     strlcpy(tnetifs[1].name, "eth0", IFNAMSIZ); 
+    strlcpy(tnetifs[1].description, "eth0", IFDESCRSIZE); 
 
     tnetifs[2].index = 2;
     tnetifs[2].argv = 0;
@@ -184,6 +194,7 @@ START_TEST(test_netif) {
     tnetifs[2].type = NETIF_REGULAR;
     tnetifs[2].subif = NULL,
     strlcpy(tnetifs[2].name, "eth2", IFNAMSIZ); 
+    strlcpy(tnetifs[2].description, "eth2", IFDESCRSIZE); 
 
     tnetifs[3].index = 4;
     tnetifs[3].argv = 0;
@@ -198,6 +209,7 @@ START_TEST(test_netif) {
     tnetifs[4].type = NETIF_BONDING;
     tnetifs[4].subif = NULL,
     strlcpy(tnetifs[4].name, "lagg0", IFNAMSIZ); 
+    strlcpy(tnetifs[4].description, "lagg0", IFDESCRSIZE); 
 
     tnetifs[5].index = 3;
     tnetifs[5].argv = 1;
@@ -205,6 +217,7 @@ START_TEST(test_netif) {
     tnetifs[5].type = NETIF_REGULAR;
     tnetifs[5].subif = NULL,
     strlcpy(tnetifs[5].name, "eth1", IFNAMSIZ); 
+    strlcpy(tnetifs[5].description, "eth1", IFDESCRSIZE); 
 
     TAILQ_INSERT_TAIL(netifs, &tnetifs[0], entries);
     TAILQ_INSERT_TAIL(netifs, &tnetifs[1], entries);
@@ -214,6 +227,7 @@ START_TEST(test_netif) {
     TAILQ_INSERT_TAIL(netifs, &tnetifs[5], entries);
 
     // netif_iter checks
+    mark_point();
     netif = NULL;
     fail_unless (netif_iter(netif, NULL) == NULL,
 	"NULL should be returned on invalid netifs");
@@ -237,6 +251,7 @@ START_TEST(test_netif) {
 
 
     // subif_iter checks
+    mark_point();
     netif = &tnetifs[0];
     subif = NULL;
     subif = subif_iter(subif, subif);
@@ -267,6 +282,7 @@ START_TEST(test_netif) {
 
 
     // netif_byindex checks
+    mark_point();
     fail_unless (netif_byindex(NULL, 0) == NULL,
 	"NULL should be returned on invalid netifs");
     fail_unless (netif_byindex(netifs, 0) == &tnetifs[0],
@@ -282,6 +298,7 @@ START_TEST(test_netif) {
 
 
     // netif_byname checks
+    mark_point();
     fail_unless (netif_byname(NULL, "bond0") == NULL,
 	"NULL should be returned on invalid netifs");
     fail_unless (netif_byname(netifs, NULL) == NULL,
@@ -296,6 +313,153 @@ START_TEST(test_netif) {
 	"incorrect netif struct returned");
     fail_unless (netif_byname(netifs, "eth3") == NULL,
 	"NULL should be returned on not found netif");
+
+    msg = my_malloc(MASTER_MSG_SIZE);
+    netif = netif_byname(netifs, "eth0");
+    msg->index = netif->index;
+    msg->proto = PROTO_LLDP;
+    memcpy(msg->msg + ETHER_ADDR_LEN, "\x02\x00\x01", 3);
+    strlcpy(msg->peer.name, "foo", IFDESCRSIZE);
+    strlcpy(msg->peer.port, "42", IFDESCRSIZE);
+    TAILQ_INSERT_TAIL(&mqueue, msg, entries);
+
+    msg = my_malloc(MASTER_MSG_SIZE);
+    netif = netif_byname(netifs, "eth2");
+    msg->index = netif->index;
+    msg->proto = PROTO_CDP;
+    memcpy(msg->msg + ETHER_ADDR_LEN, "\x02\x00\x02", 3);
+    strlcpy(msg->peer.name, "bar", IFDESCRSIZE);
+    TAILQ_INSERT_TAIL(&mqueue, msg, entries);
+
+    msg = my_malloc(MASTER_MSG_SIZE);
+    netif = netif_byname(netifs, "eth1");
+    msg->index = netif->index;
+    msg->proto = PROTO_LLDP;
+    memcpy(msg->msg + ETHER_ADDR_LEN, "\x02\x00\x03", 3);
+    strlcpy(msg->peer.name, "baz", IFDESCRSIZE);
+    strlcpy(msg->peer.port, "Ethernet4", IFDESCRSIZE);
+    TAILQ_INSERT_TAIL(&mqueue, msg, entries);
+
+    msg = my_malloc(MASTER_MSG_SIZE);
+    netif = netif_byname(netifs, "eth1");
+    msg->index = netif->index;
+    msg->proto = PROTO_LLDP;
+    memcpy(msg->msg + ETHER_ADDR_LEN, "\x02\x00\x04", 3);
+    strlcpy(msg->peer.name, "quux", IFDESCRSIZE);
+    strlcpy(msg->peer.port, "Ethernet5", IFDESCRSIZE);
+    TAILQ_INSERT_TAIL(&mqueue, msg, entries);
+
+    msg = my_malloc(MASTER_MSG_SIZE);
+    netif = netif_byname(netifs, "eth1");
+    msg->index = netif->index;
+    msg->proto = PROTO_CDP;
+    memcpy(msg->msg + ETHER_ADDR_LEN, "\x02\x00\x04", 3);
+    strlcpy(msg->peer.name, "quux", IFDESCRSIZE);
+    strlcpy(msg->peer.port, "Ethernet5", IFDESCRSIZE);
+    TAILQ_INSERT_TAIL(&mqueue, msg, entries);
+
+    msg = my_malloc(MASTER_MSG_SIZE);
+    netif = netif_byname(netifs, "lagg0");
+    msg->index = netif->index;
+    msg->proto = PROTO_LLDP;
+    memcpy(msg->msg + ETHER_ADDR_LEN, "\x02\x00\x05", 3);
+    TAILQ_INSERT_TAIL(&mqueue, msg, entries);
+
+    // netif_protos checks
+    mark_point();
+    netif = netif_byname(netifs, "bond0");
+    netif_protos(netif, &mqueue);
+    fail_unless (netif->protos == (1 << PROTO_LLDP)|(1 << PROTO_CDP),
+	"incorrect protos calculation");
+
+    netif = netif_byname(netifs, "eth1");
+    netif_protos(netif, &mqueue);
+    fail_unless (netif->protos == (1 << PROTO_LLDP)|(1 << PROTO_FDP),
+	"incorrect protos calculation");
+
+    netif = netif_byname(netifs, "lagg0");
+    netif_protos(netif, &mqueue);
+    fail_unless (netif->protos == 0, "incorrect protos calculation");
+
+    // netif_descr checks
+    mark_point();
+    msock = spair[1];
+    msg = my_malloc(MASTER_MSG_SIZE);
+
+    netif = netif_byname(netifs, "bond0");
+    descr = "";
+    msg->completed = 1;
+    write(spair[0], msg, MASTER_MSG_SIZE); 
+    netif_descr(netif, &mqueue);
+    read(spair[0], msg, MASTER_MSG_SIZE);
+    fail_unless (msg->cmd == MASTER_DESCR,
+	"incorrect command: %d", msg->cmd);
+    fail_unless (msg->index == netif->index,
+	"incorrect interface index: %d", msg->index);
+    fail_unless (msg->len == IFDESCRSIZE,
+	"incorrect message length: %d", msg->len);
+    fail_unless (strncmp(msg->msg, descr, IFDESCRSIZE) == 0,
+	"incorrect interface description: %s", msg->msg);
+
+    netif = netif_byname(netifs, "eth0");
+    descr = "connected to foo (42)";
+    msg->completed = 1;
+    write(spair[0], msg, MASTER_MSG_SIZE); 
+    netif_descr(netif, &mqueue);
+    read(spair[0], msg, MASTER_MSG_SIZE);
+    fail_unless (msg->cmd == MASTER_DESCR,
+	"incorrect command: %d", msg->cmd);
+    fail_unless (msg->index == netif->index,
+	"incorrect interface index: %d", msg->index);
+    fail_unless (msg->len == IFDESCRSIZE,
+	"incorrect message length: %d", msg->len);
+    fail_unless (strncmp(msg->msg, descr, IFDESCRSIZE) == 0,
+	"incorrect interface description: %s", msg->msg);
+
+    netif = netif_byname(netifs, "eth2");
+    descr = "connected to bar";
+    msg->completed = 1;
+    write(spair[0], msg, MASTER_MSG_SIZE); 
+    netif_descr(netif, &mqueue);
+    read(spair[0], msg, MASTER_MSG_SIZE);
+    fail_unless (msg->cmd == MASTER_DESCR,
+	"incorrect command: %d", msg->cmd);
+    fail_unless (msg->index == netif->index,
+	"incorrect interface index: %d", msg->index);
+    fail_unless (msg->len == IFDESCRSIZE,
+	"incorrect message length: %d", msg->len);
+    fail_unless (strncmp(msg->msg, descr, IFDESCRSIZE) == 0,
+	"incorrect interface description: %s", msg->msg);
+
+    netif = netif_byname(netifs, "eth1");
+    descr = "connected to 2 peers";
+    msg->completed = 1;
+    write(spair[0], msg, MASTER_MSG_SIZE); 
+    netif_descr(netif, &mqueue);
+    read(spair[0], msg, MASTER_MSG_SIZE);
+    fail_unless (msg->cmd == MASTER_DESCR,
+	"incorrect command: %d", msg->cmd);
+    fail_unless (msg->index == netif->index,
+	"incorrect interface index: %d", msg->index);
+    fail_unless (msg->len == IFDESCRSIZE,
+	"incorrect message length: %d", msg->len);
+    fail_unless (strncmp(msg->msg, descr, IFDESCRSIZE) == 0,
+	"incorrect interface description: %s", msg->msg);
+
+    netif = netif_byname(netifs, "lagg0");
+    descr = "";
+    msg->completed = 1;
+    write(spair[0], msg, MASTER_MSG_SIZE); 
+    netif_descr(netif, &mqueue);
+    read(spair[0], msg, MASTER_MSG_SIZE);
+    fail_unless (msg->cmd == MASTER_DESCR,
+	"incorrect command: %d", msg->cmd);
+    fail_unless (msg->index == netif->index,
+	"incorrect interface index: %d", msg->index);
+    fail_unless (msg->len == IFDESCRSIZE,
+	"incorrect message length: %d", msg->len);
+    fail_unless (strncmp(msg->msg, descr, IFDESCRSIZE) == 0,
+	"incorrect interface description: %s", msg->msg);
 }
 END_TEST
 
