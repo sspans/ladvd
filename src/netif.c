@@ -267,6 +267,7 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 
 	my_log(INFO, "removing old interface %s", netif->name);
 
+	memset(&mreq, 0, sizeof(mreq));
 	mreq.cmd = MASTER_CLOSE;
 	mreq.index = netif->index;
 	my_msend(&mreq);
@@ -401,6 +402,8 @@ int netif_type(int sockfd, uint32_t index,
 
 #ifdef HAVE_SYSFS
     struct master_msg mreq;
+
+    memset(&mreq, 0, sizeof(mreq));
     mreq.cmd = MASTER_DEVICE;
     mreq.index = index;
 
