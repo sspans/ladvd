@@ -64,9 +64,6 @@
 
 #ifdef HAVE_LINUX_IF_BRIDGE_H
 #include <linux/if_bridge.h>
-#ifndef SYSFS_BRIDGE_PORT_SUBDIR
-#define SYSFS_BRIDGE_PORT_SUBDIR "brif"
-#endif
 #define BRIDGE_MAX_PORTS 1024
 #endif /* HAVE_LINUX_IF_BRIDGE_H */
 
@@ -492,14 +489,6 @@ void netif_bond(int sockfd, struct nhead *netifs, struct netif *master,
     struct netif *subif = NULL, *csubif = master;
     int i;
 
-#ifdef HAVE_SYSFS
-    // handle linux bonding interfaces
-    char path[SYSFS_PATH_MAX];
-    FILE *file;
-    char line[1024];
-    char *slave, *nslave;
-#endif /* HAVE_SYSFS */
-
 #ifdef HAVE_LINUX_IF_BONDING_H
     struct ifbond ifbond;
     struct ifslave ifslave;
@@ -512,19 +501,6 @@ void netif_bond(int sockfd, struct nhead *netifs, struct netif *master,
 #endif
 
     // check for lacp
-
-#ifdef HAVE_SYSFS
-    // via sysfs
-    if (snprintf(path, SYSFS_PATH_MAX, "%s/%s/bonding/mode", 
-		SYSFS_CLASS_NET, master->name) > 0) {
-	if ((file = fopen(path, "r")) != NULL) {
-	    if (fscanf(file, "802.3ad") != EOF)
-		master->lacp = 1;
-	    (void) fclose(file);
-	}
-    }
-#endif /* HAVE_SYSFS */
-
 #if defined(HAVE_LINUX_IF_BONDING_H) && defined(BOND_MODE_8023AD)
     strlcpy(ifr->ifr_name, master->name, IFNAMSIZ);
     memset(&ifbond, 0, sizeof(ifbond));
@@ -541,44 +517,7 @@ void netif_bond(int sockfd, struct nhead *netifs, struct netif *master,
 
 
     // handle slaves
-
-#ifdef HAVE_SYSFS
-    // via sysfs
-    if ((snprintf(path, SYSFS_PATH_MAX,
-	    SYSFS_CLASS_NET "/%s/bonding/slaves", master->name) > 0) &&
-	(read_line(path, line, sizeof(line)) != -1)) {
-
-	slave = line;
-	i = 0;
-	while (strlen(slave) > 0) {
-	    nslave = strstr(slave, " ");
-	    if (nslave != NULL)
-		*nslave = '\0';
-
-	    subif = netif_byname(netifs, slave);
-	    if (subif != NULL) {
-		my_log(INFO, "found slave %s", subif->name);
-		subif->slave = 1;
-		subif->master = master;
-		subif->lacp_index = i++;
-		csubif->subif = subif;
-		csubif = subif;
-	    }
-
-	    if (nslave != NULL) {
-		nslave++;
-		slave = nslave;
-	    } else {
-		break;
-	    }
-	}
-
-	return;
-    }
-#endif /* HAVE_SYSFS */
-
 #ifdef HAVE_LINUX_IF_BONDING_H
-    // or ioctl
 
     // check for a sensible num_slaves entry
     if (ifbond.num_slaves <= 0)
@@ -690,18 +629,11 @@ void netif_bond(int sockfd, struct nhead *netifs, struct netif *master,
 void netif_bridge(int sockfd, struct nhead *netifs, struct netif *master,
 		  struct ifreq *ifr) {
 
-#if defined(HAVE_SYSFS) || defined(HAVE_LINUX_IF_BRIDGE_H) || \
+#if defined(HAVE_LINUX_IF_BRIDGE_H) || \
     defined(HAVE_NET_IF_BRIDGEVAR_H) || defined(HAVE_NET_IF_BRIDGE_H)
     struct netif *subif = NULL, *csubif = master;
     int i;
 #endif
-
-#ifdef HAVE_SYSFS
-    // handle linux bridge interfaces
-    char path[SYSFS_PATH_MAX];
-    DIR  *dir;
-    struct dirent *dirent;
-#endif /* HAVE_SYSFS */
 
 #ifdef HAVE_LINUX_IF_BRIDGE_H
     int ifindex[BRIDGE_MAX_PORTS];
@@ -711,31 +643,7 @@ void netif_bridge(int sockfd, struct nhead *netifs, struct netif *master,
 
 
     // handle slaves
- 
-#if HAVE_SYSFS
-    // via sysfs
-    sprintf(path, SYSFS_CLASS_NET "/%s/" SYSFS_BRIDGE_PORT_SUBDIR, master->name); 
-    if ((dir = opendir(path)) != NULL) {
-
-	while ((dirent = readdir(dir)) != NULL) {
-	    subif = netif_byname(netifs, dirent->d_name);
-
-	    if (subif != NULL) {
-		my_log(INFO, "found slave %s", subif->name);
-		subif->slave = 1;
-		subif->master = master;
-		csubif->subif = subif;
-		csubif = subif;
-	    }
-	}
-
-	closedir(dir);
-	return;
-    }
-#endif /* HAVE_SYSFS */
-
 #ifdef HAVE_LINUX_IF_BRIDGE_H
-    // or ioctl
     memset(ifindex, 0, sizeof(ifindex));
     strlcpy(ifr->ifr_name, master->name, IFNAMSIZ);
     ifr->ifr_data = (char *)&args;
