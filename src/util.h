@@ -22,7 +22,7 @@ char *my_strdup(const char *str);
 int my_socket(int af, int type, int proto);
 void my_socketpair(int spair[2]);
 
-size_t my_msend(struct master_msg *mreq);
+ssize_t my_msend(struct master_msg *mreq);
 
 struct netif *netif_iter(struct netif *netif, struct nhead *);
 struct netif *subif_iter(struct netif *subif, struct netif *netif);

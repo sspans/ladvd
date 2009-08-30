@@ -218,7 +218,7 @@ int main(int argc, char *argv[]) {
 	rsock = mpair[0];
 
 	if (!(options & OPT_DEBUG)) {
-	    //my_chroot(PACKAGE_CHROOT_DIR);
+	    my_chroot(PACKAGE_CHROOT_DIR);
 	    my_drop_privs(pwd);
 	}
 	setproctitle("child");

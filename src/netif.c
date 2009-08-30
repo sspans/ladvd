@@ -87,11 +87,6 @@
 #include <net80211/ieee80211_ioctl.h>
 #endif /* HAVE_NET80211_IEEE80211_IOCTL_H */
 
-#ifdef HAVE_SYSFS
-#define SYSFS_CLASS_NET		"/sys/class/net"
-#define SYSFS_PATH_MAX		256
-#endif
-
 #ifdef AF_PACKET
 #define NETIF_AF    AF_PACKET
 #elif defined(AF_LINK)
@@ -99,7 +94,7 @@
 #endif
 
 int netif_wireless(int, struct ifaddrs *ifaddr, struct ifreq *);
-int netif_type(int, struct ifaddrs *ifaddr, struct ifreq *);
+int netif_type(int, uint32_t index, struct ifaddrs *ifaddr, struct ifreq *);
 void netif_bond(int, struct nhead *, struct netif *, struct ifreq *);
 void netif_bridge(int, struct nhead *, struct netif *, struct ifreq *);
 void netif_addrs(struct ifaddrs *, struct nhead *, struct sysinfo *);
@@ -177,6 +172,7 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 	    my_log(INFO, "skipping interface %s", ifaddr->ifa_name);
 	    continue;
 	}
+	index = saddrll.sll_ifindex;
 #elif AF_LINK
 	memcpy(&saddrdl, ifaddr->ifa_addr, sizeof(saddrdl));
 #ifdef IFT_BRIDGE
@@ -188,6 +184,7 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 	    my_log(INFO, "skipping interface %s", ifaddr->ifa_name);
 	    continue;
 	}
+	index = saddrdl.sdl_index;
 #endif
 
 	// check for interfaces that are down
@@ -207,7 +204,7 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 	}
 
 	// detect interface type
-	type = netif_type(sockfd, ifaddr, &ifr);
+	type = netif_type(sockfd, index, ifaddr, &ifr);
 
 	if (type == NETIF_REGULAR) { 
 	    my_log(INFO, "found ethernet interface %s", ifaddr->ifa_name);
@@ -234,11 +231,6 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 	my_log(INFO, "adding interface %s", ifaddr->ifa_name);
 
 	// fetch / create netif
-#ifdef AF_PACKET
-	index = saddrll.sll_ifindex;
-#elif AF_LINK
-	index = saddrdl.sdl_index;
-#endif
 	if ((netif = netif_byindex(netifs, index)) == NULL) {
 	    netif = my_malloc(sizeof(struct netif));
 	    TAILQ_INSERT_TAIL(netifs, netif, entries);
@@ -385,12 +377,8 @@ int netif_wireless(int sockfd, struct ifaddrs *ifaddr, struct ifreq *ifr) {
 
 
 // detect interface type
-int netif_type(int sockfd, struct ifaddrs *ifaddr, struct ifreq *ifr) {
-
-#ifdef HAVE_SYSFS
-    char path[SYSFS_PATH_MAX];
-    struct stat sb;
-#endif
+int netif_type(int sockfd, uint32_t index,
+	struct ifaddrs *ifaddr, struct ifreq *ifr) {
 
 #if HAVE_LINUX_ETHTOOL_H
     struct ethtool_drvinfo drvinfo;
@@ -404,14 +392,13 @@ int netif_type(int sockfd, struct ifaddrs *ifaddr, struct ifreq *ifr) {
 #endif
 
 #ifdef HAVE_SYSFS
-    if (snprintf(path, SYSFS_PATH_MAX,
-	    SYSFS_CLASS_NET "/%s/device", ifaddr->ifa_name) > 0) {
+    struct master_msg mreq;
+    mreq.cmd = MASTER_DEVICE;
+    mreq.index = index;
 
-	// accept physical devices via sysfs
-	if (stat(path, &sb) == 0)
-	    return(NETIF_REGULAR);
-    }
-#endif
+    if (my_msend(&mreq))
+	return(NETIF_REGULAR);
+#endif /* HAVE_SYSFS */
 
 #if HAVE_LINUX_ETHTOOL_H
     // use ethtool to detect various drivers
@@ -430,10 +417,8 @@ int netif_type(int sockfd, struct ifaddrs *ifaddr, struct ifreq *ifr) {
 	    return(NETIF_REGULAR);
 	}
 
-	// if we don't have sysfs, we'll accept interfaces
-	// which support ethtool (aka wing it)
-	if (stat(SYSFS_CLASS_NET, &sb) == -1)
-	    return(NETIF_REGULAR);
+	// we'll accept interfaces which support ethtool (aka wing it)
+	return(NETIF_REGULAR);
     }
 
     // we don't want the rest

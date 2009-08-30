@@ -96,7 +96,7 @@ void my_socketpair(int spair[2]) {
     }
 }
 
-size_t my_msend(struct master_msg *mreq) {
+ssize_t my_msend(struct master_msg *mreq) {
     ssize_t count = 0;
 
     assert(mreq != NULL);
@@ -251,7 +251,7 @@ void netif_descr(struct netif *netif, struct mhead *mqueue) {
     dmsg->len = IFDESCRSIZE;
     strlcpy(dmsg->msg, descr, dmsg->len);
 
-    if (my_msend(dmsg) != dmsg->len)
+    if (!my_msend(dmsg))
 	my_log(CRIT, "ifdescr ioctl failed on %s", netif->name);
 
     free(dmsg);

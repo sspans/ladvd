@@ -38,6 +38,11 @@
 #include <linux/ethtool.h>
 #endif /* HAVE_LINUX_ETHTOOL_H */
 
+#ifdef HAVE_SYSFS
+#define SYSFS_CLASS_NET		"/sys/class/net"
+#define SYSFS_PATH_MAX		256
+#endif
+
 struct rfdhead rawfds;
 
 int sock = -1;
@@ -191,6 +196,11 @@ void master_cmd(int cmdfd, short event) {
 	    mreq.len = master_descr(&mreq);
 	    break;
 #endif /* SIOCGIFDESCR */
+#ifdef HAVE_SYSFS
+	case MASTER_DEVICE:
+	    mreq.len = master_device(&mreq);
+	    break;
+#endif /* HAVE_SYSFS */
 	// invalid request
 	default:
 	    my_fatal("invalid request received");
@@ -232,6 +242,10 @@ int master_check(struct master_msg *mreq) {
 	    assert(mreq->len <= IFDESCRSIZE);
 	    return(EXIT_SUCCESS);
 #endif /* SIOCSIFDESCR */
+#ifdef HAVE_SYSFS
+	case MASTER_DEVICE:
+	    return(EXIT_SUCCESS);
+#endif /* HAVE_SYSFS */
 	default:
 	    return(EXIT_FAILURE);
     }
@@ -330,7 +344,7 @@ void master_close(struct master_msg *mreq) {
 }
 
 #if HAVE_LINUX_ETHTOOL_H
-size_t master_ethtool(struct master_msg *mreq) {
+ssize_t master_ethtool(struct master_msg *mreq) {
 
     struct ifreq ifr;
     struct ethtool_cmd ecmd;
@@ -356,10 +370,10 @@ size_t master_ethtool(struct master_msg *mreq) {
 #endif /* HAVE_LINUX_ETHTOOL_H */
 
 #ifdef SIOCSIFDESCR
-size_t master_descr(struct master_msg *mreq) {
+ssize_t master_descr(struct master_msg *mreq) {
 
     struct ifreq ifr;
-    int ret;
+    ssize_t ret = 0;
 
     assert(mreq != NULL);
 
@@ -368,12 +382,27 @@ size_t master_descr(struct master_msg *mreq) {
     strlcpy(ifr.ifr_name, mreq->name, IFNAMSIZ);
     ifr.ifr_data = (caddr_t)&mreq->msg;
 
-    if ((ret = ioctl(sock, SIOCSIFDESCR, &ifr)) == -1)
-	ret = 0;
+    if (ioctl(sock, SIOCSIFDESCR, &ifr) >= 0)
+	ret = IFNAMSIZ;
     return(ret);
 }
 #endif /* SIOCGIFDESCR */
 
+#ifdef HAVE_SYSFS
+ssize_t master_device(struct master_msg *mreq) {
+    char path[SYSFS_PATH_MAX];
+    struct stat sb;
+    ssize_t ret = 0;
+
+    ret = snprintf(path, SYSFS_PATH_MAX,
+	    SYSFS_CLASS_NET "/%s/device", mreq->name);
+
+    if ((ret > 0) && (stat(path, &sb) == 0))
+	return(1);
+    else
+	return(0);
+}
+#endif /* HAVE_SYSFS */
 
 int master_socket(struct rawfd *rfd) {
 
