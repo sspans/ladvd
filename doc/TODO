@@ -1,12 +1,7 @@
 
 FOR 0.8.1:
-- change chroot
-- fix linux chroot issues
 - openbsd vlan detect
 - create freebsd lagg pr
-- listen / close listen sockets via the master
-- rework the socket handling, all sockets should 
-  have socket/bpf filters
 - fix reported RHEL 4 issues
 
 CODE:
