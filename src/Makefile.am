@@ -2,7 +2,7 @@
 AM_CFLAGS = $(WARN_CFLAGS)
 AM_LDFLAGS = $(WARN_LDFLAGS)
 
-common_headers = config.h common.h ether.h master.h util.h \
+common_headers = config.h common.h ether.h master.h filter.h util.h \
 	compat/compat.h proto/protos.h
 
 noinst_LTLIBRARIES = libcompat.la libproto.la libmisc.la
