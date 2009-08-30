@@ -235,7 +235,7 @@ int main(int argc, char *argv[]) {
 	event_add(&evmsg, NULL);
     }
 
-    while (msock) {
+    for (;;) {
 
 	// update netifs
 	my_log(INFO, "fetching all interfaces"); 
