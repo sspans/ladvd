@@ -244,10 +244,12 @@ int main(int argc, char *argv[]) {
 	    goto sleep;
 	}
 
+	netif = NULL;
 	while ((netif = netif_iter(netif, &netifs)) != NULL) {
 
 	    my_log(INFO, "starting loop with interface %s", netif->name); 
 
+	    subif = NULL;
 	    while ((subif = subif_iter(subif, netif)) != NULL) {
 
 		// populate mreq
