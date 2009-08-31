@@ -338,6 +338,10 @@ void master_close(struct master_msg *mreq) {
     // cleanup
     TAILQ_REMOVE(&rawfds, rfd, entries);
     close(rfd->fd);
+#ifdef HAVE_NET_BPF_H
+    if (rfd->bpf_buf.data)
+	free(rfd->bpf_buf.data);
+#endif /* HAVE_NET_BPF_H */
     free(rfd);
 
     return;
