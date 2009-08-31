@@ -220,6 +220,8 @@ int master_check(struct master_msg *mreq) {
 
     // validate ifindex
     if (if_indextoname(mreq->index, mreq->name) == NULL) {
+	if (mreqx->cmd == MASTER_CLOSE)
+	    return(EXIT_SUCCESS);
 	my_log(CRIT, "invalid ifindex supplied");
 	return(EXIT_FAILURE);
     }
