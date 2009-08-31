@@ -483,14 +483,12 @@ int master_socket(struct rawfd *rfd) {
 	fprog.bf_len = sizeof(reject_filter) / sizeof(struct bpf_insn);
     }
 
-    // configure a reasonable receive buffer length
-    if (!bpf_buf.len) {
-	bpf_buf.len = roundup(ETHER_MAX_LEN, getpagesize());
-	ioctl(fd, BIOCGBLEN, &bpf_buf.len);
-	if (!bpf_buf.len)
-	   my_fatal("unable to fetch bpf bufer length for %s", rfd->name);
-	bpf_buf.data = my_malloc(bpf_buf.len);
-    }
+    // configure a reasonable receive buffer
+    rfd->bpf_buf.len = roundup(ETHER_MAX_LEN, getpagesize());
+    ioctl(fd, BIOCGBLEN, &rfd->bpf_buf.len);
+    if (!rfd->bpf_buf.len)
+	my_fatal("unable to fetch bpf bufer length for %s", rfd->name);
+    rfd->bpf_buf.data = my_malloc(rfd->bpf_buf.len);
 
     // disable buffering
     if (ioctl(fd, BIOCIMMEDIATE, (caddr_t)&immediate) < 0)
@@ -583,15 +581,15 @@ void master_recv(int fd, short event, struct rawfd *rfd) {
     memset(&mrecv, 0, sizeof (mrecv));
 
 #ifdef HAVE_NET_BPF_H
-    assert(bpf_buf.len);
+    assert(rfd->bpf_buf.len);
 
-    if ((len = read(rfd->fd, bpf_buf.data, bpf_buf.len)) == -1) {
+    if ((len = read(rfd->fd, rfd->bpf_buf.data, rfd->bpf_buf.len)) == -1) {
 	my_log(CRIT,"receiving message failed: %s", strerror(errno));
 	return;
     }
 
-    bhp = (struct bpf_hdr *)bpf_buf.data;
-    endp = bpf_buf.data + len;
+    bhp = (struct bpf_hdr *)rfd->bpf_buf.data;
+    endp = rfd->bpf_buf.data + len;
 
     while ((void *)bhp < endp) {
 
@@ -601,7 +599,7 @@ void master_recv(int fd, short event, struct rawfd *rfd) {
 	else
 	    mrecv.len = ETHER_MAX_LEN;
 
-	memcpy(mrecv.msg, bpf_buf.data + bhp->bh_hdrlen, mrecv.len);
+	memcpy(mrecv.msg, rfd->bpf_buf.data + bhp->bh_hdrlen, mrecv.len);
 
 #elif defined HAVE_NETPACKET_PACKET_H
     if ((len = read(rfd->fd, mrecv.msg, ETHER_MAX_LEN)) == -1) {

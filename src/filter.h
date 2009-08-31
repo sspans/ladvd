@@ -106,12 +106,4 @@ SOCKET_FILTER proto_filter[] = {
     BPF_STMT(BPF_RET+BPF_K, 0)
 };
 
-#ifdef HAVE_NET_BPF_H
-struct bpf_buf {
-    unsigned int len;
-    char *data;
-};
-struct bpf_buf bpf_buf = { 0, NULL };
-#endif /* HAVE_NET_BPF_H */
-
 #endif /* _filter_h */

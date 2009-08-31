@@ -29,6 +29,13 @@ struct rawfd {
     int fd;
     struct event event;
 
+#ifdef HAVE_NET_BPF_H
+    struct {
+	unsigned int len;
+	char *data;
+    } bpf_buf;
+#endif /* HAVE_NET_BPF_H */
+
     // should be last
     TAILQ_ENTRY(rawfd) entries;
 };
