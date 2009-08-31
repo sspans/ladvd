@@ -521,12 +521,6 @@ void master_multi(struct rawfd *rfd, struct proto *protos, int op) {
     memset(&ifr, 0, sizeof(ifr));
     strlcpy(ifr.ifr_name, rfd->name, IFNAMSIZ);
 
-#ifdef AF_PACKET
-    op = (op) ? PACKET_ADD_MEMBERSHIP:PACKET_DROP_MEMBERSHIP;
-#elif defined AF_LINK
-    op = (op) ? SIOCADDMULTI: SIOCDELMULTI;
-#endif
-
     for (p = 0; protos[p].name != NULL; p++) {
 
 	// only enabled protos
@@ -543,6 +537,8 @@ void master_multi(struct rawfd *rfd, struct proto *protos, int op) {
 	mreq.mr_type = PACKET_MR_MULTICAST;
 	mreq.mr_alen = ETHER_ADDR_LEN;
 	memcpy(mreq.mr_address, protos[p].dst_addr, ETHER_ADDR_LEN);
+
+	op = (op) ? PACKET_ADD_MEMBERSHIP:PACKET_DROP_MEMBERSHIP;
 
 	if (setsockopt(rfd->fd, SOL_PACKET, op, &mreq, sizeof(mreq)) < 0)
 	    my_fatal("unable to change %s multicast on %s: %s",
@@ -562,7 +558,8 @@ void master_multi(struct rawfd *rfd, struct proto *protos, int op) {
 	ifr.ifr_addr.sa_family = AF_UNSPEC;
 	memcpy(ifr.ifr_addr.sa_data, protos[p].dst_addr, ETHER_ADDR_LEN);
 #endif
-	if ((ioctl(sock, op, &ifr) < 0) && (errno != EADDRINUSE))
+	if ((ioctl(sock, (op) ? SIOCADDMULTI: SIOCDELMULTI, &ifr) < 0) &&
+	    (errno != EADDRINUSE))
 	    my_fatal("unable to add %s multicast to %s: %s",
 		     protos[p].name, rfd->name, strerror(errno));
 #endif
