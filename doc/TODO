@@ -1,6 +1,9 @@
 
 FOR 0.8.1:
+- test FreeBSD / OpenBSD
+- test duplicate ifindex
 - create freebsd lagg pr
+- update tests
 - fix reported RHEL 4 issues
 
 CODE:
