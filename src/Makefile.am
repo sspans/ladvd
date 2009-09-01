@@ -3,10 +3,10 @@ AM_CFLAGS = $(WARN_CFLAGS)
 AM_LDFLAGS = $(WARN_LDFLAGS)
 
 common_headers = config.h common.h ether.h master.h filter.h util.h \
-	compat/compat.h proto/protos.h
+	compat/compat.h compat/sys-queue.h proto/protos.h
 
 noinst_LTLIBRARIES = libcompat.la libproto.la libmisc.la
-libcompat_la_SOURCES = config.h compat/compat.h \
+libcompat_la_SOURCES = config.h compat/compat.h compat/vis.h \
 	compat/strlcpy.c compat/strlcat.c compat/setproctitle.c compat/vis.c
 libproto_la_SOURCES = config.h proto/protos.h proto/tlv.h \
 	proto/lldp.c proto/lldp.h \
