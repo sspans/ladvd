@@ -168,7 +168,9 @@ struct proto {
     char * (*decode) (void *, size_t);
 };
 
-void master_init(pid_t pid, int cmdfd, int msgfd);
+void master_init(int cmdfd, int msgfd, pid_t pid);
+void child_init(int cmdfd, int msgfd, int ifc, char *ifl[]);
+
 void sysinfo_fetch(struct sysinfo *);
 uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *, struct nhead *);
 int netif_media(struct netif *session);

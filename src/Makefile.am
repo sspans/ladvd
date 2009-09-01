@@ -2,7 +2,7 @@
 AM_CFLAGS = $(WARN_CFLAGS)
 AM_LDFLAGS = $(WARN_LDFLAGS)
 
-common_headers = config.h common.h ether.h master.h filter.h util.h \
+common_headers = config.h common.h ether.h filter.h util.h \
 	compat/compat.h compat/sys-queue.h proto/protos.h
 
 noinst_LTLIBRARIES = libcompat.la libproto.la libmisc.la
@@ -14,9 +14,9 @@ libproto_la_SOURCES = config.h proto/protos.h proto/tlv.h \
 	proto/edp.c proto/edp.h \
 	proto/fdp.c proto/fdp.h \
 	proto/ndp.c proto/ndp.h
-libmisc_la_SOURCES = $(common_headers) master.c \
+libmisc_la_SOURCES = $(common_headers) child.h child.c master.h master.c \
 	util.c sysinfo.c netif.c
 
 sbin_PROGRAMS = ladvd
-ladvd_SOURCES = $(common_headers) main.c main.h
+ladvd_SOURCES = $(common_headers) main.h main.c
 ladvd_LDADD = $(noinst_LTLIBRARIES) $(EVENT_LIB) $(CAP_LIB)

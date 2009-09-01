@@ -51,7 +51,7 @@ int dfd = -1;
 
 extern struct proto protos[];
 
-void master_init(pid_t child, int cmdfd, int msgfd) {
+void master_init(int cmdfd, int msgfd, pid_t child) {
 
     // events
     struct event ev_cmd;

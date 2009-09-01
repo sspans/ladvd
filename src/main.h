@@ -17,7 +17,6 @@ struct proto protos[] = {
   { 0, NULL, {0}, {0}, 0, NULL, NULL, NULL, NULL }
 };
 
-struct nhead netifs;
-struct mhead mqueue;
+void usage();
 
 #endif /* _main_h */
