@@ -308,6 +308,30 @@ void my_drop_privs(struct passwd *pwd) {
    	my_fatal("unable to setresuid: %s", strerror(errno));
 }
 
+int read_line(const char *path, char *line, uint16_t len) {
+    FILE *file;
+    char *newline;
+
+    if (path == NULL || line == NULL)
+	return(0);
+
+    if ((file = fopen(path, "r")) == NULL)
+	return(0);
+
+    if (fgets(line, len, file) == NULL) {
+	(void) fclose(file);
+	return(0);
+    }
+    (void) fclose(file);
+
+    // remove newline
+    newline = strchr(line, '\n');
+    if (newline != NULL)
+	*newline = '\0';
+
+    return(strlen(line));
+}
+
 /*
  * Actually, this is the standard IP checksum algorithm.
  */

@@ -23,7 +23,6 @@
 #endif
 
 void sysinfo_forwarding(struct sysinfo *);
-inline int read_line(const char *path, char *line, uint16_t len);
 
 void sysinfo_fetch(struct sysinfo *sysinfo) {
 
@@ -159,29 +158,5 @@ void sysinfo_forwarding(struct sysinfo *sysinfo) {
 	}
     }
 #endif
-}
-
-inline int read_line(const char *path, char *line, uint16_t len) {
-    FILE *file;
-    char *newline;
-
-    if (path == NULL || line == NULL)
-	return(0);
-
-    if ((file = fopen(path, "r")) == NULL)
-	return(0);
-
-    if (fgets(line, len, file) == NULL) {
-	(void) fclose(file);
-	return(0);
-    }
-    (void) fclose(file);
-
-    // remove newline
-    newline = strchr(line, '\n');
-    if (newline != NULL)
-	*newline = '\0';
-
-    return(strlen(line));
 }
 

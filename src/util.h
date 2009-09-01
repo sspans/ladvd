@@ -34,6 +34,7 @@ void netif_descr(struct netif *netif, struct mhead *mqueue);
 void my_chroot(const char *path);
 void my_drop_privs(struct passwd *pwd);
 
+int read_line(const char *path, char *line, uint16_t len);
 uint16_t my_chksum(const void *data, size_t length, int cisco);
 
 #endif /* _util_h */
