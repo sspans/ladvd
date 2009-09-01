@@ -261,11 +261,10 @@ ssize_t master_send(struct master_msg *mreq) {
     struct rawfd *rfd = NULL;
     ssize_t count = 0;
 
-    pcaprec_hdr_t pcap_rec_hdr;
-    struct timeval tv;
-
     // debug
     if (options & OPT_DEBUG) {
+	pcaprec_hdr_t pcap_rec_hdr;
+	struct timeval tv;
 
 	// write a pcap record header
 	if (gettimeofday(&tv, NULL) == 0) {
@@ -284,6 +283,15 @@ ssize_t master_send(struct master_msg *mreq) {
 
     assert((rfd = rfd_byindex(&rawfds, mreq->index)) != NULL);
     count = write(rfd->fd, mreq->msg, mreq->len);
+
+    // close the socket if the device vanished
+    // if needed a new socket will be created on the next run
+#ifdef HAVE_NETPACKET_PACKET_H
+    if ((count == -1) && (errno == ENODEV))
+#elif defined HAVE_NET_BPF_H
+    if ((count == -1) && (errno == ENXIO))
+#endif /* HAVE_NET_BPF_H */
+	    master_close(mreq);
 
     if (count != mreq->len)
 	my_log(WARN, "only %d bytes written: %s", count, strerror(errno));
