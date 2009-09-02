@@ -239,7 +239,8 @@ START_TEST(test_master_cmd) {
     // test a failing return message
     mark_point();
     mreq.cmd = MASTER_CLOSE;
-    rfd->fd = dup(spair[1]);
+    fd = dup(spair[1]);
+    rfd->fd = fd;
     rfd->index = 1;
     strlcpy(rfd->name, "lo0", IFNAMSIZ);
     write(spair[0], &mreq, MASTER_MSG_SIZE);
@@ -251,9 +252,9 @@ START_TEST(test_master_cmd) {
     WRAP_FATAL_END();
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
-
-    TAILQ_REMOVE(&rawfds, rfd, entries);
-    free(rfd);
+    fail_unless (close(fd) == -1, "rfd->fd should be closed");
+    fail_unless (rfd_byindex(&rawfds, 1) == NULL,
+    	"rfd should be removed from the queue");
 }
 END_TEST
 
@@ -361,34 +362,20 @@ START_TEST(test_master_send) {
 }
 END_TEST
 
-START_TEST(test_master_open) {
-}
-END_TEST
-
-START_TEST(test_master_close) {
+START_TEST(test_master_open_close) {
     struct master_msg mreq;
-    struct rawfd *rfd = NULL;
     int spair[2];
 
-    my_socketpair(spair);
-
-    options &= ~OPT_DEBUG;
-    rfd = my_malloc(sizeof(struct rawfd));
-#ifdef HAVE_NET_BPF_H
-    // create a sensible bpf buffer
-    rfd->bpf_buf.len = roundup(ETHER_MAX_LEN, getpagesize());
-    rfd->bpf_buf.data = my_malloc(rfd->bpf_buf.len);
-#endif
+    options |= OPT_DEBUG;
 
     mark_point();
     mreq.index = 1;
-    rfd->fd = spair[0];
-    rfd->index = 1;
-    strlcpy(rfd->name, "lo0", IFNAMSIZ);
-    TAILQ_INSERT_TAIL(&rawfds, rfd, entries);
+    strlcpy(mreq.name, "lo0", IFNAMSIZ);
 
+    master_open(&mreq);
+    fail_unless (rfd_byindex(&rawfds, 1) != NULL,
+    	"rfd should be added to the queue");
     master_close(&mreq);
-    fail_unless (close(spair[0]) == -1, "rfd->fd should be closed");
     fail_unless (rfd_byindex(&rawfds, 1) == NULL,
     	"rfd should be removed from the queue");
 }
@@ -615,8 +602,7 @@ Suite * master_suite (void) {
     tcase_add_test(tc_master, test_master_cmd);
     tcase_add_test(tc_master, test_master_check);
     tcase_add_test(tc_master, test_master_send);
-    tcase_add_test(tc_master, test_master_open);
-    //tcase_add_test(tc_master, test_master_close);
+    tcase_add_test(tc_master, test_master_open_close);
     tcase_add_test(tc_master, test_master_socket);
     tcase_add_test(tc_master, test_master_multi);
     tcase_add_test(tc_master, test_master_recv);
