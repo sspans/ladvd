@@ -43,6 +43,9 @@ int event_dispatch(void) {
 int event_add(struct event *ev, struct timeval *tv) {
     return(0);
 }
+int event_del(struct event *ev) {
+    return(0);
+}
 void event_set(struct event *ev, int i, short s,
     void (*v1)(int, short, void *), void *v2) {
 }
@@ -123,13 +126,14 @@ START_TEST(test_master_cmd) {
     static uint8_t lldp_dst[] = LLDP_MULTICAST_ADDR;
     const char *errstr = NULL;
     int spair[2], fd = -1;
+    extern int dfd;
     short event = 0;
 
     // supply an invalid fd, resulting in a read error
     mark_point();
     errstr = "check";
     my_log(CRIT, errstr);
-    master_cmd(fd, event, NULL);
+    master_cmd(fd, event);
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
@@ -139,7 +143,7 @@ START_TEST(test_master_cmd) {
     write(spair[0], &mreq, 1);
     errstr = "invalid request received";
     WRAP_FATAL_START();
-    master_cmd(spair[1], event, NULL);
+    master_cmd(spair[1], event);
     WRAP_FATAL_END();
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -155,13 +159,14 @@ START_TEST(test_master_cmd) {
 
     errstr = "invalid request supplied";
     WRAP_FATAL_START();
-    master_cmd(spair[1], event, NULL);
+    master_cmd(spair[1], event);
     WRAP_FATAL_END();
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     // test a correct MASTER_SEND
     mark_point();
+    dfd = spair[1];
     options |= OPT_DEBUG;
     mreq.cmd = MASTER_SEND;
     mreq.index = 1;
@@ -173,7 +178,7 @@ START_TEST(test_master_cmd) {
     errstr = "check";
     my_log(CRIT, errstr);
     WRAP_FATAL_START();
-    master_cmd(spair[1], event, &spair[1]);
+    master_cmd(spair[1], event);
     WRAP_FATAL_END();
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -194,7 +199,7 @@ START_TEST(test_master_cmd) {
     errstr = "check";
     my_log(CRIT, errstr);
     WRAP_FATAL_START();
-    master_cmd(spair[1], event, &spair[1]);
+    master_cmd(spair[1], event);
     WRAP_FATAL_END();
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -206,7 +211,7 @@ START_TEST(test_master_cmd) {
 
     errstr = "failed to return message to child";
     WRAP_FATAL_START();
-    master_cmd(spair[1], event, &spair[1]);
+    master_cmd(spair[1], event);
     WRAP_FATAL_END();
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
