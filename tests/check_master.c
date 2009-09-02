@@ -366,17 +366,31 @@ START_TEST(test_master_open) {
 END_TEST
 
 START_TEST(test_master_close) {
+    struct master_msg mreq;
     struct rawfd *rfd = NULL;
+    int spair[2];
 
-    //mark_point();
-    //rfd = my_malloc(sizeof(struct rawfd));
+    my_socketpair(spair);
 
-    //TAILQ_INSERT_TAIL(&rawfds, rfd, entries);
-    //fail_unless (close(fd) == -1, "rfd.fd should be closed");
-    //fail_unless (rfd_byindex(&rawfds, 1) == NULL,
-    //	"rfd should be removed from the queue");
-    //TAILQ_REMOVE(&rawfds, rfd, entries);
-    //free(rfd);
+    options &= ~OPT_DEBUG;
+    rfd = my_malloc(sizeof(struct rawfd));
+#ifdef HAVE_NET_BPF_H
+    // create a sensible bpf buffer
+    rfd->bpf_buf.len = roundup(ETHER_MAX_LEN, getpagesize());
+    rfd->bpf_buf.data = my_malloc(rfd->bpf_buf.len);
+#endif
+
+    mark_point();
+    mreq.index = 1;
+    rfd->fd = spair[0];
+    rfd->index = 1;
+    strlcpy(rfd->name, "lo0", IFNAMSIZ);
+    TAILQ_INSERT_TAIL(&rawfds, rfd, entries);
+
+    master_close(&mreq);
+    fail_unless (close(spair[0]) == -1, "rfd->fd should be closed");
+    fail_unless (rfd_byindex(&rawfds, 1) == NULL,
+    	"rfd should be removed from the queue");
 }
 END_TEST
 
@@ -602,8 +616,8 @@ Suite * master_suite (void) {
     tcase_add_test(tc_master, test_master_check);
     tcase_add_test(tc_master, test_master_send);
     tcase_add_test(tc_master, test_master_open);
-    tcase_add_test(tc_master, test_master_close);
-    //tcase_add_test(tc_master, test_master_socket);
+    //tcase_add_test(tc_master, test_master_close);
+    tcase_add_test(tc_master, test_master_socket);
     tcase_add_test(tc_master, test_master_multi);
     tcase_add_test(tc_master, test_master_recv);
     suite_add_tcase(s, tc_master);
