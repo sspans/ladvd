@@ -220,8 +220,10 @@ START_TEST(test_master_cmd) {
 END_TEST
 
 START_TEST(test_master_recv) {
-    struct master_rfd rfd;
+    extern struct rfdhead rawfds;
+    struct rawfd rfd;
     int spair[2];
+    extern int mfd;
     short event = 0;
     const char *errstr = NULL;
     char buf[ETHER_MAX_LEN * 2];
@@ -236,6 +238,7 @@ START_TEST(test_master_recv) {
     static uint8_t lldp_dst[] = CDP_MULTICAST_ADDR;
 
     loglevel = INFO;
+    TAILQ_INIT(&rawfds);
 
 #ifdef HAVE_NET_BPF_H
     // create a sensible bpf buffer
@@ -273,8 +276,9 @@ START_TEST(test_master_recv) {
     msg = buf;
 #endif
     my_socketpair(spair);
+    mfd = spair[1];
     rfd.fd = spair[1];
-    rfd.cfd = spair[1];
+    TAILQ_INSERT_TAIL(&rawfds, &rfd, entries);
 
     // too short
     mark_point();
@@ -322,7 +326,7 @@ START_TEST(test_master_recv) {
 }
 END_TEST
 
-START_TEST(test_master_rcheck) {
+START_TEST(test_master_check) {
     struct master_msg mreq;
     struct ether_hdr ether;
     static uint8_t lldp_dst[] = LLDP_MULTICAST_ADDR;
@@ -334,7 +338,7 @@ START_TEST(test_master_rcheck) {
     mreq.len = ETHER_MIN_LEN;
     mreq.proto = PROTO_LLDP;
 
-    fail_unless(master_rcheck(&mreq) == EXIT_FAILURE,
+    fail_unless(master_check(&mreq) == EXIT_FAILURE,
 	"MASTER_SEND check failed");
 
     // lo0 mostly
@@ -344,14 +348,14 @@ START_TEST(test_master_rcheck) {
     ether.type = htons(ETHERTYPE_LLDP);
     memcpy(mreq.msg, &ether, sizeof(struct ether_hdr));
 
-    fail_unless(master_rcheck(&mreq) == EXIT_SUCCESS,
+    fail_unless(master_check(&mreq) == EXIT_SUCCESS,
 	"MASTER_SEND check failed");
 
 #ifdef HAVE_LINUX_ETHTOOL_H
     mark_point();
     mreq.cmd = MASTER_ETHTOOL;
     mreq.len = sizeof(struct ethtool_cmd);
-    fail_unless(master_rcheck(&mreq) == EXIT_SUCCESS,
+    fail_unless(master_check(&mreq) == EXIT_SUCCESS,
 	"MASTER_ETHTOOL check failed");
 #endif
 
@@ -359,7 +363,7 @@ START_TEST(test_master_rcheck) {
     mark_point();
     mreq.cmd = MASTER_DESCR;
     mreq.len = 0;
-    fail_unless(master_rcheck(&mreq) == EXIT_SUCCESS,
+    fail_unless(master_check(&mreq) == EXIT_SUCCESS,
 	"MASTER_DESCR check failed");
 #endif
 
@@ -369,8 +373,8 @@ START_TEST(test_master_rcheck) {
 #elif !defined SIOCSIFDESCR
     mreq.cmd = MASTER_DESCR;
 #endif
-    fail_unless(master_rcheck(&mreq) == EXIT_FAILURE,
-	"master_rcheck should fail");
+    fail_unless(master_check(&mreq) == EXIT_FAILURE,
+	"master_check should fail");
 }
 END_TEST
 
