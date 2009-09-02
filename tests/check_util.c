@@ -470,25 +470,25 @@ START_TEST(test_read_line) {
     const char *file = "testfile";
     char *prefix, *path = NULL;
 
-    fail_unless (read_line(NULL, line, 0) == -1,
-	"-1 should be returned on an invalid path");
+    fail_unless (read_line(NULL, line, 0) == 0,
+	"0 should be returned on an invalid path argument");
 
     if ((prefix = getenv("srcdir")) == NULL)
 	prefix = ".";
 
     fail_if(asprintf(&path, "%s/%s", prefix, file) == -1, "asprintf failed");
 
-    fail_unless (read_line(path, NULL, 0) == -1,
-	"-1 should be returned on an invalid line");
+    fail_unless (read_line(path, NULL, 0) == 0,
+	"0 should be returned on an invalid line argument");
 
-    fail_unless (read_line("non-existant", line, 0) == -1,
-	"-1 should be returned on a missing file");
+    fail_unless (read_line("non-existant", line, 0) == 0,
+	"0 should be returned on a missing file");
 
-    fail_unless (read_line(null, line, 10) == -1,
-	"-1 should be returned on a unreadable file");
+    fail_unless (read_line(null, line, 10) == 0,
+	"0 should be returned on a unreadable file");
 
-    fail_unless (read_line(path, line, 0) == -1,
-	"-1 should be returned on zero len request");
+    fail_unless (read_line(path, line, 0) == 0,
+	"0 should be returned on zero len request");
 
     fail_unless (read_line(path, line, 1) == 0,
 	"0 bytes should be returned");
