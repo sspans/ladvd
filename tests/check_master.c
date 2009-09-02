@@ -486,36 +486,77 @@ START_TEST(test_master_rconf) {
 }
 END_TEST
 
-START_TEST(test_master_rsend) {
-    struct master_msg mreq;
+START_TEST(test_master_multi) {
+    struct rawfd rfd;
     int spair[2];
-    ssize_t len;
     const char *errstr;
 
-    loglevel = INFO;
     my_socketpair(spair);
-    mreq.len = ETHER_MIN_LEN;
+    rfd.fd = spair[1];
+    rfd.index = 1;
+    strlcpy(rfd.name, "lo0", IFNAMSIZ);
 
     mark_point();
     options |= OPT_DEBUG;
-    len = master_rsend(spair[1], &mreq);
+    errstr = "check";
+    my_log(CRIT, errstr);
+    master_multi(&rfd, protos, 0);
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    mark_point();
+    errstr = "check";
+    my_log(CRIT, errstr);
+    check_wrap_fake |= FAKE_IOCTL|FAKE_SETSOCKOPT;
+    master_multi(&rfd, protos, 1);
+    check_wrap_fake = 0;
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+}
+END_TEST
+
+START_TEST(test_master_send) {
+    extern struct rfdhead rawfds;
+    struct rawfd rfd;
+    struct master_msg mreq;
+    int spair[2];
+    extern int dfd;
+    ssize_t len;
+    const char *errstr;
+
+    TAILQ_INIT(&rawfds);
+    loglevel = INFO;
+    my_socketpair(spair);
+    mreq.index = 1;
+    mreq.len = ETHER_MIN_LEN;
+
+    dfd = spair[1];
+    rfd.fd = spair[1];
+    rfd.index = 1;
+    strlcpy(rfd.name, "lo0", IFNAMSIZ);
+    TAILQ_INSERT_TAIL(&rawfds, &rfd, entries);
+
+    mark_point();
+    options |= OPT_DEBUG;
+    len = master_send(&mreq);
     fail_unless(len == ETHER_MIN_LEN,
 	"incorrect length returned: %ld", len);
 
     mark_point();
     errstr = "failed to write pcap record header";
-    spair[1] = -1;
+    dfd = -1;
     WRAP_FATAL_START();
-    len = master_rsend(spair[1], &mreq);
+    len = master_send(&mreq);
     WRAP_FATAL_END();
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     mark_point();
     errstr = "only -1 bytes written";
+    rfd.fd = -1;
     options &= ~OPT_DEBUG;
     check_wrap_fake |= FAKE_IOCTL;
-    master_rsend(spair[1], &mreq);
+    master_send(&mreq);
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 }
@@ -529,10 +570,10 @@ Suite * master_suite (void) {
     tcase_add_test(tc_master, test_master_signal);
     tcase_add_test(tc_master, test_master_cmd);
     tcase_add_test(tc_master, test_master_recv);
-    tcase_add_test(tc_master, test_master_rcheck);
-    tcase_add_test(tc_master, test_master_rsocket);
-    tcase_add_test(tc_master, test_master_rconf);
-    tcase_add_test(tc_master, test_master_rsend);
+    tcase_add_test(tc_master, test_master_check);
+    tcase_add_test(tc_master, test_master_socket);
+    tcase_add_test(tc_master, test_master_multi);
+    tcase_add_test(tc_master, test_master_send);
     suite_add_tcase(s, tc_master);
 
     return s;
