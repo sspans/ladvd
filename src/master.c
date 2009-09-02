@@ -303,9 +303,6 @@ ssize_t master_send(struct master_msg *mreq) {
 void master_open(struct master_msg *mreq) {
     struct rawfd *rfd = NULL;
 
-    if (options & OPT_DEBUG)
-	return;
-
     rfd = my_malloc(sizeof(struct rawfd));
     TAILQ_INSERT_TAIL(&rawfds, rfd, entries);
 
@@ -316,7 +313,7 @@ void master_open(struct master_msg *mreq) {
     if (rfd->fd < 0)
 	my_fatal("opening raw socket failed");
 
-    if (!(options & OPT_RECV))
+    if (!(options & OPT_RECV) || (options & OPT_DEBUG))
 	return;
 
     // register multicast membership
@@ -333,12 +330,9 @@ void master_open(struct master_msg *mreq) {
 void master_close(struct master_msg *mreq) {
     struct rawfd *rfd = NULL;
 
-    if (options & OPT_DEBUG)
-	return;
-
     assert((rfd = rfd_byindex(&rawfds, mreq->index)) != NULL);
 
-    if (options & OPT_RECV) {
+    if ((options & OPT_RECV) && !(options & OPT_DEBUG)) {
 	// unregister multicast membership
 	master_multi(rfd, protos, 0);
 	// delete event
@@ -421,6 +415,9 @@ ssize_t master_device(struct master_msg *mreq) {
 int master_socket(struct rawfd *rfd) {
 
     int fd = -1;
+
+    if (options & OPT_DEBUG)
+	return(fileno(stdin));
 
 #ifdef HAVE_NETPACKET_PACKET_H
     struct sockaddr_ll sa;
