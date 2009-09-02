@@ -30,6 +30,10 @@ struct event { };
 #include "check_wrap.h"
 
 uint32_t options = OPT_DAEMON | OPT_CHECK;
+extern int dfd;
+extern int mfd;
+extern struct rfdhead rawfds;
+
 
 // stub functions
 // linking with libevent introduces threads which breaks check_wrap
@@ -62,7 +66,6 @@ int cap_free(void *arg) {
     return(0);
 }
 #endif /* USE_CAPABILITIES */
-
 
 START_TEST(test_master_signal) {
     int sig = 0;
@@ -124,12 +127,14 @@ START_TEST(test_master_cmd) {
     struct master_msg mreq;
     struct ether_hdr ether;
     static uint8_t lldp_dst[] = LLDP_MULTICAST_ADDR;
-    extern struct rfdhead rawfds;
-    struct rawfd rfd;
+    struct rawfd *rfd;
     const char *errstr = NULL;
     int spair[2], fd = -1;
-    extern int dfd;
     short event = 0;
+
+    loglevel = INFO;
+    my_socketpair(spair);
+    memset(&mreq, 0, sizeof(struct master_msg));
 
     // supply an invalid fd, resulting in a read error
     mark_point();
@@ -141,7 +146,6 @@ START_TEST(test_master_cmd) {
 
     // test a message with an incorrect size
     mark_point();
-    my_socketpair(spair);
     write(spair[0], &mreq, 1);
     errstr = "invalid request received";
     WRAP_FATAL_START();
@@ -152,13 +156,11 @@ START_TEST(test_master_cmd) {
 
     // test a message with incorrect content
     mark_point();
-    memset(&mreq, 0, sizeof(struct master_msg));
     mreq.cmd = MASTER_SEND;
     mreq.len = ETHER_MIN_LEN;
     mreq.proto = PROTO_LLDP;
 
     write(spair[0], &mreq, MASTER_MSG_SIZE);
-
     errstr = "invalid request supplied";
     WRAP_FATAL_START();
     master_cmd(spair[1], event);
@@ -170,7 +172,6 @@ START_TEST(test_master_cmd) {
     mark_point();
     dfd = spair[1];
     options |= OPT_DEBUG;
-    mreq.cmd = MASTER_SEND;
     mreq.index = 1;
     memcpy(ether.dst, lldp_dst, ETHER_ADDR_LEN);
     ether.type = htons(ETHERTYPE_LLDP);
@@ -187,19 +188,18 @@ START_TEST(test_master_cmd) {
 
     // test a correct CLOSE
     mark_point();
-    TAILQ_INIT(&rawfds);
+    mreq.cmd = MASTER_CLOSE;
+
+    mark_point();
+    rfd = my_malloc(sizeof(struct rawfd));
+    fd = dup(spair[1]);
+    rfd->fd = fd;
+    rfd->index = 1;
+    strlcpy(rfd->name, "lo0", IFNAMSIZ);
+    TAILQ_INSERT_TAIL(&rawfds, rfd, entries);
+
     errstr = "check";
     my_log(CRIT, errstr);
-    mreq.cmd = MASTER_CLOSE;
-    write(spair[0], &mreq, MASTER_MSG_SIZE);
-    master_cmd(spair[1], event);
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
-	"incorrect message logged: %s", check_wrap_errstr);
-
-    rfd.fd = dup(spair[1]);
-    rfd.index = 1;
-    strlcpy(rfd.name, "lo0", IFNAMSIZ);
-    TAILQ_INSERT_TAIL(&rawfds, &rfd, entries);
     write(spair[0], &mreq, MASTER_MSG_SIZE);
     master_cmd(spair[1], event);
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
@@ -239,7 +239,9 @@ START_TEST(test_master_cmd) {
     // test a failing return message
     mark_point();
     mreq.cmd = MASTER_CLOSE;
-    rfd.fd = dup(spair[1]);
+    rfd->fd = dup(spair[1]);
+    rfd->index = 1;
+    strlcpy(rfd->name, "lo0", IFNAMSIZ);
     write(spair[0], &mreq, MASTER_MSG_SIZE);
     close(spair[0]);
 
@@ -249,6 +251,9 @@ START_TEST(test_master_cmd) {
     WRAP_FATAL_END();
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
+
+    TAILQ_REMOVE(&rawfds, rfd, entries);
+    free(rfd);
 }
 END_TEST
 
@@ -258,6 +263,11 @@ START_TEST(test_master_check) {
     static uint8_t lldp_dst[] = LLDP_MULTICAST_ADDR;
 
     memset(&mreq, 0, sizeof(struct master_msg));
+
+    mark_point();
+    mreq.cmd = MASTER_CLOSE;
+    fail_unless(master_check(&mreq) == EXIT_SUCCESS,
+	"MASTER_SEND check failed");
 
     mark_point();
     mreq.cmd = MASTER_SEND;
@@ -305,25 +315,23 @@ START_TEST(test_master_check) {
 END_TEST
 
 START_TEST(test_master_send) {
-    extern struct rfdhead rawfds;
-    struct rawfd rfd;
+    struct rawfd *rfd;
     struct master_msg mreq;
     int spair[2];
-    extern int dfd;
     ssize_t len;
     const char *errstr;
 
-    TAILQ_INIT(&rawfds);
     loglevel = INFO;
     my_socketpair(spair);
     mreq.index = 1;
     mreq.len = ETHER_MIN_LEN;
 
     dfd = spair[1];
-    rfd.fd = spair[1];
-    rfd.index = 1;
-    strlcpy(rfd.name, "lo0", IFNAMSIZ);
-    TAILQ_INSERT_TAIL(&rawfds, &rfd, entries);
+    rfd = my_malloc(sizeof(struct rawfd));
+    rfd->fd = spair[1];
+    rfd->index = 1;
+    strlcpy(rfd->name, "lo0", IFNAMSIZ);
+    TAILQ_INSERT_TAIL(&rawfds, rfd, entries);
 
     mark_point();
     options |= OPT_DEBUG;
@@ -342,12 +350,14 @@ START_TEST(test_master_send) {
 
     mark_point();
     errstr = "only -1 bytes written";
-    rfd.fd = -1;
+    rfd->fd = -1;
     options &= ~OPT_DEBUG;
-    check_wrap_fake |= FAKE_IOCTL;
     master_send(&mreq);
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
+
+    TAILQ_REMOVE(&rawfds, rfd, entries);
+    free(rfd);
 }
 END_TEST
 
@@ -356,27 +366,37 @@ START_TEST(test_master_open) {
 END_TEST
 
 START_TEST(test_master_close) {
+    struct rawfd *rfd = NULL;
+
+    //mark_point();
+    //rfd = my_malloc(sizeof(struct rawfd));
+
+    //TAILQ_INSERT_TAIL(&rawfds, rfd, entries);
+    //fail_unless (close(fd) == -1, "rfd.fd should be closed");
+    //fail_unless (rfd_byindex(&rawfds, 1) == NULL,
+    //	"rfd should be removed from the queue");
+    //TAILQ_REMOVE(&rawfds, rfd, entries);
+    //free(rfd);
 }
 END_TEST
 
 START_TEST(test_master_socket) {
-    extern struct rfdhead rawfds;
-    struct rawfd rfd;
+    struct rawfd *rfd;
     const char *errstr;
 
-    TAILQ_INIT(&rawfds);
+    rfd = my_malloc(sizeof(struct rawfd));
+    TAILQ_INSERT_TAIL(&rawfds, rfd, entries);
 
-    rfd.fd = -1;
-    rfd.index = 1;
-    strlcpy(rfd.name, "lo0", IFNAMSIZ);
-    TAILQ_INSERT_TAIL(&rawfds, &rfd, entries);
+    rfd->fd = -1;
+    rfd->index = 1;
+    strlcpy(rfd->name, "lo0", IFNAMSIZ);
 
     mark_point();
     errstr = "failed to bind socket to";
     check_wrap_fake |= FAKE_SOCKET|FAKE_OPEN;
     check_wrap_fail |= FAIL_BIND|FAIL_IOCTL;
     WRAP_FATAL_START();
-    master_socket(&rfd);
+    master_socket(rfd);
     WRAP_FATAL_END();
     check_wrap_fail &= ~(FAIL_BIND|FAIL_IOCTL);
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
@@ -391,7 +411,7 @@ START_TEST(test_master_socket) {
     errstr = "unable to configure socket filter for";
     check_wrap_fail |= FAIL_SETSOCKOPT;
     WRAP_FATAL_START();
-    master_socket(&rfd);
+    master_socket(rfd);
     WRAP_FATAL_END();
     check_wrap_fail &= ~FAIL_SETSOCKOPT;
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
@@ -400,7 +420,7 @@ START_TEST(test_master_socket) {
     errstr = "unable to configure immediate mode for";
     check_wrap_fail |= FAIL_IOCTL;
     WRAP_FATAL_START();
-    master_socket(&rfd);
+    master_socket(rfd);
     WRAP_FATAL_END();
     check_wrap_fail &= ~FAIL_IOCTL;
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
@@ -412,7 +432,7 @@ START_TEST(test_master_socket) {
     errstr = "check";
     my_log(CRIT, errstr);
     check_wrap_fake |= FAKE_SETSOCKOPT;
-    master_socket(&rfd);
+    master_socket(rfd);
     check_wrap_fake &= ~FAKE_SETSOCKOPT;
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -421,11 +441,14 @@ START_TEST(test_master_socket) {
     errstr = "check";
     my_log(CRIT, errstr);
     check_wrap_fake |= FAKE_IOCTL;
-    master_socket(&rfd);
+    master_socket(rfd);
     check_wrap_fake &= ~FAKE_IOCTL;
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 #endif
+
+    TAILQ_REMOVE(&rawfds, rfd, entries);
+    free(rfd);
 }
 END_TEST
 
@@ -459,10 +482,8 @@ START_TEST(test_master_multi) {
 END_TEST
 
 START_TEST(test_master_recv) {
-    extern struct rfdhead rawfds;
-    struct rawfd rfd;
+    struct rawfd *rfd;
     int spair[2];
-    extern int mfd;
     short event = 0;
     const char *errstr = NULL;
     char buf[ETHER_MAX_LEN * 2];
@@ -471,27 +492,26 @@ START_TEST(test_master_recv) {
 #ifdef HAVE_NET_BPF_H
     struct bpf_hdr *bhp, *ebhp;
     void *endp;
-    extern struct bpf_buf bpf_buf;
 #endif /* HAVE_NET_BPF_H */
     struct ether_hdr ether;
     static uint8_t lldp_dst[] = CDP_MULTICAST_ADDR;
 
     loglevel = INFO;
-    TAILQ_INIT(&rawfds);
+    rfd = my_malloc(sizeof(struct rawfd));
+    TAILQ_INSERT_TAIL(&rawfds, rfd, entries);
 
 #ifdef HAVE_NET_BPF_H
     // create a sensible bpf buffer
-    bpf_buf.len = roundup(ETHER_MAX_LEN, getpagesize());
-    bpf_buf.data = my_malloc(bpf_buf.len);
+    rfd->bpf_buf.len = roundup(ETHER_MAX_LEN, getpagesize());
+    rfd->bpf_buf.data = my_malloc(rfd->bpf_buf.len);
 #endif
 
     // test a failing receive
     mark_point();
     errstr = "receiving message failed";
-    memset(&rfd, 0, sizeof(rfd));
-    rfd.fd = -1;
+    rfd->fd = -1;
     WRAP_FATAL_START();
-    master_recv(rfd.fd, event, &rfd);
+    master_recv(rfd->fd, event, rfd);
     WRAP_FATAL_END();
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -516,15 +536,14 @@ START_TEST(test_master_recv) {
 #endif
     my_socketpair(spair);
     mfd = spair[1];
-    rfd.fd = spair[1];
-    TAILQ_INSERT_TAIL(&rawfds, &rfd, entries);
+    rfd->fd = spair[1];
 
     // too short
     mark_point();
     errstr = "check";
     my_log(CRIT, errstr);
     write(spair[0], &buf, 1 + hlen);
-    master_recv(rfd.fd, event, &rfd);
+    master_recv(rfd->fd, event, rfd);
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
@@ -532,7 +551,7 @@ START_TEST(test_master_recv) {
     mark_point();
     errstr = "unknown message type received";
     write(spair[0], &buf, ETHER_MIN_LEN + hlen);
-    master_recv(rfd.fd, event, &rfd);
+    master_recv(rfd->fd, event, rfd);
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
@@ -543,14 +562,14 @@ START_TEST(test_master_recv) {
     memcpy(msg, &ether, sizeof(struct ether_hdr));
     mark_point();
     write(spair[0], &buf, ETHER_MIN_LEN + hlen);
-    master_recv(rfd.fd, event, &rfd);
+    master_recv(rfd->fd, event, rfd);
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     // too long (or multiple messages with bpf)
     mark_point();
     write(spair[0], &buf, sizeof(buf));
-    master_recv(rfd.fd, event, &rfd);
+    master_recv(rfd->fd, event, rfd);
 
     // closed child socket
     mark_point();
@@ -558,15 +577,23 @@ START_TEST(test_master_recv) {
     write(spair[0], &buf, ETHER_MIN_LEN + hlen);
     close(spair[0]);
     WRAP_FATAL_START();
-    master_recv(rfd.fd, event, &rfd);
+    master_recv(rfd->fd, event, rfd);
     WRAP_FATAL_END();
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
+
+    TAILQ_REMOVE(&rawfds, rfd, entries);
+#ifdef HAVE_NET_BPF_H
+    free(rfd->bpf_buf.data);
+#endif
+    free(rfd);
 }
 END_TEST
 
 Suite * master_suite (void) {
     Suite *s = suite_create("master.c");
+
+    TAILQ_INIT(&rawfds);
 
     // master test case
     TCase *tc_master = tcase_create("master");
