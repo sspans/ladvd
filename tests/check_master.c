@@ -124,6 +124,8 @@ START_TEST(test_master_cmd) {
     struct master_msg mreq;
     struct ether_hdr ether;
     static uint8_t lldp_dst[] = LLDP_MULTICAST_ADDR;
+    extern struct rfdhead rawfds;
+    struct rawfd rfd;
     const char *errstr = NULL;
     int spair[2], fd = -1;
     extern int dfd;
@@ -164,7 +166,7 @@ START_TEST(test_master_cmd) {
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
-    // test a correct MASTER_SEND
+    // test a correct SEND
     mark_point();
     dfd = spair[1];
     options |= OPT_DEBUG;
@@ -183,6 +185,26 @@ START_TEST(test_master_cmd) {
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
+    // test a correct CLOSE
+    mark_point();
+    TAILQ_INIT(&rawfds);
+    errstr = "check";
+    my_log(CRIT, errstr);
+    mreq.cmd = MASTER_CLOSE;
+    write(spair[0], &mreq, MASTER_MSG_SIZE);
+    master_cmd(spair[1], event);
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    rfd.fd = dup(spair[1]);
+    rfd.index = 1;
+    strlcpy(rfd.name, "lo0", IFNAMSIZ);
+    TAILQ_INSERT_TAIL(&rawfds, &rfd, entries);
+    write(spair[0], &mreq, MASTER_MSG_SIZE);
+    master_cmd(spair[1], event);
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+ 
     // test a correct ETHTOOL / DESCR
     mark_point();
 #ifdef HAVE_LINUX_ETHTOOL_H
@@ -203,9 +225,21 @@ START_TEST(test_master_cmd) {
     WRAP_FATAL_END();
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
+#endif
+
+#ifdef HAVE_SYSFS
+    // test a correct DEVICE
+    mreq.cmd = MASTER_DEVICE;
+    write(spair[0], &mreq, MASTER_MSG_SIZE);
+    master_cmd(spair[1], event);
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+#endif /* HAVE_SYSFS */
 
     // test a failing return message
     mark_point();
+    mreq.cmd = MASTER_CLOSE;
+    rfd.fd = dup(spair[1]);
     write(spair[0], &mreq, MASTER_MSG_SIZE);
     close(spair[0]);
 
@@ -215,7 +249,6 @@ START_TEST(test_master_cmd) {
     WRAP_FATAL_END();
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
-#endif
 }
 END_TEST
 
@@ -543,7 +576,7 @@ Suite * master_suite (void) {
     tcase_add_test(tc_master, test_master_send);
     tcase_add_test(tc_master, test_master_open);
     tcase_add_test(tc_master, test_master_close);
-    tcase_add_test(tc_master, test_master_socket);
+    //tcase_add_test(tc_master, test_master_socket);
     tcase_add_test(tc_master, test_master_multi);
     tcase_add_test(tc_master, test_master_recv);
     suite_add_tcase(s, tc_master);
