@@ -219,6 +219,212 @@ START_TEST(test_master_cmd) {
 }
 END_TEST
 
+START_TEST(test_master_check) {
+    struct master_msg mreq;
+    struct ether_hdr ether;
+    static uint8_t lldp_dst[] = LLDP_MULTICAST_ADDR;
+
+    memset(&mreq, 0, sizeof(struct master_msg));
+
+    mark_point();
+    mreq.cmd = MASTER_SEND;
+    mreq.len = ETHER_MIN_LEN;
+    mreq.proto = PROTO_LLDP;
+
+    fail_unless(master_check(&mreq) == EXIT_FAILURE,
+	"MASTER_SEND check failed");
+
+    // lo0 mostly
+    mark_point();
+    mreq.index = 1;
+    memcpy(ether.dst, lldp_dst, ETHER_ADDR_LEN);
+    ether.type = htons(ETHERTYPE_LLDP);
+    memcpy(mreq.msg, &ether, sizeof(struct ether_hdr));
+
+    fail_unless(master_check(&mreq) == EXIT_SUCCESS,
+	"MASTER_SEND check failed");
+
+#ifdef HAVE_LINUX_ETHTOOL_H
+    mark_point();
+    mreq.cmd = MASTER_ETHTOOL;
+    mreq.len = sizeof(struct ethtool_cmd);
+    fail_unless(master_check(&mreq) == EXIT_SUCCESS,
+	"MASTER_ETHTOOL check failed");
+#endif
+
+#ifdef SIOCSIFDESCR
+    mark_point();
+    mreq.cmd = MASTER_DESCR;
+    mreq.len = 0;
+    fail_unless(master_check(&mreq) == EXIT_SUCCESS,
+	"MASTER_DESCR check failed");
+#endif
+
+    mark_point();
+#ifndef HAVE_LINUX_ETHTOOL_H
+    mreq.cmd = MASTER_ETHTOOL;
+#elif !defined SIOCSIFDESCR
+    mreq.cmd = MASTER_DESCR;
+#endif
+    fail_unless(master_check(&mreq) == EXIT_FAILURE,
+	"master_check should fail");
+}
+END_TEST
+
+START_TEST(test_master_send) {
+    extern struct rfdhead rawfds;
+    struct rawfd rfd;
+    struct master_msg mreq;
+    int spair[2];
+    extern int dfd;
+    ssize_t len;
+    const char *errstr;
+
+    TAILQ_INIT(&rawfds);
+    loglevel = INFO;
+    my_socketpair(spair);
+    mreq.index = 1;
+    mreq.len = ETHER_MIN_LEN;
+
+    dfd = spair[1];
+    rfd.fd = spair[1];
+    rfd.index = 1;
+    strlcpy(rfd.name, "lo0", IFNAMSIZ);
+    TAILQ_INSERT_TAIL(&rawfds, &rfd, entries);
+
+    mark_point();
+    options |= OPT_DEBUG;
+    len = master_send(&mreq);
+    fail_unless(len == ETHER_MIN_LEN,
+	"incorrect length returned: %ld", len);
+
+    mark_point();
+    errstr = "failed to write pcap record header";
+    dfd = -1;
+    WRAP_FATAL_START();
+    len = master_send(&mreq);
+    WRAP_FATAL_END();
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    mark_point();
+    errstr = "only -1 bytes written";
+    rfd.fd = -1;
+    options &= ~OPT_DEBUG;
+    check_wrap_fake |= FAKE_IOCTL;
+    master_send(&mreq);
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+}
+END_TEST
+
+START_TEST(test_master_open) {
+}
+END_TEST
+
+START_TEST(test_master_close) {
+}
+END_TEST
+
+START_TEST(test_master_socket) {
+    extern struct rfdhead rawfds;
+    struct rawfd rfd;
+    const char *errstr;
+
+    TAILQ_INIT(&rawfds);
+
+    rfd.fd = -1;
+    rfd.index = 1;
+    strlcpy(rfd.name, "lo0", IFNAMSIZ);
+    TAILQ_INSERT_TAIL(&rawfds, &rfd, entries);
+
+    mark_point();
+    errstr = "failed to bind socket to";
+    check_wrap_fake |= FAKE_SOCKET|FAKE_OPEN;
+    check_wrap_fail |= FAIL_BIND|FAIL_IOCTL;
+    WRAP_FATAL_START();
+    master_socket(&rfd);
+    WRAP_FATAL_END();
+    check_wrap_fail &= ~(FAIL_BIND|FAIL_IOCTL);
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    mark_point();
+    errstr = "check";
+    my_log(CRIT, errstr);
+    check_wrap_fake |= FAKE_BIND|FAKE_IOCTL;
+
+#ifdef HAVE_LINUX_FILTER_H
+    errstr = "unable to configure socket filter for";
+    check_wrap_fail |= FAIL_SETSOCKOPT;
+    WRAP_FATAL_START();
+    master_socket(&rfd);
+    WRAP_FATAL_END();
+    check_wrap_fail &= ~FAIL_SETSOCKOPT;
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+#elif HAVE_NET_BPF_H
+    errstr = "unable to configure immediate mode for";
+    check_wrap_fail |= FAIL_IOCTL;
+    WRAP_FATAL_START();
+    master_socket(&rfd);
+    WRAP_FATAL_END();
+    check_wrap_fail &= ~FAIL_IOCTL;
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+#endif
+
+#ifdef AF_PACKET
+    mark_point();
+    errstr = "check";
+    my_log(CRIT, errstr);
+    check_wrap_fake |= FAKE_SETSOCKOPT;
+    master_socket(&rfd);
+    check_wrap_fake &= ~FAKE_SETSOCKOPT;
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+#elif defined AF_LINK
+    mark_point();
+    errstr = "check";
+    my_log(CRIT, errstr);
+    check_wrap_fake |= FAKE_IOCTL;
+    master_socket(&rfd);
+    check_wrap_fake &= ~FAKE_IOCTL;
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+#endif
+}
+END_TEST
+
+START_TEST(test_master_multi) {
+    struct rawfd rfd;
+    int spair[2];
+    const char *errstr;
+
+    my_socketpair(spair);
+    rfd.fd = spair[1];
+    rfd.index = 1;
+    strlcpy(rfd.name, "lo0", IFNAMSIZ);
+
+    mark_point();
+    options |= OPT_DEBUG;
+    errstr = "check";
+    my_log(CRIT, errstr);
+    master_multi(&rfd, protos, 0);
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    mark_point();
+    errstr = "check";
+    my_log(CRIT, errstr);
+    check_wrap_fake |= FAKE_IOCTL|FAKE_SETSOCKOPT;
+    master_multi(&rfd, protos, 1);
+    check_wrap_fake = 0;
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+}
+END_TEST
+
 START_TEST(test_master_recv) {
     extern struct rfdhead rawfds;
     struct rawfd rfd;
@@ -326,242 +532,6 @@ START_TEST(test_master_recv) {
 }
 END_TEST
 
-START_TEST(test_master_check) {
-    struct master_msg mreq;
-    struct ether_hdr ether;
-    static uint8_t lldp_dst[] = LLDP_MULTICAST_ADDR;
-
-    memset(&mreq, 0, sizeof(struct master_msg));
-
-    mark_point();
-    mreq.cmd = MASTER_SEND;
-    mreq.len = ETHER_MIN_LEN;
-    mreq.proto = PROTO_LLDP;
-
-    fail_unless(master_check(&mreq) == EXIT_FAILURE,
-	"MASTER_SEND check failed");
-
-    // lo0 mostly
-    mark_point();
-    mreq.index = 1;
-    memcpy(ether.dst, lldp_dst, ETHER_ADDR_LEN);
-    ether.type = htons(ETHERTYPE_LLDP);
-    memcpy(mreq.msg, &ether, sizeof(struct ether_hdr));
-
-    fail_unless(master_check(&mreq) == EXIT_SUCCESS,
-	"MASTER_SEND check failed");
-
-#ifdef HAVE_LINUX_ETHTOOL_H
-    mark_point();
-    mreq.cmd = MASTER_ETHTOOL;
-    mreq.len = sizeof(struct ethtool_cmd);
-    fail_unless(master_check(&mreq) == EXIT_SUCCESS,
-	"MASTER_ETHTOOL check failed");
-#endif
-
-#ifdef SIOCSIFDESCR
-    mark_point();
-    mreq.cmd = MASTER_DESCR;
-    mreq.len = 0;
-    fail_unless(master_check(&mreq) == EXIT_SUCCESS,
-	"MASTER_DESCR check failed");
-#endif
-
-    mark_point();
-#ifndef HAVE_LINUX_ETHTOOL_H
-    mreq.cmd = MASTER_ETHTOOL;
-#elif !defined SIOCSIFDESCR
-    mreq.cmd = MASTER_DESCR;
-#endif
-    fail_unless(master_check(&mreq) == EXIT_FAILURE,
-	"master_check should fail");
-}
-END_TEST
-
-START_TEST(test_master_rsocket) {
-    struct master_rfd rfd;
-    int sock;
-    const char *errstr;
-
-    rfd.fd = -1;
-    rfd.index = 1;
-    strlcpy(rfd.name, "lo0", IFNAMSIZ);
-
-    mark_point();
-    errno = EPERM;
-    errstr = "check";
-    my_log(CRIT, errstr);
-    check_wrap_fail |= (FAIL_SOCKET|FAIL_OPEN);
-    WRAP_FATAL_START();
-    sock = master_rsocket(NULL, 0);
-    WRAP_FATAL_END();
-    check_wrap_fail &= ~(FAIL_SOCKET|FAIL_OPEN);
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
-	"incorrect message logged: %s", check_wrap_errstr);
-    fail_unless (sock == -1, "incorrect socket returned: %d", sock);
-
-    mark_point();
-    check_wrap_fake |= FAKE_SOCKET|FAKE_OPEN;
-    WRAP_FATAL_START();
-    sock = master_rsocket(NULL, 0);
-    WRAP_FATAL_END();
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
-	"incorrect message logged: %s", check_wrap_errstr);
-    fail_unless (sock == 0, "incorrect socket returned: %d", sock);
-
-    mark_point();
-    errstr = "failed to bind socket to";
-    check_wrap_fail |= FAIL_BIND|FAIL_IOCTL;
-    WRAP_FATAL_START();
-    master_rsocket(&rfd, 0);
-    WRAP_FATAL_END();
-    check_wrap_fail &= ~(FAIL_BIND|FAIL_IOCTL);
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
-	"incorrect message logged: %s", check_wrap_errstr);
-
-    mark_point();
-    errstr = "check";
-    my_log(CRIT, errstr);
-    check_wrap_fake |= FAKE_BIND|FAKE_IOCTL;
-    WRAP_FATAL_START();
-    sock = master_rsocket(&rfd, 0);
-    WRAP_FATAL_END();
-    check_wrap_fail = 0;
-    check_wrap_fake = 0;
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
-	"incorrect message logged: %s", check_wrap_errstr);
-    fail_unless (sock == 0, "incorrect socket returned: %d", sock);
-}
-END_TEST
-
-START_TEST(test_master_rconf) {
-    struct master_rfd rfd;
-    const char *errstr;
-
-    rfd.fd = -1;
-    rfd.index = 1;
-    strlcpy(rfd.name, "lo0", IFNAMSIZ);
-
-#ifdef HAVE_LINUX_FILTER_H
-    mark_point();
-    errstr = "unable to configure socket filter for";
-    check_wrap_fail |= FAIL_SETSOCKOPT;
-    WRAP_FATAL_START();
-    master_rconf(&rfd, protos);
-    WRAP_FATAL_END();
-    check_wrap_fail &= ~FAIL_SETSOCKOPT;
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
-	"incorrect message logged: %s", check_wrap_errstr);
-#elif HAVE_NET_BPF_H
-    mark_point();
-    errstr = "unable to configure immediate mode for";
-    check_wrap_fail |= FAIL_IOCTL;
-    WRAP_FATAL_START();
-    master_rconf(&rfd, protos);
-    WRAP_FATAL_END();
-    check_wrap_fail &= ~FAIL_IOCTL;
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
-	"incorrect message logged: %s", check_wrap_errstr);
-#endif
-
-#ifdef AF_PACKET
-    mark_point();
-    errstr = "check";
-    my_log(CRIT, errstr);
-    check_wrap_fake |= FAKE_SETSOCKOPT;
-    master_rconf(&rfd, protos);
-    check_wrap_fake &= ~FAKE_SETSOCKOPT;
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
-	"incorrect message logged: %s", check_wrap_errstr);
-#elif defined AF_LINK
-    mark_point();
-    errstr = "check";
-    my_log(CRIT, errstr);
-    check_wrap_fake |= FAKE_IOCTL;
-    master_rconf(&rfd, protos);
-    check_wrap_fake &= ~FAKE_IOCTL;
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
-	"incorrect message logged: %s", check_wrap_errstr);
-#endif
-}
-END_TEST
-
-START_TEST(test_master_multi) {
-    struct rawfd rfd;
-    int spair[2];
-    const char *errstr;
-
-    my_socketpair(spair);
-    rfd.fd = spair[1];
-    rfd.index = 1;
-    strlcpy(rfd.name, "lo0", IFNAMSIZ);
-
-    mark_point();
-    options |= OPT_DEBUG;
-    errstr = "check";
-    my_log(CRIT, errstr);
-    master_multi(&rfd, protos, 0);
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
-	"incorrect message logged: %s", check_wrap_errstr);
-
-    mark_point();
-    errstr = "check";
-    my_log(CRIT, errstr);
-    check_wrap_fake |= FAKE_IOCTL|FAKE_SETSOCKOPT;
-    master_multi(&rfd, protos, 1);
-    check_wrap_fake = 0;
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
-	"incorrect message logged: %s", check_wrap_errstr);
-}
-END_TEST
-
-START_TEST(test_master_send) {
-    extern struct rfdhead rawfds;
-    struct rawfd rfd;
-    struct master_msg mreq;
-    int spair[2];
-    extern int dfd;
-    ssize_t len;
-    const char *errstr;
-
-    TAILQ_INIT(&rawfds);
-    loglevel = INFO;
-    my_socketpair(spair);
-    mreq.index = 1;
-    mreq.len = ETHER_MIN_LEN;
-
-    dfd = spair[1];
-    rfd.fd = spair[1];
-    rfd.index = 1;
-    strlcpy(rfd.name, "lo0", IFNAMSIZ);
-    TAILQ_INSERT_TAIL(&rawfds, &rfd, entries);
-
-    mark_point();
-    options |= OPT_DEBUG;
-    len = master_send(&mreq);
-    fail_unless(len == ETHER_MIN_LEN,
-	"incorrect length returned: %ld", len);
-
-    mark_point();
-    errstr = "failed to write pcap record header";
-    dfd = -1;
-    WRAP_FATAL_START();
-    len = master_send(&mreq);
-    WRAP_FATAL_END();
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
-	"incorrect message logged: %s", check_wrap_errstr);
-
-    mark_point();
-    errstr = "only -1 bytes written";
-    rfd.fd = -1;
-    options &= ~OPT_DEBUG;
-    check_wrap_fake |= FAKE_IOCTL;
-    master_send(&mreq);
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
-	"incorrect message logged: %s", check_wrap_errstr);
-}
-END_TEST
-
 Suite * master_suite (void) {
     Suite *s = suite_create("master.c");
 
@@ -569,11 +539,13 @@ Suite * master_suite (void) {
     TCase *tc_master = tcase_create("master");
     tcase_add_test(tc_master, test_master_signal);
     tcase_add_test(tc_master, test_master_cmd);
-    tcase_add_test(tc_master, test_master_recv);
     tcase_add_test(tc_master, test_master_check);
+    tcase_add_test(tc_master, test_master_send);
+    tcase_add_test(tc_master, test_master_open);
+    tcase_add_test(tc_master, test_master_close);
     tcase_add_test(tc_master, test_master_socket);
     tcase_add_test(tc_master, test_master_multi);
-    tcase_add_test(tc_master, test_master_send);
+    tcase_add_test(tc_master, test_master_recv);
     suite_add_tcase(s, tc_master);
 
     return s;
