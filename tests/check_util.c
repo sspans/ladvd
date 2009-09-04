@@ -297,10 +297,6 @@ START_TEST(test_netif) {
 
     // netif_byname checks
     mark_point();
-    fail_unless (netif_byname(NULL, "bond0") == NULL,
-	"NULL should be returned on invalid netifs");
-    fail_unless (netif_byname(netifs, NULL) == NULL,
-	"NULL should be returned on invalid name");
     fail_unless (netif_byname(netifs, "bond0") == &tnetifs[0],
 	"incorrect netif struct returned");
     fail_unless (netif_byname(netifs, "eth0") == &tnetifs[1],

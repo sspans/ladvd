@@ -180,8 +180,7 @@ struct netif *netif_byindex(struct nhead *netifs, uint32_t index) {
 struct netif *netif_byname(struct nhead *netifs, char *name) {
     struct netif *netif;
 
-    if (netifs == NULL || name == NULL)
-	return NULL;
+    assert((netifs != NULL) && (name != NULL));
 
     TAILQ_FOREACH(netif, netifs, entries) {
 	if (strcmp(netif->name, name) == 0)
