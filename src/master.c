@@ -131,7 +131,7 @@ void master_init(int cmdfd, int msgfd, pid_t child) {
     event_dispatch();
 
     // not reached
-    exit(EXIT_FAILURE);
+    my_fatal("master event-loop failed");
 }
 
 
@@ -569,7 +569,7 @@ void master_multi(struct rawfd *rfd, struct proto *protos, int op) {
 #endif
 	if ((ioctl(sock, (op) ? SIOCADDMULTI: SIOCDELMULTI, &ifr) < 0) &&
 	    (errno != EADDRINUSE))
-	    my_fatal("unable to add %s multicast to %s: %s",
+	    my_fatal("unable to change %s multicast on %s: %s",
 		     protos[p].name, rfd->name, strerror(errno));
 #endif
     }

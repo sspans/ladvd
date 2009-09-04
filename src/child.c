@@ -59,7 +59,7 @@ void child_init(int cmdfd, int msgfd, int ifc, char *ifl[]) {
     event_dispatch();
 
     // not reached
-    exit(EXIT_FAILURE);
+    my_fatal("child event-loop failed");
 }
 
 void child_send(int fd, short event, void *evs) {
