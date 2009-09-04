@@ -14,7 +14,7 @@
 static void *(*libc_malloc) (size_t size);
 static void *(*libc_calloc) (size_t nmemb, size_t size);
 static char *(*libc_strdup) (const char *s1);
-static void (*libc_exit) (int status);
+static void (*libc_exit) (int status) __attribute__ ((noreturn));
 static int (*libc_setresgid) (gid_t rgid, gid_t egid, gid_t sgid);
 static int (*libc_setresuid) (uid_t ruid, uid_t euid, uid_t suid);
 static int (*libc_setgroups) (int ngroups, const gid_t *gidset);
