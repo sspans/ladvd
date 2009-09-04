@@ -168,8 +168,7 @@ struct netif *subif_iter(struct netif *subif, struct netif *netif) {
 struct netif *netif_byindex(struct nhead *netifs, uint32_t index) {
     struct netif *netif = NULL;
 
-    if (netifs == NULL)
-	return NULL;
+    assert(netifs);
 
     TAILQ_FOREACH(netif, netifs, entries) {
 	if (netif->index == index)

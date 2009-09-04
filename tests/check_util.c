@@ -283,8 +283,6 @@ START_TEST(test_netif) {
 
     // netif_byindex checks
     mark_point();
-    fail_unless (netif_byindex(NULL, 0) == NULL,
-	"NULL should be returned on invalid netifs");
     fail_unless (netif_byindex(netifs, 0) == &tnetifs[0],
 	"incorrect netif struct returned");
     fail_unless (netif_byindex(netifs, 1) == &tnetifs[1],

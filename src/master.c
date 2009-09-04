@@ -658,8 +658,7 @@ void master_recv(int fd, short event, struct rawfd *rfd) {
 inline struct rawfd *rfd_byindex(struct rfdhead *rawfds, uint32_t index) {
     struct rawfd *rfd = NULL;
 
-    if (rawfds == NULL)
-	return NULL;
+    assert(rawfds);
 
     TAILQ_FOREACH(rfd, rawfds, entries) {
 	if (rfd->index == index)
