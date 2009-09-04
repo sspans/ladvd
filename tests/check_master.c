@@ -120,6 +120,9 @@ START_TEST(test_master_signal) {
     WRAP_FATAL_END();
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
+
+    // reset
+    check_wrap_fake = 0;
 }
 END_TEST
 
@@ -463,9 +466,10 @@ START_TEST(test_master_socket) {
 	"incorrect message logged: %s", check_wrap_errstr);
 #endif
 
+    // reset
+    master_close(&mreq);
     check_wrap_fake = 0;
     check_wrap_fail = 0;
-    master_close(&mreq);
 }
 END_TEST
 
@@ -488,13 +492,26 @@ START_TEST(test_master_multi) {
 	"incorrect message logged: %s", check_wrap_errstr);
 
     mark_point();
+    options &= ~OPT_DEBUG;
+    errstr = "unable to change LLDP multicast on";
+    WRAP_FATAL_START();
+    master_multi(&rfd, protos, 1);
+    WRAP_FATAL_END();
+    check_wrap_fake = 0;
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    mark_point();
+    check_wrap_fake |= FAKE_IOCTL|FAKE_SETSOCKOPT;
     errstr = "check";
     my_log(CRIT, errstr);
-    check_wrap_fake |= FAKE_IOCTL|FAKE_SETSOCKOPT;
     master_multi(&rfd, protos, 1);
     check_wrap_fake = 0;
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
+
+    // reset
+    check_wrap_fake = 0;
 }
 END_TEST
 
