@@ -463,6 +463,8 @@ START_TEST(test_master_socket) {
 	"incorrect message logged: %s", check_wrap_errstr);
 #endif
 
+    check_wrap_fake = 0;
+    check_wrap_fail = 0;
     master_close(&mreq);
 }
 END_TEST
