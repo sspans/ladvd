@@ -101,7 +101,7 @@ START_TEST(test_strlcpy) {
 END_TEST
 #endif /* HAVE_STRLCPY */
 
-#ifndef HAVE_STRLCAT
+#ifndef HAVE_STRNVIS
 START_TEST(test_strnvis) {
     char dst[BUFSIZ];
     const char *src = "0123456789ABCDEF\n\t\r\b\a\v\f1234\\";
@@ -119,7 +119,7 @@ START_TEST(test_strnvis) {
     fail_unless (strlen(dst) == 39, "length should be equal to 39");
 }
 END_TEST
-#endif  /* HAVE_STRLCAT */
+#endif  /* HAVE_STRNVIS */
 
 Suite * compat_suite (void) {
     Suite *s = suite_create("libcompat");
