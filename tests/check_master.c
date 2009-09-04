@@ -185,18 +185,21 @@ START_TEST(test_master_cmd) {
     WRAP_FATAL_END();
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
+    master_close(&mreq);
 
     // test a correct CLOSE
     mark_point();
-    mreq.cmd = MASTER_CLOSE;
+    fail_unless (rfd_byindex(&rawfds, 1) == NULL,
+    	"the queue should be empty");
 
-    mark_point();
-    rfd = my_malloc(sizeof(struct rawfd));
-    fd = dup(spair[1]);
-    rfd->fd = fd;
-    rfd->index = 1;
-    strlcpy(rfd->name, "lo0", IFNAMSIZ);
-    TAILQ_INSERT_TAIL(&rawfds, rfd, entries);
+    options |= OPT_DEBUG;
+    mreq.cmd = MASTER_CLOSE;
+    mreq.index = 1;
+    strlcpy(mreq.name, "lo0", IFNAMSIZ);
+
+    master_open(&mreq);
+    fail_unless (rfd_byindex(&rawfds, 1) != NULL,
+    	"rfd should be added to the queue");
 
     errstr = "check";
     my_log(CRIT, errstr);
@@ -204,6 +207,8 @@ START_TEST(test_master_cmd) {
     master_cmd(spair[1], event);
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
+    fail_unless (rfd_byindex(&rawfds, 1) == NULL,
+    	"rfd should be removed from the queue");
  
     // test a correct ETHTOOL / DESCR
     mark_point();
@@ -238,11 +243,12 @@ START_TEST(test_master_cmd) {
 
     // test a failing return message
     mark_point();
+    master_open(&mreq);
+    rfd = rfd_byindex(&rawfds, 1);
+    fail_unless (rfd != NULL, "rfd should be added to the queue");
     mreq.cmd = MASTER_CLOSE;
     fd = dup(spair[1]);
     rfd->fd = fd;
-    rfd->index = 1;
-    strlcpy(rfd->name, "lo0", IFNAMSIZ);
     write(spair[0], &mreq, MASTER_MSG_SIZE);
     close(spair[0]);
 
@@ -323,19 +329,19 @@ START_TEST(test_master_send) {
     const char *errstr;
 
     loglevel = INFO;
+    options |= OPT_DEBUG;
     my_socketpair(spair);
     mreq.index = 1;
     mreq.len = ETHER_MIN_LEN;
+    strlcpy(mreq.name, "lo0", IFNAMSIZ);
 
     dfd = spair[1];
-    rfd = my_malloc(sizeof(struct rawfd));
+    master_open(&mreq);
+    rfd = rfd_byindex(&rawfds, 1);
+    fail_unless (rfd != NULL, "rfd should be added to the queue");
     rfd->fd = spair[1];
-    rfd->index = 1;
-    strlcpy(rfd->name, "lo0", IFNAMSIZ);
-    TAILQ_INSERT_TAIL(&rawfds, rfd, entries);
 
     mark_point();
-    options |= OPT_DEBUG;
     len = master_send(&mreq);
     fail_unless(len == ETHER_MIN_LEN,
 	"incorrect length returned: %ld", len);
@@ -357,8 +363,8 @@ START_TEST(test_master_send) {
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
-    TAILQ_REMOVE(&rawfds, rfd, entries);
-    free(rfd);
+    options |= OPT_DEBUG;
+    master_close(&mreq);
 }
 END_TEST
 
@@ -382,17 +388,27 @@ START_TEST(test_master_open_close) {
 END_TEST
 
 START_TEST(test_master_socket) {
+    struct master_msg mreq;
     struct rawfd *rfd;
     const char *errstr;
 
-    rfd = my_malloc(sizeof(struct rawfd));
-    TAILQ_INSERT_TAIL(&rawfds, rfd, entries);
+    mark_point();
+    options |= OPT_DEBUG;
+    mreq.index = 1;
+    strlcpy(mreq.name, "lo0", IFNAMSIZ);
 
-    rfd->fd = -1;
-    rfd->index = 1;
-    strlcpy(rfd->name, "lo0", IFNAMSIZ);
+    master_open(&mreq);
+    rfd = rfd_byindex(&rawfds, 1);
+    fail_unless (rfd != NULL, "rfd should be added to the queue");
+
+#ifdef HAVE_NET_BPF_H
+    // create a sensible bpf buffer
+    rfd->bpf_buf.len = roundup(ETHER_MAX_LEN, getpagesize());
+    rfd->bpf_buf.data = my_malloc(rfd->bpf_buf.len);
+#endif
 
     mark_point();
+    options &= ~OPT_DEBUG;
     errstr = "failed to bind socket to";
     check_wrap_fake |= FAKE_SOCKET|FAKE_OPEN;
     check_wrap_fail |= FAIL_BIND|FAIL_IOCTL;
@@ -418,12 +434,11 @@ START_TEST(test_master_socket) {
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 #elif HAVE_NET_BPF_H
-    errstr = "unable to configure immediate mode for";
-    check_wrap_fail |= FAIL_IOCTL;
+    errstr = "check";
+    my_log(CRIT, errstr);
     WRAP_FATAL_START();
     master_socket(rfd);
     WRAP_FATAL_END();
-    check_wrap_fail &= ~FAIL_IOCTL;
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 #endif
@@ -448,8 +463,7 @@ START_TEST(test_master_socket) {
 	"incorrect message logged: %s", check_wrap_errstr);
 #endif
 
-    TAILQ_REMOVE(&rawfds, rfd, entries);
-    free(rfd);
+    master_close(&mreq);
 }
 END_TEST
 
@@ -499,13 +513,12 @@ START_TEST(test_master_recv) {
 
     loglevel = INFO;
     rfd = my_malloc(sizeof(struct rawfd));
-    TAILQ_INSERT_TAIL(&rawfds, rfd, entries);
 
 #ifdef HAVE_NET_BPF_H
     // create a sensible bpf buffer
     rfd->bpf_buf.len = roundup(ETHER_MAX_LEN, getpagesize());
     rfd->bpf_buf.data = my_malloc(rfd->bpf_buf.len);
-#endif
+#endif /* HAVE_NET_BPF_H */
 
     // test a failing receive
     mark_point();
@@ -583,7 +596,6 @@ START_TEST(test_master_recv) {
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
-    TAILQ_REMOVE(&rawfds, rfd, entries);
 #ifdef HAVE_NET_BPF_H
     free(rfd->bpf_buf.data);
 #endif
