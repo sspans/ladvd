@@ -5,6 +5,8 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #define __USE_GNU
 #include <dlfcn.h>
@@ -188,8 +190,6 @@ int bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen) {
 }
 
 int open(const char *pathname, int flags, ...) {
-    va_list ap;
-    mode_t mode;
 
     libc_open = dlsym(RTLD_NEXT, "open");
 
@@ -198,11 +198,18 @@ int open(const char *pathname, int flags, ...) {
     if (check_wrap_fake & FAKE_OPEN)
 	return 0;
 
-    va_start(ap, flags);
-    mode = va_arg(ap, mode_t);
-    va_end(ap);
+    if (flags & O_CREAT) {
+	mode_t mode;
+	va_list ap;
 
-    return libc_open(pathname, flags, mode);
+	va_start(ap, flags);
+	mode = (mode_t) va_arg(ap, int);
+	va_end(ap);
+
+	return libc_open(pathname, flags, mode);
+    } else {
+	return libc_open(pathname, flags);
+    }
 }
 
 void vsyslog(int priority, const char *fmt, va_list ap) {
