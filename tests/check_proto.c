@@ -139,6 +139,7 @@ START_TEST(test_lldp_check) {
     static uint8_t lldp_dst[] = LLDP_MULTICAST_ADDR;
 
     mark_point();
+    memset(msg.msg, 0, ETHER_MAX_LEN);
     msg.len = ETHER_MIN_LEN;
     fail_unless (lldp_check(msg.msg, msg.len) == NULL,
 	    "empty packets should generate a NULL");
@@ -165,6 +166,7 @@ START_TEST(test_cdp_check) {
     static uint8_t cdp_org[] = LLC_ORG_CISCO;
 
     mark_point();
+    memset(msg.msg, 0, ETHER_MAX_LEN);
     msg.len = ETHER_MIN_LEN;
     fail_unless (cdp_check(msg.msg, msg.len) == NULL,
 	    "empty packets should generate a NULL");
@@ -198,6 +200,7 @@ START_TEST(test_edp_check) {
     static uint8_t edp_org[] = LLC_ORG_EXTREME;
 
     mark_point();
+    memset(msg.msg, 0, ETHER_MAX_LEN);
     msg.len = ETHER_MIN_LEN;
     fail_unless (edp_check(msg.msg, msg.len) == NULL,
 	    "empty packets should generate a NULL");
@@ -231,6 +234,7 @@ START_TEST(test_fdp_check) {
     static uint8_t fdp_org[] = LLC_ORG_FOUNDRY;
 
     mark_point();
+    memset(msg.msg, 0, ETHER_MAX_LEN);
     msg.len = ETHER_MIN_LEN;
     fail_unless (fdp_check(msg.msg, msg.len) == NULL,
 	    "empty packets should generate a NULL");
@@ -264,6 +268,7 @@ START_TEST(test_ndp_check) {
     static uint8_t ndp_org[] = LLC_ORG_NORTEL;
 
     mark_point();
+    memset(msg.msg, 0, ETHER_MAX_LEN);
     msg.len = ETHER_MIN_LEN;
     fail_unless (ndp_check(msg.msg, msg.len) == NULL,
 	    "empty packets should generate a NULL");
