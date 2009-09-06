@@ -53,7 +53,9 @@ WRAP(setsockopt, SETSOCKOPT,
 VWRAP(malloc, MALLOC, (size_t size), (size));
 VWRAP(calloc, CALLOC, (size_t nmemb, size_t size), (nmemb, size));
 VWRAP(strdup, STRDUP, (const char *s1), (s1));
+#ifdef HAVE___STRDUP
 VWRAP(__strdup, STRDUP, (const char *s1), (s1));
+#endif
 
 MWRAP(ioctl, int) (int fd, unsigned long int request, ...) {
     va_list ap;

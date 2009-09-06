@@ -301,7 +301,7 @@ AC_CHECK_FUNCS([asprintf memcpy memset snprintf strdup strerror uname \
 		socketpair vsyslog],
 		[], AC_MSG_ERROR([required function missing]))
 
-AC_CHECK_FUNCS([setproctitle strlcpy strlcat strnvis])
+AC_CHECK_FUNCS([setproctitle strlcpy strlcat strnvis __strdup])
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile
