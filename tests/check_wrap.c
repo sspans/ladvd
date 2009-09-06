@@ -34,7 +34,9 @@ void * __wrap_##name params {\
     return __real_##name args;\
 }
 
-#define MWRAP(name, ret)	ret __wrap_##name
+#define MWRAP(name, ret, params) \
+ret __real_##name params ;\
+ret __wrap_##name params 
 
 WRAP(setresgid, SETRESGID, (gid_t r, gid_t e, gid_t s), (r, e, s));
 WRAP(setresuid, SETRESUID, (uid_t r, uid_t e, uid_t s), (r, e, s));
@@ -55,7 +57,7 @@ VWRAP(strdup, STRDUP, (const char *s1), (s1));
 VWRAP(__strdup, STRDUP, (const char *s1), (s1));
 #endif
 
-MWRAP(ioctl, int) (int fd, unsigned long int request, ...) {
+MWRAP(ioctl, int, (int fd, unsigned long int request, ...)) {
     va_list ap;
     int ret;
 
@@ -71,7 +73,7 @@ MWRAP(ioctl, int) (int fd, unsigned long int request, ...) {
     return(ret);
 }
 
-MWRAP(open, int) (const char *pathname, int flags, ...) {
+MWRAP(open, int, (const char *pathname, int flags, ...)) {
 
     if (check_wrap_fail & FAIL_OPEN)
 	return -1;
@@ -92,18 +94,18 @@ MWRAP(open, int) (const char *pathname, int flags, ...) {
     }
 }
 
-MWRAP(exit, void) (int status) {
+MWRAP(exit, void, (int status)) {
 
     if (check_wrap_fail & FAIL_EXIT)
 	longjmp(check_wrap_env,1);
     __real_exit(status);
 }
 
-MWRAP(vsyslog, void) (int p, const char *fmt, va_list ap) {
+MWRAP(vsyslog, void, (int p, const char *fmt, va_list ap)) {
     vsnprintf(check_wrap_errstr, 1024, fmt, ap);
 }
 
-MWRAP(__vsyslog_chk, void) (int p, int __flag, const char *fmt, va_list ap) {
+MWRAP(__vsyslog_chk, void, (int p, int __flag, const char *fmt, va_list ap)) {
     vsnprintf(check_wrap_errstr, 1024, fmt, ap);
 }
 

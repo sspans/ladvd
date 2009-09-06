@@ -1,10 +1,10 @@
 
+#define _GNU_SOURCE
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <check.h>
-
 #include "config.h"
 #include "compat/compat.h"
 
@@ -36,7 +36,8 @@ START_TEST(test_setproctitle) {
     compat_init_setproctitle(argc, argv);
     setproctitle(str);
 
-    asprintf(&ptitle, "%s: %s", __progname, str);
+    fail_unless(asprintf(&ptitle, "%s: %s", __progname, str) != -1,
+	"asprintf failed");
     fail_unless (strcmp(argv[0], ptitle) == 0,
 	"title should be '%s' not '%s'", ptitle, argv[0]);
 }
