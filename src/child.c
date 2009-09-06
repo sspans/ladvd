@@ -13,6 +13,9 @@
 int sargc;
 char **sargv;
 
+struct nhead netifs;
+struct mhead mqueue;
+struct sysinfo sysinfo;
 extern struct proto protos[];
 
 void child_init(int cmdfd, int msgfd, int ifc, char *ifl[]) {
