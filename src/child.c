@@ -10,8 +10,8 @@
 #include <unistd.h>
 #include <time.h>
 
-int sargc;
-char **sargv;
+int sargc = 0;
+char **sargv = NULL;
 
 struct nhead netifs;
 struct mhead mqueue;
