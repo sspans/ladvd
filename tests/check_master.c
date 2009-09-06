@@ -502,7 +502,6 @@ START_TEST(test_master_recv) {
     int hlen = 0;
 #ifdef HAVE_NET_BPF_H
     struct bpf_hdr *bhp, *ebhp;
-    void *endp;
 #endif /* HAVE_NET_BPF_H */
     struct ether_hdr ether;
     static uint8_t lldp_dst[] = CDP_MULTICAST_ADDR;
