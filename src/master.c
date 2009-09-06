@@ -139,12 +139,12 @@ void master_signal(int sig, short event, void *pid) {
     switch (sig) {
 	case SIGCHLD:
 	    my_fatal("child has exited");
-	    rfd_closeall(&rawfds);
+	    rfd_closeall();
 	    break;
 	case SIGINT:
 	case SIGTERM:
 	    kill(*(pid_t *)pid, sig);
-	    rfd_closeall(&rawfds);
+	    rfd_closeall();
 	    my_fatal("quitting");
 	    break;
 	case SIGHUP:
@@ -177,13 +177,13 @@ void master_cmd(int cmdfd, short event) {
     switch (mreq.cmd) {
 	// transmit packet
 	case MASTER_SEND:
-	    if (rfd_byindex(&rawfds, mreq.index) == NULL)
+	    if (rfd_byindex(mreq.index) == NULL)
 		master_open(&mreq);
 	    mreq.len = master_send(&mreq);
 	    break;
 	// close socket
 	case MASTER_CLOSE:
-	    if ((rfd = rfd_byindex(&rawfds, mreq.index)) != NULL)
+	    if ((rfd = rfd_byindex(mreq.index)) != NULL)
 		master_close(rfd);
 	    break;
 #if HAVE_LINUX_ETHTOOL_H
@@ -283,7 +283,7 @@ ssize_t master_send(struct master_msg *mreq) {
 	return(write(dfd, mreq->msg, mreq->len));
     }
 
-    assert((rfd = rfd_byindex(&rawfds, mreq->index)) != NULL);
+    assert((rfd = rfd_byindex(mreq->index)) != NULL);
     count = write(rfd->fd, mreq->msg, mreq->len);
 
     // close the socket if the device vanished
@@ -656,24 +656,20 @@ void master_recv(int fd, short event, struct rawfd *rfd) {
 }
 
 
-inline struct rawfd *rfd_byindex(struct rfdhead *rawfds, uint32_t index) {
+inline struct rawfd *rfd_byindex(uint32_t index) {
     struct rawfd *rfd = NULL;
 
-    assert(rawfds);
-
-    TAILQ_FOREACH(rfd, rawfds, entries) {
+    TAILQ_FOREACH(rfd, &rawfds, entries) {
 	if (rfd->index == index)
 	    break;
     }
     return(rfd);
 }
 
-inline void rfd_closeall(struct rfdhead *rawfds) {
+inline void rfd_closeall() {
     struct rawfd *rfd, *nrfd;
 
-    assert(rawfds);
-
-    TAILQ_FOREACH_SAFE(rfd, rawfds, entries, nrfd) {
+    TAILQ_FOREACH_SAFE(rfd, &rawfds, entries, nrfd) {
 	master_close(rfd);
     }
 }

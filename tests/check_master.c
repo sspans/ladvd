@@ -153,12 +153,12 @@ START_TEST(test_master_cmd) {
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
-    rfd = rfd_byindex(&rawfds, 1);
+    rfd = rfd_byindex(1);
     master_close(rfd);
 
     // test a correct CLOSE
     mark_point();
-    fail_unless (rfd_byindex(&rawfds, 1) == NULL,
+    fail_unless (rfd_byindex(1) == NULL,
     	"the queue should be empty");
 
     options |= OPT_DEBUG;
@@ -167,7 +167,7 @@ START_TEST(test_master_cmd) {
     strlcpy(mreq.name, "lo0", IFNAMSIZ);
 
     master_open(&mreq);
-    fail_unless (rfd_byindex(&rawfds, 1) != NULL,
+    fail_unless (rfd_byindex(1) != NULL,
     	"rfd should be added to the queue");
 
     errstr = "check";
@@ -176,7 +176,7 @@ START_TEST(test_master_cmd) {
     master_cmd(spair[1], event);
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
-    fail_unless (rfd_byindex(&rawfds, 1) == NULL,
+    fail_unless (rfd_byindex(1) == NULL,
     	"rfd should be removed from the queue");
  
     // test a correct ETHTOOL / DESCR
@@ -213,7 +213,7 @@ START_TEST(test_master_cmd) {
     // test a failing return message
     mark_point();
     master_open(&mreq);
-    rfd = rfd_byindex(&rawfds, 1);
+    rfd = rfd_byindex(1);
     fail_unless (rfd != NULL, "rfd should be added to the queue");
     mreq.cmd = MASTER_CLOSE;
     fd = dup(spair[1]);
@@ -228,7 +228,7 @@ START_TEST(test_master_cmd) {
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (close(fd) == -1, "rfd->fd should be closed");
-    fail_unless (rfd_byindex(&rawfds, 1) == NULL,
+    fail_unless (rfd_byindex(1) == NULL,
     	"rfd should be removed from the queue");
 }
 END_TEST
@@ -306,7 +306,7 @@ START_TEST(test_master_send) {
 
     dfd = spair[1];
     master_open(&mreq);
-    rfd = rfd_byindex(&rawfds, 1);
+    rfd = rfd_byindex(1);
     fail_unless (rfd != NULL, "rfd should be added to the queue");
     rfd->fd = spair[1];
 
@@ -333,7 +333,7 @@ START_TEST(test_master_send) {
 	"incorrect message logged: %s", check_wrap_errstr);
 
     options |= OPT_DEBUG;
-    rfd = rfd_byindex(&rawfds, 1);
+    rfd = rfd_byindex(1);
     master_close(rfd);
 }
 END_TEST
@@ -350,11 +350,11 @@ START_TEST(test_master_open_close) {
     strlcpy(mreq.name, "lo0", IFNAMSIZ);
 
     master_open(&mreq);
-    rfd = rfd_byindex(&rawfds, 1);
+    rfd = rfd_byindex(1);
     fail_unless (rfd != NULL,
     	"rfd should be added to the queue");
     master_close(rfd);
-    fail_unless (rfd_byindex(&rawfds, 1) == NULL,
+    fail_unless (rfd_byindex(1) == NULL,
     	"rfd should be removed from the queue");
 }
 END_TEST
@@ -370,7 +370,7 @@ START_TEST(test_master_socket) {
     strlcpy(mreq.name, "lo0", IFNAMSIZ);
 
     master_open(&mreq);
-    rfd = rfd_byindex(&rawfds, 1);
+    rfd = rfd_byindex(1);
     fail_unless (rfd != NULL, "rfd should be added to the queue");
 
 #ifdef HAVE_NET_BPF_H
@@ -436,7 +436,7 @@ START_TEST(test_master_socket) {
 #endif
 
     // reset
-    rfd = rfd_byindex(&rawfds, 1);
+    rfd = rfd_byindex(1);
     master_close(rfd);
     check_wrap_fake = 0;
     check_wrap_fail = 0;
@@ -509,7 +509,7 @@ START_TEST(test_master_recv) {
     mreq.index = 1;
     strlcpy(mreq.name, "lo0", IFNAMSIZ);
     master_open(&mreq);
-    rfd = rfd_byindex(&rawfds, 1);
+    rfd = rfd_byindex(1);
     fail_unless (rfd != NULL, "rfd should be added to the queue");
 
 #ifdef HAVE_NET_BPF_H
@@ -597,7 +597,7 @@ START_TEST(test_master_recv) {
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
-    rfd = rfd_byindex(&rawfds, 1);
+    rfd = rfd_byindex(1);
     master_close(rfd);
 }
 END_TEST

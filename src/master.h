@@ -62,7 +62,7 @@ void master_close(struct rawfd *rfd);
 int master_check(struct master_msg *mreq);
 int master_socket(struct rawfd *rfd);
 void master_multi(struct rawfd *rfd, struct proto *protos, int op);
-inline struct rawfd *rfd_byindex(struct rfdhead *, uint32_t index);
-inline void rfd_closeall(struct rfdhead *);
+inline struct rawfd *rfd_byindex(uint32_t index);
+inline void rfd_closeall();
 
 #endif /* _master_h */
