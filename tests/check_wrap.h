@@ -14,6 +14,7 @@
 #define FAIL_SOCKET	(1 << 10)
 #define FAIL_BIND	(1 << 11)
 #define FAIL_OPEN	(1 << 12)
+#define FAIL_KILL	(1 << 13)
 
 #define FAKE_SETRESGID	(1 << 0)
 #define FAKE_SETRESUID	(1 << 1)

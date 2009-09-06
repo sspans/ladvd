@@ -6,9 +6,6 @@
 #include <sys/param.h>
 #include <signal.h>
 
-#define _EVENT_H_
-struct event { };
-
 #include "common.h"
 #include "util.h"
 #include "proto/protos.h"
@@ -33,39 +30,6 @@ uint32_t options = OPT_DAEMON | OPT_CHECK;
 extern int dfd;
 extern int mfd;
 extern struct rfdhead rawfds;
-
-
-// stub functions
-// linking with libevent introduces threads which breaks check_wrap
-// so instead use stubs since we don't test library functions anyway
-void *event_init(void) {
-    return(NULL);
-}
-int event_dispatch(void) {
-    return(0);
-}
-int event_add(struct event *ev, struct timeval *tv) {
-    return(0);
-}
-int event_del(struct event *ev) {
-    return(0);
-}
-void event_set(struct event *ev, int i, short s,
-    void (*v1)(int, short, void *), void *v2) {
-}
-
-#ifdef USE_CAPABILITIES
-cap_t cap_from_text(const char *str) {
-    cap_t cap;
-    return (cap);
-}
-int cap_set_proc(cap_t cap) {
-    return(0);
-}
-int cap_free(void *arg) {
-    return(0);
-}
-#endif /* USE_CAPABILITIES */
 
 START_TEST(test_master_signal) {
     int sig = 0;
@@ -516,6 +480,7 @@ START_TEST(test_master_multi) {
 END_TEST
 
 START_TEST(test_master_recv) {
+    struct master_msg mreq;
     struct rawfd *rfd;
     int spair[2];
     short event = 0;
@@ -530,8 +495,16 @@ START_TEST(test_master_recv) {
     struct ether_hdr ether;
     static uint8_t lldp_dst[] = CDP_MULTICAST_ADDR;
 
+
+    options |= OPT_DEBUG;
     loglevel = INFO;
-    rfd = my_malloc(sizeof(struct rawfd));
+
+    mark_point();
+    mreq.index = 1;
+    strlcpy(mreq.name, "lo0", IFNAMSIZ);
+    master_open(&mreq);
+    rfd = rfd_byindex(&rawfds, 1);
+    fail_unless (rfd != NULL, "rfd should be added to the queue");
 
 #ifdef HAVE_NET_BPF_H
     // create a sensible bpf buffer
@@ -554,7 +527,7 @@ START_TEST(test_master_recv) {
     bhp = (struct bpf_hdr *)buf;
     hlen = BPF_WORDALIGN(sizeof(struct bpf_hdr));
     bhp->bh_hdrlen = hlen;
-    bhp->bh_caplen = ETHER_MIN_LEN;
+    bhp->bh_caplen = ETHER_MIN_LEN - 1;
     msg = buf + hlen;
 
     // create an end bhp covering the rest of buf
@@ -579,6 +552,9 @@ START_TEST(test_master_recv) {
     master_recv(rfd->fd, event, rfd);
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
+#ifdef HAVE_NET_BPF_H
+    bhp->bh_caplen = ETHER_MIN_LEN;
+#endif /* HAVE_NET_BPF_H */
 
     // empty message
     mark_point();
@@ -615,10 +591,7 @@ START_TEST(test_master_recv) {
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
-#ifdef HAVE_NET_BPF_H
-    free(rfd->bpf_buf.data);
-#endif
-    free(rfd);
+    master_close(&mreq);
 }
 END_TEST
 
