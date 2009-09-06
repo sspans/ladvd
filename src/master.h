@@ -57,11 +57,12 @@ ssize_t master_descr(struct master_msg *mreq);
 #ifdef HAVE_SYSFS
 ssize_t master_device(struct master_msg *mreq);
 #endif /* HAVE_SYSFS */
-void master_close(struct master_msg *mreq);
+void master_close(struct rawfd *rfd);
 
 int master_check(struct master_msg *mreq);
 int master_socket(struct rawfd *rfd);
 void master_multi(struct rawfd *rfd, struct proto *protos, int op);
 inline struct rawfd *rfd_byindex(struct rfdhead *, uint32_t index);
+inline void rfd_closeall(struct rfdhead *);
 
 #endif /* _master_h */

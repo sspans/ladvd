@@ -152,7 +152,9 @@ START_TEST(test_master_cmd) {
     WRAP_FATAL_END();
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
-    master_close(&mreq);
+
+    rfd = rfd_byindex(&rawfds, 1);
+    master_close(rfd);
 
     // test a correct CLOSE
     mark_point();
@@ -331,11 +333,13 @@ START_TEST(test_master_send) {
 	"incorrect message logged: %s", check_wrap_errstr);
 
     options |= OPT_DEBUG;
-    master_close(&mreq);
+    rfd = rfd_byindex(&rawfds, 1);
+    master_close(rfd);
 }
 END_TEST
 
 START_TEST(test_master_open_close) {
+    struct rawfd *rfd;
     struct master_msg mreq;
     int spair[2];
 
@@ -346,9 +350,10 @@ START_TEST(test_master_open_close) {
     strlcpy(mreq.name, "lo0", IFNAMSIZ);
 
     master_open(&mreq);
-    fail_unless (rfd_byindex(&rawfds, 1) != NULL,
+    rfd = rfd_byindex(&rawfds, 1);
+    fail_unless (rfd != NULL,
     	"rfd should be added to the queue");
-    master_close(&mreq);
+    master_close(rfd);
     fail_unless (rfd_byindex(&rawfds, 1) == NULL,
     	"rfd should be removed from the queue");
 }
@@ -431,7 +436,8 @@ START_TEST(test_master_socket) {
 #endif
 
     // reset
-    master_close(&mreq);
+    rfd = rfd_byindex(&rawfds, 1);
+    master_close(rfd);
     check_wrap_fake = 0;
     check_wrap_fail = 0;
 }
@@ -591,7 +597,8 @@ START_TEST(test_master_recv) {
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
-    master_close(&mreq);
+    rfd = rfd_byindex(&rawfds, 1);
+    master_close(rfd);
 }
 END_TEST
 

@@ -139,10 +139,12 @@ void master_signal(int sig, short event, void *pid) {
     switch (sig) {
 	case SIGCHLD:
 	    my_fatal("child has exited");
+	    rfd_closeall(&rawfds);
 	    break;
 	case SIGINT:
 	case SIGTERM:
 	    kill(*(pid_t *)pid, sig);
+	    rfd_closeall(&rawfds);
 	    my_fatal("quitting");
 	    break;
 	case SIGHUP:
@@ -155,8 +157,8 @@ void master_signal(int sig, short event, void *pid) {
 
 void master_cmd(int cmdfd, short event) {
     struct master_msg mreq;
+    struct rawfd *rfd;
     ssize_t len;
-
 
     // receive request
     len = read(cmdfd, &mreq, MASTER_MSG_SIZE);
@@ -181,8 +183,8 @@ void master_cmd(int cmdfd, short event) {
 	    break;
 	// close socket
 	case MASTER_CLOSE:
-	    if (rfd_byindex(&rawfds, mreq.index) != NULL)
-		master_close(&mreq);
+	    if ((rfd = rfd_byindex(&rawfds, mreq.index)) != NULL)
+		master_close(rfd);
 	    break;
 #if HAVE_LINUX_ETHTOOL_H
 	// fetch ethtool details
@@ -291,7 +293,7 @@ ssize_t master_send(struct master_msg *mreq) {
 #elif defined HAVE_NET_BPF_H
     if ((count == -1) && (errno == ENXIO))
 #endif /* HAVE_NET_BPF_H */
-	    master_close(mreq);
+	    master_close(rfd);
 
     if (count != mreq->len)
 	my_log(WARN, "only %d bytes written: %s", count, strerror(errno));
@@ -327,10 +329,9 @@ void master_open(struct master_msg *mreq) {
     return;
 }
 
-void master_close(struct master_msg *mreq) {
-    struct rawfd *rfd = NULL;
+void master_close(struct rawfd *rfd) {
 
-    assert((rfd = rfd_byindex(&rawfds, mreq->index)) != NULL);
+    assert(rfd != NULL);
 
     if ((options & OPT_RECV) && !(options & OPT_DEBUG)) {
 	// unregister multicast membership
@@ -665,5 +666,15 @@ inline struct rawfd *rfd_byindex(struct rfdhead *rawfds, uint32_t index) {
 	    break;
     }
     return(rfd);
+}
+
+inline void rfd_closeall(struct rfdhead *rawfds) {
+    struct rawfd *rfd, *nrfd;
+
+    assert(rawfds);
+
+    TAILQ_FOREACH_SAFE(rfd, rawfds, entries, nrfd) {
+	master_close(rfd);
+    }
 }
 
