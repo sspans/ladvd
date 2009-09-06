@@ -1,4 +1,5 @@
 
+#include <config.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdarg.h>
@@ -7,9 +8,6 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-
-#define __USE_GNU
-#include <dlfcn.h>
 
 #include "check_wrap.h"
 

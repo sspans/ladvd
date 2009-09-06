@@ -6,8 +6,8 @@ dist-hook:
 	-rm -rf `find $(distdir)/proto -name .svn`
 
 # auto-generate the list of wrap functions
-check_WRAPFLAGS = `grep -E '^[MV]?WRAP' check_wrap.c | \
-	sed -re 's/^[MV]?WRAP\(([_a-z]+)\,.+/-Wl,--wrap,\1/g'`
+check_WRAPFLAGS = `$(EGREP) '^[MV]?WRAP' check_wrap.c | \
+	$(SED) -e 's/^[MV]*WRAP(\([_a-z]*\)\,.*/-Wl,--wrap,\1/g'`
 
 AM_CPPFLAGS = -I$(top_srcdir)/src
 LDADD =  @CHECK_LIBS@ $(check_LTLIBRARIES) $(EVENT_LIB) $(CAP_LIB) \

@@ -96,9 +96,6 @@ AS_IF([test -n "$chroot_dir"],
 # check unit tests
 PKG_CHECK_MODULES([CHECK], [check >= 0.9.4], [], [true])
 
-# dlsym
-AC_CHECK_LIB(dl, dlsym, AC_SUBST(DL_LIB,"-ldl"))
-
 # libevent
 trylibeventdir=""
 AC_ARG_WITH(libevent,
