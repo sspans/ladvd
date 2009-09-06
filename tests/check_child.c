@@ -6,6 +6,7 @@
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <signal.h>
 
 #include "common.h"
 #include "util.h"
@@ -19,6 +20,7 @@ uint32_t options = OPT_DAEMON | OPT_CHECK;
 extern struct nhead netifs;
 extern struct mhead mqueue;
 extern struct sysinfo sysinfo;
+extern int msock;
 
 void read_packet(struct master_msg *msg, const char *suffix) {
     int fd;
@@ -44,11 +46,61 @@ void read_packet(struct master_msg *msg, const char *suffix) {
 }
 
 START_TEST(test_child_send) {
+    struct master_msg *mreq;
+    struct netif *netif, *nnetif;
+    int spair[2];
+    struct event evs;
+    const char *errstr = NULL;
+    pid_t pid;
+
+    loglevel = INFO;
+    my_socketpair(spair);
+    msock = spair[0];
+
+    // initalize the event library
+    event_init();
+    evtimer_set(&evs, (void *)child_send, &evs);
+
+    // start a dummy replier
+    pid = fork();
+    if (pid == 0) {
+	close(spair[0]);
+	mreq = my_malloc(MASTER_MSG_SIZE);
+	while (read(spair[1], mreq, MASTER_MSG_SIZE) > 0) {
+	    mreq->completed = 1;
+	    if (mreq->cmd == MASTER_DEVICE)
+		mreq->len = 1;
+	    write(spair[1], mreq, MASTER_MSG_SIZE);
+	}
+	exit (0);
+    }
+    close(spair[1]);
+
+    // no protocols enabled
+    mark_point();
+    protos[PROTO_LLDP].enabled = 0;
+    child_send(-1, EV_TIMEOUT, &evs);
+
+    // LLDP enabled
+    mark_point();
+    protos[PROTO_LLDP].enabled = 1;
+    child_send(-1, EV_TIMEOUT, &evs);
+
+    // CDP enabled
+    mark_point();
+    protos[PROTO_CDP].enabled = 1;
+    child_send(-1, EV_TIMEOUT, &evs);
+
+    // reset
+    kill(pid, SIGTERM);
+    TAILQ_FOREACH_SAFE(netif, &netifs, entries, nnetif) {
+	TAILQ_REMOVE(&netifs, netif, entries);
+    }
 }
 END_TEST
 
 START_TEST(test_child_queue) {
-    struct master_msg msg;
+    struct master_msg msg, *dmsg, *nmsg;
     struct netif netif;
     struct ether_hdr *ether;
     static uint8_t lldp_dst[] = LLDP_MULTICAST_ADDR;
@@ -122,12 +174,93 @@ START_TEST(test_child_queue) {
     write(spair[0], &msg, MASTER_MSG_SIZE);
     child_queue(spair[1], event);
 
+    // reset
     options = OPT_DAEMON | OPT_CHECK;
     TAILQ_REMOVE(&netifs, &netif, entries);
+    TAILQ_FOREACH_SAFE(dmsg, &mqueue, entries, nmsg) {
+	TAILQ_REMOVE(&mqueue, dmsg, entries);
+    }
 }
 END_TEST
 
 START_TEST(test_child_expire) {
+    struct master_msg msg, *dmsg, *nmsg;
+    struct netif netif;
+    int spair[2], count;
+    short event = 0;
+
+    loglevel = INFO;
+    my_socketpair(spair);
+
+    memset(&netif, 0, sizeof(struct netif));
+    netif.index = 1;
+    strlcpy(netif.name, "lo0", IFNAMSIZ);
+    TAILQ_INSERT_TAIL(&netifs, &netif, entries);
+
+    memset(&msg, 0, sizeof(struct master_msg));
+    msg.cmd = MASTER_RECV;
+    msg.index = 1;
+    msg.len = ETHER_MIN_LEN;
+    msg.proto = PROTO_LLDP;
+
+    fail_unless (TAILQ_EMPTY(&mqueue), "the queue should be empty");
+
+    // add an lldp message
+    mark_point();
+    read_packet(&msg, "proto/lldp/42.good.big");
+    write(spair[0], &msg, MASTER_MSG_SIZE);
+    child_queue(spair[1], event);
+    child_expire();
+
+    // check the message count
+    count = 0;
+    TAILQ_FOREACH(dmsg, &mqueue, entries) {
+	count++;
+    }
+    fail_unless (count == 1, "invalid message count: %d != 1", count);
+
+    // add an cdp message
+    mark_point();
+    msg.proto = PROTO_CDP;
+    read_packet(&msg, "proto/cdp/45.good.6504");
+    write(spair[0], &msg, MASTER_MSG_SIZE);
+    child_queue(spair[1], event);
+    child_expire();
+
+    // check the message count
+    count = 0;
+    TAILQ_FOREACH(dmsg, &mqueue, entries) {
+	count++;
+    }
+    fail_unless (count == 2, "invalid message count: %d != 2", count);
+
+    // expire a message
+    options |= OPT_AUTO;
+    dmsg = TAILQ_FIRST(&mqueue);
+    dmsg->ttl = 0;
+    child_expire();
+
+    // check the message count
+    count = 0;
+    TAILQ_FOREACH(dmsg, &mqueue, entries) {
+	count++;
+    }
+    fail_unless (count == 1, "invalid message count: %d != 1", count);
+
+    // expire a message
+    dmsg = TAILQ_FIRST(&mqueue);
+    dmsg->ttl = 0;
+    child_expire();
+
+    // check the message count
+    fail_unless (TAILQ_EMPTY(&mqueue), "the queue should be empty");
+
+    // reset
+    options = OPT_DAEMON | OPT_CHECK;
+    TAILQ_REMOVE(&netifs, &netif, entries);
+    TAILQ_FOREACH_SAFE(dmsg, &mqueue, entries, nmsg) {
+	TAILQ_REMOVE(&mqueue, dmsg, entries);
+    }
 }
 END_TEST
 
