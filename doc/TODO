@@ -1,10 +1,5 @@
 
-FOR 0.8.1:
-- test FreeBSD / OpenBSD
-- create freebsd lagg pr
-- implement main.c sending via EV_TIMEOUT
-- update tests
-- fix reported RHEL 4 issues
+FOR 0.8.5:
 
 CODE:
 - socket & cli to display received packets
@@ -15,7 +10,6 @@ CODE:
 - support vlan interfaces
 - support edp vlan information
 - support fdp unknown fields
-- investigate netlink/other interface notifications
 - SNMP support for LLDP (agentx)
 - SNMP support for CDP (CISCO-CDP-MIB agentx)
 
