@@ -47,6 +47,49 @@ void read_packet(struct master_msg *msg, const char *suffix) {
     free(path);
 }
 
+START_TEST(test_child_init) {
+    struct master_msg *mreq;
+    struct netif *netif, *nnetif;
+    const char *errstr = NULL;
+    int spair[2];
+    pid_t pid;
+
+    options |= OPT_ONCE;
+    loglevel = CRIT;
+    my_socketpair(spair);
+
+    // start a dummy replier
+    pid = fork();
+    if (pid == 0) {
+	close(spair[0]);
+	mreq = my_malloc(MASTER_MSG_SIZE);
+	while (read(spair[1], mreq, MASTER_MSG_SIZE) > 0) {
+	    mreq->completed = 1;
+	    if (mreq->cmd == MASTER_DEVICE)
+		mreq->len = 1;
+	    if (write(spair[1], mreq, MASTER_MSG_SIZE) != MASTER_MSG_SIZE)
+		exit(1);
+	}
+	exit (0);
+    }
+    close(spair[1]);
+
+    child_init(spair[0], -1, 0, NULL);
+
+    errstr = PACKAGE_STRING " running";
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    // reset
+    kill(pid, SIGTERM);
+    loglevel = INFO;
+    options = OPT_DAEMON | OPT_CHECK;
+    TAILQ_FOREACH_SAFE(netif, &netifs, entries, nnetif) {
+	TAILQ_REMOVE(&netifs, netif, entries);
+    }
+}
+END_TEST
+
 START_TEST(test_child_send) {
     struct master_msg *mreq;
     struct netif *netif, *nnetif;
@@ -284,6 +327,7 @@ Suite * child_suite (void) {
 
     // child test case
     TCase *tc_child = tcase_create("child");
+    tcase_add_test(tc_child, test_child_init);
     tcase_add_test(tc_child, test_child_send);
     tcase_add_test(tc_child, test_child_queue);
     tcase_add_test(tc_child, test_child_expire);
