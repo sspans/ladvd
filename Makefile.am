@@ -1,6 +1,7 @@
 ACLOCAL_AMFLAGS = -I m4
-SUBDIRS = src . tests doc
+SUBDIRS = src . doc @TESTS_SUBDIR@
 
+if TESTS_ENABLED
 if GCOV_ENABLED
 lcov-reset:
 	lcov -d @top_srcdir@/src --zerocounters
@@ -25,5 +26,6 @@ lcov-check:
 	$(MAKE) lcov-reset
 	$(MAKE) check
 	$(MAKE) lcov-report
+endif
 endif
 

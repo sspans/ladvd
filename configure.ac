@@ -94,7 +94,10 @@ AS_IF([test -n "$chroot_dir"],
 )
 
 # check unit tests
-PKG_CHECK_MODULES([CHECK], [check >= 0.9.4], [], [true])
+PKG_CHECK_MODULES([CHECK], [check >= 0.9.4],
+    AC_SUBST([TESTS_SUBDIR], ["tests"])
+    AM_CONDITIONAL([TESTS_ENABLED], [true]),
+    AM_CONDITIONAL([TESTS_ENABLED], [false]))
 
 # libevent
 trylibeventdir=""
