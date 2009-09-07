@@ -1,5 +1,7 @@
 /*
- * rewritten versions of some NET::CDP macro's (libcdp/src/encoding.c)
+ * Based on libcdp/src/encoding.c from Net::CDP
+ * by Michael Chapman <cpan@very.puzzling.org>
+ *
  * VOIDP_DIFF: fixed types
  * PUSH, END_TLV: use memcpy to make them strict alignment compatible
  * added support for LLDP tlv's (7/9 bits)
