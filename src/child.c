@@ -21,8 +21,6 @@
 #include "util.h"
 #include "proto/protos.h"
 #include "child.h"
-#include <ctype.h>
-#include <unistd.h>
 #include <time.h>
 
 int sargc = 0;

@@ -22,16 +22,7 @@
 #include "proto/protos.h"
 #include "master.h"
 #include "filter.h"
-#include <sys/ioctl.h>
-#include <sys/param.h>
 #include <sys/select.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <sys/time.h>
-#include <fcntl.h>
-#include <signal.h>
-#include <time.h>
-#include <unistd.h>
 
 #ifdef USE_CAPABILITIES
 #include <sys/prctl.h>

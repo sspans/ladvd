@@ -20,12 +20,19 @@
 #ifndef _common_h
 #define _common_h
 
+#define __USE_GNU
+
 #include "config.h"
+#include <stdarg.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <signal.h>
+#include <time.h>
 #include <errno.h>
 #include <assert.h>
 #ifdef HAVE_STRNVIS
@@ -38,8 +45,12 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/utsname.h>
-
+#include <sys/ioctl.h>
+#include <sys/param.h>
+#include <sys/sysctl.h>
+#include <sys/stat.h>
 #include <sys/time.h>
+
 #include <event.h>
 
 #if HAVE_NET_IF_H

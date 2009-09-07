@@ -17,16 +17,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <config.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <stdarg.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-
+#include "common.h"
 #include "check_wrap.h"
 
 jmp_buf check_wrap_env;

@@ -17,15 +17,10 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#define _GNU_SOURCE
-#include <stdlib.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <string.h>
 #include <check.h>
-#include "config.h"
-#include "compat/compat.h"
 
+#include "common.h"
+#include "compat/compat.h"
 #include "check_wrap.h"
 
 #ifndef HAVE_SETPROCTITLE

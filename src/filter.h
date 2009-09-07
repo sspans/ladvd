@@ -21,9 +21,6 @@
 #define _filter_h
 
 #ifdef HAVE_NET_BPF_H
-#include <sys/types.h>
-#include <sys/time.h>
-#include <sys/ioctl.h>
 #include <net/bpf.h>
 #endif /* HAVE_NET_BPF_H */
 #ifdef HAVE_LINUX_FILTER_H

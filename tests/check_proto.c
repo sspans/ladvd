@@ -17,19 +17,11 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#define _GNU_SOURCE
-#include <stdlib.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <string.h>
-#include <unistd.h>
-#include <fcntl.h>
 #include <check.h>
 
 #include "common.h"
 #include "util.h"
 #include "proto/protos.h"
-
 #include "check_wrap.h"
 
 uint32_t options = OPT_DAEMON | OPT_CHECK;

@@ -21,14 +21,9 @@
 #include "util.h"
 #include "proto/protos.h"
 #include "main.h"
-#include <ctype.h>
-#include <unistd.h>
 #include <sys/file.h>
-#include <sys/ioctl.h>
-#include <sys/stat.h>
-#include <fcntl.h>
+#include <ctype.h>
 #include <syslog.h>
-#include <time.h>
 
 uint32_t options = OPT_DAEMON;
 extern struct sysinfo sysinfo;

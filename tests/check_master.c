@@ -17,19 +17,14 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <stdlib.h>
-#include <stdint.h>
-#include <string.h>
-#include <unistd.h>
 #include <check.h>
-#include <sys/param.h>
-#include <signal.h>
 
 #include "common.h"
 #include "util.h"
 #include "proto/protos.h"
 #include "main.h"
 #include "master.h"
+#include "check_wrap.h"
 
 #ifdef USE_CAPABILITIES
 #include <sys/prctl.h>
@@ -42,8 +37,6 @@
 #ifdef HAVE_NET_BPF_H
 #include <net/bpf.h>
 #endif /* HAVE_NET_BPF_H */
-
-#include "check_wrap.h"
 
 uint32_t options = OPT_DAEMON | OPT_CHECK;
 extern int dfd;

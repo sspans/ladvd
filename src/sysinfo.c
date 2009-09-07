@@ -19,7 +19,6 @@
 
 #include "common.h"
 #include "util.h"
-#include <unistd.h>
 #include <netdb.h>
 #include <sys/sysctl.h>
 
