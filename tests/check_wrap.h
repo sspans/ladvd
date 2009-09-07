@@ -59,3 +59,8 @@ extern uint32_t check_wrap_fake;
 extern uint32_t check_wrap_fail;
 extern char check_wrap_errstr[];
 
+#define WRAP_WRITE(sock, msg, size)	\
+    fail_unless(write(sock, msg, size) == size, "message write failed");
+#define WRAP_READ(sock, msg, size)	\
+    fail_unless(read(sock, msg, size) == size, "message read failed");
+

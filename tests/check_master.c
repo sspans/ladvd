@@ -125,8 +125,8 @@ START_TEST(test_master_cmd) {
 
     // test a message with an incorrect size
     mark_point();
-    fail_unless(write(spair[0], &mreq, 1) == 1, "message write failed");
     errstr = "invalid request received";
+    WRAP_WRITE(spair[0], &mreq, 1);
     WRAP_FATAL_START();
     master_cmd(spair[1], event);
     WRAP_FATAL_END();
@@ -139,9 +139,8 @@ START_TEST(test_master_cmd) {
     mreq.len = ETHER_MIN_LEN;
     mreq.proto = PROTO_LLDP;
 
-    fail_unless(write(spair[0], &mreq, MASTER_MSG_SIZE) == MASTER_MSG_SIZE,
-	"message write failed");
     errstr = "invalid request supplied";
+    WRAP_WRITE(spair[0], &mreq, MASTER_MSG_SIZE);
     WRAP_FATAL_START();
     master_cmd(spair[1], event);
     WRAP_FATAL_END();
@@ -156,8 +155,7 @@ START_TEST(test_master_cmd) {
     memcpy(ether.dst, lldp_dst, ETHER_ADDR_LEN);
     ether.type = htons(ETHERTYPE_LLDP);
     memcpy(mreq.msg, &ether, sizeof(struct ether_hdr));
-    fail_unless(write(spair[0], &mreq, MASTER_MSG_SIZE) == MASTER_MSG_SIZE,
-	"message write failed");
+    WRAP_WRITE(spair[0], &mreq, MASTER_MSG_SIZE);
 
     errstr = "check";
     my_log(CRIT, errstr);
@@ -186,8 +184,7 @@ START_TEST(test_master_cmd) {
 
     errstr = "check";
     my_log(CRIT, errstr);
-    fail_unless(write(spair[0], &mreq, MASTER_MSG_SIZE) == MASTER_MSG_SIZE,
-	"message write failed");
+    WRAP_WRITE(spair[0], &mreq, MASTER_MSG_SIZE);
     master_cmd(spair[1], event);
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -205,8 +202,7 @@ START_TEST(test_master_cmd) {
 #endif
 
 #if defined(HAVE_LINUX_ETHTOOL_H) || defined(SIOCSIFDESCR)
-    fail_unless(write(spair[0], &mreq, MASTER_MSG_SIZE) == MASTER_MSG_SIZE,
-	"message write failed");
+    WRAP_WRITE(spair[0], &mreq, MASTER_MSG_SIZE);
 
     errstr = "check";
     my_log(CRIT, errstr);
@@ -220,8 +216,7 @@ START_TEST(test_master_cmd) {
 #ifdef HAVE_SYSFS
     // test a correct DEVICE
     mreq.cmd = MASTER_DEVICE;
-    fail_unless(write(spair[0], &mreq, MASTER_MSG_SIZE) == MASTER_MSG_SIZE,
-	"message write failed");
+    WRAP_WRITE(spair[0], &mreq, MASTER_MSG_SIZE);
     master_cmd(spair[1], event);
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -235,8 +230,7 @@ START_TEST(test_master_cmd) {
     mreq.cmd = MASTER_CLOSE;
     fd = dup(spair[1]);
     rfd->fd = fd;
-    fail_unless(write(spair[0], &mreq, MASTER_MSG_SIZE) == MASTER_MSG_SIZE,
-	"message write failed");
+    WRAP_WRITE(spair[0], &mreq, MASTER_MSG_SIZE);
     close(spair[0]);
 
     errstr = "failed to return message to child";
@@ -586,8 +580,7 @@ START_TEST(test_master_recv) {
     mark_point();
     errstr = "check";
     my_log(CRIT, errstr);
-    fail_unless(write(spair[0], &buf, 1 + hlen) == 1 + hlen,
-	"message write failed");
+    WRAP_WRITE(spair[0], &buf, 1 + hlen);
     master_recv(rfd->fd, event, rfd);
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -598,8 +591,7 @@ START_TEST(test_master_recv) {
     // empty message
     mark_point();
     errstr = "unknown message type received";
-    fail_unless(write(spair[0], &buf, ETHER_MIN_LEN + hlen) ==
-	ETHER_MIN_LEN + hlen, "message write failed");
+    WRAP_WRITE(spair[0], &buf, ETHER_MIN_LEN + hlen);
     master_recv(rfd->fd, event, rfd);
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -610,23 +602,20 @@ START_TEST(test_master_recv) {
     memcpy(ether.dst, lldp_dst, ETHER_ADDR_LEN);
     memcpy(msg, &ether, sizeof(struct ether_hdr));
     mark_point();
-    fail_unless(write(spair[0], &buf, ETHER_MIN_LEN + hlen) ==
-	ETHER_MIN_LEN + hlen, "message write failed");
+    WRAP_WRITE(spair[0], &buf, ETHER_MIN_LEN + hlen);
     master_recv(rfd->fd, event, rfd);
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     // too long (or multiple messages with bpf)
     mark_point();
-    fail_unless(write(spair[0], &buf, sizeof(buf)) == sizeof(buf),
-	"message write failed");
+    WRAP_WRITE(spair[0], &buf, sizeof(buf));
     master_recv(rfd->fd, event, rfd);
 
     // closed child socket
     mark_point();
     errstr = "failed to send message to child";
-    fail_unless(write(spair[0], &buf, ETHER_MIN_LEN + hlen) ==
-	ETHER_MIN_LEN + hlen, "message write failed");
+    WRAP_WRITE(spair[0], &buf, ETHER_MIN_LEN + hlen);
     close(spair[0]);
     WRAP_FATAL_START();
     master_recv(rfd->fd, event, rfd);

@@ -139,8 +139,7 @@ START_TEST(test_my_msend) {
     mark_point();
     msock = spair[1];
     errstr = "request failed";
-    fail_unless(write(spair[0], &mreq, MASTER_MSG_SIZE) == MASTER_MSG_SIZE,
-	"message write failed");
+    WRAP_WRITE(spair[0], &mreq, MASTER_MSG_SIZE);
     WRAP_FATAL_START();
     my_msend(&mreq);
     WRAP_FATAL_END();
@@ -152,16 +151,14 @@ START_TEST(test_my_msend) {
     my_log(CRIT, errstr);
     mreq.completed = 1;
     mreq.len = ETHER_MIN_LEN; 
-    fail_unless(write(spair[0], &mreq, MASTER_MSG_SIZE) == MASTER_MSG_SIZE,
-	"message write failed");
+    WRAP_WRITE(spair[0], &mreq, MASTER_MSG_SIZE);
     ret = my_msend(&mreq);
     fail_unless (ret == ETHER_MIN_LEN,
 	"incorrect size %lu returned from my_msend", ret);
 
     mark_point();
     errstr = "invalid reply received from master";
-    fail_unless(write(spair[0], &mreq, ETHER_MIN_LEN) == ETHER_MIN_LEN,
-	"message write failed");
+    WRAP_WRITE(spair[0], &mreq, ETHER_MIN_LEN);
     WRAP_FATAL_START();
     my_msend(&mreq);
     WRAP_FATAL_END();
@@ -399,11 +396,9 @@ START_TEST(test_netif) {
     netif = netif_byname(netifs, "bond0");
     descr = "";
     msg->completed = 1;
-    fail_unless(write(spair[0], msg, MASTER_MSG_SIZE) == MASTER_MSG_SIZE,
-	"message write failed");
+    WRAP_WRITE(spair[0], msg, MASTER_MSG_SIZE);
     netif_descr(netif, &mqueue);
-    fail_unless(read(spair[0], msg, MASTER_MSG_SIZE) == MASTER_MSG_SIZE,
-	"message read failed");
+    WRAP_READ(spair[0], msg, MASTER_MSG_SIZE);
     fail_unless (msg->cmd == MASTER_DESCR,
 	"incorrect command: %d", msg->cmd);
     fail_unless (msg->index == netif->index,
@@ -416,11 +411,9 @@ START_TEST(test_netif) {
     netif = netif_byname(netifs, "eth0");
     descr = "connected to foo (42)";
     msg->completed = 1;
-    fail_unless(write(spair[0], msg, MASTER_MSG_SIZE) == MASTER_MSG_SIZE,
-	"message write failed");
+    WRAP_WRITE(spair[0], msg, MASTER_MSG_SIZE);
     netif_descr(netif, &mqueue);
-    fail_unless(read(spair[0], msg, MASTER_MSG_SIZE) == MASTER_MSG_SIZE,
-	"message read failed");
+    WRAP_READ(spair[0], msg, MASTER_MSG_SIZE);
     fail_unless (msg->cmd == MASTER_DESCR,
 	"incorrect command: %d", msg->cmd);
     fail_unless (msg->index == netif->index,
@@ -433,11 +426,9 @@ START_TEST(test_netif) {
     netif = netif_byname(netifs, "eth2");
     descr = "connected to bar";
     msg->completed = 1;
-    fail_unless(write(spair[0], msg, MASTER_MSG_SIZE) == MASTER_MSG_SIZE,
-	"message write failed");
+    WRAP_WRITE(spair[0], msg, MASTER_MSG_SIZE);
     netif_descr(netif, &mqueue);
-    fail_unless(read(spair[0], msg, MASTER_MSG_SIZE) == MASTER_MSG_SIZE,
-	"message read failed");
+    WRAP_READ(spair[0], msg, MASTER_MSG_SIZE);
     fail_unless (msg->cmd == MASTER_DESCR,
 	"incorrect command: %d", msg->cmd);
     fail_unless (msg->index == netif->index,
@@ -450,11 +441,9 @@ START_TEST(test_netif) {
     netif = netif_byname(netifs, "eth1");
     descr = "connected to 2 peers";
     msg->completed = 1;
-    fail_unless(write(spair[0], msg, MASTER_MSG_SIZE) == MASTER_MSG_SIZE,
-	"message write failed");
+    WRAP_WRITE(spair[0], msg, MASTER_MSG_SIZE);
     netif_descr(netif, &mqueue);
-    fail_unless(read(spair[0], msg, MASTER_MSG_SIZE) == MASTER_MSG_SIZE,
-	"message read failed");
+    WRAP_READ(spair[0], msg, MASTER_MSG_SIZE);
     fail_unless (msg->cmd == MASTER_DESCR,
 	"incorrect command: %d", msg->cmd);
     fail_unless (msg->index == netif->index,
@@ -467,11 +456,9 @@ START_TEST(test_netif) {
     netif = netif_byname(netifs, "lagg0");
     descr = "";
     msg->completed = 1;
-    fail_unless(write(spair[0], msg, MASTER_MSG_SIZE) == MASTER_MSG_SIZE,
-	"message write failed");
+    WRAP_WRITE(spair[0], msg, MASTER_MSG_SIZE);
     netif_descr(netif, &mqueue);
-    fail_unless(read(spair[0], msg, MASTER_MSG_SIZE) == MASTER_MSG_SIZE,
-	"message read failed");
+    WRAP_READ(spair[0], msg, MASTER_MSG_SIZE);
     fail_unless (msg->cmd == MASTER_DESCR,
 	"incorrect command: %d", msg->cmd);
     fail_unless (msg->index == netif->index,
