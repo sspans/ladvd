@@ -354,7 +354,6 @@ START_TEST(test_master_open_close) {
     mark_point();
     mreq.index = 1;
     strlcpy(mreq.name, "lo0", IFNAMSIZ);
-
     master_open(&mreq);
     rfd = rfd_byindex(1);
     fail_unless (rfd != NULL,
@@ -362,6 +361,23 @@ START_TEST(test_master_open_close) {
     master_close(rfd);
     fail_unless (rfd_byindex(1) == NULL,
     	"rfd should be removed from the queue");
+
+    mark_point();
+    master_open(&mreq);
+    rfd = rfd_byindex(1);
+    fail_unless (rfd != NULL,
+    	"rfd should be added to the queue");
+
+    mreq.index = 2;
+    strlcpy(mreq.name, "lo1", IFNAMSIZ);
+    master_open(&mreq);
+    rfd = rfd_byindex(2);
+    fail_unless (rfd != NULL,
+    	"rfd should be added to the queue");
+
+    rfd_closeall();
+    fail_unless (TAILQ_EMPTY(&rawfds),
+    	"the queue should be empty");
 }
 END_TEST
 
