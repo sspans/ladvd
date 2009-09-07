@@ -470,7 +470,7 @@ int master_socket(struct rawfd *rfd) {
 
     struct ifreq ifr;
     struct bpf_program fprog;
-    int immediate = 1;
+    int enable = 1;
 
     assert(rfd);
 
@@ -509,7 +509,10 @@ int master_socket(struct rawfd *rfd) {
     rfd->bpf_buf.data = my_malloc(rfd->bpf_buf.len);
 
     // disable buffering
-    if (ioctl(fd, BIOCIMMEDIATE, (caddr_t)&immediate) < 0)
+    if (ioctl(fd, BIOCIMMEDIATE, (caddr_t)&enable) < 0)
+	my_fatal("unable to configure immediate mode for %s", rfd->name);
+    // set header complete
+    if (ioctl(fd, BIOCSHDRCMPLT, (caddr_t)&enable) < 0)
 	my_fatal("unable to configure immediate mode for %s", rfd->name);
     // install bpf filter
     if (ioctl(fd, BIOCSETF, (caddr_t)&fprog) < 0)
