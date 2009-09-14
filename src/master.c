@@ -297,7 +297,7 @@ ssize_t master_send(struct master_msg *mreq) {
 #ifdef HAVE_NETPACKET_PACKET_H
     if ((count == -1) && (errno == ENODEV))
 #elif defined HAVE_NET_BPF_H
-    if ((count == -1) && (errno == ENXIO))
+    if ((count == -1) && (errno == EIO))
 #endif /* HAVE_NET_BPF_H */
 	    master_close(rfd);
 
