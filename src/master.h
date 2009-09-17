@@ -60,7 +60,6 @@ struct rawfd {
 
 TAILQ_HEAD(rfdhead, rawfd);
 
-void master_signal(int fd, short event, void *pid);
 void master_cmd(int fd, short event);
 void master_recv(int fd, short event, struct rawfd *rfd);
 

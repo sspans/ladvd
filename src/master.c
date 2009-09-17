@@ -143,15 +143,13 @@ void master_init(int cmdfd, int msgfd, pid_t child) {
 
 void master_signal(int sig, short event, void *pid) {
     switch (sig) {
-	case SIGCHLD:
-	    my_fatal("child has exited");
-	    rfd_closeall();
-	    break;
 	case SIGINT:
 	case SIGTERM:
 	    kill(*(pid_t *)pid, sig);
+	case SIGCHLD:
 	    rfd_closeall();
-	    my_fatal("quitting");
+	    my_log(CRIT, "quitting");
+	    exit(EXIT_SUCCESS);
 	    break;
 	case SIGHUP:
 	    break;

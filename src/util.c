@@ -24,6 +24,7 @@
 
 int8_t loglevel = CRIT;
 int msock = -1;
+pid_t pid = 0;
 
 void __my_log(const char *func, int8_t prio, const char *fmt, ...) {
 
@@ -43,8 +44,12 @@ void __my_log(const char *func, int8_t prio, const char *fmt, ...) {
     }
     va_end(ap);
 
-    if (prio == FATAL)
-	exit(EXIT_FAILURE);
+    if (prio == FATAL) {
+	if (!pid)
+	    exit(EXIT_FAILURE);
+	// exit via a sigterm signal
+	master_signal(SIGTERM, 0, &pid);
+    }
 }
 
 void * my_malloc(size_t size) {

@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
     int cpair[2], mpair[2];
 
     // pids
-    pid_t pid;
+    extern pid_t pid;
 
     // clear sysinfo
     memset(&sysinfo, 0, sizeof(struct sysinfo));
