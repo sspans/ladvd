@@ -168,7 +168,8 @@ int main(int argc, char *argv[]) {
 	    (write(fd, pidstr, strlen(pidstr)) <= 0))
 	    my_fatal("failed to write pidfile: %s", strerror(errno));
     
-	// call openlog before chrooting
+	// init syslog before chrooting (including tz)
+	tzset();
 	openlog(PACKAGE_NAME, LOG_NDELAY, LOG_DAEMON);
     }
 
