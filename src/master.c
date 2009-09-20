@@ -592,8 +592,8 @@ void master_recv(int fd, short event, struct rawfd *rfd) {
     unsigned int p;
     ssize_t len = 0;
 #ifdef HAVE_NET_BPF_H
-    struct bpf_hdr *bhp;
-    void *endp;
+    void *bp, *endp;
+#define bhp ((struct bpf_hdr *)bp)
 #endif /* HAVE_NET_BPF_H */
 
     assert(rfd);
@@ -607,10 +607,10 @@ void master_recv(int fd, short event, struct rawfd *rfd) {
 	return;
     }
 
-    bhp = (struct bpf_hdr *)rfd->bpf_buf.data;
+    bp = rfd->bpf_buf.data;
     endp = rfd->bpf_buf.data + len;
 
-    while ((void *)bhp < endp) {
+    while (bp < endp) {
 
 	// with valid sizes
 	if (bhp->bh_caplen < ETHER_MAX_LEN)
@@ -618,7 +618,7 @@ void master_recv(int fd, short event, struct rawfd *rfd) {
 	else
 	    mrecv.len = ETHER_MAX_LEN;
 
-	memcpy(mrecv.msg, rfd->bpf_buf.data + bhp->bh_hdrlen, mrecv.len);
+	memcpy(mrecv.msg, bp + bhp->bh_hdrlen, mrecv.len);
 
 #elif defined HAVE_NETPACKET_PACKET_H
     if ((len = read(rfd->fd, mrecv.msg, ETHER_MAX_LEN)) == -1) {
@@ -657,7 +657,7 @@ void master_recv(int fd, short event, struct rawfd *rfd) {
     rcount++;
 
 #ifdef HAVE_NET_BPF_H
-	bhp += BPF_WORDALIGN(bhp->bh_hdrlen + bhp->bh_caplen);
+	bp += BPF_WORDALIGN(bhp->bh_hdrlen + bhp->bh_caplen);
     }
 #endif /* HAVE_NET_BPF_H */
 }
