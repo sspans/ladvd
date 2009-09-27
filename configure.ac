@@ -82,7 +82,8 @@ AS_IF([test -n "$pid_dir"],
     [AC_DEFINE(PACKAGE_PID_DIR,"/var/run",[location of pid file])]
 )
 AC_DEFINE(PACKAGE_PID_FILE, PACKAGE_PID_DIR "/" PACKAGE_NAME ".pid", [pid file])
-AC_DEFINE(PACKAGE_SOCKET, PACKAGE_PID_DIR "/" PACKAGE_NAME ".sock", [pid file])
+AC_DEFINE(PACKAGE_SOCKET, PACKAGE_PID_DIR "/" PACKAGE_NAME ".sock", [socket])
+AC_DEFINE(PACKAGE_CLI, PACKAGE_NAME "cli", [cli command])
 
 # chroot dir
 AC_ARG_WITH([chroot_dir],
