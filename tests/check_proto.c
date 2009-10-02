@@ -22,6 +22,7 @@
 #include "common.h"
 #include "util.h"
 #include "proto/protos.h"
+#include "main.h"
 #include "check_wrap.h"
 
 uint32_t options = OPT_DAEMON | OPT_CHECK;

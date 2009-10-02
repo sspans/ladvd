@@ -319,7 +319,7 @@ void my_drop_privs(struct passwd *pwd) {
 
 int read_line(const char *path, char *line, uint16_t len) {
     FILE *file;
-    char *newline;
+    int ret = 0;
 
     if (path == NULL || line == NULL)
 	return(0);
@@ -327,18 +327,13 @@ int read_line(const char *path, char *line, uint16_t len) {
     if ((file = fopen(path, "r")) == NULL)
 	return(0);
 
-    if (fgets(line, len, file) == NULL) {
-	(void) fclose(file);
-	return(0);
+    if (fgets(line, len, file) != NULL) {
+	line[strcspn(line, "\n")] = '\0';
+	ret = strlen(line);
     }
-    (void) fclose(file);
 
-    // remove newline
-    newline = strchr(line, '\n');
-    if (newline != NULL)
-	*newline = '\0';
-
-    return(strlen(line));
+    fclose(file);
+    return(ret);
 }
 
 /*

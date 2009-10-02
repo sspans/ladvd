@@ -53,7 +53,7 @@ START_TEST(test_master_signal) {
 
     mark_point();
     sig = SIGCHLD;
-    errstr = "child has exited";
+    errstr = "quitting";
     WRAP_FATAL_START();
     master_signal(sig, event, NULL);
     WRAP_FATAL_END();
