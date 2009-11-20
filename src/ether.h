@@ -51,6 +51,12 @@ struct ether_llc {
 #define ETH_LLC_PROTOID	ETHER_HDR_LEN + 6
 
 /* Should be defined in net/ethertypes.h */
+#ifndef ETHERTYPE_VLAN
+#define ETHERTYPE_VLAN  0x8100
+#endif
+#ifndef ETHER_VLAN_ENCAP_LEN
+#define ETHER_VLAN_ENCAP_LEN	4   /* len of 802.1Q VLAN encapsulation */
+#endif
 #ifndef ETHERTYPE_LLDP
 #define ETHERTYPE_LLDP  0x88cc
 #endif
