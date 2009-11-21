@@ -501,6 +501,8 @@ START_TEST(test_cdp_peer) {
 	"incorrect message logged: %s", check_wrap_errstr);
     read_packet(&msg, "proto/cdp/03.header.only");
     fail_unless (cdp_peer(&msg) == msg.len, "packet length incorrect");
+    read_packet(&msg, "proto/cdp/04.vlan.broken");
+    fail_unless (cdp_peer(&msg) == 0, "broken packets should return 0");
 
     errstr = "Corrupt CDP packet: invalid System Name TLV";
     read_packet(&msg, "proto/cdp/21.device_id.broken");
@@ -577,6 +579,15 @@ START_TEST(test_cdp_peer) {
 		"system name should be 'c2811.ttttrnal.lottlloou.nl'");
     fail_unless (strcmp(msg.peer.port, "FastEthernet0/0") == 0,
 	"port id should be 'FastEthernet0/0' not '%s'", msg.peer.port);
+    read_packet(&msg, "proto/cdp/47.good.vlan");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+    fail_unless (cdp_peer(&msg) == msg.len, "packet length incorrect");
+    fail_unless (msg.ttl == 180, "ttl should be 180");
+    fail_unless (strcmp(msg.peer.name, "sw1.bit-2b.notwork.bot.nl") == 0,
+		"system name should be 'sw1.bit-2b.notwork.bot.nl'");
+    fail_unless (strcmp(msg.peer.port, "GigabitEthernet0/2") == 0,
+	"port id should be 'GigabitEthernet0/2' not '%s'", msg.peer.port);
 }
 END_TEST
 

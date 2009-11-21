@@ -346,6 +346,7 @@ size_t lldp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
 
 char * lldp_check(void *packet, size_t length) {
     struct ether_hdr ether;
+    uint8_t offset = 0;
     static uint8_t lldp_dst[] = LLDP_MULTICAST_ADDR;
 
     assert(packet);
@@ -354,10 +355,16 @@ char * lldp_check(void *packet, size_t length) {
 
     memcpy(&ether, packet, sizeof(ether));
 
-    if ((memcmp(ether.dst, lldp_dst, ETHER_ADDR_LEN) == 0) &&
-	(ether.type == htons(ETHERTYPE_LLDP))) {
-	return(packet + sizeof(ether));
+    if (memcmp(ether.dst, lldp_dst, ETHER_ADDR_LEN) != 0)
+	return(NULL);
+
+    if (ether.type == htons(ETHERTYPE_VLAN)) {
+	memcpy(&ether.type, packet + sizeof(ether), sizeof(ether.type));
+	offset = ETHER_VLAN_ENCAP_LEN;
     }
+
+    if (ether.type == htons(ETHERTYPE_LLDP))
+	return(packet + sizeof(ether) + offset);
 
     return(NULL);
 }

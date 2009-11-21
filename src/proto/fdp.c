@@ -184,6 +184,7 @@ size_t fdp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
 
 char * fdp_check(void *packet, size_t length) {
     struct ether_hdr ether;
+    uint8_t offset = 0;
     struct ether_llc llc;
     const uint8_t fdp_dst[] = FDP_MULTICAST_ADDR;
     const uint8_t fdp_org[] = LLC_ORG_FOUNDRY;
@@ -193,13 +194,16 @@ char * fdp_check(void *packet, size_t length) {
     assert(length <= ETHER_MAX_LEN);
 
     memcpy(&ether, packet, sizeof(ether));
-    memcpy(&llc, packet + sizeof(ether), sizeof(llc));
+    if (memcmp(ether.dst, fdp_dst, ETHER_ADDR_LEN) != 0) 
+	return(NULL);
+    if (ether.type == htons(ETHERTYPE_VLAN))
+	offset = ETHER_VLAN_ENCAP_LEN;
 
-    if ((memcmp(ether.dst, fdp_dst, ETHER_ADDR_LEN) == 0) &&
-	(memcmp(llc.org, fdp_org, sizeof(llc.org)) == 0) &&
-	(llc.protoid == htons(LLC_PID_FDP))) {
-	    return(packet + sizeof(ether) + sizeof(llc));
-    } 
+    memcpy(&llc, packet + sizeof(ether) + offset, sizeof(llc));
+    if ((memcmp(llc.org, fdp_org, sizeof(llc.org)) == 0) &&
+	(llc.protoid == htons(LLC_PID_FDP)))
+	    return(packet + sizeof(ether) + offset + sizeof(llc));
+
     return(NULL);
 }
 

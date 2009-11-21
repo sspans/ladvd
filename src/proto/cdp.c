@@ -222,6 +222,7 @@ size_t cdp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
 
 char * cdp_check(void *packet, size_t length) {
     struct ether_hdr ether;
+    uint8_t offset = 0;
     struct ether_llc llc;
     const uint8_t cdp_dst[] = CDP_MULTICAST_ADDR;
     const uint8_t cdp_org[] = LLC_ORG_CISCO;
@@ -231,13 +232,16 @@ char * cdp_check(void *packet, size_t length) {
     assert(length <= ETHER_MAX_LEN);
 
     memcpy(&ether, packet, sizeof(ether));
-    memcpy(&llc, packet + sizeof(ether), sizeof(llc));
+    if (memcmp(ether.dst, cdp_dst, ETHER_ADDR_LEN) != 0)
+	return(NULL);
+    if (ether.type == htons(ETHERTYPE_VLAN))
+	offset = ETHER_VLAN_ENCAP_LEN;
 
-    if ((memcmp(ether.dst, cdp_dst, ETHER_ADDR_LEN) == 0) &&
-	(memcmp(llc.org, cdp_org, sizeof(llc.org)) == 0) &&
-	(llc.protoid == htons(LLC_PID_CDP))) {
-	    return(packet + sizeof(ether) + sizeof(llc));
-    }
+    memcpy(&llc, packet + sizeof(ether) + offset, sizeof(llc));
+    if ((memcmp(llc.org, cdp_org, sizeof(llc.org)) == 0) &&
+	(llc.protoid == htons(LLC_PID_CDP))) 
+	    return(packet + sizeof(ether) + offset + sizeof(llc));
+
     return(NULL);
 }
 
