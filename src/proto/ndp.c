@@ -93,6 +93,9 @@ char * ndp_check(void *packet, size_t length) {
 	offset = ETHER_VLAN_ENCAP_LEN;
 
     memcpy(&llc, packet + sizeof(ether) + offset, sizeof(llc));
+    if ((llc.dsap != LLC_SNAP_LSAP) || (llc.ssap != LLC_SNAP_LSAP) ||
+	(llc.control != LLC_UI))
+	return(NULL);
     if ((memcmp(llc.org, ndp_org, sizeof(llc.org)) == 0) &&
 	(llc.protoid == htons(LLC_PID_NDP_HELLO)))
 	    return(packet + sizeof(ether) + offset + sizeof(llc));

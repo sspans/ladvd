@@ -164,7 +164,18 @@ START_TEST(test_lldp_check) {
 	    "packets without an ethertype should generate a NULL");
 
     mark_point();
+    ether.type = htons(ETHERTYPE_VLAN);
+    memcpy(msg.msg, &ether, sizeof(ether));
+    fail_unless (lldp_check(msg.msg, msg.len) == NULL,
+	    "packets without an encapsulated ethertype should generate a NULL");
+
     ether.type = htons(ETHERTYPE_LLDP);
+    memcpy(msg.msg + offsetof(struct ether_hdr, type) + ETHER_VLAN_ENCAP_LEN, 
+	    &ether.type, sizeof(ether.type));
+    fail_unless (lldp_check(msg.msg, msg.len) ==
+	    msg.msg + sizeof(ether) + ETHER_VLAN_ENCAP_LEN,
+	    "valid encapsulated packets should return a correct ptr");
+
     memcpy(msg.msg, &ether, sizeof(ether));
     fail_unless (lldp_check(msg.msg, msg.len) == msg.msg + sizeof(ether),
 	    "valid packets should return a correct ptr");
@@ -191,6 +202,13 @@ START_TEST(test_cdp_check) {
 	    "packets without an llc header should generate a NULL");
 
     mark_point();
+    llc.dsap = llc.ssap = LLC_SNAP_LSAP;
+    llc.control = LLC_UI;
+    memcpy(msg.msg + sizeof(ether), &llc, sizeof(llc));
+    fail_unless (cdp_check(msg.msg, msg.len) == NULL,
+	    "packets with an incomplete llc header should generate a NULL");
+
+    mark_point();
     memcpy(llc.org, cdp_org, sizeof(llc.org));
     memcpy(msg.msg + sizeof(ether), &llc, sizeof(llc));
     fail_unless (cdp_check(msg.msg, msg.len) == NULL,
@@ -201,6 +219,18 @@ START_TEST(test_cdp_check) {
     memcpy(msg.msg + sizeof(ether), &llc, sizeof(llc));
     fail_unless (cdp_check(msg.msg, msg.len) == 
 		 msg.msg + sizeof(ether) + sizeof(llc),
+	    "valid packets should return a correct ptr");
+
+    mark_point();
+    ether.type = htons(ETHERTYPE_VLAN);
+    memcpy(msg.msg, &ether, sizeof(ether));
+    fail_unless (cdp_check(msg.msg, msg.len) == NULL,
+	    "packets without an encapsulated llc should generate a NULL");
+
+    mark_point();
+    memcpy(msg.msg + sizeof(ether) + ETHER_VLAN_ENCAP_LEN, &llc, sizeof(llc));
+    fail_unless (cdp_check(msg.msg, msg.len) == 
+		 msg.msg + sizeof(ether) + ETHER_VLAN_ENCAP_LEN + sizeof(llc),
 	    "valid packets should return a correct ptr");
 }
 END_TEST
@@ -225,6 +255,13 @@ START_TEST(test_edp_check) {
 	    "packets without an llc header should generate a NULL");
 
     mark_point();
+    llc.dsap = llc.ssap = LLC_SNAP_LSAP;
+    llc.control = LLC_UI;
+    memcpy(msg.msg + sizeof(ether), &llc, sizeof(llc));
+    fail_unless (edp_check(msg.msg, msg.len) == NULL,
+	    "packets with an incomplete llc header should generate a NULL");
+
+    mark_point();
     memcpy(llc.org, edp_org, sizeof(llc.org));
     memcpy(msg.msg + sizeof(ether), &llc, sizeof(llc));
     fail_unless (edp_check(msg.msg, msg.len) == NULL,
@@ -235,6 +272,18 @@ START_TEST(test_edp_check) {
     memcpy(msg.msg + sizeof(ether), &llc, sizeof(llc));
     fail_unless (edp_check(msg.msg, msg.len) == 
 		 msg.msg + sizeof(ether) + sizeof(llc),
+	    "valid packets should return a correct ptr");
+
+    mark_point();
+    ether.type = htons(ETHERTYPE_VLAN);
+    memcpy(msg.msg, &ether, sizeof(ether));
+    fail_unless (edp_check(msg.msg, msg.len) == NULL,
+	    "packets without an encapsulated llc should generate a NULL");
+
+    mark_point();
+    memcpy(msg.msg + sizeof(ether) + ETHER_VLAN_ENCAP_LEN, &llc, sizeof(llc));
+    fail_unless (edp_check(msg.msg, msg.len) == 
+		 msg.msg + sizeof(ether) + ETHER_VLAN_ENCAP_LEN + sizeof(llc),
 	    "valid packets should return a correct ptr");
 }
 END_TEST
@@ -259,6 +308,13 @@ START_TEST(test_fdp_check) {
 	    "packets without an llc header should generate a NULL");
 
     mark_point();
+    llc.dsap = llc.ssap = LLC_SNAP_LSAP;
+    llc.control = LLC_UI;
+    memcpy(msg.msg + sizeof(ether), &llc, sizeof(llc));
+    fail_unless (fdp_check(msg.msg, msg.len) == NULL,
+	    "packets with an incomplete llc header should generate a NULL");
+
+    mark_point();
     memcpy(llc.org, fdp_org, sizeof(llc.org));
     memcpy(msg.msg + sizeof(ether), &llc, sizeof(llc));
     fail_unless (fdp_check(msg.msg, msg.len) == NULL,
@@ -269,6 +325,18 @@ START_TEST(test_fdp_check) {
     memcpy(msg.msg + sizeof(ether), &llc, sizeof(llc));
     fail_unless (fdp_check(msg.msg, msg.len) == 
 		 msg.msg + sizeof(ether) + sizeof(llc),
+	    "valid packets should return a correct ptr");
+
+    mark_point();
+    ether.type = htons(ETHERTYPE_VLAN);
+    memcpy(msg.msg, &ether, sizeof(ether));
+    fail_unless (fdp_check(msg.msg, msg.len) == NULL,
+	    "packets without an encapsulated llc should generate a NULL");
+
+    mark_point();
+    memcpy(msg.msg + sizeof(ether) + ETHER_VLAN_ENCAP_LEN, &llc, sizeof(llc));
+    fail_unless (fdp_check(msg.msg, msg.len) == 
+		 msg.msg + sizeof(ether) + ETHER_VLAN_ENCAP_LEN + sizeof(llc),
 	    "valid packets should return a correct ptr");
 }
 END_TEST
@@ -293,6 +361,13 @@ START_TEST(test_ndp_check) {
 	    "packets without an llc header should generate a NULL");
 
     mark_point();
+    llc.dsap = llc.ssap = LLC_SNAP_LSAP;
+    llc.control = LLC_UI;
+    memcpy(msg.msg + sizeof(ether), &llc, sizeof(llc));
+    fail_unless (ndp_check(msg.msg, msg.len) == NULL,
+	    "packets with an incomplete llc header should generate a NULL");
+
+    mark_point();
     memcpy(llc.org, ndp_org, sizeof(llc.org));
     memcpy(msg.msg + sizeof(ether), &llc, sizeof(llc));
     fail_unless (ndp_check(msg.msg, msg.len) == NULL,
@@ -303,6 +378,18 @@ START_TEST(test_ndp_check) {
     memcpy(msg.msg + sizeof(ether), &llc, sizeof(llc));
     fail_unless (ndp_check(msg.msg, msg.len) == 
 		 msg.msg + sizeof(ether) + sizeof(llc),
+	    "valid packets should return a correct ptr");
+
+    mark_point();
+    ether.type = htons(ETHERTYPE_VLAN);
+    memcpy(msg.msg, &ether, sizeof(ether));
+    fail_unless (ndp_check(msg.msg, msg.len) == NULL,
+	    "packets without an encapsulated llc should generate a NULL");
+
+    mark_point();
+    memcpy(msg.msg + sizeof(ether) + ETHER_VLAN_ENCAP_LEN, &llc, sizeof(llc));
+    fail_unless (ndp_check(msg.msg, msg.len) == 
+		 msg.msg + sizeof(ether) + ETHER_VLAN_ENCAP_LEN + sizeof(llc),
 	    "valid packets should return a correct ptr");
 }
 END_TEST
@@ -473,6 +560,15 @@ START_TEST(test_lldp_peer) {
 		"system name should be 'HP ProCurve Switch 2626'");
     fail_unless (strcmp(msg.peer.port, "25") == 0,
 	"port id should be '25' not '%s'", msg.peer.port);
+    read_packet(&msg, "proto/lldp/45.good.vlan");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+    fail_unless (lldp_peer(&msg) == msg.len, "packet length incorrect");
+    fail_unless (msg.ttl == 120, "ttl should be 120");
+    fail_unless (strcmp(msg.peer.name, "trillian.blinkenlights.nl") == 0,
+		"system name should be 'trillian.blinkenlights.nl'");
+    fail_unless (strcmp(msg.peer.port, "Gi0/1") == 0,
+	"port id should be 'Gi0/1' not '%s'", msg.peer.port);
 }
 END_TEST
 
@@ -501,8 +597,6 @@ START_TEST(test_cdp_peer) {
 	"incorrect message logged: %s", check_wrap_errstr);
     read_packet(&msg, "proto/cdp/03.header.only");
     fail_unless (cdp_peer(&msg) == msg.len, "packet length incorrect");
-    read_packet(&msg, "proto/cdp/04.vlan.broken");
-    fail_unless (cdp_peer(&msg) == 0, "broken packets should return 0");
 
     errstr = "Corrupt CDP packet: invalid System Name TLV";
     read_packet(&msg, "proto/cdp/21.device_id.broken");
@@ -588,6 +682,15 @@ START_TEST(test_cdp_peer) {
 		"system name should be 'sw1.bit-2b.notwork.bot.nl'");
     fail_unless (strcmp(msg.peer.port, "GigabitEthernet0/2") == 0,
 	"port id should be 'GigabitEthernet0/2' not '%s'", msg.peer.port);
+    read_packet(&msg, "proto/cdp/48.good.vlan");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+    fail_unless (cdp_peer(&msg) == msg.len, "packet length incorrect");
+    fail_unless (msg.ttl == 180, "ttl should be 180");
+    fail_unless (strcmp(msg.peer.name, "trillian.blinkenlights.nl") == 0,
+		"system name should be 'trillian.blinkenlights.nl'");
+    fail_unless (strcmp(msg.peer.port, "GigabitEthernet0/1") == 0,
+	"port id should be 'GigabitEthernet0/1' not '%s'", msg.peer.port);
 }
 END_TEST
 
