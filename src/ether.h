@@ -47,6 +47,12 @@ struct ether_llc {
     uint16_t protoid;
 } __attribute__ ((__packed__));
 
+#ifndef LLC_SNAP_LSAP
+#define LLC_SNAP_LSAP   0xaa
+#endif
+#ifndef LLC_UI
+#define LLC_UI          0x3
+#endif
 #define ETH_LLC_CONTROL	ETHER_HDR_LEN + 2
 #define ETH_LLC_PROTOID	ETHER_HDR_LEN + 6
 

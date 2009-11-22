@@ -54,8 +54,8 @@ size_t edp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
     pos += sizeof(struct ether_hdr);
 
     // llc snap header
-    llc.dsap = llc.ssap = 0xaa;
-    llc.control = 0x03;
+    llc.dsap = llc.ssap = LLC_SNAP_LSAP;
+    llc.control = LLC_UI;
     memcpy(llc.org, llc_org, sizeof(llc.org));
     llc.protoid = htons(LLC_PID_EDP);
     memcpy(pos, &llc, sizeof(struct ether_llc));
