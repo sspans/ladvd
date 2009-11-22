@@ -155,7 +155,7 @@ END_TEST
 START_TEST(test_child_queue) {
     struct master_msg msg, *dmsg, *nmsg;
     struct netif netif;
-    struct ether_hdr *ether;
+    struct ether_hdr ether;
     static uint8_t lldp_dst[] = LLDP_MULTICAST_ADDR;
     int spair[2];
     short event = 0;
@@ -191,10 +191,10 @@ START_TEST(test_child_queue) {
     // invalid message contents
     mark_point();
     errstr = "Invalid LLDP packet";
-    ether = (struct ether_hdr *)msg.msg;
-    memset(ether->src, 'A', ETHER_ADDR_LEN);
-    memcpy(ether->dst, lldp_dst, ETHER_ADDR_LEN);
-    ether->type = htons(ETHERTYPE_LLDP);
+    memset(&ether.src, 'A', ETHER_ADDR_LEN);
+    memcpy(&ether.dst, lldp_dst, ETHER_ADDR_LEN);
+    ether.type = htons(ETHERTYPE_LLDP);
+    memcpy(msg.msg, &ether, sizeof(ether));
     WRAP_WRITE(spair[0], &msg, MASTER_MSG_SIZE);
     child_queue(spair[1], event);
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
