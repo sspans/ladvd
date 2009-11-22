@@ -359,8 +359,9 @@ char * lldp_check(void *packet, size_t length) {
 	return(NULL);
 
     if (ether.type == htons(ETHERTYPE_VLAN)) {
-	memcpy(&ether.type, packet + sizeof(ether), sizeof(ether.type));
 	offset = ETHER_VLAN_ENCAP_LEN;
+	memcpy(&ether.type, packet + offsetof(struct ether_hdr, type) + offset,
+	    sizeof(ether.type));
     }
 
     if (ether.type == htons(ETHERTYPE_LLDP))
