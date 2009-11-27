@@ -20,16 +20,13 @@ use_pie=yes
 
 case "$target_os" in
     linux-gnu*)
-	AC_DEFINE([TARGET_IS_LINUX], 1, [Define if target OS is Linux])
 	AC_DEFINE(HAVE_PROC_SYS_NET,1, [define for /proc/sys/net])
 	AC_DEFINE(HAVE_SYSFS,1, [define for /sys])
 	;;
     freebsd*)
-	AC_DEFINE([TARGET_IS_FREEBSD], 1, [Define if target OS is FreeBSD])
 	use_pie=no
 	;;
     openbsd*)
-	AC_DEFINE([TARGET_IS_OPENBSD], 1, [Define if target OS is OpenBSD])
 	case "$target" in
 	    arm-*-openbsd*)
 		use_pie=no

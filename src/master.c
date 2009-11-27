@@ -526,7 +526,7 @@ void master_multi(struct rawfd *rfd, struct proto *protos, int op) {
 #ifdef AF_PACKET
     struct packet_mreq mreq;
 #endif
-#ifdef TARGET_IS_FREEBSD
+#ifdef __FreeBSD__
     struct sockaddr_dl *saddrdl;
 #endif
     struct ifreq ifr;
@@ -562,7 +562,7 @@ void master_multi(struct rawfd *rfd, struct proto *protos, int op) {
 		     protos[p].name, rfd->name, strerror(errno));
 
 #elif defined AF_LINK
-#ifdef TARGET_IS_FREEBSD
+#ifdef __FreeBSD__
 	saddrdl = (struct sockaddr_dl *)&ifr.ifr_addr;
 	saddrdl->sdl_family = AF_LINK;
 	saddrdl->sdl_index = 0;
