@@ -2,7 +2,7 @@
 .SH NAME
 ladvd \- send link layer advertisements
 .SH SYNOPSIS
-.BI "ladvd [ -C ]" 
+.BI "ladvd [ -a ]" 
 .BI "[ " INTERFACE " ] [ " INTERFACE " ]"
 .B ...
 .SH DESCRIPTION
