@@ -224,7 +224,7 @@ void usage() {
     extern char *__progname;
 
     fprintf(stderr, PACKAGE_NAME " version " PACKAGE_VERSION "\n" 
-	"Usage: %s [-c] [-l] [-f] INTERFACE INTERFACE\n"
+	"Usage: %s [-a] INTERFACE INTERFACE\n"
 	    "\t-a = Auto-enable protocols based on received packets\n"
 	    "\t-d = Dump pcap-compatible packets to stdout\n"
 	    "\t-f = Run in the foreground\n"
