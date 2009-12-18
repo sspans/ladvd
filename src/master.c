@@ -159,7 +159,7 @@ void master_signal(int sig, short event, void *pid) {
 }
 
 
-void master_cmd(int cmdfd, short event) {
+static void master_cmd(int cmdfd, short event) {
     struct master_msg mreq;
     struct rawfd *rfd;
     ssize_t len;
@@ -218,7 +218,7 @@ void master_cmd(int cmdfd, short event) {
 }
 
 
-int master_check(struct master_msg *mreq) {
+static int master_check(struct master_msg *mreq) {
 
     assert(mreq);
     assert(mreq->len <= ETHER_MAX_LEN);
@@ -262,7 +262,7 @@ int master_check(struct master_msg *mreq) {
 }
 
 
-ssize_t master_send(struct master_msg *mreq) {
+static ssize_t master_send(struct master_msg *mreq) {
 
     struct rawfd *rfd = NULL;
     ssize_t count = 0;
@@ -306,7 +306,7 @@ ssize_t master_send(struct master_msg *mreq) {
 }
 
 
-void master_open(struct master_msg *mreq) {
+static void master_open(struct master_msg *mreq) {
     struct rawfd *rfd = NULL;
 
     rfd = my_malloc(sizeof(struct rawfd));
@@ -333,7 +333,7 @@ void master_open(struct master_msg *mreq) {
     return;
 }
 
-void master_close(struct rawfd *rfd) {
+static void master_close(struct rawfd *rfd) {
 
     assert(rfd != NULL);
 
@@ -357,7 +357,7 @@ void master_close(struct rawfd *rfd) {
 }
 
 #if HAVE_LINUX_ETHTOOL_H
-ssize_t master_ethtool(struct master_msg *mreq) {
+static ssize_t master_ethtool(struct master_msg *mreq) {
 
     struct ifreq ifr;
     struct ethtool_cmd ecmd;
@@ -383,7 +383,7 @@ ssize_t master_ethtool(struct master_msg *mreq) {
 #endif /* HAVE_LINUX_ETHTOOL_H */
 
 #ifdef SIOCSIFDESCR
-ssize_t master_descr(struct master_msg *mreq) {
+static ssize_t master_descr(struct master_msg *mreq) {
 
     struct ifreq ifr;
     ssize_t ret = 0;
@@ -402,7 +402,7 @@ ssize_t master_descr(struct master_msg *mreq) {
 #endif /* SIOCGIFDESCR */
 
 #ifdef HAVE_SYSFS
-ssize_t master_device(struct master_msg *mreq) {
+static ssize_t master_device(struct master_msg *mreq) {
     char path[SYSFS_PATH_MAX];
     struct stat sb;
     ssize_t ret = 0;
@@ -417,7 +417,7 @@ ssize_t master_device(struct master_msg *mreq) {
 }
 #endif /* HAVE_SYSFS */
 
-int master_socket(struct rawfd *rfd) {
+static int master_socket(struct rawfd *rfd) {
 
     int fd = -1;
 
@@ -521,7 +521,7 @@ int master_socket(struct rawfd *rfd) {
 }
 
 
-void master_multi(struct rawfd *rfd, struct proto *protos, int op) {
+static void master_multi(struct rawfd *rfd, struct proto *protos, int op) {
 
 #ifdef AF_PACKET
     struct packet_mreq mreq;
@@ -584,7 +584,7 @@ void master_multi(struct rawfd *rfd, struct proto *protos, int op) {
 }
 
 
-void master_recv(int fd, short event, struct rawfd *rfd) {
+static void master_recv(int fd, short event, struct rawfd *rfd) {
     // packet
     struct master_msg mrecv;
     struct ether_hdr *ether;
@@ -663,7 +663,7 @@ void master_recv(int fd, short event, struct rawfd *rfd) {
 }
 
 
-inline struct rawfd *rfd_byindex(uint32_t index) {
+static inline struct rawfd *rfd_byindex(uint32_t index) {
     struct rawfd *rfd = NULL;
 
     TAILQ_FOREACH(rfd, &rawfds, entries) {
@@ -673,7 +673,7 @@ inline struct rawfd *rfd_byindex(uint32_t index) {
     return(rfd);
 }
 
-inline void rfd_closeall() {
+static inline void rfd_closeall() {
     struct rawfd *rfd, *nrfd;
 
     TAILQ_FOREACH_SAFE(rfd, &rawfds, entries, nrfd) {
