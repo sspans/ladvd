@@ -60,26 +60,26 @@ struct rawfd {
 
 TAILQ_HEAD(rfdhead, rawfd);
 
-static void master_cmd(int fd, short event);
-static void master_recv(int fd, short event, struct rawfd *rfd);
+void master_cmd(int fd, short event);
+void master_recv(int fd, short event, struct rawfd *rfd);
 
-static ssize_t master_send(struct master_msg *mreq);
-static void master_open(struct master_msg *mreq);
+ssize_t master_send(struct master_msg *mreq);
+void master_open(struct master_msg *mreq);
 #if HAVE_LINUX_ETHTOOL_H
-static ssize_t master_ethtool(struct master_msg *mreq);
+ssize_t master_ethtool(struct master_msg *mreq);
 #endif /* HAVE_LINUX_ETHTOOL_H */
 #ifdef SIOCSIFDESCR
-static ssize_t master_descr(struct master_msg *mreq);
+ssize_t master_descr(struct master_msg *mreq);
 #endif /* SIOCSIFDESCR */
 #ifdef HAVE_SYSFS
-static ssize_t master_device(struct master_msg *mreq);
+ssize_t master_device(struct master_msg *mreq);
 #endif /* HAVE_SYSFS */
-static void master_close(struct rawfd *rfd);
+void master_close(struct rawfd *rfd);
 
-static int master_check(struct master_msg *mreq);
-static int master_socket(struct rawfd *rfd);
-static void master_multi(struct rawfd *rfd, struct proto *protos, int op);
-static inline struct rawfd *rfd_byindex(uint32_t index);
-static inline void rfd_closeall();
+int master_check(struct master_msg *mreq);
+int master_socket(struct rawfd *rfd);
+void master_multi(struct rawfd *rfd, struct proto *protos, int op);
+inline struct rawfd *rfd_byindex(uint32_t index);
+inline void rfd_closeall();
 
 #endif /* _master_h */
