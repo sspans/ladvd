@@ -58,7 +58,13 @@ AC_DEFUN([GCC_STACK_PROTECT_CC],[
       ssp_cv_cc,
       [ssp_old_cflags="$CFLAGS"
        CFLAGS="$CFLAGS -fstack-protector -Werror"
-       AC_TRY_LINK(, [char s[80]], ssp_cv_cc=yes, ssp_cv_cc=no)
+       AC_TRY_LINK([
+	    #include <stdio.h>
+	    #include <stdarg.h>
+	], [
+	    va_list ap;
+	    vprintf("test", ap);
+	], ssp_cv_cc=yes, ssp_cv_cc=no)
        CFLAGS="$ssp_old_cflags"
       ])
     if test $ssp_cv_cc = yes; then
