@@ -47,7 +47,7 @@ void child_init(int cmdfd, int msgfd, int ifc, char *ifl[],
     TAILQ_INIT(&netifs);
     TAILQ_INIT(&mqueue);
 
-    // configure master socket
+    // configure command socket
     msock = cmdfd;
 
     // drop privileges
@@ -67,7 +67,7 @@ void child_init(int cmdfd, int msgfd, int ifc, char *ifl[],
 
     // create and run the transmit event
     evtimer_set(&evs, (void *)child_send, &evs);
-    child_send(cmdfd, EV_TIMEOUT, &evs);
+    child_send(msgfd, EV_TIMEOUT, &evs);
 
     if (options & OPT_ONCE)
 	exit(EXIT_SUCCESS);
@@ -90,6 +90,7 @@ void child_send(int fd, short event, void *evs) {
     struct netif *netif = NULL, *subif = NULL;
     struct timeval tv;
     int p;
+    ssize_t len;
 
     // update netifs
     my_log(INFO, "fetching all interfaces"); 
@@ -107,7 +108,6 @@ void child_send(int fd, short event, void *evs) {
 	    // populate mreq
 	    memset(&mreq, 0, sizeof(mreq));
 	    mreq.index = subif->index;
-	    mreq.cmd = MASTER_SEND;
 
 	    // fetch interface media status
 	    my_log(INFO, "fetching %s media details", subif->name);
@@ -138,8 +138,9 @@ void child_send(int fd, short event, void *evs) {
 		// write it to the wire.
 		my_log(INFO, "sending %s packet (%d bytes) on %s",
 			    protos[p].name, mreq.len, subif->name);
-		if (my_msend(&mreq) != mreq.len)
-		    my_log(CRIT, "network transmit error on %s", subif->name);
+		len = write(fd, &mreq, MASTER_MSG_SIZE);
+		if (len != MASTER_MSG_SIZE)
+		    my_fatal("only %d bytes written: %s", len, strerror(errno));
 	    }
 	}
     }
