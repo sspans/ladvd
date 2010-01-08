@@ -208,13 +208,8 @@ int main(int argc, char *argv[]) {
 	close(cpair[1]);
 	close(mpair[1]);
 
-	if (!(options & OPT_DEBUG)) {
-	    my_chroot(PACKAGE_CHROOT_DIR);
-	    my_drop_privs(pwd);
-	}
-
 	// enter the child loop
-	child_init(cpair[0], mpair[0], sargc, sargv);
+	child_init(cpair[0], mpair[0], sargc, sargv, pwd);
 
 	// not reached
 	my_fatal("child process failed");

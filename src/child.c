@@ -31,13 +31,17 @@ struct mhead mqueue;
 struct sysinfo sysinfo;
 extern struct proto protos[];
 
-void child_init(int cmdfd, int msgfd, int ifc, char *ifl[]) {
+void child_init(int cmdfd, int msgfd, int ifc, char *ifl[],
+		struct passwd *pwd) {
 
     // events
     struct event evs, evq;
 
     // master socket
     extern int msock;
+
+    sargc = ifc;
+    sargv = ifl;
 
     // init the queues
     TAILQ_INIT(&netifs);
@@ -46,8 +50,11 @@ void child_init(int cmdfd, int msgfd, int ifc, char *ifl[]) {
     // configure master socket
     msock = cmdfd;
 
-    sargc = ifc;
-    sargv = ifl;
+    // drop privileges
+    if (!(options & OPT_DEBUG)) {
+	my_chroot(PACKAGE_CHROOT_DIR);
+	my_drop_privs(pwd);
+    }
 
     // proctitle
     setproctitle("child");

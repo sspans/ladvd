@@ -50,6 +50,7 @@
 #include <sys/sysctl.h>
 #include <sys/stat.h>
 #include <sys/time.h>
+#include <pwd.h>
 
 #include <event.h>
 
@@ -196,7 +197,7 @@ struct proto {
     char * (*decode) (void *, size_t);
 };
 
-void child_init(int cmdfd, int msgfd, int ifc, char *ifl[]);
+void child_init(int cmdfd, int msgfd, int ifc, char *ifl[], struct passwd *pwd);
 void master_init(int cmdfd, int msgfd, pid_t pid);
 void master_signal(int fd, short event, void *pid);
 
