@@ -27,6 +27,7 @@
 
 uint32_t options = OPT_DAEMON;
 extern struct sysinfo sysinfo;
+extern char *__progname;
 
 int main(int argc, char *argv[]) {
 
@@ -49,6 +50,10 @@ int main(int argc, char *argv[]) {
 
     // clear sysinfo
     memset(&sysinfo, 0, sizeof(struct sysinfo));
+
+    // cli
+    if (strcmp(__progname, PACKAGE_CLI) == 0)
+	return 0; // cli_init(argc, argv);
 
     // Save argv. Duplicate so setproctitle emulation doesn't clobber it
     sargc = argc;
@@ -221,7 +226,6 @@ int main(int argc, char *argv[]) {
 
 
 void usage() {
-    extern char *__progname;
 
     fprintf(stderr, PACKAGE_NAME " version " PACKAGE_VERSION "\n" 
 	"Usage: %s [-a] INTERFACE INTERFACE\n"
