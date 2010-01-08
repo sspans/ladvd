@@ -36,7 +36,7 @@ void child_init(int cmdfd, int msgfd, int ifc, char *ifl[],
 		struct passwd *pwd) {
 
     // events
-    struct event evs, evq;
+    struct event evs, evq, eva;
 
     // master socket
     extern int msock;
@@ -96,6 +96,10 @@ void child_init(int cmdfd, int msgfd, int ifc, char *ifl[],
 	event_set(&evq, msgfd, EV_READ|EV_PERSIST, (void *)child_queue, NULL);
 	event_add(&evq, NULL);
     }
+
+    // accept cli connections
+    event_set(&eva, csock, EV_READ|EV_PERSIST, (void *)child_cli_accept, NULL);
+    event_add(&eva, NULL);
 
     // wait for events
     event_dispatch();
@@ -185,7 +189,8 @@ void child_queue(int fd, short event) {
     ssize_t len;
 
     my_log(INFO, "receiving message from master");
-    len = read(fd, &rmsg, MASTER_MSG_SIZE);
+    if ((len = read(fd, &rmsg, MASTER_MSG_SIZE)) == -1)
+	return;
 
     assert(len == MASTER_MSG_SIZE);
     assert(rmsg.cmd == MASTER_RECV);
@@ -325,5 +330,50 @@ void child_expire() {
 
 	subif->update = 0;
     }
+}
+
+void child_cli_accept(int socket, short event) {
+    int	fd, sndbuf = MASTER_MSG_SIZE * 10;
+    struct sockaddr_un sa;
+    socklen_t addrlen = sizeof(sa);
+    struct event *evc = NULL;
+
+    if ((fd = accept(socket, &sa, &addrlen)) == -1) {
+	my_log(WARN, "cli connection failed");
+	return;
+    }
+
+    my_nonblock(fd);
+    if (setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &sndbuf, sizeof(sndbuf)) == -1)
+	my_log(WARN, "failed to set sndbuf: %s", strerror(errno));
+
+    evc = my_malloc(sizeof(struct event));
+    event_set(evc, fd, EV_WRITE, (void *)child_cli_write, evc);
+    event_add(evc, NULL);
+}
+
+void child_cli_write(int fd, short event, struct event *evc) {
+    struct master_msg *msg = NULL;
+
+    TAILQ_FOREACH(msg, &mqueue, entries) {
+	if (write(fd, msg, MASTER_MSG_SIZE) == -1) {
+	    if (errno != EAGAIN)
+		msg = NULL;
+	    break;
+	}
+    }
+
+    // schedule a new event
+    /* if (msg != NULL) {
+	event_set(evc, fd, EV_WRITE, (void *)child_cli, evc);
+	event_add(evc, NULL);
+	event_add
+	return;
+    } */
+
+    // close / cleanup
+    event_del(evc);
+    free(evc);
+    close(fd);
 }
 

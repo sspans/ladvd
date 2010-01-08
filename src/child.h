@@ -23,5 +23,7 @@
 void child_send(int fd, short event, void *);
 void child_queue(int fd, short event);
 void child_expire();
+void child_cli_accept(int socket, short event);
+void child_cli_write(int fd, short event, struct event *);
 
 #endif /* _child_h */
