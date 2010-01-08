@@ -21,6 +21,7 @@
 #include "util.h"
 #include "proto/protos.h"
 #include "child.h"
+#include <sys/un.h>
 #include <time.h>
 
 int sargc = 0;
@@ -39,6 +40,8 @@ void child_init(int cmdfd, int msgfd, int ifc, char *ifl[],
 
     // master socket
     extern int msock;
+    int csock;
+    struct sockaddr_un sun;
 
     sargc = ifc;
     sargv = ifl;
@@ -49,6 +52,21 @@ void child_init(int cmdfd, int msgfd, int ifc, char *ifl[],
 
     // configure command socket
     msock = cmdfd;
+
+    // configure unix socket
+    csock = my_socket(AF_UNIX, SOCK_DGRAM, 0);
+    memset(&sun, 0, sizeof(sun));
+    sun.sun_family = AF_UNIX;
+    strlcpy(sun.sun_path, PACKAGE_SOCKET, sizeof(sun.sun_path));
+
+    if ((unlink(PACKAGE_SOCKET) == -1) && (errno != ENOENT))
+	my_fatal("failed to remove %s: %s", PACKAGE_SOCKET, strerror(errno));
+
+    if (bind(csock, (struct sockaddr *)&sun, sizeof(sun)) == -1)
+	my_fatal("failed to bind %s: %s", PACKAGE_SOCKET, strerror(errno));
+
+    fchmod(csock, S_IRUSR|S_IRGRP);
+    fchown(csock, -1, pwd->pw_gid);
 
     // drop privileges
     if (!(options & OPT_DEBUG)) {
