@@ -60,7 +60,7 @@ extern struct proto protos[];
 void master_init(int cmdfd, int msgfd, pid_t child) {
 
     // events
-    struct event ev_cmd;
+    struct event ev_cmd, ev_msg;
     struct event ev_sigchld, ev_sigint, ev_sigterm,  ev_sighup;
 
 #ifdef USE_CAPABILITIES
@@ -119,9 +119,11 @@ void master_init(int cmdfd, int msgfd, pid_t child) {
     // initalize the event library
     event_init();
 
-    // listen for requests from the child
+    // listen for request and messages from the child
     event_set(&ev_cmd, cmdfd, EV_READ|EV_PERSIST, (void *)master_cmd, NULL);
+    event_set(&ev_msg, msgfd, EV_READ|EV_PERSIST, (void *)master_send, NULL);
     event_add(&ev_cmd, NULL);
+    event_add(&ev_msg, NULL);
 
     // handle signals
     signal_set(&ev_sigchld, SIGCHLD, master_signal, NULL);
@@ -179,12 +181,6 @@ void master_cmd(int cmdfd, short event) {
 	my_fatal("invalid request supplied");
 
     switch (mreq.cmd) {
-	// transmit packet
-	case MASTER_SEND:
-	    if (rfd_byindex(mreq.index) == NULL)
-		master_open(&mreq);
-	    mreq.len = master_send(&mreq);
-	    break;
 	// close socket
 	case MASTER_CLOSE:
 	    if ((rfd = rfd_byindex(mreq.index)) != NULL)
@@ -233,11 +229,6 @@ int master_check(struct master_msg *mreq) {
     }
 
     switch (mreq->cmd) {
-	case MASTER_SEND:
-	    assert(mreq->len >= ETHER_MIN_LEN);
-	    assert(mreq->proto < PROTO_MAX);
-	    assert(protos[mreq->proto].check(mreq->msg, mreq->len) != NULL);
-	    return(EXIT_SUCCESS);
 	case MASTER_CLOSE:
 	    return(EXIT_SUCCESS);
 #if HAVE_LINUX_ETHTOOL_H
@@ -262,10 +253,30 @@ int master_check(struct master_msg *mreq) {
 }
 
 
-ssize_t master_send(struct master_msg *mreq) {
+void master_send(int msgfd, short event) {
 
+    struct master_msg msend;
     struct rawfd *rfd = NULL;
-    ssize_t count = 0;
+    ssize_t len;
+
+    // receive request
+    len = read(msgfd, &msend, MASTER_MSG_SIZE);
+
+    if (len <= 0)
+	return;
+
+    // check request size
+    if (len != MASTER_MSG_SIZE)
+	my_fatal("invalid message received");
+
+    if (if_indextoname(msend.index, msend.name) == NULL) {
+	my_log(CRIT, "invalid ifindex supplied");
+	return;
+    }
+
+    assert(msend.len >= ETHER_MIN_LEN);
+    assert(msend.proto < PROTO_MAX);
+    assert(protos[msend.proto].check(msend.msg, msend.len) != NULL);
 
     // debug
     if (options & OPT_DEBUG) {
@@ -276,33 +287,40 @@ ssize_t master_send(struct master_msg *mreq) {
 	if (gettimeofday(&tv, NULL) == 0) {
 	    pcap_rec_hdr.ts_sec = tv.tv_sec;
 	    pcap_rec_hdr.ts_usec = tv.tv_usec;
-	    pcap_rec_hdr.incl_len = mreq->len;
-	    pcap_rec_hdr.orig_len = mreq->len;
+	    pcap_rec_hdr.incl_len = msend.len;
+	    pcap_rec_hdr.orig_len = msend.len;
 
 	    if (write(dfd, &pcap_rec_hdr, sizeof(pcap_rec_hdr))
 		    != sizeof(pcap_rec_hdr))
 		my_fatal("failed to write pcap record header");
 	}
 
-	return(write(dfd, mreq->msg, mreq->len));
+	len = write(dfd, msend.msg, msend.len);
+	if (len != msend.len)
+	    my_log(WARN, "only %d bytes written: %s", len, strerror(errno));
+	return;
     }
 
-    assert((rfd = rfd_byindex(mreq->index)) != NULL);
-    count = write(rfd->fd, mreq->msg, mreq->len);
+    // create rfd if needed
+    if (rfd_byindex(msend.index) == NULL)
+	master_open(&msend);
+
+    assert((rfd = rfd_byindex(msend.index)) != NULL);
+    len = write(rfd->fd, msend.msg, msend.len);
 
     // close the socket if the device vanished
     // if needed a new socket will be created on the next run
 #ifdef HAVE_NETPACKET_PACKET_H
-    if ((count == -1) && (errno == ENODEV))
+    if ((len == -1) && (errno == ENODEV))
 #elif defined HAVE_NET_BPF_H
-    if ((count == -1) && (errno == EIO))
+    if ((len == -1) && (errno == EIO))
 #endif /* HAVE_NET_BPF_H */
 	    master_close(rfd);
 
-    if (count != mreq->len)
-	my_log(WARN, "only %d bytes written: %s", count, strerror(errno));
+    if (len != msend.len)
+	my_log(WARN, "only %d bytes written: %s", len, strerror(errno));
 
-    return(count);
+    return;
 }
 
 

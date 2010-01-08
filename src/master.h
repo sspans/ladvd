@@ -61,9 +61,9 @@ struct rawfd {
 TAILQ_HEAD(rfdhead, rawfd);
 
 void master_cmd(int fd, short event);
+void master_send(int fd, short event);
 void master_recv(int fd, short event, struct rawfd *rfd);
 
-ssize_t master_send(struct master_msg *mreq);
 void master_open(struct master_msg *mreq);
 #if HAVE_LINUX_ETHTOOL_H
 ssize_t master_ethtool(struct master_msg *mreq);
