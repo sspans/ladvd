@@ -107,6 +107,19 @@ void my_socketpair(int spair[2]) {
     }
 }
 
+int my_nonblock(int s) {
+    int flags;
+
+    flags = fcntl(s, F_GETFL);
+    if (flags < 0)
+	return 0;
+    flags |= O_NONBLOCK;
+    if (fcntl(s, F_SETFL, flags) < 0)
+	return 0;
+
+    return flags;
+}
+
 ssize_t my_msend(struct master_msg *mreq) {
     ssize_t count = 0;
 

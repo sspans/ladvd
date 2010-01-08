@@ -39,6 +39,7 @@ void *my_calloc(size_t, size_t);
 char *my_strdup(const char *str);
 int my_socket(int af, int type, int proto);
 void my_socketpair(int spair[2]);
+int my_nonblock(int s);
 
 ssize_t my_msend(struct master_msg *mreq);
 
