@@ -60,13 +60,14 @@ void child_init(int cmdfd, int msgfd, int ifc, char *ifl[],
     strlcpy(sun.sun_path, PACKAGE_SOCKET, sizeof(sun.sun_path));
 
     if ((unlink(PACKAGE_SOCKET) == -1) && (errno != ENOENT))
-	my_fatal("failed to remove %s: %s", PACKAGE_SOCKET, strerror(errno));
-
+	my_fatal("failed to remove " PACKAGE_SOCKET ": %s", strerror(errno));
     if (bind(csock, (struct sockaddr *)&sun, sizeof(sun)) == -1)
-	my_fatal("failed to bind %s: %s", PACKAGE_SOCKET, strerror(errno));
+	my_fatal("failed to bind " PACKAGE_SOCKET ": %s", strerror(errno));
 
-    fchmod(csock, S_IRUSR|S_IRGRP);
-    fchown(csock, -1, pwd->pw_gid);
+    if (fchmod(csock, S_IRUSR|S_IRGRP) == -1)
+	my_fatal("failed to chmod " PACKAGE_SOCKET ": %s", strerror(errno));
+    if (fchown(csock, -1, pwd->pw_gid) == -1)
+	my_fatal("failed to chown " PACKAGE_SOCKET ": %s", strerror(errno));
 
     // drop privileges
     if (!(options & OPT_DEBUG)) {
