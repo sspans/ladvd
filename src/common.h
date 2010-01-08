@@ -177,13 +177,12 @@ struct master_msg {
 TAILQ_HEAD(mhead, master_msg);
 
 #define MASTER_MSG_SIZE   sizeof(struct master_msg)
-#define MASTER_SEND	0
-#define MASTER_CLOSE	1
-#define MASTER_RECV	2
-#define MASTER_ETHTOOL	3
-#define MASTER_DESCR	4
-#define MASTER_DEVICE	5
-#define MASTER_MAX	6
+#define MASTER_CLOSE	0
+#define MASTER_RECV	1
+#define MASTER_ETHTOOL	2
+#define MASTER_DESCR	3
+#define MASTER_DEVICE	4
+#define MASTER_MAX	5
 
 struct proto {
     uint8_t enabled;
