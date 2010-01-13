@@ -18,6 +18,7 @@
  */
 
 #include <check.h>
+#include <paths.h>
 
 #include "common.h"
 #include "util.h"
@@ -59,10 +60,11 @@ START_TEST(test_child_init) {
     struct master_msg *mreq;
     struct netif *netif, *nnetif;
     const char *errstr = NULL;
-    int spair[2];
+    int spair[2], null;
+    struct passwd *pwd;
     pid_t pid;
 
-    options |= OPT_ONCE;
+    options |= OPT_ONCE|OPT_DEBUG;
     loglevel = CRIT;
     my_socketpair(spair);
 
@@ -82,7 +84,12 @@ START_TEST(test_child_init) {
     }
     close(spair[1]);
 
-    child_init(spair[0], -1, 0, NULL);
+    mark_point();
+    null = open(_PATH_DEVNULL, O_WRONLY);
+    pwd = getpwnam("nobody");
+    WRAP_FATAL_START();
+    child_init(spair[0], null, 0, NULL, pwd);
+    WRAP_FATAL_END();
 
     errstr = PACKAGE_STRING " running";
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
@@ -101,13 +108,14 @@ END_TEST
 START_TEST(test_child_send) {
     struct master_msg *mreq;
     struct netif *netif, *nnetif;
-    int spair[2];
+    int spair[2], null;
     struct event evs;
     pid_t pid;
 
     loglevel = INFO;
     my_socketpair(spair);
     msock = spair[0];
+    null = open(_PATH_DEVNULL, O_WRONLY);
 
     // initalize the event library
     event_init();
@@ -132,17 +140,17 @@ START_TEST(test_child_send) {
     // no protocols enabled
     mark_point();
     protos[PROTO_LLDP].enabled = 0;
-    child_send(-1, EV_TIMEOUT, &evs);
+    child_send(null, EV_TIMEOUT, &evs);
 
     // LLDP enabled
     mark_point();
     protos[PROTO_LLDP].enabled = 1;
-    child_send(-1, EV_TIMEOUT, &evs);
+    child_send(null, EV_TIMEOUT, &evs);
 
     // CDP enabled
     mark_point();
     protos[PROTO_CDP].enabled = 1;
-    child_send(-1, EV_TIMEOUT, &evs);
+    child_send(null, EV_TIMEOUT, &evs);
 
     // reset
     kill(pid, SIGTERM);

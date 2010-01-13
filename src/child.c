@@ -40,7 +40,7 @@ void child_init(int cmdfd, int msgfd, int ifc, char *ifl[],
 
     // master socket
     extern int msock;
-    int csock;
+    int csock = -1;
     struct sockaddr_un sun;
 
     sargc = ifc;
@@ -54,20 +54,27 @@ void child_init(int cmdfd, int msgfd, int ifc, char *ifl[],
     msock = cmdfd;
 
     // configure unix socket
-    csock = my_socket(AF_UNIX, SOCK_DGRAM, 0);
-    memset(&sun, 0, sizeof(sun));
-    sun.sun_family = AF_UNIX;
-    strlcpy(sun.sun_path, PACKAGE_SOCKET, sizeof(sun.sun_path));
+    if (!(options & (OPT_DEBUG|OPT_ONCE))) {
 
-    if ((unlink(PACKAGE_SOCKET) == -1) && (errno != ENOENT))
-	my_fatal("failed to remove " PACKAGE_SOCKET ": %s", strerror(errno));
-    if (bind(csock, (struct sockaddr *)&sun, sizeof(sun)) == -1)
-	my_fatal("failed to bind " PACKAGE_SOCKET ": %s", strerror(errno));
+	csock = my_socket(AF_UNIX, SOCK_DGRAM, 0);
+	memset(&sun, 0, sizeof(sun));
+	sun.sun_family = AF_UNIX;
+	strlcpy(sun.sun_path, PACKAGE_SOCKET, sizeof(sun.sun_path));
 
-    if (fchmod(csock, S_IRUSR|S_IRGRP) == -1)
-	my_fatal("failed to chmod " PACKAGE_SOCKET ": %s", strerror(errno));
-    if (fchown(csock, -1, pwd->pw_gid) == -1)
-	my_fatal("failed to chown " PACKAGE_SOCKET ": %s", strerror(errno));
+	if ((unlink(PACKAGE_SOCKET) == -1) && (errno != ENOENT))
+	    my_fatal("failed to remove " PACKAGE_SOCKET ": %s",
+		strerror(errno));
+	if (bind(csock, (struct sockaddr *)&sun, sizeof(sun)) == -1)
+	    my_fatal("failed to bind " PACKAGE_SOCKET ": %s",
+		strerror(errno));
+
+	if (fchmod(csock, S_IRUSR|S_IRGRP) == -1)
+	    my_fatal("failed to chmod " PACKAGE_SOCKET ": %s",
+		strerror(errno));
+	if (fchown(csock, -1, pwd->pw_gid) == -1)
+	    my_fatal("failed to chown " PACKAGE_SOCKET ": %s",
+		strerror(errno));
+    }
 
     // drop privileges
     if (!(options & OPT_DEBUG)) {
@@ -98,8 +105,11 @@ void child_init(int cmdfd, int msgfd, int ifc, char *ifl[],
     }
 
     // accept cli connections
-    event_set(&eva, csock, EV_READ|EV_PERSIST, (void *)child_cli_accept, NULL);
-    event_add(&eva, NULL);
+    if (csock != -1) {
+	event_set(&eva, csock, EV_READ|EV_PERSIST,
+			(void *)child_cli_accept, NULL);
+	event_add(&eva, NULL);
+    }
 
     // wait for events
     event_dispatch();
