@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
 
     // cli
     if (strcmp(__progname, PACKAGE_CLI) == 0)
-	return 0; // cli_init(argc, argv);
+	cli_init(argc, argv);
 
     // Save argv. Duplicate so setproctitle emulation doesn't clobber it
     sargc = argc;
@@ -225,7 +225,7 @@ int main(int argc, char *argv[]) {
 static void usage() {
 
     fprintf(stderr, PACKAGE_NAME " version " PACKAGE_VERSION "\n" 
-	"Usage: %s [-a] INTERFACE INTERFACE\n"
+	"Usage: %s [-a] [INTERFACE] [INTERFACE]\n"
 	    "\t-a = Auto-enable protocols based on received packets\n"
 	    "\t-d = Dump pcap-compatible packets to stdout\n"
 	    "\t-f = Run in the foreground\n"
