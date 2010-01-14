@@ -260,7 +260,7 @@ void netif_descr(struct netif *netif, struct mhead *mqueue) {
 	else
 	    memset(descr, 0, IFDESCRSIZE);
     } else {
-	snprintf(descr, IFDESCRSIZE, "connected to %u peers", peers);
+	snprintf(descr, IFDESCRSIZE, "connected to %" PRIu16 " peers", peers);
     }
 
     // only update if changed
