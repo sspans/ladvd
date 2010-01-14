@@ -88,7 +88,7 @@ int my_socket(int af, int type, int proto) {
     return(s);
 }
 
-void my_socketpair(int spair[2]) {
+void my_socketpair(int spair[]) {
     int i, rbuf = MASTER_MSG_SIZE * 10;
 
     assert(spair != NULL);
@@ -260,7 +260,7 @@ void netif_descr(struct netif *netif, struct mhead *mqueue) {
 	else
 	    memset(descr, 0, IFDESCRSIZE);
     } else {
-	snprintf(descr, IFDESCRSIZE, "connected to %d peers", peers);
+	snprintf(descr, IFDESCRSIZE, "connected to %u peers", peers);
     }
 
     // only update if changed

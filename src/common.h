@@ -29,7 +29,9 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#ifndef S_SPLINT_S
 #include <unistd.h>
+#endif
 #include <fcntl.h>
 #include <signal.h>
 #include <time.h>
