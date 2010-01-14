@@ -135,7 +135,7 @@ START_TEST(test_master_cmd) {
 
     // test a message with incorrect content
     mark_point();
-    mreq.cmd = MASTER_SEND;
+    mreq.cmd = MASTER_MAX - 1;
     mreq.len = ETHER_MIN_LEN;
     mreq.proto = PROTO_LLDP;
 
@@ -147,10 +147,11 @@ START_TEST(test_master_cmd) {
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
-    // test a correct SEND
+    // test a correct CLOSE
     mark_point();
     dfd = spair[1];
     options |= OPT_DEBUG;
+    mreq.cmd = MASTER_CLOSE;
     mreq.index = 1;
     memcpy(ether.dst, lldp_dst, ETHER_ADDR_LEN);
     ether.type = htons(ETHERTYPE_LLDP);
@@ -164,9 +165,6 @@ START_TEST(test_master_cmd) {
     WRAP_FATAL_END();
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
-
-    rfd = rfd_byindex(1);
-    master_close(rfd);
 
     // test a correct CLOSE
     mark_point();
@@ -255,15 +253,15 @@ START_TEST(test_master_check) {
     mark_point();
     mreq.cmd = MASTER_CLOSE;
     fail_unless(master_check(&mreq) == EXIT_SUCCESS,
-	"MASTER_SEND check failed");
+	"MASTER_CLOSE check failed");
 
     mark_point();
-    mreq.cmd = MASTER_SEND;
+    mreq.cmd = MASTER_MAX - 1;
     mreq.len = ETHER_MIN_LEN;
     mreq.proto = PROTO_LLDP;
 
     fail_unless(master_check(&mreq) == EXIT_FAILURE,
-	"MASTER_SEND check failed");
+	"master_check should fail");
 
     // lo0 mostly
     mark_point();
@@ -273,7 +271,7 @@ START_TEST(test_master_check) {
     memcpy(mreq.msg, &ether, sizeof(struct ether_hdr));
 
     fail_unless(master_check(&mreq) == EXIT_SUCCESS,
-	"MASTER_SEND check failed");
+	"MASTER_CLOSE check failed");
 
 #ifdef HAVE_LINUX_ETHTOOL_H
     mark_point();
@@ -305,9 +303,11 @@ END_TEST
 START_TEST(test_master_send) {
     struct rawfd *rfd;
     struct master_msg mreq;
+    struct ether_hdr ether;
+    static uint8_t lldp_dst[] = LLDP_MULTICAST_ADDR;
     int spair[2];
-    ssize_t len;
     const char *errstr;
+    short event = 0;
 
     loglevel = INFO;
     options |= OPT_DEBUG;
@@ -323,15 +323,24 @@ START_TEST(test_master_send) {
     rfd->fd = spair[1];
 
     mark_point();
-    len = master_send(&mreq);
-    fail_unless(len == ETHER_MIN_LEN,
-	"incorrect length returned: %ld", len);
+    errstr = "invalid message received";
+    WRAP_WRITE(spair[0], &mreq, MASTER_MSG_SIZE - 1); 
+    WRAP_FATAL_START();
+    master_send(spair[1], event);
+    WRAP_FATAL_END();
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
 
     mark_point();
+    mreq.proto = PROTO_LLDP;
+    memcpy(ether.dst, lldp_dst, ETHER_ADDR_LEN);
+    ether.type = htons(ETHERTYPE_LLDP);
+    memcpy(mreq.msg, &ether, sizeof(ether));
     errstr = "failed to write pcap record header";
     dfd = -1;
     WRAP_FATAL_START();
-    len = master_send(&mreq);
+    WRAP_WRITE(spair[0], &mreq, MASTER_MSG_SIZE); 
+    master_send(spair[1], event);
     WRAP_FATAL_END();
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -340,7 +349,8 @@ START_TEST(test_master_send) {
     errstr = "only -1 bytes written";
     rfd->fd = -1;
     options &= ~OPT_DEBUG;
-    master_send(&mreq);
+    WRAP_WRITE(spair[0], &mreq, MASTER_MSG_SIZE); 
+    master_send(spair[1], event);
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
