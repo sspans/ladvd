@@ -29,6 +29,8 @@ uint32_t options = OPT_DAEMON;
 extern struct sysinfo sysinfo;
 extern char *__progname;
 
+static void usage();
+
 int main(int argc, char *argv[]) {
 
     int ch, i;
