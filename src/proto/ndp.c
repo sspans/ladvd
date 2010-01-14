@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2008, 2009
+ * Copyright (c) 2008, 2009, 2010
  *      Sten Spans <sten@blinkenlights.nl>
  *
  * Permission to use, copy, modify, and distribute this software for any
