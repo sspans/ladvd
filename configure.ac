@@ -82,6 +82,7 @@ AS_IF([test -n "$pid_dir"],
 AC_DEFINE(PACKAGE_PID_FILE, PACKAGE_PID_DIR "/" PACKAGE_NAME ".pid", [pid file])
 AC_DEFINE(PACKAGE_SOCKET, PACKAGE_PID_DIR "/" PACKAGE_NAME ".sock", [socket])
 AC_DEFINE(PACKAGE_CLI, PACKAGE_NAME "c", [cli command])
+AC_SUBST([PACKAGE_CLI], "${PACKAGE_NAME}c")
 
 # chroot dir
 AC_ARG_WITH([chroot_dir],
