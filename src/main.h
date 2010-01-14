@@ -35,6 +35,6 @@ struct proto protos[] = {
   { 0, NULL, {0}, {0}, 0, NULL, NULL, NULL, NULL }
 };
 
-void usage();
+static void usage();
 
 #endif /* _main_h */

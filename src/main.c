@@ -220,7 +220,7 @@ int main(int argc, char *argv[]) {
 }
 
 
-void usage() {
+static void usage() {
 
     fprintf(stderr, PACKAGE_NAME " version " PACKAGE_VERSION "\n" 
 	"Usage: %s [-a] INTERFACE INTERFACE\n"
