@@ -23,6 +23,7 @@
 #include "master.h"
 #include "filter.h"
 #include <sys/select.h>
+#include <sys/wait.h>
 
 #ifdef USE_CAPABILITIES
 #include <sys/prctl.h>
@@ -134,6 +135,10 @@ void master_init(int cmdfd, int msgfd, pid_t child) {
     signal_add(&ev_sigint, NULL);
     signal_add(&ev_sigterm, NULL);
     signal_add(&ev_sighup, NULL);
+
+    // make sure the child is still running
+    if (waitpid(child, NULL, WNOHANG) != -1)
+	    exit(EXIT_FAILURE);
 
     // wait for events
     event_dispatch();
