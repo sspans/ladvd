@@ -137,7 +137,7 @@ void master_init(int cmdfd, int msgfd, pid_t child) {
     signal_add(&ev_sighup, NULL);
 
     // make sure the child is still running
-    if (waitpid(child, NULL, WNOHANG) != -1)
+    if (waitpid(child, NULL, WNOHANG) != 0)
 	    exit(EXIT_FAILURE);
 
     // wait for events
