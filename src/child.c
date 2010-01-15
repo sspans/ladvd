@@ -92,7 +92,7 @@ void child_init(int cmdfd, int msgfd, int ifc, char *ifl[],
     event_init();
 
     // create and run the transmit event
-    evtimer_set(&evs, (void *)child_send, &evs);
+    event_set(&evs, msgfd, 0, (void *)child_send, &evs);
     child_send(msgfd, EV_TIMEOUT, &evs);
 
     if (options & OPT_ONCE)
