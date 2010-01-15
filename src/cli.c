@@ -76,7 +76,7 @@ void cli_main(int argc, char *argv[]) {
     }
 
     // open socket connection
-    fd = my_socket(AF_UNIX, SOCK_DGRAM, 0);
+    fd = my_socket(AF_UNIX, SOCK_SEQPACKET, 0);
     memset(&sun, 0, sizeof(sun));
     sun.sun_family = AF_UNIX;
     strlcpy(sun.sun_path, PACKAGE_SOCKET, sizeof(sun.sun_path));
@@ -104,14 +104,14 @@ void cli_main(int argc, char *argv[]) {
 	    continue;
 
 	// skip unwanted protocols
-	if (proto & (1 << msg.proto))
+	if (!(proto & (1 << msg.proto)))
 	    continue;
 
 	// decode packet
-	if (msg.len != protos[msg.proto].peer(&msg))
-	    continue;
+	//if (msg.len != protos[msg.proto].peer(&msg)) {
+	//    continue;
 
-	printf("peer %s (%s) on interface %s",
+	printf("peer %s (%s) on interface %s\n",
 		msg.peer.name, protos[msg.proto].name, msg.name);
     }
 

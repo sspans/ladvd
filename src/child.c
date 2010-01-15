@@ -56,7 +56,7 @@ void child_init(int cmdfd, int msgfd, int ifc, char *ifl[],
     // configure unix socket
     if (!(options & (OPT_DEBUG|OPT_ONCE))) {
 
-	csock = my_socket(AF_UNIX, SOCK_DGRAM, 0);
+	csock = my_socket(AF_UNIX, SOCK_SEQPACKET, 0);
 	memset(&sun, 0, sizeof(sun));
 	sun.sun_family = AF_UNIX;
 	strlcpy(sun.sun_path, PACKAGE_SOCKET, sizeof(sun.sun_path));
@@ -66,6 +66,9 @@ void child_init(int cmdfd, int msgfd, int ifc, char *ifl[],
 		strerror(errno));
 	if (bind(csock, (struct sockaddr *)&sun, sizeof(sun)) == -1)
 	    my_fatal("failed to bind " PACKAGE_SOCKET ": %s",
+		strerror(errno));
+	if (listen(csock, 10) == -1)
+	    my_fatal("failed to listen on " PACKAGE_SOCKET ": %s",
 		strerror(errno));
 
 	if (fchmod(csock, S_IRUSR|S_IRGRP) == -1)
