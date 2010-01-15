@@ -23,10 +23,11 @@
 #include <sys/file.h>
 #include <sys/un.h>
 
-static void usage();
+static void usage() __attribute__ ((__noreturn__));
 extern struct proto protos[];
 
-int cli_init(int argc, char *argv[]) {
+__attribute__ ((__noreturn__))
+void cli_main(int argc, char *argv[]) {
     int ch, i;
     uint8_t proto = 0xFF;
     uint32_t *indexes = NULL;
@@ -114,10 +115,11 @@ int cli_init(int argc, char *argv[]) {
 		msg.peer.name, protos[msg.proto].name, msg.name);
     }
 
-    return (EXIT_SUCCESS);
+    exit(EXIT_SUCCESS);
 }
 
 
+__attribute__ ((__noreturn__))
 static void usage() {
     extern char *__progname;
 

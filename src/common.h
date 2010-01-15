@@ -199,7 +199,7 @@ struct proto {
     char * (*decode) (void *, size_t);
 };
 
-int cli_init(int argc, char *argv[]);
+void cli_main(int argc, char *argv[]) __attribute__ ((__noreturn__));
 void child_init(int cmdfd, int msgfd, int ifc, char *ifl[], struct passwd *pwd);
 void master_init(int cmdfd, int msgfd, pid_t pid);
 void master_signal(int fd, short event, void *pid);
