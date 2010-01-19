@@ -253,7 +253,6 @@ AC_CHECK_HEADERS([linux/wireless.h], [],[],
 #endif
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <net/if.h>
 ])
 AC_CHECK_HEADERS([net80211/ieee80211.h])
 AC_CHECK_HEADERS([net80211/ieee80211_ioctl.h], [],[],
