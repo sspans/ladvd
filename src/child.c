@@ -64,7 +64,7 @@ void child_init(int cmdfd, int msgfd, int ifc, char *ifl[],
 	if ((unlink(PACKAGE_SOCKET) == -1) && (errno != ENOENT))
 	    my_fatal("failed to remove " PACKAGE_SOCKET ": %s",
 		strerror(errno));
-	if (bind(csock, (struct sockaddr *)&sun, sizeof(sun)) == -1)
+	if (bind(csock, (struct sockaddr *)&sun, SUN_LEN(&sun)) == -1)
 	    my_fatal("failed to bind " PACKAGE_SOCKET ": %s",
 		strerror(errno));
 	if (listen(csock, 10) == -1)

@@ -155,6 +155,7 @@ void master_signal(int sig, short event, void *pid) {
 	    kill(*(pid_t *)pid, sig);
 	case SIGCHLD:
 	    rfd_closeall();
+	    unlink(PACKAGE_SOCKET);
 	    my_log(CRIT, "quitting");
 	    exit(EXIT_SUCCESS);
 	    break;
