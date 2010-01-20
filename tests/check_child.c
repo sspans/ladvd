@@ -325,6 +325,94 @@ START_TEST(test_child_expire) {
 }
 END_TEST
 
+START_TEST(test_child_cli) {
+    const char *errstr = NULL;
+    int sock, spair[2];
+    struct sockaddr_in sa;
+    socklen_t len = sizeof(sa);
+    pid_t pid;
+    struct master_msg msg;
+    struct netif netif;
+
+    loglevel = INFO;
+    sock = my_socket(AF_INET, SOCK_STREAM, 0);
+    my_socketpair(spair);
+
+    // initalize the event library
+    event_init();
+
+    // create netif, queue messages
+    memset(&netif, 0, sizeof(struct netif));
+    netif.index = 1;
+    strlcpy(netif.name, "lo0", IFNAMSIZ);
+    TAILQ_INSERT_TAIL(&netifs, &netif, entries);
+
+    memset(&msg, 0, sizeof(struct master_msg));
+    msg.cmd = MASTER_RECV;
+    msg.len = ETHER_MIN_LEN;
+    msg.index = 1;
+
+    // valid message contents
+    mark_point();
+    msg.proto = PROTO_LLDP;
+    read_packet(&msg, "proto/lldp/42.good.big");
+    WRAP_WRITE(spair[0], &msg, MASTER_MSG_SIZE);
+    child_queue(spair[1], 0);
+    msg.proto = PROTO_CDP;
+    read_packet(&msg, "proto/cdp/45.good.6504");
+    WRAP_WRITE(spair[0], &msg, MASTER_MSG_SIZE);
+    child_queue(spair[1], 0);
+
+    // configure socket
+    memset(&sa, 0, sizeof(struct sockaddr_in));
+    sa.sin_family = AF_INET;
+    sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    sa.sin_port = 0;
+
+    mark_point();
+    fail_unless(bind(sock,(struct sockaddr *)&sa, len) == 0,
+	"socket bind failed");
+    fail_unless(getsockname(sock, (struct sockaddr *)&sa, &len) == 0,
+	"socket getsockname failed");
+    fail_unless(listen(sock, 10) == 0,
+	"socket listen failed");
+
+    // start a dummy reader
+    mark_point();
+    pid = fork();
+    if (pid == 0) {
+	close(sock);
+	sock = my_socket(AF_INET, SOCK_STREAM, 0);
+
+	if (connect(sock, (struct sockaddr *)&sa, sizeof(sa)) == -1)
+	    exit(EXIT_FAILURE);
+	while (read(sock, &msg, MASTER_MSG_SIZE) > 0)
+	    continue;
+	exit (EXIT_SUCCESS);
+    }
+
+    // incorrect socket
+    mark_point();
+    errstr = "cli connection failed";
+    WRAP_FATAL_START();
+    child_cli_accept(-1, 0);
+    WRAP_FATAL_END();
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    // accept the connection
+    mark_point();
+    child_cli_accept(sock, 0);
+
+    // handle the write event
+    mark_point();
+    event_loop(EVLOOP_ONCE);
+
+    // reset
+    kill(pid, SIGTERM);
+}
+END_TEST
+
 Suite * child_suite (void) {
     Suite *s = suite_create("child.c");
 
@@ -338,6 +426,7 @@ Suite * child_suite (void) {
     tcase_add_test(tc_child, test_child_send);
     tcase_add_test(tc_child, test_child_queue);
     tcase_add_test(tc_child, test_child_expire);
+    tcase_add_test(tc_child, test_child_cli);
     suite_add_tcase(s, tc_child);
 
     return s;
