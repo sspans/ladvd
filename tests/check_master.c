@@ -245,8 +245,6 @@ END_TEST
 
 START_TEST(test_master_check) {
     struct master_msg mreq;
-    struct ether_hdr ether;
-    static uint8_t lldp_dst[] = LLDP_MULTICAST_ADDR;
 
     memset(&mreq, 0, sizeof(struct master_msg));
 
@@ -263,18 +261,9 @@ START_TEST(test_master_check) {
     fail_unless(master_check(&mreq) == EXIT_FAILURE,
 	"master_check should fail");
 
-    // lo0 mostly
-    mark_point();
-    mreq.index = 1;
-    memcpy(ether.dst, lldp_dst, ETHER_ADDR_LEN);
-    ether.type = htons(ETHERTYPE_LLDP);
-    memcpy(mreq.msg, &ether, sizeof(struct ether_hdr));
-
-    fail_unless(master_check(&mreq) == EXIT_SUCCESS,
-	"MASTER_CLOSE check failed");
-
 #ifdef HAVE_LINUX_ETHTOOL_H
     mark_point();
+    mreq.index = 1;
     mreq.cmd = MASTER_ETHTOOL;
     mreq.len = sizeof(struct ethtool_cmd);
     fail_unless(master_check(&mreq) == EXIT_SUCCESS,
