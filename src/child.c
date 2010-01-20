@@ -347,7 +347,7 @@ void child_expire() {
 
 void child_cli_accept(int socket, short event) {
     int	fd, sndbuf = MASTER_MSG_SIZE * 10;
-    struct sockaddr_un sa;
+    struct sockaddr sa;
     socklen_t addrlen = sizeof(sa);
     struct event *evc = NULL;
 
