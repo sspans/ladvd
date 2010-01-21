@@ -20,10 +20,15 @@
 #ifndef _child_h
 #define _child_h
 
+struct child_session {
+    struct event event;
+    struct master_msg *msg;
+};
+
 void child_send(int fd, short event, void *);
 void child_queue(int fd, short event);
 void child_expire();
 void child_cli_accept(int socket, short event);
-void child_cli_write(int fd, short event, struct event *);
+void child_cli_write(int fd, short event, struct child_session *);
 
 #endif /* _child_h */

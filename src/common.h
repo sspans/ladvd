@@ -173,6 +173,8 @@ struct master_msg {
 	char port[IFDESCRSIZE];
     } peer;
 
+    uint8_t used;
+
     // should be last
     TAILQ_ENTRY(master_msg) entries;
 };

@@ -92,7 +92,7 @@ START_TEST(test_child_init) {
     WRAP_FATAL_END();
 
     errstr = PACKAGE_STRING " running";
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+    fail_unless(strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     // reset
@@ -181,7 +181,7 @@ START_TEST(test_child_queue) {
     errstr = "receiving message from master";
     WRAP_WRITE(spair[0], &msg, MASTER_MSG_SIZE);
     child_queue(spair[1], event);
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+    fail_unless(strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     
     // locally generated packet
@@ -193,7 +193,7 @@ START_TEST(test_child_queue) {
     msg.index = 1;
     WRAP_WRITE(spair[0], &msg, MASTER_MSG_SIZE);
     child_queue(spair[1], event);
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+    fail_unless(strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     // invalid message contents
@@ -205,7 +205,7 @@ START_TEST(test_child_queue) {
     memcpy(msg.msg, &ether, sizeof(ether));
     WRAP_WRITE(spair[0], &msg, MASTER_MSG_SIZE);
     child_queue(spair[1], event);
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+    fail_unless(strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     // valid message contents
@@ -245,7 +245,7 @@ START_TEST(test_child_queue) {
 END_TEST
 
 START_TEST(test_child_expire) {
-    struct master_msg msg, *dmsg, *nmsg;
+    struct master_msg msg, *dmsg;
     struct netif netif;
     int spair[2], count;
     short event = 0;
@@ -264,7 +264,7 @@ START_TEST(test_child_expire) {
     msg.len = ETHER_MIN_LEN;
     msg.proto = PROTO_LLDP;
 
-    fail_unless (TAILQ_EMPTY(&mqueue), "the queue should be empty");
+    fail_unless(TAILQ_EMPTY(&mqueue), "the queue should be empty");
 
     // add an lldp message
     mark_point();
@@ -278,7 +278,7 @@ START_TEST(test_child_expire) {
     TAILQ_FOREACH(dmsg, &mqueue, entries) {
 	count++;
     }
-    fail_unless (count == 1, "invalid message count: %d != 1", count);
+    fail_unless(count == 1, "invalid message count: %d != 1", count);
 
     // add an cdp message
     mark_point();
@@ -293,12 +293,13 @@ START_TEST(test_child_expire) {
     TAILQ_FOREACH(dmsg, &mqueue, entries) {
 	count++;
     }
-    fail_unless (count == 2, "invalid message count: %d != 2", count);
+    fail_unless(count == 2, "invalid message count: %d != 2", count);
 
-    // expire a message
+    // expire a used message
     options |= OPT_AUTO;
     dmsg = TAILQ_FIRST(&mqueue);
     dmsg->ttl = 0;
+    dmsg->used = 1;
     child_expire();
 
     // check the message count
@@ -306,7 +307,19 @@ START_TEST(test_child_expire) {
     TAILQ_FOREACH(dmsg, &mqueue, entries) {
 	count++;
     }
-    fail_unless (count == 1, "invalid message count: %d != 1", count);
+    fail_unless(count == 2, "invalid message count: %d != 2", count);
+
+    // expire a message
+    dmsg = TAILQ_FIRST(&mqueue);
+    dmsg->used = 0;
+    child_expire();
+
+    // check the message count
+    count = 0;
+    TAILQ_FOREACH(dmsg, &mqueue, entries) {
+	count++;
+    }
+    fail_unless(count == 1, "invalid message count: %d != 1", count);
 
     // expire a message
     dmsg = TAILQ_FIRST(&mqueue);
@@ -314,14 +327,11 @@ START_TEST(test_child_expire) {
     child_expire();
 
     // check the message count
-    fail_unless (TAILQ_EMPTY(&mqueue), "the queue should be empty");
+    fail_unless(TAILQ_EMPTY(&mqueue), "the queue should be empty");
 
     // reset
     options = OPT_DAEMON | OPT_CHECK;
     TAILQ_REMOVE(&netifs, &netif, entries);
-    TAILQ_FOREACH_SAFE(dmsg, &mqueue, entries, nmsg) {
-	TAILQ_REMOVE(&mqueue, dmsg, entries);
-    }
 }
 END_TEST
 
@@ -397,7 +407,7 @@ START_TEST(test_child_cli) {
     WRAP_FATAL_START();
     child_cli_accept(-1, 0);
     WRAP_FATAL_END();
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+    fail_unless(strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     // accept the connection

@@ -308,7 +308,7 @@ void child_expire() {
 
     // remove expired messages
     TAILQ_FOREACH_SAFE(msg, &mqueue, entries, nmsg) {
-	if (msg->ttl >= now)
+	if ((msg->ttl >= now) || msg->used)
 	    continue;
 
 	my_log(CRIT, "removing peer %s (%s)",
@@ -349,7 +349,7 @@ void child_cli_accept(int socket, short event) {
     int	fd, sndbuf = MASTER_MSG_SIZE * 10;
     struct sockaddr sa;
     socklen_t addrlen = sizeof(sa);
-    struct event *evc = NULL;
+    struct child_session *session = NULL;
 
     if ((fd = accept(socket, &sa, &addrlen)) == -1) {
 	my_log(WARN, "cli connection failed");
@@ -360,33 +360,42 @@ void child_cli_accept(int socket, short event) {
     if (setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &sndbuf, sizeof(sndbuf)) == -1)
 	my_log(WARN, "failed to set sndbuf: %s", strerror(errno));
 
-    evc = my_malloc(sizeof(struct event));
-    event_set(evc, fd, EV_WRITE, (void *)child_cli_write, evc);
-    event_add(evc, NULL);
+    session = my_malloc(sizeof(struct child_session));
+    event_set(&session->event, fd, EV_WRITE, (void *)child_cli_write, session);
+    event_add(&session->event, NULL);
 }
 
-void child_cli_write(int fd, short event, struct event *evc) {
-    struct master_msg *msg = NULL;
+void child_cli_write(int fd, short event, struct child_session *sess) {
+    struct master_msg *msg = sess->msg;
 
-    TAILQ_FOREACH(msg, &mqueue, entries) {
-	if (write(fd, msg, MASTER_MSG_SIZE) == -1) {
-	    if (errno != EAGAIN)
-		msg = NULL;
-	    break;
-	}
+    // grab the first message
+    if (!msg)
+	msg = TAILQ_FIRST(&mqueue);
+    // or release
+    else
+	msg->used--;
+
+    for (; msg != NULL; msg = TAILQ_NEXT(msg, entries)) {
+	if (write(fd, msg, MASTER_MSG_SIZE) != -1)
+	    continue;
+
+	// bail unless non-block
+	if (errno != EAGAIN)
+	    msg = NULL;
+	break;
     }
 
     // schedule a new event
-    /* if (msg != NULL) {
-	event_set(evc, fd, EV_WRITE, (void *)child_cli, evc);
-	event_add(evc, NULL);
-	event_add
-	return;
-    } */
-
-    // close / cleanup
-    event_del(evc);
-    free(evc);
-    close(fd);
+    if (msg) {
+	msg->used++;
+	sess->msg = msg;
+	event_set(&sess->event, fd, EV_WRITE, (void *)child_cli_write, sess);
+	event_add(&sess->event, NULL);
+    // cleanup
+    } else {
+	event_del(&sess->event);
+	free(sess);
+	close(fd);
+    }
 }
 
