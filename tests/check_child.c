@@ -337,11 +337,13 @@ END_TEST
 
 START_TEST(test_child_cli) {
     const char *errstr = NULL;
-    int sock, spair[2];
+    int sock, spair[2], i;
     struct sockaddr_in sa;
     socklen_t len = sizeof(sa);
     pid_t pid;
     struct master_msg msg;
+    struct ether_hdr ether;
+    static uint8_t lldp_dst[] = LLDP_MULTICAST_ADDR;
     struct netif netif;
 
     loglevel = INFO;
@@ -392,12 +394,16 @@ START_TEST(test_child_cli) {
     pid = fork();
     if (pid == 0) {
 	close(sock);
-	sock = my_socket(AF_INET, SOCK_STREAM, 0);
-
-	if (connect(sock, (struct sockaddr *)&sa, sizeof(sa)) == -1)
-	    exit(EXIT_FAILURE);
-	while (read(sock, &msg, MASTER_MSG_SIZE) > 0)
-	    continue;
+	while(1) {
+	    sock = my_socket(AF_INET, SOCK_STREAM, 0);
+	    if (connect(sock, (struct sockaddr *)&sa, sizeof(sa)) == -1)
+		exit(EXIT_FAILURE);
+	    while (read(sock, &msg, MASTER_MSG_SIZE) > 0) {
+		usleep(10);
+		continue;
+	    }
+	    close(sock);
+	}
 	exit (EXIT_SUCCESS);
     }
 
@@ -417,6 +423,28 @@ START_TEST(test_child_cli) {
     // handle the write event
     mark_point();
     event_loop(EVLOOP_ONCE);
+
+    // test EAGAIN too
+    mark_point();
+    msg.proto = PROTO_LLDP;
+    read_packet(&msg, "proto/lldp/42.good.big");
+    memcpy(&ether.dst, lldp_dst, ETHER_ADDR_LEN);
+    ether.type = htons(ETHERTYPE_LLDP);
+
+    for (i = 0; i < 255; i++) {
+	memset(&ether.src, i, ETHER_ADDR_LEN);
+	memcpy(msg.msg, &ether, sizeof(ether));
+	WRAP_WRITE(spair[0], &msg, MASTER_MSG_SIZE);
+	child_queue(spair[1], 0);
+    }
+
+    // accept the connection
+    mark_point();
+    child_cli_accept(sock, 0);
+
+    // handle the write events
+    mark_point();
+    event_loop(0);
 
     // reset
     kill(pid, SIGTERM);
