@@ -399,7 +399,6 @@ START_TEST(test_child_cli) {
 	    if (connect(sock, (struct sockaddr *)&sa, sizeof(sa)) == -1)
 		exit(EXIT_FAILURE);
 	    while (read(sock, &msg, MASTER_MSG_SIZE) > 0) {
-		usleep(10);
 		continue;
 	    }
 	    close(sock);
