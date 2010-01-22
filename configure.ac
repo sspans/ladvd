@@ -27,11 +27,6 @@ case "$target_os" in
 	use_pie=no
 	;;
     openbsd*)
-	case "$target" in
-	    arm-*-openbsd*)
-		use_pie=no
-		;;
-	esac
 	;;
     *)
 	AC_MSG_ERROR([Unsupported operating system])
