@@ -263,8 +263,8 @@ START_TEST(test_master_check) {
 
 #ifdef HAVE_LINUX_ETHTOOL_H
     mark_point();
-    mreq.index = 1;
     mreq.cmd = MASTER_ETHTOOL;
+    mreq.index = 1;
     mreq.len = sizeof(struct ethtool_cmd);
     fail_unless(master_check(&mreq) == EXIT_SUCCESS,
 	"MASTER_ETHTOOL check failed");
@@ -273,6 +273,7 @@ START_TEST(test_master_check) {
 #ifdef SIOCSIFDESCR
     mark_point();
     mreq.cmd = MASTER_DESCR;
+    mreq.index = 1;
     mreq.len = 0;
     fail_unless(master_check(&mreq) == EXIT_SUCCESS,
 	"MASTER_DESCR check failed");
