@@ -380,6 +380,7 @@ size_t lldp_peer(struct master_msg *msg) {
 
     uint16_t tlv_type;
     uint16_t tlv_length;
+    uint8_t tlv_subtype;
 
     char *tlv_str = NULL;
 
@@ -413,17 +414,32 @@ size_t lldp_peer(struct master_msg *msg) {
 	my_log(INFO, "Corrupt LLDP packet: invalid Port ID TLV");
 	return 0;
     }
-    // skip the subtype
-    if (!SKIP(1)) {
+    // grab the subtype
+    if (!GRAB_UINT8(tlv_subtype)) {
 	my_log(INFO, "Corrupt LLDP packet: invalid Port ID TLV");
 	return 0;
     }
-    if (!GRAB_STRING(tlv_str, tlv_length - 1)) {
-	my_log(INFO, "Corrupt LLDP packet: invalid Port ID TLV");
-	return 0;
+    tlv_length--;
+
+    switch (tlv_subtype) {
+	case LLDP_PORT_INTF_ALIAS_SUBTYPE:
+	case LLDP_PORT_PORT_COMP_SUBTYPE:
+	case LLDP_PORT_INTF_NAME_SUBTYPE:
+	case LLDP_PORT_AGENT_CIRC_ID_SUBTYPE:
+	case LLDP_PORT_LOCAL_SUBTYPE:
+	    if (!GRAB_STRING(tlv_str, tlv_length)) {
+		my_log(INFO, "Corrupt LLDP packet: invalid Port ID TLV");
+		return 0;
+	    }
+	    strlcpy(msg->peer.port, tlv_str, IFDESCRSIZE);
+	    free(tlv_str);
+	    break;
+	default:
+	    if (!SKIP(tlv_length)) {
+		my_log(INFO, "Corrupt LLDP packet: invalid Port ID TLV");
+		return 0;
+	    }
     }
-    strlcpy(msg->peer.port, tlv_str, IFDESCRSIZE);
-    free(tlv_str);
 
     if (!GRAB_LLDP_TLV(tlv_type, tlv_length) ||
 	tlv_type != LLDP_TYPE_TTL) {
