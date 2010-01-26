@@ -162,7 +162,6 @@ struct master_msg {
     uint32_t index;
     char name[IFNAMSIZ];
     uint8_t cmd;
-    uint8_t completed;
     char msg[ETHER_MAX_LEN];
     ssize_t len;
     uint8_t proto;

@@ -214,7 +214,6 @@ void master_cmd(int cmdfd, short event) {
 	    my_fatal("invalid request received");
     }
 
-    mreq.completed = 1;
     if (write(cmdfd, &mreq, MASTER_MSG_SIZE) != MASTER_MSG_SIZE)
 	    my_fatal("failed to return message to child");
 }

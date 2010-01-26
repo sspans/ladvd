@@ -133,12 +133,7 @@ ssize_t my_msend(struct master_msg *mreq) {
     if (count != MASTER_MSG_SIZE)
 	my_fatal("invalid reply received from master");
 
-    if (mreq->completed != 1) {
-	my_log(WARN, "request failed");
-	return(0);
-    } else {
-	return(mreq->len);
-    }
+    return(mreq->len);
 };
 
 struct netif *netif_iter(struct netif *netif, struct nhead *netifs) {
