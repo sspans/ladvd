@@ -293,11 +293,11 @@ START_TEST(test_child_expire) {
     }
     fail_unless(count == 2, "invalid message count: %d != 2", count);
 
-    // expire a used message
+    // expire a locked message
     options |= OPT_AUTO;
     dmsg = TAILQ_FIRST(&mqueue);
     dmsg->ttl = 0;
-    dmsg->used = 1;
+    dmsg->lock = 1;
     child_expire();
 
     // check the message count
@@ -309,7 +309,7 @@ START_TEST(test_child_expire) {
 
     // expire a message
     dmsg = TAILQ_FIRST(&mqueue);
-    dmsg->used = 0;
+    dmsg->lock = 0;
     child_expire();
 
     // check the message count

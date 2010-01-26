@@ -308,7 +308,7 @@ void child_expire() {
 
     // remove expired messages
     TAILQ_FOREACH_SAFE(msg, &mqueue, entries, nmsg) {
-	if ((msg->ttl >= now) || msg->used)
+	if ((msg->ttl >= now) || msg->lock)
 	    continue;
 
 	my_log(CRIT, "removing peer %s (%s)",
@@ -373,7 +373,7 @@ void child_cli_write(int fd, short event, struct child_session *sess) {
 	msg = TAILQ_FIRST(&mqueue);
     // or release
     else
-	msg->used--;
+	msg->lock--;
 
     for (; msg != NULL; msg = TAILQ_NEXT(msg, entries)) {
 	if (write(fd, msg, MASTER_MSG_SIZE) != -1)
@@ -387,7 +387,7 @@ void child_cli_write(int fd, short event, struct child_session *sess) {
 
     // schedule a new event
     if (msg) {
-	msg->used++;
+	msg->lock++;
 	sess->msg = msg;
 	event_set(&sess->event, fd, EV_WRITE, (void *)child_cli_write, sess);
 	event_add(&sess->event, NULL);
