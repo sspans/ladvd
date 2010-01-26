@@ -139,18 +139,8 @@ START_TEST(test_my_msend) {
 
     mark_point();
     msock = spair[1];
-    errstr = "request failed";
-    WRAP_WRITE(spair[0], &mreq, MASTER_MSG_SIZE);
-    WRAP_FATAL_START();
-    my_msend(&mreq);
-    WRAP_FATAL_END();
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
-	"incorrect message logged: %s", check_wrap_errstr);
-
-    mark_point();
     errstr = "check";
     my_log(CRIT, errstr);
-    mreq.completed = 1;
     mreq.len = ETHER_MIN_LEN; 
     WRAP_WRITE(spair[0], &mreq, MASTER_MSG_SIZE);
     ret = my_msend(&mreq);
@@ -396,7 +386,6 @@ START_TEST(test_netif) {
 
     netif = netif_byname(netifs, "bond0");
     descr = "";
-    msg->completed = 1;
     WRAP_WRITE(spair[0], msg, MASTER_MSG_SIZE);
     netif_descr(netif, &mqueue);
     WRAP_READ(spair[0], msg, MASTER_MSG_SIZE);
@@ -411,7 +400,6 @@ START_TEST(test_netif) {
 
     netif = netif_byname(netifs, "eth0");
     descr = "connected to foo (42)";
-    msg->completed = 1;
     WRAP_WRITE(spair[0], msg, MASTER_MSG_SIZE);
     netif_descr(netif, &mqueue);
     WRAP_READ(spair[0], msg, MASTER_MSG_SIZE);
@@ -426,7 +414,6 @@ START_TEST(test_netif) {
 
     netif = netif_byname(netifs, "eth2");
     descr = "connected to bar";
-    msg->completed = 1;
     WRAP_WRITE(spair[0], msg, MASTER_MSG_SIZE);
     netif_descr(netif, &mqueue);
     WRAP_READ(spair[0], msg, MASTER_MSG_SIZE);
@@ -441,7 +428,6 @@ START_TEST(test_netif) {
 
     netif = netif_byname(netifs, "eth1");
     descr = "connected to 2 peers";
-    msg->completed = 1;
     WRAP_WRITE(spair[0], msg, MASTER_MSG_SIZE);
     netif_descr(netif, &mqueue);
     WRAP_READ(spair[0], msg, MASTER_MSG_SIZE);
@@ -456,7 +442,6 @@ START_TEST(test_netif) {
 
     netif = netif_byname(netifs, "lagg0");
     descr = "";
-    msg->completed = 1;
     WRAP_WRITE(spair[0], msg, MASTER_MSG_SIZE);
     netif_descr(netif, &mqueue);
     WRAP_READ(spair[0], msg, MASTER_MSG_SIZE);

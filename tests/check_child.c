@@ -74,7 +74,6 @@ START_TEST(test_child_init) {
 	close(spair[0]);
 	mreq = my_malloc(MASTER_MSG_SIZE);
 	while (read(spair[1], mreq, MASTER_MSG_SIZE) > 0) {
-	    mreq->completed = 1;
 	    if (mreq->cmd == MASTER_DEVICE)
 		mreq->len = 1;
 	    if (write(spair[1], mreq, MASTER_MSG_SIZE) != MASTER_MSG_SIZE)
@@ -127,7 +126,6 @@ START_TEST(test_child_send) {
 	close(spair[0]);
 	mreq = my_malloc(MASTER_MSG_SIZE);
 	while (read(spair[1], mreq, MASTER_MSG_SIZE) > 0) {
-	    mreq->completed = 1;
 	    if (mreq->cmd == MASTER_DEVICE)
 		mreq->len = 1;
 	    if (write(spair[1], mreq, MASTER_MSG_SIZE) != MASTER_MSG_SIZE)
