@@ -28,3 +28,7 @@ rm -rf ladvd-*
 
 # return to the root
 cd ${BASE}
+
+echo for ubuntu uploads run:
+echo "cd ${RELEASE}/debian && dput my-ppa ladvd_*_source.changes"
+
