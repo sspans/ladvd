@@ -1,5 +1,5 @@
 Source: ladvd
-Section: universe/net
+Section: net
 Priority: extra
 Maintainer: Sten Spans <sten@blinkenlights.nl>
 Build-Depends: debhelper (>= 4), autotools-dev, libcap-dev, libevent-dev, lsb-base
