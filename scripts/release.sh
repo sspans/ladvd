@@ -17,6 +17,9 @@ mkdir -p ${RELEASE}/debian
 make distcheck
 mv *tar.gz ${RELEASE}
 
+# create signature
+gpg -ba ${RELEASE}/*tar.gz
+
 # create debian sources
 cd ${RELEASE}/debian
 tar xf ../*tar.gz
