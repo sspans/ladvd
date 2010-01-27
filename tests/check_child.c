@@ -72,11 +72,11 @@ START_TEST(test_child_init) {
     pid = fork();
     if (pid == 0) {
 	close(spair[0]);
-	mreq = my_malloc(MASTER_MSG_SIZE);
-	while (read(spair[1], mreq, MASTER_MSG_SIZE) > 0) {
+	mreq = my_malloc(MASTER_MSG_MAX);
+	while (read(spair[1], mreq, MASTER_MSG_MAX) > 0) {
 	    if (mreq->cmd == MASTER_DEVICE)
 		mreq->len = 1;
-	    if (write(spair[1], mreq, MASTER_MSG_SIZE) != MASTER_MSG_SIZE)
+	    if (write(spair[1], mreq, MASTER_MSG_LEN(mreq->len)) == -1)
 		exit(1);
 	}
 	exit (0);
@@ -124,11 +124,11 @@ START_TEST(test_child_send) {
     pid = fork();
     if (pid == 0) {
 	close(spair[0]);
-	mreq = my_malloc(MASTER_MSG_SIZE);
-	while (read(spair[1], mreq, MASTER_MSG_SIZE) > 0) {
+	mreq = my_malloc(MASTER_MSG_MAX);
+	while (read(spair[1], mreq, MASTER_MSG_MAX) > 0) {
 	    if (mreq->cmd == MASTER_DEVICE)
 		mreq->len = 1;
-	    if (write(spair[1], mreq, MASTER_MSG_SIZE) != MASTER_MSG_SIZE)
+	    if (write(spair[1], mreq, MASTER_MSG_LEN(mreq->len)) == -1)
 		exit(1);
 	}
 	exit (0);
@@ -177,7 +177,7 @@ START_TEST(test_child_queue) {
     // unknown interface
     mark_point();
     errstr = "receiving message from master";
-    WRAP_WRITE(spair[0], &msg, MASTER_MSG_SIZE);
+    WRAP_WRITE(spair[0], &msg, MASTER_MSG_LEN(msg.len));
     child_queue(spair[1], event);
     fail_unless(strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -189,7 +189,7 @@ START_TEST(test_child_queue) {
     strlcpy(netif.name, "lo0", IFNAMSIZ);
     TAILQ_INSERT_TAIL(&netifs, &netif, entries);
     msg.index = 1;
-    WRAP_WRITE(spair[0], &msg, MASTER_MSG_SIZE);
+    WRAP_WRITE(spair[0], &msg, MASTER_MSG_LEN(msg.len));
     child_queue(spair[1], event);
     fail_unless(strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -201,7 +201,7 @@ START_TEST(test_child_queue) {
     memcpy(&ether.dst, lldp_dst, ETHER_ADDR_LEN);
     ether.type = htons(ETHERTYPE_LLDP);
     memcpy(msg.msg, &ether, sizeof(ether));
-    WRAP_WRITE(spair[0], &msg, MASTER_MSG_SIZE);
+    WRAP_WRITE(spair[0], &msg, MASTER_MSG_LEN(msg.len));
     child_queue(spair[1], event);
     fail_unless(strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -209,20 +209,20 @@ START_TEST(test_child_queue) {
     // valid message contents
     mark_point();
     read_packet(&msg, "proto/lldp/42.good.big");
-    WRAP_WRITE(spair[0], &msg, MASTER_MSG_SIZE);
+    WRAP_WRITE(spair[0], &msg, MASTER_MSG_LEN(msg.len));
     child_queue(spair[1], event);
 
     // and the same peer again
     mark_point();
     read_packet(&msg, "proto/lldp/42.good.big");
-    WRAP_WRITE(spair[0], &msg, MASTER_MSG_SIZE);
+    WRAP_WRITE(spair[0], &msg, MASTER_MSG_LEN(msg.len));
     child_queue(spair[1], event);
 
     // test with OPT_AUTO
     mark_point();
     options |= OPT_AUTO;
     read_packet(&msg, "proto/lldp/43.good.lldpmed");
-    WRAP_WRITE(spair[0], &msg, MASTER_MSG_SIZE);
+    WRAP_WRITE(spair[0], &msg, MASTER_MSG_LEN(msg.len));
     child_queue(spair[1], event);
 
     // test with OPT_ARGV
@@ -230,7 +230,7 @@ START_TEST(test_child_queue) {
     options |= OPT_ARGV;
     msg.proto = PROTO_CDP;
     read_packet(&msg, "proto/cdp/45.good.6504");
-    WRAP_WRITE(spair[0], &msg, MASTER_MSG_SIZE);
+    WRAP_WRITE(spair[0], &msg, MASTER_MSG_LEN(msg.len));
     child_queue(spair[1], event);
 
     // reset
@@ -267,7 +267,7 @@ START_TEST(test_child_expire) {
     // add an lldp message
     mark_point();
     read_packet(&msg, "proto/lldp/42.good.big");
-    WRAP_WRITE(spair[0], &msg, MASTER_MSG_SIZE);
+    WRAP_WRITE(spair[0], &msg, MASTER_MSG_LEN(msg.len));
     child_queue(spair[1], event);
     child_expire();
 
@@ -282,7 +282,7 @@ START_TEST(test_child_expire) {
     mark_point();
     msg.proto = PROTO_CDP;
     read_packet(&msg, "proto/cdp/45.good.6504");
-    WRAP_WRITE(spair[0], &msg, MASTER_MSG_SIZE);
+    WRAP_WRITE(spair[0], &msg, MASTER_MSG_LEN(msg.len));
     child_queue(spair[1], event);
     child_expire();
 
@@ -366,11 +366,11 @@ START_TEST(test_child_cli) {
     mark_point();
     msg.proto = PROTO_LLDP;
     read_packet(&msg, "proto/lldp/42.good.big");
-    WRAP_WRITE(spair[0], &msg, MASTER_MSG_SIZE);
+    WRAP_WRITE(spair[0], &msg, MASTER_MSG_LEN(msg.len));
     child_queue(spair[1], 0);
     msg.proto = PROTO_CDP;
     read_packet(&msg, "proto/cdp/45.good.6504");
-    WRAP_WRITE(spair[0], &msg, MASTER_MSG_SIZE);
+    WRAP_WRITE(spair[0], &msg, MASTER_MSG_LEN(msg.len));
     child_queue(spair[1], 0);
 
     // configure socket
@@ -396,7 +396,7 @@ START_TEST(test_child_cli) {
 	    sock = my_socket(AF_INET, SOCK_STREAM, 0);
 	    if (connect(sock, (struct sockaddr *)&sa, sizeof(sa)) == -1)
 		exit(EXIT_FAILURE);
-	    while (read(sock, &msg, MASTER_MSG_SIZE) > 0) {
+	    while (read(sock, &msg, MASTER_MSG_MAX) > 0) {
 		continue;
 	    }
 	    close(sock);
@@ -431,7 +431,7 @@ START_TEST(test_child_cli) {
     for (i = 0; i < 255; i++) {
 	memset(&ether.src, i, ETHER_ADDR_LEN);
 	memcpy(msg.msg, &ether, sizeof(ether));
-	WRAP_WRITE(spair[0], &msg, MASTER_MSG_SIZE);
+	WRAP_WRITE(spair[0], &msg, MASTER_MSG_LEN(msg.len));
 	child_queue(spair[1], 0);
     }
 

@@ -142,7 +142,7 @@ START_TEST(test_my_msend) {
     errstr = "check";
     my_log(CRIT, errstr);
     mreq.len = ETHER_MIN_LEN; 
-    WRAP_WRITE(spair[0], &mreq, MASTER_MSG_SIZE);
+    WRAP_WRITE(spair[0], &mreq, MASTER_MSG_LEN(mreq.len));
     ret = my_msend(&mreq);
     fail_unless (ret == ETHER_MIN_LEN,
 	"incorrect size %lu returned from my_msend", ret);
@@ -170,6 +170,7 @@ START_TEST(test_netif) {
     struct master_msg *msg = NULL;
     char *descr = NULL;
     int spair[2];
+    ssize_t len;
     extern int msock;
 
     TAILQ_INIT(netifs);
@@ -312,7 +313,7 @@ START_TEST(test_netif) {
     fail_unless (netif_byname(netifs, "eth3") == NULL,
 	"NULL should be returned on not found netif");
 
-    msg = my_malloc(MASTER_MSG_SIZE);
+    msg = my_malloc(MASTER_MSG_MAX);
     netif = netif_byname(netifs, "eth0");
     msg->index = netif->index;
     msg->proto = PROTO_LLDP;
@@ -321,7 +322,7 @@ START_TEST(test_netif) {
     strlcpy(msg->peer.port, "42", IFDESCRSIZE);
     TAILQ_INSERT_TAIL(&mqueue, msg, entries);
 
-    msg = my_malloc(MASTER_MSG_SIZE);
+    msg = my_malloc(MASTER_MSG_MAX);
     netif = netif_byname(netifs, "eth2");
     msg->index = netif->index;
     msg->proto = PROTO_CDP;
@@ -329,7 +330,7 @@ START_TEST(test_netif) {
     strlcpy(msg->peer.name, "bar", IFDESCRSIZE);
     TAILQ_INSERT_TAIL(&mqueue, msg, entries);
 
-    msg = my_malloc(MASTER_MSG_SIZE);
+    msg = my_malloc(MASTER_MSG_MAX);
     netif = netif_byname(netifs, "eth1");
     msg->index = netif->index;
     msg->proto = PROTO_LLDP;
@@ -338,7 +339,7 @@ START_TEST(test_netif) {
     strlcpy(msg->peer.port, "Ethernet4", IFDESCRSIZE);
     TAILQ_INSERT_TAIL(&mqueue, msg, entries);
 
-    msg = my_malloc(MASTER_MSG_SIZE);
+    msg = my_malloc(MASTER_MSG_MAX);
     netif = netif_byname(netifs, "eth1");
     msg->index = netif->index;
     msg->proto = PROTO_LLDP;
@@ -347,7 +348,7 @@ START_TEST(test_netif) {
     strlcpy(msg->peer.port, "Ethernet5", IFDESCRSIZE);
     TAILQ_INSERT_TAIL(&mqueue, msg, entries);
 
-    msg = my_malloc(MASTER_MSG_SIZE);
+    msg = my_malloc(MASTER_MSG_MAX);
     netif = netif_byname(netifs, "eth1");
     msg->index = netif->index;
     msg->proto = PROTO_FDP;
@@ -356,7 +357,7 @@ START_TEST(test_netif) {
     strlcpy(msg->peer.port, "Ethernet5", IFDESCRSIZE);
     TAILQ_INSERT_TAIL(&mqueue, msg, entries);
 
-    msg = my_malloc(MASTER_MSG_SIZE);
+    msg = my_malloc(MASTER_MSG_MAX);
     netif = netif_byname(netifs, "lagg0");
     msg->index = netif->index;
     msg->proto = PROTO_LLDP;
@@ -382,13 +383,14 @@ START_TEST(test_netif) {
     // netif_descr checks
     mark_point();
     msock = spair[1];
-    msg = my_malloc(MASTER_MSG_SIZE);
+    msg = my_malloc(MASTER_MSG_MAX);
+    msg->len = IFDESCRSIZE;
 
     netif = netif_byname(netifs, "bond0");
     descr = "";
-    WRAP_WRITE(spair[0], msg, MASTER_MSG_SIZE);
+    WRAP_WRITE(spair[0], msg, MASTER_MSG_LEN(msg->len));
     netif_descr(netif, &mqueue);
-    WRAP_READ(spair[0], msg, MASTER_MSG_SIZE);
+    WRAP_READ(spair[0], msg, len);
     fail_unless (msg->cmd == MASTER_DESCR,
 	"incorrect command: %d", msg->cmd);
     fail_unless (msg->index == netif->index,
@@ -400,9 +402,9 @@ START_TEST(test_netif) {
 
     netif = netif_byname(netifs, "eth0");
     descr = "connected to foo (42)";
-    WRAP_WRITE(spair[0], msg, MASTER_MSG_SIZE);
+    WRAP_WRITE(spair[0], msg, MASTER_MSG_LEN(msg->len));
     netif_descr(netif, &mqueue);
-    WRAP_READ(spair[0], msg, MASTER_MSG_SIZE);
+    WRAP_READ(spair[0], msg, len);
     fail_unless (msg->cmd == MASTER_DESCR,
 	"incorrect command: %d", msg->cmd);
     fail_unless (msg->index == netif->index,
@@ -414,9 +416,9 @@ START_TEST(test_netif) {
 
     netif = netif_byname(netifs, "eth2");
     descr = "connected to bar";
-    WRAP_WRITE(spair[0], msg, MASTER_MSG_SIZE);
+    WRAP_WRITE(spair[0], msg, MASTER_MSG_LEN(msg->len));
     netif_descr(netif, &mqueue);
-    WRAP_READ(spair[0], msg, MASTER_MSG_SIZE);
+    WRAP_READ(spair[0], msg, len);
     fail_unless (msg->cmd == MASTER_DESCR,
 	"incorrect command: %d", msg->cmd);
     fail_unless (msg->index == netif->index,
@@ -428,9 +430,9 @@ START_TEST(test_netif) {
 
     netif = netif_byname(netifs, "eth1");
     descr = "connected to 2 peers";
-    WRAP_WRITE(spair[0], msg, MASTER_MSG_SIZE);
+    WRAP_WRITE(spair[0], msg, MASTER_MSG_LEN(msg->len));
     netif_descr(netif, &mqueue);
-    WRAP_READ(spair[0], msg, MASTER_MSG_SIZE);
+    WRAP_READ(spair[0], msg, len);
     fail_unless (msg->cmd == MASTER_DESCR,
 	"incorrect command: %d", msg->cmd);
     fail_unless (msg->index == netif->index,
@@ -442,9 +444,9 @@ START_TEST(test_netif) {
 
     netif = netif_byname(netifs, "lagg0");
     descr = "";
-    WRAP_WRITE(spair[0], msg, MASTER_MSG_SIZE);
+    WRAP_WRITE(spair[0], msg, MASTER_MSG_LEN(msg->len));
     netif_descr(netif, &mqueue);
-    WRAP_READ(spair[0], msg, MASTER_MSG_SIZE);
+    WRAP_READ(spair[0], msg, len);
     fail_unless (msg->cmd == MASTER_DESCR,
 	"incorrect command: %d", msg->cmd);
     fail_unless (msg->index == netif->index,

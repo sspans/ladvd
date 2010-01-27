@@ -174,8 +174,8 @@ void child_send(int fd, short event, void *evs) {
 		// write it to the wire.
 		my_log(INFO, "sending %s packet (%d bytes) on %s",
 			    protos[p].name, mreq.len, subif->name);
-		len = write(fd, &mreq, MASTER_MSG_SIZE);
-		if (len != MASTER_MSG_SIZE)
+		len = write(fd, &mreq, MASTER_MSG_LEN(mreq.len));
+		if (len < MASTER_MSG_MIN || len != MASTER_MSG_LEN(mreq.len))
 		    my_fatal("only %d bytes written: %s", len, strerror(errno));
 	    }
 	}
@@ -202,10 +202,11 @@ void child_queue(int fd, short event) {
     ssize_t len;
 
     my_log(INFO, "receiving message from master");
-    if ((len = read(fd, &rmsg, MASTER_MSG_SIZE)) == -1)
+    if ((len = read(fd, &rmsg, MASTER_MSG_MAX)) == -1)
+	return;
+    if (len < MASTER_MSG_MIN || len != MASTER_MSG_LEN(rmsg.len))
 	return;
 
-    assert(len == MASTER_MSG_SIZE);
     assert(rmsg.cmd == MASTER_RECV);
     assert(rmsg.proto < PROTO_MAX);
     assert(rmsg.len >= ETHER_MIN_LEN);
@@ -267,8 +268,8 @@ void child_queue(int fd, short event) {
 	// copy everything upto the tailq_entry
 	memcpy(msg, &rmsg, offsetof(struct master_msg, entries));
     } else {
-	msg = my_malloc(MASTER_MSG_SIZE);
-	memcpy(msg, &rmsg, MASTER_MSG_SIZE);
+	msg = my_malloc(MASTER_MSG_MAX);
+	memcpy(msg, &rmsg, MASTER_MSG_MAX);
 	// group messages per peer
 	if (pmsg)
 	    TAILQ_INSERT_AFTER(&mqueue, pmsg, msg, entries);
@@ -346,7 +347,7 @@ void child_expire() {
 }
 
 void child_cli_accept(int socket, short event) {
-    int	fd, sndbuf = MASTER_MSG_SIZE * 10;
+    int	fd, sndbuf = MASTER_MSG_MAX * 10;
     struct sockaddr sa;
     socklen_t addrlen = sizeof(sa);
     struct child_session *session = NULL;
@@ -376,7 +377,7 @@ void child_cli_write(int fd, short event, struct child_session *sess) {
 	msg->lock--;
 
     for (; msg != NULL; msg = TAILQ_NEXT(msg, entries)) {
-	if (write(fd, msg, MASTER_MSG_SIZE) != -1)
+	if (write(fd, msg, MASTER_MSG_LEN(msg->len)) != -1)
 	    continue;
 
 	// bail unless non-block

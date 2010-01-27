@@ -89,7 +89,7 @@ int my_socket(int af, int type, int proto) {
 }
 
 void my_socketpair(int spair[]) {
-    int i, rbuf = MASTER_MSG_SIZE * 10;
+    int i, rbuf = MASTER_MSG_MAX * 10;
 
     assert(spair != NULL);
 
@@ -121,16 +121,17 @@ int my_nonblock(int s) {
 }
 
 ssize_t my_msend(struct master_msg *mreq) {
-    ssize_t count = 0;
+    ssize_t len = 0;
 
     assert(mreq != NULL);
 
-    count = write(msock, mreq, MASTER_MSG_SIZE);
-    if (count != MASTER_MSG_SIZE)
-	my_fatal("only %d bytes written: %s", count, strerror(errno));
+    len = write(msock, mreq, MASTER_MSG_LEN(mreq->len));
+    if (len < MASTER_MSG_MIN || len != MASTER_MSG_LEN(mreq->len))
+	my_fatal("only %zi bytes written: %s", len, strerror(errno));
 
-    count = read(msock, mreq, MASTER_MSG_SIZE);
-    if (count != MASTER_MSG_SIZE)
+    memset(mreq, 0, MASTER_MSG_MAX);
+    len = read(msock, mreq, MASTER_MSG_MAX);
+    if (len < MASTER_MSG_MIN || len != MASTER_MSG_LEN(mreq->len))
 	my_fatal("invalid reply received from master");
 
     return(mreq->len);

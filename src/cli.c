@@ -34,6 +34,7 @@ void cli_main(int argc, char *argv[]) {
     struct sockaddr_un sun;
     int fd = -1;
     struct master_msg msg;
+    ssize_t len;
 
      options &= ~OPT_DAEMON;
 
@@ -83,7 +84,10 @@ void cli_main(int argc, char *argv[]) {
     if (connect(fd, (struct sockaddr *)&sun, sizeof(sun)) == -1)
 	my_fatal("failed to open " PACKAGE_SOCKET ": %s", strerror(errno));
 
-    while (read(fd, &msg, MASTER_MSG_SIZE) == MASTER_MSG_SIZE) {
+    while ((len = read(fd, &msg, MASTER_MSG_MAX)) != -1) {
+    
+	 if (len < MASTER_MSG_MIN || len != MASTER_MSG_LEN(msg.len))
+	    continue;
 
 	if (msg.proto > PROTO_MAX)
 	    continue;

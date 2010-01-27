@@ -117,9 +117,11 @@ START_TEST(test_master_cmd) {
 
     // supply an invalid fd, resulting in a read error
     mark_point();
-    errstr = "check";
+    errstr = "invalid request received";
     my_log(CRIT, errstr);
+    WRAP_FATAL_START();
     master_cmd(fd, event);
+    WRAP_FATAL_END();
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
@@ -140,7 +142,7 @@ START_TEST(test_master_cmd) {
     mreq.proto = PROTO_LLDP;
 
     errstr = "invalid request supplied";
-    WRAP_WRITE(spair[0], &mreq, MASTER_MSG_SIZE);
+    WRAP_WRITE(spair[0], &mreq, MASTER_MSG_LEN(mreq.len));
     WRAP_FATAL_START();
     master_cmd(spair[1], event);
     WRAP_FATAL_END();
@@ -153,10 +155,11 @@ START_TEST(test_master_cmd) {
     options |= OPT_DEBUG;
     mreq.cmd = MASTER_CLOSE;
     mreq.index = 1;
+    mreq.len = 0;
     memcpy(ether.dst, lldp_dst, ETHER_ADDR_LEN);
     ether.type = htons(ETHERTYPE_LLDP);
     memcpy(mreq.msg, &ether, sizeof(struct ether_hdr));
-    WRAP_WRITE(spair[0], &mreq, MASTER_MSG_SIZE);
+    WRAP_WRITE(spair[0], &mreq, MASTER_MSG_LEN(mreq.len));
 
     errstr = "check";
     my_log(CRIT, errstr);
@@ -182,7 +185,7 @@ START_TEST(test_master_cmd) {
 
     errstr = "check";
     my_log(CRIT, errstr);
-    WRAP_WRITE(spair[0], &mreq, MASTER_MSG_SIZE);
+    WRAP_WRITE(spair[0], &mreq, MASTER_MSG_LEN(mreq.len));
     master_cmd(spair[1], event);
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -200,7 +203,7 @@ START_TEST(test_master_cmd) {
 #endif
 
 #if defined(HAVE_LINUX_ETHTOOL_H) || defined(SIOCSIFDESCR)
-    WRAP_WRITE(spair[0], &mreq, MASTER_MSG_SIZE);
+    WRAP_WRITE(spair[0], &mreq, MASTER_MSG_LEN(mreq.len));
 
     errstr = "check";
     my_log(CRIT, errstr);
@@ -214,7 +217,8 @@ START_TEST(test_master_cmd) {
 #ifdef HAVE_SYSFS
     // test a correct DEVICE
     mreq.cmd = MASTER_DEVICE;
-    WRAP_WRITE(spair[0], &mreq, MASTER_MSG_SIZE);
+    mreq.len = 0;
+    WRAP_WRITE(spair[0], &mreq, MASTER_MSG_LEN(mreq.len));
     master_cmd(spair[1], event);
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -228,7 +232,7 @@ START_TEST(test_master_cmd) {
     mreq.cmd = MASTER_CLOSE;
     fd = dup(spair[1]);
     rfd->fd = fd;
-    WRAP_WRITE(spair[0], &mreq, MASTER_MSG_SIZE);
+    WRAP_WRITE(spair[0], &mreq, MASTER_MSG_LEN(mreq.len));
     close(spair[0]);
 
     errstr = "failed to return message to child";
@@ -312,9 +316,11 @@ START_TEST(test_master_send) {
     fail_unless (rfd != NULL, "rfd should be added to the queue");
     rfd->fd = spair[1];
 
+    // incorrect msend msg.len should be skipped
     mark_point();
-    errstr = "invalid message received";
-    WRAP_WRITE(spair[0], &mreq, MASTER_MSG_SIZE - 1); 
+    errstr = "check";
+    my_log(CRIT, errstr);
+    WRAP_WRITE(spair[0], &mreq, MASTER_MSG_LEN(mreq.len) - 1); 
     WRAP_FATAL_START();
     master_send(spair[1], event);
     WRAP_FATAL_END();
@@ -329,7 +335,7 @@ START_TEST(test_master_send) {
     errstr = "failed to write pcap record header";
     dfd = -1;
     WRAP_FATAL_START();
-    WRAP_WRITE(spair[0], &mreq, MASTER_MSG_SIZE); 
+    WRAP_WRITE(spair[0], &mreq, MASTER_MSG_LEN(mreq.len)); 
     master_send(spair[1], event);
     WRAP_FATAL_END();
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
@@ -339,7 +345,7 @@ START_TEST(test_master_send) {
     errstr = "only -1 bytes written";
     rfd->fd = -1;
     options &= ~OPT_DEBUG;
-    WRAP_WRITE(spair[0], &mreq, MASTER_MSG_SIZE); 
+    WRAP_WRITE(spair[0], &mreq, MASTER_MSG_LEN(mreq.len)); 
     master_send(spair[1], event);
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);

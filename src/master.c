@@ -173,13 +173,11 @@ void master_cmd(int cmdfd, short event) {
     ssize_t len;
 
     // receive request
-    len = read(cmdfd, &mreq, MASTER_MSG_SIZE);
-
-    if (len <= 0)
-	return;
+    memset(&mreq, 0, MASTER_MSG_MAX);
+    len = read(cmdfd, &mreq, MASTER_MSG_MAX);
 
     // check request size
-    if (len != MASTER_MSG_SIZE)
+    if (len < MASTER_MSG_MIN || len != MASTER_MSG_LEN(mreq.len))
 	my_fatal("invalid request received");
 
     // validate request
@@ -214,7 +212,8 @@ void master_cmd(int cmdfd, short event) {
 	    my_fatal("invalid request received");
     }
 
-    if (write(cmdfd, &mreq, MASTER_MSG_SIZE) != MASTER_MSG_SIZE)
+    len = write(cmdfd, &mreq, MASTER_MSG_LEN(mreq.len));
+    if (len != MASTER_MSG_LEN(mreq.len))
 	    my_fatal("failed to return message to child");
 }
 
@@ -265,14 +264,12 @@ void master_send(int msgfd, short event) {
     ssize_t len;
 
     // receive request
-    len = read(msgfd, &msend, MASTER_MSG_SIZE);
-
-    if (len <= 0)
-	return;
+    memset(&msend, 0, MASTER_MSG_MAX);
+    len = read(msgfd, &msend, MASTER_MSG_MAX);
 
     // check request size
-    if (len != MASTER_MSG_SIZE)
-	my_fatal("invalid message received");
+    if (len < MASTER_MSG_MIN || len != MASTER_MSG_LEN(msend.len))
+	return;
 
     if (if_indextoname(msend.index, msend.name) == NULL) {
 	my_log(CRIT, "invalid ifindex supplied");
@@ -419,7 +416,7 @@ ssize_t master_descr(struct master_msg *mreq) {
     ifr.ifr_data = (caddr_t)&mreq->msg;
 
     if (ioctl(sock, SIOCSIFDESCR, &ifr) >= 0)
-	ret = IFNAMSIZ;
+	ret = IFDESCRSIZE;
     return(ret);
 }
 #endif /* SIOCGIFDESCR */
@@ -675,7 +672,8 @@ void master_recv(int fd, short event, struct rawfd *rfd) {
     }
     my_log(INFO, "received %s message (%d bytes)", protos[p].name, mrecv.len);
 
-    if (write(mfd, &mrecv, MASTER_MSG_SIZE) != MASTER_MSG_SIZE)
+    len = write(mfd, &mrecv, MASTER_MSG_LEN(mrecv.len));
+    if (len != MASTER_MSG_LEN(mrecv.len))
 	    my_fatal("failed to send message to child");
     rcount++;
 

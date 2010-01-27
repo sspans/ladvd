@@ -162,16 +162,15 @@ struct master_msg {
     uint32_t index;
     char name[IFNAMSIZ];
     uint8_t cmd;
-    char msg[ETHER_MAX_LEN];
-    ssize_t len;
     uint8_t proto;
     time_t ttl;
+    ssize_t len;
+    char msg[ETHER_MAX_LEN];
 
     struct {
 	char name[IFDESCRSIZE];
 	char port[IFDESCRSIZE];
     } peer;
-
     uint8_t lock;
 
     // should be last
@@ -180,7 +179,9 @@ struct master_msg {
 
 TAILQ_HEAD(mhead, master_msg);
 
-#define MASTER_MSG_SIZE   sizeof(struct master_msg)
+#define MASTER_MSG_MIN	    offsetof(struct master_msg, msg)
+#define MASTER_MSG_MAX	    sizeof(struct master_msg)
+#define MASTER_MSG_LEN(l)   MASTER_MSG_MIN + l
 #define MASTER_CLOSE	0
 #define MASTER_RECV	1
 #define MASTER_ETHTOOL	2
