@@ -158,10 +158,21 @@ struct sysinfo {
 
 extern uint32_t options;
 
+struct master_req {
+    uint8_t op;
+    uint32_t index;
+    char name[IFNAMSIZ];
+    ssize_t len;
+    char buf[512];
+};
+
+#define MASTER_REQ_MIN	    offsetof(struct master_req, buf)
+#define MASTER_REQ_MAX	    sizeof(struct master_req)
+#define MASTER_REQ_LEN(l)   MASTER_REQ_MIN + l
+
 struct master_msg {
     uint32_t index;
     char name[IFNAMSIZ];
-    uint8_t cmd;
     uint8_t proto;
     time_t ttl;
     ssize_t len;
@@ -202,8 +213,8 @@ struct proto {
 };
 
 void cli_main(int argc, char *argv[]) __attribute__ ((__noreturn__));
-void child_init(int cmdfd, int msgfd, int ifc, char *ifl[], struct passwd *pwd);
-void master_init(int cmdfd, int msgfd, pid_t pid);
+void child_init(int reqfd, int msgfd, int ifc, char *ifl[], struct passwd *pwd);
+void master_init(int reqfd, int msgfd, pid_t pid);
 void master_signal(int fd, short event, void *pid);
 
 void sysinfo_fetch(struct sysinfo *);

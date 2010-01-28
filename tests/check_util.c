@@ -117,8 +117,8 @@ START_TEST(test_my) {
 }
 END_TEST
 
-START_TEST(test_my_msend) {
-    struct master_msg mreq;
+START_TEST(test_my_mreq) {
+    struct master_req mreq;
     int spair[2];
     extern int msock;
     size_t ret;
@@ -132,7 +132,7 @@ START_TEST(test_my_msend) {
     msock = -1;
     errstr = "only -1 bytes written";
     WRAP_FATAL_START();
-    my_msend(&mreq);
+    my_mreq(&mreq);
     WRAP_FATAL_END();
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -142,16 +142,16 @@ START_TEST(test_my_msend) {
     errstr = "check";
     my_log(CRIT, errstr);
     mreq.len = ETHER_MIN_LEN; 
-    WRAP_WRITE(spair[0], &mreq, MASTER_MSG_LEN(mreq.len));
-    ret = my_msend(&mreq);
+    WRAP_WRITE(spair[0], &mreq, MASTER_REQ_LEN(mreq.len));
+    ret = my_mreq(&mreq);
     fail_unless (ret == ETHER_MIN_LEN,
-	"incorrect size %lu returned from my_msend", ret);
+	"incorrect size %lu returned from my_mreq", ret);
 
     mark_point();
     errstr = "invalid reply received from master";
     WRAP_WRITE(spair[0], &mreq, ETHER_MIN_LEN);
     WRAP_FATAL_START();
-    my_msend(&mreq);
+    my_mreq(&mreq);
     WRAP_FATAL_END();
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -168,6 +168,7 @@ START_TEST(test_netif) {
     struct netif *netif, *subif;
     struct mhead mqueue;
     struct master_msg *msg = NULL;
+    struct master_req *mreq = NULL;
     char *descr = NULL;
     int spair[2];
     ssize_t len;
@@ -383,78 +384,78 @@ START_TEST(test_netif) {
     // netif_descr checks
     mark_point();
     msock = spair[1];
-    msg = my_malloc(MASTER_MSG_MAX);
-    msg->len = IFDESCRSIZE;
+    mreq = my_malloc(MASTER_REQ_MAX);
+    mreq->len = IFDESCRSIZE;
 
     netif = netif_byname(netifs, "bond0");
     descr = "";
-    WRAP_WRITE(spair[0], msg, MASTER_MSG_LEN(msg->len));
+    WRAP_WRITE(spair[0], mreq, MASTER_REQ_LEN(mreq->len));
     netif_descr(netif, &mqueue);
-    WRAP_READ(spair[0], msg, len);
-    fail_unless (msg->cmd == MASTER_DESCR,
-	"incorrect command: %d", msg->cmd);
-    fail_unless (msg->index == netif->index,
-	"incorrect interface index: %d", msg->index);
-    fail_unless (msg->len == IFDESCRSIZE,
-	"incorrect message length: %d", msg->len);
-    fail_unless (strncmp(msg->msg, descr, IFDESCRSIZE) == 0,
-	"incorrect interface description: %s", msg->msg);
+    WRAP_REQ_READ(spair[0], mreq, len);
+    fail_unless (mreq->op == MASTER_DESCR,
+	"incorrect command: %d", mreq->op);
+    fail_unless (mreq->index == netif->index,
+	"incorrect interface index: %d", mreq->index);
+    fail_unless (mreq->len == IFDESCRSIZE,
+	"incorrect message length: %d", mreq->len);
+    fail_unless (strncmp(mreq->buf, descr, IFDESCRSIZE) == 0,
+	"incorrect interface description: %s", mreq->buf);
 
     netif = netif_byname(netifs, "eth0");
     descr = "connected to foo (42)";
-    WRAP_WRITE(spair[0], msg, MASTER_MSG_LEN(msg->len));
+    WRAP_WRITE(spair[0], mreq, MASTER_REQ_LEN(mreq->len));
     netif_descr(netif, &mqueue);
-    WRAP_READ(spair[0], msg, len);
-    fail_unless (msg->cmd == MASTER_DESCR,
-	"incorrect command: %d", msg->cmd);
-    fail_unless (msg->index == netif->index,
-	"incorrect interface index: %d", msg->index);
-    fail_unless (msg->len == IFDESCRSIZE,
-	"incorrect message length: %d", msg->len);
-    fail_unless (strncmp(msg->msg, descr, IFDESCRSIZE) == 0,
-	"incorrect interface description: %s", msg->msg);
+    WRAP_REQ_READ(spair[0], mreq, len);
+    fail_unless (mreq->op == MASTER_DESCR,
+	"incorrect command: %d", mreq->op);
+    fail_unless (mreq->index == netif->index,
+	"incorrect interface index: %d", mreq->index);
+    fail_unless (mreq->len == IFDESCRSIZE,
+	"incorrect message length: %d", mreq->len);
+    fail_unless (strncmp(mreq->buf, descr, IFDESCRSIZE) == 0,
+	"incorrect interface description: %s", mreq->buf);
 
     netif = netif_byname(netifs, "eth2");
     descr = "connected to bar";
-    WRAP_WRITE(spair[0], msg, MASTER_MSG_LEN(msg->len));
+    WRAP_WRITE(spair[0], mreq, MASTER_REQ_LEN(mreq->len));
     netif_descr(netif, &mqueue);
-    WRAP_READ(spair[0], msg, len);
-    fail_unless (msg->cmd == MASTER_DESCR,
-	"incorrect command: %d", msg->cmd);
-    fail_unless (msg->index == netif->index,
-	"incorrect interface index: %d", msg->index);
-    fail_unless (msg->len == IFDESCRSIZE,
-	"incorrect message length: %d", msg->len);
-    fail_unless (strncmp(msg->msg, descr, IFDESCRSIZE) == 0,
-	"incorrect interface description: %s", msg->msg);
+    WRAP_REQ_READ(spair[0], mreq, len);
+    fail_unless (mreq->op == MASTER_DESCR,
+	"incorrect command: %d", mreq->op);
+    fail_unless (mreq->index == netif->index,
+	"incorrect interface index: %d", mreq->index);
+    fail_unless (mreq->len == IFDESCRSIZE,
+	"incorrect message length: %d", mreq->len);
+    fail_unless (strncmp(mreq->buf, descr, IFDESCRSIZE) == 0,
+	"incorrect interface description: %s", mreq->buf);
 
     netif = netif_byname(netifs, "eth1");
     descr = "connected to 2 peers";
-    WRAP_WRITE(spair[0], msg, MASTER_MSG_LEN(msg->len));
+    WRAP_WRITE(spair[0], mreq, MASTER_REQ_LEN(mreq->len));
     netif_descr(netif, &mqueue);
-    WRAP_READ(spair[0], msg, len);
-    fail_unless (msg->cmd == MASTER_DESCR,
-	"incorrect command: %d", msg->cmd);
-    fail_unless (msg->index == netif->index,
-	"incorrect interface index: %d", msg->index);
-    fail_unless (msg->len == IFDESCRSIZE,
-	"incorrect message length: %d", msg->len);
-    fail_unless (strncmp(msg->msg, descr, IFDESCRSIZE) == 0,
-	"incorrect interface description: %s", msg->msg);
+    WRAP_REQ_READ(spair[0], mreq, len);
+    fail_unless (mreq->op == MASTER_DESCR,
+	"incorrect command: %d", mreq->op);
+    fail_unless (mreq->index == netif->index,
+	"incorrect interface index: %d", mreq->index);
+    fail_unless (mreq->len == IFDESCRSIZE,
+	"incorrect message length: %d", mreq->len);
+    fail_unless (strncmp(mreq->buf, descr, IFDESCRSIZE) == 0,
+	"incorrect interface description: %s", mreq->buf);
 
     netif = netif_byname(netifs, "lagg0");
     descr = "";
-    WRAP_WRITE(spair[0], msg, MASTER_MSG_LEN(msg->len));
+    WRAP_WRITE(spair[0], mreq, MASTER_REQ_LEN(mreq->len));
     netif_descr(netif, &mqueue);
-    WRAP_READ(spair[0], msg, len);
-    fail_unless (msg->cmd == MASTER_DESCR,
-	"incorrect command: %d", msg->cmd);
-    fail_unless (msg->index == netif->index,
-	"incorrect interface index: %d", msg->index);
-    fail_unless (msg->len == IFDESCRSIZE,
-	"incorrect message length: %d", msg->len);
-    fail_unless (strncmp(msg->msg, descr, IFDESCRSIZE) == 0,
-	"incorrect interface description: %s", msg->msg);
+    WRAP_REQ_READ(spair[0], mreq, len);
+    fail_unless (mreq->op == MASTER_DESCR,
+	"incorrect command: %d", mreq->op);
+    fail_unless (mreq->index == netif->index,
+	"incorrect interface index: %d", mreq->index);
+    fail_unless (mreq->len == IFDESCRSIZE,
+	"incorrect message length: %d", mreq->len);
+    fail_unless (strncmp(mreq->buf, descr, IFDESCRSIZE) == 0,
+	"incorrect interface description: %s", mreq->buf);
 }
 END_TEST
 
@@ -678,7 +679,7 @@ Suite * util_suite (void) {
     // util test case
     TCase *tc_util = tcase_create("util");
     tcase_add_test(tc_util, test_my);
-    tcase_add_test(tc_util, test_my_msend);
+    tcase_add_test(tc_util, test_my_mreq);
     tcase_add_test(tc_util, test_netif);
     tcase_add_test(tc_util, test_read_line);
     tcase_add_test(tc_util, test_my_cksum);

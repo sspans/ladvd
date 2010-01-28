@@ -58,7 +58,7 @@ int dfd = -1;
 
 extern struct proto protos[];
 
-void master_init(int cmdfd, int msgfd, pid_t child) {
+void master_init(int reqfd, int msgfd, pid_t child) {
 
     // events
     struct event ev_cmd, ev_msg;
@@ -121,7 +121,7 @@ void master_init(int cmdfd, int msgfd, pid_t child) {
     event_init();
 
     // listen for request and messages from the child
-    event_set(&ev_cmd, cmdfd, EV_READ|EV_PERSIST, (void *)master_cmd, NULL);
+    event_set(&ev_cmd, reqfd, EV_READ|EV_PERSIST, (void *)master_req, NULL);
     event_set(&ev_msg, msgfd, EV_READ|EV_PERSIST, (void *)master_send, NULL);
     event_add(&ev_cmd, NULL);
     event_add(&ev_msg, NULL);
@@ -167,24 +167,24 @@ void master_signal(int sig, short event, void *pid) {
 }
 
 
-void master_cmd(int cmdfd, short event) {
-    struct master_msg mreq;
+void master_req(int reqfd, short event) {
+    struct master_req mreq;
     struct rawfd *rfd;
     ssize_t len;
 
     // receive request
-    memset(&mreq, 0, MASTER_MSG_MAX);
-    len = read(cmdfd, &mreq, MASTER_MSG_MAX);
+    memset(&mreq, 0, MASTER_REQ_MAX);
+    len = read(reqfd, &mreq, MASTER_REQ_MAX);
 
     // check request size
-    if (len < MASTER_MSG_MIN || len != MASTER_MSG_LEN(mreq.len))
+    if (len < MASTER_REQ_MIN || len != MASTER_REQ_LEN(mreq.len))
 	my_fatal("invalid request received");
 
     // validate request
     if (master_check(&mreq) != EXIT_SUCCESS)
 	my_fatal("invalid request supplied");
 
-    switch (mreq.cmd) {
+    switch (mreq.op) {
 	// close socket
 	case MASTER_CLOSE:
 	    if ((rfd = rfd_byindex(mreq.index)) != NULL)
@@ -212,27 +212,27 @@ void master_cmd(int cmdfd, short event) {
 	    my_fatal("invalid request received");
     }
 
-    len = write(cmdfd, &mreq, MASTER_MSG_LEN(mreq.len));
-    if (len != MASTER_MSG_LEN(mreq.len))
-	    my_fatal("failed to return message to child");
+    len = write(reqfd, &mreq, MASTER_REQ_LEN(mreq.len));
+    if (len != MASTER_REQ_LEN(mreq.len))
+	    my_fatal("failed to return request to child");
 }
 
 
-int master_check(struct master_msg *mreq) {
+int master_check(struct master_req *mreq) {
 
     assert(mreq);
     assert(mreq->len <= ETHER_MAX_LEN);
-    assert(mreq->cmd < MASTER_MAX);
+    assert(mreq->op < MASTER_MAX);
 
     // validate ifindex
     if (if_indextoname(mreq->index, mreq->name) == NULL) {
-	if (mreq->cmd == MASTER_CLOSE)
+	if (mreq->op == MASTER_CLOSE)
 	    return(EXIT_SUCCESS);
 	my_log(CRIT, "invalid ifindex supplied");
 	return(EXIT_FAILURE);
     }
 
-    switch (mreq->cmd) {
+    switch (mreq->op) {
 	case MASTER_CLOSE:
 	    return(EXIT_SUCCESS);
 #if HAVE_LINUX_ETHTOOL_H
@@ -326,14 +326,14 @@ void master_send(int msgfd, short event) {
 }
 
 
-void master_open(struct master_msg *mreq) {
+void master_open(struct master_msg *msg) {
     struct rawfd *rfd = NULL;
 
     rfd = my_malloc(sizeof(struct rawfd));
     TAILQ_INSERT_TAIL(&rawfds, rfd, entries);
 
-    rfd->index = mreq->index;
-    strlcpy(rfd->name, mreq->name, IFNAMSIZ);
+    rfd->index = msg->index;
+    strlcpy(rfd->name, msg->name, IFNAMSIZ);
 
     rfd->fd = master_socket(rfd);
     if (rfd->fd < 0)
@@ -377,7 +377,7 @@ void master_close(struct rawfd *rfd) {
 }
 
 #if HAVE_LINUX_ETHTOOL_H
-ssize_t master_ethtool(struct master_msg *mreq) {
+ssize_t master_ethtool(struct master_req *mreq) {
 
     struct ifreq ifr;
     struct ethtool_cmd ecmd;
@@ -394,7 +394,7 @@ ssize_t master_ethtool(struct master_msg *mreq) {
     ifr.ifr_data = (caddr_t)&ecmd;
 
     if (ioctl(sock, SIOCETHTOOL, &ifr) != -1) {
-	memcpy(mreq->msg, &ecmd, sizeof(ecmd));
+	memcpy(mreq->buf, &ecmd, sizeof(ecmd));
 	return(sizeof(ecmd));
     } else {
 	return(0);
@@ -403,7 +403,7 @@ ssize_t master_ethtool(struct master_msg *mreq) {
 #endif /* HAVE_LINUX_ETHTOOL_H */
 
 #ifdef SIOCSIFDESCR
-ssize_t master_descr(struct master_msg *mreq) {
+ssize_t master_descr(struct master_req *mreq) {
 
     struct ifreq ifr;
     ssize_t ret = 0;
@@ -422,7 +422,7 @@ ssize_t master_descr(struct master_msg *mreq) {
 #endif /* SIOCGIFDESCR */
 
 #ifdef HAVE_SYSFS
-ssize_t master_device(struct master_msg *mreq) {
+ssize_t master_device(struct master_req *mreq) {
     char path[SYSFS_PATH_MAX];
     struct stat sb;
     ssize_t ret = 0;
@@ -652,8 +652,7 @@ void master_recv(int fd, short event, struct rawfd *rfd) {
     if (mrecv.len < ETHER_MIN_LEN)
 	return;
 
-    // note the command and ifindex
-    mrecv.cmd = MASTER_RECV;
+    // note the ifindex
     mrecv.index = rfd->index;
 
     ether = (struct ether_hdr *)mrecv.msg;

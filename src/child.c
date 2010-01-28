@@ -32,7 +32,7 @@ struct mhead mqueue;
 struct sysinfo sysinfo;
 extern struct proto protos[];
 
-void child_init(int cmdfd, int msgfd, int ifc, char *ifl[],
+void child_init(int reqfd, int msgfd, int ifc, char *ifl[],
 		struct passwd *pwd) {
 
     // events
@@ -51,7 +51,7 @@ void child_init(int cmdfd, int msgfd, int ifc, char *ifl[],
     TAILQ_INIT(&mqueue);
 
     // configure command socket
-    msock = cmdfd;
+    msock = reqfd;
 
     // configure unix socket
     if (!(options & (OPT_DEBUG|OPT_ONCE))) {
@@ -207,7 +207,6 @@ void child_queue(int fd, short event) {
     if (len < MASTER_MSG_MIN || len != MASTER_MSG_LEN(rmsg.len))
 	return;
 
-    assert(rmsg.cmd == MASTER_RECV);
     assert(rmsg.proto < PROTO_MAX);
     assert(rmsg.len >= ETHER_MIN_LEN);
     assert(rmsg.len <= ETHER_MAX_LEN);

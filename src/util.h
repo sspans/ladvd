@@ -41,7 +41,7 @@ int my_socket(int af, int type, int proto);
 void my_socketpair(int spair[]);
 int my_nonblock(int s);
 
-ssize_t my_msend(struct master_msg *mreq);
+ssize_t my_mreq(struct master_req *mreq);
 
 struct netif *netif_iter(struct netif *netif, struct nhead *);
 struct netif *subif_iter(struct netif *subif, struct netif *netif);

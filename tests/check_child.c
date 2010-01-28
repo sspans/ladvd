@@ -57,7 +57,7 @@ void read_packet(struct master_msg *msg, const char *suffix) {
 }
 
 START_TEST(test_child_init) {
-    struct master_msg *mreq;
+    struct master_req *mreq;
     struct netif *netif, *nnetif;
     const char *errstr = NULL;
     int spair[2], null;
@@ -72,11 +72,10 @@ START_TEST(test_child_init) {
     pid = fork();
     if (pid == 0) {
 	close(spair[0]);
-	mreq = my_malloc(MASTER_MSG_MAX);
-	while (read(spair[1], mreq, MASTER_MSG_MAX) > 0) {
-	    if (mreq->cmd == MASTER_DEVICE)
-		mreq->len = 1;
-	    if (write(spair[1], mreq, MASTER_MSG_LEN(mreq->len)) == -1)
+	mreq = my_malloc(MASTER_REQ_MAX);
+	while (read(spair[1], mreq, MASTER_REQ_MAX) > 0) {
+	    mreq->len = 1;
+	    if (write(spair[1], mreq, MASTER_REQ_LEN(mreq->len)) == -1)
 		exit(1);
 	}
 	exit (0);
@@ -105,7 +104,7 @@ START_TEST(test_child_init) {
 END_TEST
 
 START_TEST(test_child_send) {
-    struct master_msg *mreq;
+    struct master_req *mreq;
     struct netif *netif, *nnetif;
     int spair[2], null;
     struct event evs;
@@ -124,11 +123,11 @@ START_TEST(test_child_send) {
     pid = fork();
     if (pid == 0) {
 	close(spair[0]);
-	mreq = my_malloc(MASTER_MSG_MAX);
-	while (read(spair[1], mreq, MASTER_MSG_MAX) > 0) {
-	    if (mreq->cmd == MASTER_DEVICE)
+	mreq = my_malloc(MASTER_REQ_MAX);
+	while (read(spair[1], mreq, MASTER_REQ_MAX) > 0) {
+	    if (mreq->op == MASTER_DEVICE)
 		mreq->len = 1;
-	    if (write(spair[1], mreq, MASTER_MSG_LEN(mreq->len)) == -1)
+	    if (write(spair[1], mreq, MASTER_REQ_LEN(mreq->len)) == -1)
 		exit(1);
 	}
 	exit (0);
@@ -170,7 +169,6 @@ START_TEST(test_child_queue) {
     loglevel = INFO;
     my_socketpair(spair);
     memset(&msg, 0, sizeof(struct master_msg));
-    msg.cmd = MASTER_RECV;
     msg.len = ETHER_MIN_LEN;
     msg.proto = PROTO_LLDP;
 
@@ -257,7 +255,6 @@ START_TEST(test_child_expire) {
     TAILQ_INSERT_TAIL(&netifs, &netif, entries);
 
     memset(&msg, 0, sizeof(struct master_msg));
-    msg.cmd = MASTER_RECV;
     msg.index = 1;
     msg.len = ETHER_MIN_LEN;
     msg.proto = PROTO_LLDP;
@@ -358,7 +355,6 @@ START_TEST(test_child_cli) {
     TAILQ_INSERT_TAIL(&netifs, &netif, entries);
 
     memset(&msg, 0, sizeof(struct master_msg));
-    msg.cmd = MASTER_RECV;
     msg.len = ETHER_MIN_LEN;
     msg.index = 1;
 

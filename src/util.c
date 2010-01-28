@@ -120,18 +120,18 @@ int my_nonblock(int s) {
     return flags;
 }
 
-ssize_t my_msend(struct master_msg *mreq) {
+ssize_t my_mreq(struct master_req *mreq) {
     ssize_t len = 0;
 
     assert(mreq != NULL);
 
-    len = write(msock, mreq, MASTER_MSG_LEN(mreq->len));
-    if (len < MASTER_MSG_MIN || len != MASTER_MSG_LEN(mreq->len))
+    len = write(msock, mreq, MASTER_REQ_LEN(mreq->len));
+    if (len < MASTER_REQ_MIN || len != MASTER_REQ_LEN(mreq->len))
 	my_fatal("only %zi bytes written: %s", len, strerror(errno));
 
-    memset(mreq, 0, MASTER_MSG_MAX);
-    len = read(msock, mreq, MASTER_MSG_MAX);
-    if (len < MASTER_MSG_MIN || len != MASTER_MSG_LEN(mreq->len))
+    memset(mreq, 0, MASTER_REQ_MAX);
+    len = read(msock, mreq, MASTER_REQ_MAX);
+    if (len < MASTER_REQ_MIN || len != MASTER_REQ_LEN(mreq->len))
 	my_fatal("invalid reply received from master");
 
     return(mreq->len);
@@ -224,7 +224,8 @@ void netif_protos(struct netif *netif, struct mhead *mqueue) {
 }
 
 void netif_descr(struct netif *netif, struct mhead *mqueue) {
-    struct master_msg *qmsg = NULL, *dmsg = NULL;
+    struct master_msg *qmsg = NULL;
+    struct master_req *mreq = NULL;
     char *peer = NULL, *port = NULL;
     char descr[IFDESCRSIZE], paddr[ETHER_ADDR_LEN];
     uint16_t peers = 0;
@@ -263,16 +264,16 @@ void netif_descr(struct netif *netif, struct mhead *mqueue) {
     if (strncmp(descr, netif->description, IFDESCRSIZE) == 0)
 	return;
 
-    dmsg = my_malloc(sizeof(struct master_msg));
-    dmsg->index = netif->index;
-    dmsg->cmd = MASTER_DESCR;
-    dmsg->len = IFDESCRSIZE;
-    strlcpy(dmsg->msg, descr, dmsg->len);
+    mreq = my_malloc(MASTER_REQ_MAX);
+    mreq->op = MASTER_DESCR;
+    mreq->index = netif->index;
+    mreq->len = IFDESCRSIZE;
+    strlcpy(mreq->buf, descr, mreq->len);
 
-    if (!my_msend(dmsg))
+    if (!my_mreq(mreq))
 	my_log(CRIT, "ifdescr ioctl failed on %s", netif->name);
 
-    free(dmsg);
+    free(mreq);
 }
 
 // adapted from openssh's safely_chroot

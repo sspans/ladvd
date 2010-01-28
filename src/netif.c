@@ -123,7 +123,7 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
     int j, count = 0;
     int type, enabled;
     uint32_t index;
-    struct master_msg mreq;
+    struct master_req mreq;
 
 #ifdef AF_PACKET
     struct sockaddr_ll saddrll;
@@ -276,9 +276,9 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 	my_log(INFO, "removing old interface %s", netif->name);
 
 	memset(&mreq, 0, sizeof(mreq));
-	mreq.cmd = MASTER_CLOSE;
+	mreq.op = MASTER_CLOSE;
 	mreq.index = netif->index;
-	my_msend(&mreq);
+	my_mreq(&mreq);
 
 	TAILQ_REMOVE(netifs, netif, entries);
 	free(netif);
@@ -409,13 +409,13 @@ int netif_type(int sockfd, uint32_t index,
 #endif
 
 #ifdef HAVE_SYSFS
-    struct master_msg mreq;
+    struct master_req mreq;
 
     memset(&mreq, 0, sizeof(mreq));
-    mreq.cmd = MASTER_DEVICE;
+    mreq.op = MASTER_DEVICE;
     mreq.index = index;
 
-    if (my_msend(&mreq))
+    if (my_mreq(&mreq))
 	return(NETIF_REGULAR);
 #endif /* HAVE_SYSFS */
 
@@ -844,7 +844,7 @@ int netif_media(struct netif *netif) {
 
 #if HAVE_LINUX_ETHTOOL_H
     struct ethtool_cmd ecmd;
-    struct master_msg mreq;
+    struct master_req mreq;
 #endif /* HAVE_LINUX_ETHTOOL_H */
 
 #if HAVE_NET_IF_MEDIA_H
@@ -870,14 +870,14 @@ int netif_media(struct netif *netif) {
 
 #if HAVE_LINUX_ETHTOOL_H
     memset(&mreq, 0, sizeof(mreq));
+    mreq.op = MASTER_ETHTOOL;
     mreq.index = netif->index;
-    mreq.cmd = MASTER_ETHTOOL;
     mreq.len = sizeof(ecmd);
 
-    if (my_msend(&mreq) == sizeof(ecmd)) {
+    if (my_mreq(&mreq) == sizeof(ecmd)) {
 
 	// copy ecmd struct
-	memcpy(&ecmd, mreq.msg, sizeof(ecmd));
+	memcpy(&ecmd, mreq.buf, sizeof(ecmd));
 
 	// duplex
 	netif->duplex = (ecmd.duplex == DUPLEX_FULL) ? 1 : 0;

@@ -60,23 +60,23 @@ struct rawfd {
 
 TAILQ_HEAD(rfdhead, rawfd);
 
-void master_cmd(int fd, short event);
+void master_req(int fd, short event);
 void master_send(int fd, short event);
 void master_recv(int fd, short event, struct rawfd *rfd);
 
 void master_open(struct master_msg *mreq);
 #if HAVE_LINUX_ETHTOOL_H
-ssize_t master_ethtool(struct master_msg *mreq);
+ssize_t master_ethtool(struct master_req *mreq);
 #endif /* HAVE_LINUX_ETHTOOL_H */
 #ifdef SIOCSIFDESCR
-ssize_t master_descr(struct master_msg *mreq);
+ssize_t master_descr(struct master_req *mreq);
 #endif /* SIOCSIFDESCR */
 #ifdef HAVE_SYSFS
-ssize_t master_device(struct master_msg *mreq);
+ssize_t master_device(struct master_req *mreq);
 #endif /* HAVE_SYSFS */
 void master_close(struct rawfd *rfd);
 
-int master_check(struct master_msg *mreq);
+int master_check(struct master_req *mreq);
 int master_socket(struct rawfd *rfd);
 void master_multi(struct rawfd *rfd, struct proto *protos, int op);
 inline struct rawfd *rfd_byindex(uint32_t index);
