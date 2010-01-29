@@ -268,7 +268,8 @@ void netif_descr(struct netif *netif, struct mhead *mqueue) {
     mreq->op = MASTER_DESCR;
     mreq->index = netif->index;
     mreq->len = IFDESCRSIZE;
-    strlcpy(mreq->buf, descr, mreq->len);
+    mreq->len = strlen(descr) + 1;
+    memcpy(mreq->buf, descr, mreq->len);
 
     if (!my_mreq(mreq))
 	my_log(CRIT, "ifdescr ioctl failed on %s", netif->name);
