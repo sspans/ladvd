@@ -523,6 +523,7 @@ START_TEST(test_lldp_decode) {
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
+    mark_point();
     errstr = "check";
     my_log(CRIT, errstr);
     read_packet(&msg, "proto/lldp/41.good.small");
@@ -534,37 +535,46 @@ START_TEST(test_lldp_decode) {
 	"system name should be 'test'");
     fail_unless (strcmp(msg.peer[PEER_PORTNAME], "1/3") == 0,
 	"port id should be '1/3' not '%s'", msg.peer[PEER_PORTNAME]);
+
+    mark_point();
     read_packet(&msg, "proto/lldp/42.good.big");
+    fail_unless (lldp_decode(&msg) == msg.len, "packet length incorrect");
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
-    fail_unless (lldp_decode(&msg) == msg.len, "packet length incorrect");
     fail_unless (msg.ttl == 120, "ttl should be 120");
     fail_unless (strcmp(msg.peer[PEER_HOSTNAME], "Summit300-48") == 0,
 		"system name should be 'Summit300-48'");
     fail_unless (strcmp(msg.peer[PEER_PORTNAME], "1/1") == 0,
 	"port id should be '1/1' not '%s'", msg.peer[PEER_PORTNAME]);
+
+    mark_point();
     read_packet(&msg, "proto/lldp/43.good.lldpmed");
+    mark_point();
+    fail_unless (lldp_decode(&msg) == msg.len, "packet length incorrect");
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
-    fail_unless (lldp_decode(&msg) == msg.len, "packet length incorrect");
     fail_unless (msg.ttl == 120, "ttl should be 120");
     fail_unless (strcmp(msg.peer[PEER_HOSTNAME], "ProCurve Switch 2600-8-PWR") == 0,
 		"system name should be 'ProCurve Switch 2600-8-PWR'");
     fail_unless (strcmp(msg.peer[PEER_PORTNAME], "1") == 0,
 	"port id should be '1' not '%s'", msg.peer[PEER_PORTNAME]);
+
+    mark_point();
     read_packet(&msg, "proto/lldp/44.good.spaces");
+    fail_unless (lldp_decode(&msg) == msg.len, "packet length incorrect");
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
-    fail_unless (lldp_decode(&msg) == msg.len, "packet length incorrect");
     fail_unless (msg.ttl == 120, "ttl should be 120");
     fail_unless (strcmp(msg.peer[PEER_HOSTNAME], "HP ProCurve Switch 2626") == 0,
 		"system name should be 'HP ProCurve Switch 2626'");
     fail_unless (strcmp(msg.peer[PEER_PORTNAME], "25") == 0,
 	"port id should be '25' not '%s'", msg.peer[PEER_PORTNAME]);
+
+    mark_point();
     read_packet(&msg, "proto/lldp/45.good.vlan");
+    fail_unless (lldp_decode(&msg) == msg.len, "packet length incorrect");
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
-    fail_unless (lldp_decode(&msg) == msg.len, "packet length incorrect");
     fail_unless (msg.ttl == 120, "ttl should be 120");
     fail_unless (strcmp(msg.peer[PEER_HOSTNAME], "trillian.blinkenlights.nl") == 0,
 		"system name should be 'trillian.blinkenlights.nl'");

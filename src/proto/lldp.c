@@ -382,6 +382,10 @@ size_t lldp_decode(struct master_msg *msg) {
     uint16_t tlv_length;
     uint8_t tlv_subtype;
 
+    const char *errstr = NULL;
+    uint16_t peer_type;
+    uint8_t addr_len, addr_type;
+
     assert(msg);
 
     packet = msg->msg;
@@ -474,6 +478,62 @@ size_t lldp_decode(struct master_msg *msg) {
 		return 0;
 	    }
 	    break;
+	case LLDP_TYPE_SYSTEM_DESCR:
+	    if (!DECODE_STRING(msg, PEER_SOFTWARE, tlv_length)) {
+		my_log(INFO, "Corrupt LLDP packet: invalid System Descr TLV");
+		return 0;
+	    }
+	    break;
+	case LLDP_TYPE_MGMT_ADDR:
+	    if (!DECODE_WANTED(msg, PEER_IPV4) &&
+		!DECODE_WANTED(msg, PEER_IPV6)) {
+		if (!SKIP(tlv_length)) {
+		    my_log(INFO, "Corrupt LLDP packet: invalid TLV Length");
+		    return 0;
+		}
+		break;
+	    }
+
+	    errstr = "Corrupt LLDP packet: invalid Mgmt Address TLV";
+
+	    if (!GRAB_UINT8(addr_len)) {
+		my_log(INFO, errstr);
+		return 0;
+	    }
+	    tlv_length--;
+	    if (addr_len < 2 || addr_len > 32) {
+		my_log(INFO, errstr);
+		return 0;
+	    }
+	    if (!GRAB_UINT8(addr_type)) {
+		my_log(INFO, errstr);
+		return 0;
+	    }
+	    tlv_length--;
+	    addr_len--;
+
+	    if (addr_type == LLDP_AFNUM_INET)
+		peer_type = PEER_IPV4;
+	    else if (addr_type == LLDP_AFNUM_INET6)
+		peer_type = PEER_IPV6;
+	    else
+		peer_type = 0;
+	    
+	    if (peer_type) {
+		if (!DECODE_STRING(msg, peer_type, addr_len)) {
+		    my_log(INFO, errstr);
+		    return 0;
+		}
+		tlv_length -= addr_len;
+	    }
+
+	    if (!SKIP(tlv_length)) {
+		my_log(INFO, errstr);
+		return 0;
+	    }
+	    break; 
+	case LLDP_TYPE_SYSTEM_CAP:
+	case LLDP_TYPE_PRIVATE:
 	default:
 	    if (8 < tlv_type && tlv_type < 127) {
 		my_log(INFO, "Corrupt LLDP packet: invalid TLV Type");

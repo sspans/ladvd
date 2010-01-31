@@ -82,6 +82,7 @@ typedef union {
 		pos += (b), \
 		1 \
 	    ))
+#define DECODE_WANTED(m, t)	((m->decode & (1<<t)) && !m->peer[t])
 #define DECODE_STRING(m, t, b) \
 	((length >= (b)) && \
 	    ( \

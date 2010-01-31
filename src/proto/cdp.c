@@ -35,7 +35,7 @@ size_t cdp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
 
     void *cdp_start;
     uint8_t cap = 0;
-    uint8_t addr_count = 0;
+    uint32_t addr_count = 0;
     struct netif *master;
 
     const uint8_t cdp_dst[] = CDP_MULTICAST_ADDR;
@@ -305,6 +305,39 @@ size_t cdp_decode(struct master_msg *msg) {
 		    return 0;
 		}
 		break;
+	case CDP_TYPE_IOS_VERSION:
+		if (!DECODE_STRING(msg, PEER_SOFTWARE, tlv_length)) {
+		    my_log(INFO, "Corrupt CDP packet: invalid IOS Version TLV");
+		    return 0;
+		}
+		break;
+	case CDP_TYPE_PLATFORM:
+		if (!DECODE_STRING(msg, PEER_HARDWARE, tlv_length)) {
+		    my_log(INFO, "Corrupt CDP packet: invalid Platform TLV");
+		    return 0;
+		}
+		break;
+	case CDP_TYPE_MTU:
+		if (!DECODE_WANTED(msg, tlv_type)) { 
+		    if (!SKIP(tlv_length)) {
+			my_log(INFO, "Corrupt CDP packet: invalid TLV length");
+			return 0;
+		    }
+		    break;
+		}
+
+		uint32_t mtu = 0;
+		if (tlv_length != 4 || GRAB_UINT32(mtu)) {
+		    my_log(INFO, "Corrupt CDP packet: invalid MTU TLV");
+		    return 0;
+		}
+		if (asprintf(&msg->peer[PEER_MTU], "%" PRIu32, mtu) == -1)
+		    msg->peer[PEER_MTU] = NULL;
+		break;
+	case CDP_TYPE_ADDRESS:
+	case CDP_TYPE_DUPLEX:
+	case CDP_TYPE_CAPABILITIES:
+		// XXX: todo
 	default:
 		my_log(DEBUG, "unknown TLV: type %d, length %d, leaves %zu",
 			    tlv_type, tlv_length, length);
