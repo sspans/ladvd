@@ -23,16 +23,16 @@
 // supported protocols
 struct proto protos[] = {
   { 1, "LLDP", LLDP_MULTICAST_ADDR, {0}, 0,
-    &lldp_packet, &lldp_check, &lldp_peer, NULL },
+    &lldp_packet, &lldp_check, &lldp_decode },
   { 0, "CDP",  CDP_MULTICAST_ADDR, LLC_ORG_CISCO, LLC_PID_CDP,
-    &cdp_packet, &cdp_check, &cdp_peer, NULL },
+    &cdp_packet, &cdp_check, &cdp_decode },
   { 0, "EDP",  EDP_MULTICAST_ADDR, LLC_ORG_EXTREME, LLC_PID_EDP,
-    &edp_packet, &edp_check, &edp_peer, NULL },
+    &edp_packet, &edp_check, &edp_decode },
   { 0, "FDP",  FDP_MULTICAST_ADDR, LLC_ORG_FOUNDRY, LLC_PID_FDP,
-    &fdp_packet, &fdp_check, &fdp_peer, NULL },
+    &fdp_packet, &fdp_check, &fdp_decode },
   { 0, "NDP",  NDP_MULTICAST_ADDR, LLC_ORG_NORTEL, LLC_PID_NDP_HELLO,
-    &ndp_packet, &ndp_check, &ndp_peer, NULL },
-  { 0, NULL, {0}, {0}, 0, NULL, NULL, NULL, NULL }
+    &ndp_packet, &ndp_check, &ndp_decode },
+  { 0, NULL, {0}, {0}, 0, NULL, NULL, NULL }
 };
 
 #endif /* _main_h */

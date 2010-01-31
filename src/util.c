@@ -234,10 +234,10 @@ void netif_descr(struct netif *netif, struct mhead *mqueue) {
 	if (netif->index != qmsg->index)
 	    continue;
 
-	if (!peer && strlen(qmsg->peer.name))
-	    peer = qmsg->peer.name;
-	if (!port && strlen(qmsg->peer.port))
-	    port = qmsg->peer.port;
+	if (!peer && qmsg->peer[PEER_HOSTNAME])
+	    peer = qmsg->peer[PEER_HOSTNAME];
+	if (!port && qmsg->peer[PEER_PORTNAME])
+	    port = qmsg->peer[PEER_PORTNAME];
 
 	// this assumes a sorted queue
 	if (memcmp(paddr, qmsg->msg + ETHER_ADDR_LEN, ETHER_ADDR_LEN) == 0)

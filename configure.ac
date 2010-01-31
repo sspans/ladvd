@@ -208,6 +208,7 @@ AC_CHECK_HEADERS([linux/ethtool.h], [], [],
 AC_CHECK_HEADERS([net/ethernet.h])
 AC_CHECK_HEADERS([net/ethertypes.h])
 AC_CHECK_HEADERS([netinet/in.h])
+AC_CHECK_HEADERS([netinet/ether.h])
 AC_CHECK_HEADERS([netinet/if_ether.h], [], [],
 [
 #include <sys/types.h>

@@ -170,6 +170,26 @@ struct master_req {
 #define MASTER_REQ_MAX	    sizeof(struct master_req)
 #define MASTER_REQ_LEN(l)   MASTER_REQ_MIN + l
 
+#define PEER_HOSTNAME	0
+#define PEER_PORTNAME	1
+#define PEER_HARDWARE	2
+#define PEER_SOFTWARE	3
+#define PEER_MTU	4
+#define PEER_ETHER	5
+#define PEER_IPV4	6
+#define PEER_IPV6	7
+#define PEER_MAX	8
+#define PEER_FREE(p) \
+    { \
+	int s; \
+	for (s = 0; s < PEER_MAX; s++) {\
+	    if (!p[s]) \
+		continue; \
+	    free(p[s]); \
+	    p[s] = NULL; \
+	} \
+    };
+
 struct master_msg {
     uint32_t index;
     char name[IFNAMSIZ];
@@ -178,10 +198,9 @@ struct master_msg {
     ssize_t len;
     char msg[ETHER_MAX_LEN];
 
-    struct {
-	char name[IFDESCRSIZE];
-	char port[IFDESCRSIZE];
-    } peer;
+    uint16_t decode;
+    char *peer[PEER_MAX];
+
     uint8_t lock;
 
     // should be last
@@ -208,8 +227,7 @@ struct proto {
     uint16_t llc_pid;
     size_t (*build_msg) (void *, struct netif *, struct sysinfo *);
     char * (*check) (void *, size_t);
-    size_t (*peer) (struct master_msg *);
-    char * (*decode) (void *, size_t);
+    size_t (*decode) (struct master_msg *);
 };
 
 void cli_main(int argc, char *argv[]) __attribute__ ((__noreturn__));

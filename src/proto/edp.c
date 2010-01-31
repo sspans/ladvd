@@ -159,7 +159,7 @@ char * edp_check(void *packet, size_t length) {
     return(NULL);
 }
 
-size_t edp_peer(struct master_msg *msg) {
+size_t edp_decode(struct master_msg *msg) {
     char *packet = NULL;
     size_t length;
     struct edp_header edp;
@@ -170,8 +170,6 @@ size_t edp_peer(struct master_msg *msg) {
 
     uint16_t tlv_type;
     uint16_t tlv_length;
-
-    char *hostname = NULL;
 
     assert(msg);
 
@@ -206,15 +204,13 @@ size_t edp_peer(struct master_msg *msg) {
 
 	switch(tlv_type) {
 	case EDP_TYPE_DISPLAY:
-		if (!GRAB_STRING(hostname, tlv_length)) {
+		if (!DECODE_STRING(msg, PEER_HOSTNAME, tlv_length)) {
 		    my_log(INFO, "Corrupt EDP packet: invalid Display TLV");
 		    return 0;
 		}
-		strlcpy(msg->peer.name, hostname, IFDESCRSIZE);
-		free(hostname);
 		break;
 	default:
-		my_log(DEBUG, "unknown TLV: type %d, length %d, leaves %d",
+		my_log(DEBUG, "unknown TLV: type %d, length %d, leaves %zu",
 			    tlv_type, tlv_length, length);
 		if (!SKIP(tlv_length)) {
 		    my_log(INFO, "Corrupt EDP packet: invalid TLV length");

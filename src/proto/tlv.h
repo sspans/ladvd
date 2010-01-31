@@ -28,6 +28,9 @@
  * added extended GRAB macros
  */
 
+void tlv_value_str(struct master_msg *, uint16_t, uint16_t, void *);
+#define TLV_LEN	    512
+
 #define VOIDP_DIFF(P, Q) ((uintptr_t)((char *)(P) - (char *)(Q)))
 
 typedef union {
@@ -75,6 +78,14 @@ typedef union {
 		d = my_malloc((b) + 1), \
 		memcpy((d), pos, (b)), \
 		*(d + b) = '\0', \
+		length -= (b), \
+		pos += (b), \
+		1 \
+	    ))
+#define DECODE_STRING(m, t, b) \
+	((length >= (b)) && \
+	    ( \
+		tlv_value_str(m, t, b, pos), \
 		length -= (b), \
 		pos += (b), \
 		1 \

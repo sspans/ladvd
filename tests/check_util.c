@@ -319,8 +319,8 @@ START_TEST(test_netif) {
     msg->index = netif->index;
     msg->proto = PROTO_LLDP;
     memcpy(msg->msg + ETHER_ADDR_LEN, "\x02\x00\x01", 3);
-    strlcpy(msg->peer.name, "foo", IFDESCRSIZE);
-    strlcpy(msg->peer.port, "42", IFDESCRSIZE);
+    msg->peer[PEER_HOSTNAME] = my_strdup("foo");
+    msg->peer[PEER_PORTNAME] = my_strdup("42");
     TAILQ_INSERT_TAIL(&mqueue, msg, entries);
 
     msg = my_malloc(MASTER_MSG_MAX);
@@ -328,7 +328,7 @@ START_TEST(test_netif) {
     msg->index = netif->index;
     msg->proto = PROTO_CDP;
     memcpy(msg->msg + ETHER_ADDR_LEN, "\x02\x00\x02", 3);
-    strlcpy(msg->peer.name, "bar", IFDESCRSIZE);
+    msg->peer[PEER_HOSTNAME] = my_strdup("bar");
     TAILQ_INSERT_TAIL(&mqueue, msg, entries);
 
     msg = my_malloc(MASTER_MSG_MAX);
@@ -336,8 +336,8 @@ START_TEST(test_netif) {
     msg->index = netif->index;
     msg->proto = PROTO_LLDP;
     memcpy(msg->msg + ETHER_ADDR_LEN, "\x02\x00\x03", 3);
-    strlcpy(msg->peer.name, "baz", IFDESCRSIZE);
-    strlcpy(msg->peer.port, "Ethernet4", IFDESCRSIZE);
+    msg->peer[PEER_HOSTNAME] = my_strdup("baz");
+    msg->peer[PEER_PORTNAME] = my_strdup("Ethernet4");
     TAILQ_INSERT_TAIL(&mqueue, msg, entries);
 
     msg = my_malloc(MASTER_MSG_MAX);
@@ -345,8 +345,8 @@ START_TEST(test_netif) {
     msg->index = netif->index;
     msg->proto = PROTO_LLDP;
     memcpy(msg->msg + ETHER_ADDR_LEN, "\x02\x00\x04", 3);
-    strlcpy(msg->peer.name, "quux", IFDESCRSIZE);
-    strlcpy(msg->peer.port, "Ethernet5", IFDESCRSIZE);
+    msg->peer[PEER_HOSTNAME] = my_strdup("quux");
+    msg->peer[PEER_PORTNAME] = my_strdup("Ethernet5");
     TAILQ_INSERT_TAIL(&mqueue, msg, entries);
 
     msg = my_malloc(MASTER_MSG_MAX);
@@ -354,8 +354,8 @@ START_TEST(test_netif) {
     msg->index = netif->index;
     msg->proto = PROTO_FDP;
     memcpy(msg->msg + ETHER_ADDR_LEN, "\x02\x00\x04", 3);
-    strlcpy(msg->peer.name, "quux", IFDESCRSIZE);
-    strlcpy(msg->peer.port, "Ethernet5", IFDESCRSIZE);
+    msg->peer[PEER_HOSTNAME] = my_strdup("quux");
+    msg->peer[PEER_PORTNAME] = my_strdup("Ethernet5");
     TAILQ_INSERT_TAIL(&mqueue, msg, entries);
 
     msg = my_malloc(MASTER_MSG_MAX);

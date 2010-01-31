@@ -20,6 +20,9 @@
 #ifndef _ether_h
 #define _ether_h
 
+#if HAVE_NETINET_ETHER_H
+#include <netinet/ether.h>
+#endif
 #if HAVE_NET_ETHERNET_H
 #include <net/ethernet.h>
 #endif

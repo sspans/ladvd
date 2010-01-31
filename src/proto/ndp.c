@@ -103,12 +103,12 @@ char * ndp_check(void *packet, size_t length) {
     return(NULL);
 }
 
-size_t ndp_peer(struct master_msg *msg) {
+size_t ndp_decode(struct master_msg *msg) {
     char *packet = NULL;
     size_t length;
     struct ndp_header ndp;
 
-    char *pos;
+    char *pos, *str;
 
     assert(msg);
 
@@ -124,10 +124,15 @@ size_t ndp_peer(struct master_msg *msg) {
     }
 
     memcpy(&ndp, pos, sizeof(ndp));
-    if (!inet_ntop(AF_INET, &ndp.addr, msg->peer.name, IFDESCRSIZE)) {
+    str = my_malloc(INET_ADDRSTRLEN);
+    if (!inet_ntop(AF_INET, &ndp.addr, str, INET_ADDRSTRLEN)) {
 	my_log(INFO, "failed to copy peer addr");
+	free(str);
 	return 0;
+    } else {
+	msg->peer[PEER_IPV4] = str;
     }
+
     // XXX: this should be improved
     msg->ttl = LADVD_TTL;
 

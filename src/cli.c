@@ -36,7 +36,7 @@ void cli_main(int argc, char *argv[]) {
     struct master_msg msg;
     ssize_t len;
 
-     options &= ~OPT_DAEMON;
+    options = 0;
 
     while ((ch = getopt(argc, argv, "LCEFNh")) != -1) {
 	// reset protos
@@ -112,11 +112,14 @@ void cli_main(int argc, char *argv[]) {
 	    continue;
 
 	// decode packet
-	//if (msg.len != protos[msg.proto].peer(&msg)) {
-	//    continue;
+	msg.decode = UINT16_MAX;
+	if (msg.len != protos[msg.proto].decode(&msg))
+	    continue;
 
 	printf("peer %s (%s) on interface %s\n",
-		msg.peer.name, protos[msg.proto].name, msg.name);
+		msg.peer[PEER_HOSTNAME], protos[msg.proto].name, msg.name);
+
+	PEER_FREE(msg.peer);
     }
 
     exit(EXIT_SUCCESS);

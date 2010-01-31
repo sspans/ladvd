@@ -172,11 +172,11 @@ void child_send(int fd, short event, void *evs) {
 		}
 
 		// write it to the wire.
-		my_log(INFO, "sending %s packet (%d bytes) on %s",
+		my_log(INFO, "sending %s packet (%zu bytes) on %s",
 			    protos[p].name, mreq.len, subif->name);
 		len = write(fd, &mreq, MASTER_MSG_LEN(mreq.len));
 		if (len < MASTER_MSG_MIN || len != MASTER_MSG_LEN(mreq.len))
-		    my_fatal("only %d bytes written: %s", len, strerror(errno));
+		    my_fatal("only %zi bytes written: %s", len, strerror(errno));
 	    }
 	}
     }
@@ -197,11 +197,11 @@ void child_queue(int fd, short event) {
     struct master_msg rmsg, *msg = NULL, *qmsg = NULL, *pmsg = NULL;
     struct netif *subif, *netif;
     struct ether_hdr *ether;
-    char buf[IFDESCRSIZE];
     time_t now;
     ssize_t len;
 
     my_log(INFO, "receiving message from master");
+    memset(&rmsg, 0, MASTER_MSG_MAX);
     if ((len = read(fd, &rmsg, MASTER_MSG_MAX)) == -1)
 	return;
     if (len < MASTER_MSG_MIN || len != MASTER_MSG_LEN(rmsg.len))
@@ -222,15 +222,10 @@ void child_queue(int fd, short event) {
 
     // decode message
     my_log(INFO, "decoding peer name and ttl");
-    if (rmsg.len != protos[rmsg.proto].peer(&rmsg))
+    rmsg.decode |= (1 << PEER_HOSTNAME);
+    rmsg.decode |= (1 << PEER_PORTNAME);
+    if (rmsg.len != protos[rmsg.proto].decode(&rmsg))
     	return;
-
-    memcpy(buf, rmsg.peer.name, sizeof(rmsg.peer.name));
-    strnvis(rmsg.peer.name, buf, sizeof(rmsg.peer.name),
-	VIS_CSTYLE|VIS_NL|VIS_TAB|VIS_OCTAL);
-    memcpy(buf, rmsg.peer.port, sizeof(rmsg.peer.name));
-    strnvis(rmsg.peer.port, buf, sizeof(rmsg.peer.port),
-	VIS_CSTYLE|VIS_NL|VIS_TAB|VIS_OCTAL);
 
     // add current time to the ttl
     if ((now = time(NULL)) == (time_t)-1)
@@ -267,6 +262,8 @@ void child_queue(int fd, short event) {
 	// copy everything upto the tailq_entry
 	memcpy(msg, &rmsg, offsetof(struct master_msg, entries));
     } else {
+	char *hostname = NULL;
+
 	msg = my_malloc(MASTER_MSG_MAX);
 	memcpy(msg, &rmsg, MASTER_MSG_MAX);
 	// group messages per peer
@@ -275,8 +272,10 @@ void child_queue(int fd, short event) {
 	else
 	    TAILQ_INSERT_TAIL(&mqueue, msg, entries);
 
-	my_log(CRIT, "new peer %s (%s) on interface %s",
-		msg->peer.name, protos[msg->proto].name, netif->name);
+	hostname = msg->peer[PEER_HOSTNAME];
+	if (hostname)
+	    my_log(CRIT, "new peer %s (%s) on interface %s",
+		    hostname, protos[msg->proto].name, netif->name);
     }
 
     // update ifdescr
@@ -302,6 +301,7 @@ void child_expire() {
     time_t now;
     struct master_msg *msg = NULL, *nmsg = NULL;
     struct netif *netif = NULL, *subif = NULL;
+    char *hostname = NULL;
 
     if ((now = time(NULL)) == (time_t)-1)
 	return;
@@ -311,14 +311,17 @@ void child_expire() {
 	if ((msg->ttl >= now) || msg->lock)
 	    continue;
 
-	my_log(CRIT, "removing peer %s (%s)",
-		    msg->peer.name, protos[msg->proto].name);
+	hostname = msg->peer[PEER_HOSTNAME];
+	if (hostname)
+	    my_log(CRIT, "removing peer %s (%s)",
+		    hostname, protos[msg->proto].name);
 
 	// mark the interface
 	if ((subif = netif_byindex(&netifs, msg->index)) != NULL)
 	    subif->update = 1;
 
 	TAILQ_REMOVE(&mqueue, msg, entries);
+	PEER_FREE(msg->peer);
 	free(msg);
     }
 

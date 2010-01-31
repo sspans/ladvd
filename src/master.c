@@ -299,7 +299,7 @@ void master_send(int msgfd, short event) {
 
 	len = write(dfd, msend.msg, msend.len);
 	if (len != msend.len)
-	    my_log(WARN, "only %d bytes written: %s", len, strerror(errno));
+	    my_log(WARN, "only %zi bytes written: %s", len, strerror(errno));
 	return;
     }
 
@@ -320,7 +320,7 @@ void master_send(int msgfd, short event) {
 	    master_close(rfd);
 
     if (len != msend.len)
-	my_log(WARN, "only %d bytes written: %s", len, strerror(errno));
+	my_log(WARN, "only %zi bytes written: %s", len, strerror(errno));
 
     return;
 }
@@ -674,7 +674,7 @@ void master_recv(int fd, short event, struct rawfd *rfd) {
 	my_log(INFO, "unknown message type received");
 	return;
     }
-    my_log(INFO, "received %s message (%d bytes)", protos[p].name, mrecv.len);
+    my_log(INFO, "received %s message (%zu bytes)", protos[p].name, mrecv.len);
 
     len = write(mfd, &mrecv, MASTER_MSG_LEN(mrecv.len));
     if (len != MASTER_MSG_LEN(mrecv.len))
