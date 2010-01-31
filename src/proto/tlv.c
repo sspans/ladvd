@@ -51,12 +51,14 @@ void tlv_value_str(struct master_msg *msg,
 		free(str);
 		str = NULL;
 	    }
+	    break;
 	case PEER_IPV6:
 	    str = my_malloc(INET6_ADDRSTRLEN);
 	    if (!inet_ntop(AF_INET6, value, str, INET_ADDRSTRLEN)) {
 		free(str);
 		str = NULL;
 	    }
+	    break;
 	default:
 	    my_fatal("unhandled type %d", type);
     }
