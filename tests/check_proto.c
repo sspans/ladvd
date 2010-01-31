@@ -549,7 +549,6 @@ START_TEST(test_lldp_decode) {
 
     mark_point();
     read_packet(&msg, "proto/lldp/43.good.lldpmed");
-    mark_point();
     fail_unless (lldp_decode(&msg) == msg.len, "packet length incorrect");
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
