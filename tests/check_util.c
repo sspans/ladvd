@@ -396,7 +396,7 @@ START_TEST(test_netif) {
 	"incorrect command: %d", mreq->op);
     fail_unless (mreq->index == netif->index,
 	"incorrect interface index: %d", mreq->index);
-    fail_unless (mreq->len == IFDESCRSIZE,
+    fail_unless (mreq->len == strlen(descr) + 1,
 	"incorrect message length: %d", mreq->len);
     fail_unless (strncmp(mreq->buf, descr, IFDESCRSIZE) == 0,
 	"incorrect interface description: %s", mreq->buf);
@@ -410,7 +410,7 @@ START_TEST(test_netif) {
 	"incorrect command: %d", mreq->op);
     fail_unless (mreq->index == netif->index,
 	"incorrect interface index: %d", mreq->index);
-    fail_unless (mreq->len == IFDESCRSIZE,
+    fail_unless (mreq->len == strlen(descr) + 1,
 	"incorrect message length: %d", mreq->len);
     fail_unless (strncmp(mreq->buf, descr, IFDESCRSIZE) == 0,
 	"incorrect interface description: %s", mreq->buf);
@@ -424,7 +424,7 @@ START_TEST(test_netif) {
 	"incorrect command: %d", mreq->op);
     fail_unless (mreq->index == netif->index,
 	"incorrect interface index: %d", mreq->index);
-    fail_unless (mreq->len == IFDESCRSIZE,
+    fail_unless (mreq->len == strlen(descr) + 1,
 	"incorrect message length: %d", mreq->len);
     fail_unless (strncmp(mreq->buf, descr, IFDESCRSIZE) == 0,
 	"incorrect interface description: %s", mreq->buf);
@@ -438,7 +438,7 @@ START_TEST(test_netif) {
 	"incorrect command: %d", mreq->op);
     fail_unless (mreq->index == netif->index,
 	"incorrect interface index: %d", mreq->index);
-    fail_unless (mreq->len == IFDESCRSIZE,
+    fail_unless (mreq->len == strlen(descr) + 1,
 	"incorrect message length: %d", mreq->len);
     fail_unless (strncmp(mreq->buf, descr, IFDESCRSIZE) == 0,
 	"incorrect interface description: %s", mreq->buf);
@@ -452,7 +452,7 @@ START_TEST(test_netif) {
 	"incorrect command: %d", mreq->op);
     fail_unless (mreq->index == netif->index,
 	"incorrect interface index: %d", mreq->index);
-    fail_unless (mreq->len == IFDESCRSIZE,
+    fail_unless (mreq->len == strlen(descr) + 1,
 	"incorrect message length: %d", mreq->len);
     fail_unless (strncmp(mreq->buf, descr, IFDESCRSIZE) == 0,
 	"incorrect interface description: %s", mreq->buf);
