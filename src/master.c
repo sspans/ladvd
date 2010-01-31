@@ -242,7 +242,7 @@ int master_check(struct master_req *mreq) {
 #endif /* HAVE_LINUX_ETHTOOL_H */
 #ifdef SIOCSIFDESCR
 	case MASTER_DESCR:
-	    assert(mreq->len =< IFDESCRSIZE);
+	    assert(mreq->len <= IFDESCRSIZE);
 	    return(EXIT_SUCCESS);
 #endif /* SIOCSIFDESCR */
 #ifdef HAVE_SYSFS
@@ -409,15 +409,15 @@ ssize_t master_descr(struct master_req *mreq) {
     ssize_t ret = 0;
 
     assert(mreq != NULL);
-    msg->msg[IFDESCRSIZ] = 0;
+    mreq->buf[IFDESCRSIZE] = 0;
 
     // prepare ifr struct
     memset(&ifr, 0, sizeof(ifr));
     strlcpy(ifr.ifr_name, mreq->name, IFNAMSIZ);
 #ifndef __FreeBSD__
-    ifr.ifr_data = (caddr_t)&mreq->msg;
+    ifr.ifr_data = (caddr_t)&mreq->buf;
 #else
-    ifr.ifr_buffer.buffer = &mreq->msg;
+    ifr.ifr_buffer.buffer = &mreq->buf;
     ifr.ifr_buffer.length = mreq->len;
 #endif
 
