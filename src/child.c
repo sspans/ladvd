@@ -200,11 +200,14 @@ void child_queue(int fd, short event) {
     time_t now;
     ssize_t len;
 
-    my_log(INFO, "receiving message from master");
     memset(&rmsg, 0, MASTER_MSG_MAX);
+
+    my_log(INFO, "receiving message from master");
     if ((len = read(fd, &rmsg, MASTER_MSG_MAX)) == -1)
 	return;
     if (len < MASTER_MSG_MIN || len != MASTER_MSG_LEN(rmsg.len))
+	return;
+    if ((now = time(NULL)) == (time_t)-1)
 	return;
 
     assert(rmsg.proto < PROTO_MAX);
@@ -224,12 +227,12 @@ void child_queue(int fd, short event) {
     my_log(INFO, "decoding peer name and ttl");
     rmsg.decode |= (1 << PEER_HOSTNAME);
     rmsg.decode |= (1 << PEER_PORTNAME);
-    if (rmsg.len != protos[rmsg.proto].decode(&rmsg))
+    if (rmsg.len != protos[rmsg.proto].decode(&rmsg)) {
+	PEER_FREE(msg->peer);
     	return;
+    }
 
     // add current time to the ttl
-    if ((now = time(NULL)) == (time_t)-1)
-	return;
     rmsg.ttl += now;
 
     // fetch the parent netif
