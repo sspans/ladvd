@@ -228,7 +228,7 @@ void child_queue(int fd, short event) {
     rmsg.decode |= (1 << PEER_HOSTNAME);
     rmsg.decode |= (1 << PEER_PORTNAME);
     if (rmsg.len != protos[rmsg.proto].decode(&rmsg)) {
-	PEER_FREE(msg->peer);
+	PEER_FREE(rmsg.peer);
     	return;
     }
 
