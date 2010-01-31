@@ -43,9 +43,13 @@ void tlv_value_str(struct master_msg *msg,
 	    strnvis(str, src, strlen, VIS_NL|VIS_TAB|VIS_OCTAL);
 	    break;
 	case PEER_ETHER:
+	    if (length != sizeof(struct ether_addr))
+		break;
 	    str = ether_ntoa(value);
 	    break;
 	case PEER_IPV4:
+	    if (length != sizeof(struct in_addr))
+		break;
 	    str = my_malloc(INET_ADDRSTRLEN);
 	    if (!inet_ntop(AF_INET, value, str, INET_ADDRSTRLEN)) {
 		free(str);
@@ -53,8 +57,10 @@ void tlv_value_str(struct master_msg *msg,
 	    }
 	    break;
 	case PEER_IPV6:
+	    if (length != sizeof(struct in6_addr))
+		break;
 	    str = my_malloc(INET6_ADDRSTRLEN);
-	    if (!inet_ntop(AF_INET6, value, str, INET_ADDRSTRLEN)) {
+	    if (!inet_ntop(AF_INET6, value, str, INET6_ADDRSTRLEN)) {
 		free(str);
 		str = NULL;
 	    }
