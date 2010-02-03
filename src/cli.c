@@ -29,7 +29,7 @@ extern struct proto protos[];
 __attribute__ ((__noreturn__))
 void cli_main(int argc, char *argv[]) {
     int ch, i;
-    uint8_t proto = 0xFF;
+    uint8_t verbose, proto = 0;
     uint32_t *indexes = NULL;
     struct sockaddr_un sun;
     int fd = -1;
@@ -38,11 +38,7 @@ void cli_main(int argc, char *argv[]) {
 
     options = 0;
 
-    while ((ch = getopt(argc, argv, "LCEFNh")) != -1) {
-	// reset protos
-	if (proto == 0xFF)
-	    proto = 0;
-
+    while ((ch = getopt(argc, argv, "LCEFNbhov")) != -1) {
 	switch(ch) {
 	    case 'L':
 		proto |= (1 << PROTO_LLDP);
@@ -59,6 +55,15 @@ void cli_main(int argc, char *argv[]) {
 	    case 'N':
 		proto |= (1 << PROTO_NDP);
 		break;
+	    case 'b':
+		options |= OPT_BATCH;
+		break;
+	    case 'o':
+		options |= OPT_ONCE;
+		break;
+	    case 'v':
+		verbose++;
+		break;
 	    default:
 		usage();
 	}
@@ -66,6 +71,10 @@ void cli_main(int argc, char *argv[]) {
 
     argc -= optind;
     argv += optind;
+
+    // default to all protocols
+    if (proto == 0)
+	proto = UINT8_MAX;
 
     if (argc) {
 	indexes = my_calloc(argc, sizeof(msg.index));
@@ -120,6 +129,9 @@ void cli_main(int argc, char *argv[]) {
 		msg.peer[PEER_HOSTNAME], protos[msg.proto].name, msg.name);
 
 	PEER_FREE(msg.peer);
+
+	if (options & OPT_ONCE)
+	    exit(EXIT_SUCCESS);
     }
 
     exit(EXIT_SUCCESS);
@@ -137,7 +149,10 @@ static void usage() {
 	    "\t-E = Print EDP\n"
 	    "\t-F = Print FDP\n"
 	    "\t-N = Print NDP\n"
-	    "\t-h = Print this message\n",
+	    "\t-b = Print scriptable output\n"
+	    "\t-h = Print this message\n"
+	    "\t-o = Decode only one packet\n"
+	    "\t-v = Increase verbosity\n",
 	    __progname);
 
     exit(EXIT_FAILURE);
