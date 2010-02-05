@@ -292,7 +292,7 @@ START_TEST(test_child_expire) {
     // expire a locked message
     options |= OPT_AUTO;
     dmsg = TAILQ_FIRST(&mqueue);
-    dmsg->ttl = 0;
+    dmsg->received  -= dmsg->ttl * 2;
     dmsg->lock = 1;
     child_expire();
 
@@ -317,7 +317,7 @@ START_TEST(test_child_expire) {
 
     // expire a message
     dmsg = TAILQ_FIRST(&mqueue);
-    dmsg->ttl = 0;
+    dmsg->received  -= dmsg->ttl * 2;
     child_expire();
 
     // check the message count

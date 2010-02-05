@@ -195,11 +195,12 @@ struct master_msg {
     uint32_t index;
     char name[IFNAMSIZ];
     uint8_t proto;
-    time_t ttl;
+    time_t received;
     ssize_t len;
     char msg[ETHER_MAX_LEN];
 
     uint16_t decode;
+    uint16_t ttl;
     char *peer[PEER_MAX];
 
     uint8_t lock;

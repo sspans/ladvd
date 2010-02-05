@@ -232,8 +232,8 @@ void child_queue(int fd, short event) {
     	return;
     }
 
-    // add current time to the ttl
-    rmsg.ttl += now;
+    // add current timestamp
+    rmsg.received = now;
 
     // fetch the parent netif
     if (subif->master)
@@ -311,7 +311,7 @@ void child_expire() {
 
     // remove expired messages
     TAILQ_FOREACH_SAFE(msg, &mqueue, entries, nmsg) {
-	if ((msg->ttl >= now) || msg->lock)
+	if (((msg->received + msg->ttl) >= now) || msg->lock)
 	    continue;
 
 	hostname = msg->peer[PEER_HOSTNAME];
