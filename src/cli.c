@@ -100,7 +100,7 @@ void cli_main(int argc, char *argv[]) {
     if (options & OPT_DEBUG)
 	write_pcap_hdr(fileno(stdout));
 
-    while ((len = read(fd, &msg, MASTER_MSG_MAX)) != -1) {
+    while ((len = read(fd, &msg, MASTER_MSG_MAX)) > 0) {
     
 	 if (len < MASTER_MSG_MIN || len != MASTER_MSG_LEN(msg.len))
 	    continue;
