@@ -371,3 +371,44 @@ uint16_t my_chksum(const void *data, size_t length, int cisco) {
     return (uint16_t)~sum;
 }
 
+void write_pcap_hdr(int fd) {
+    pcap_hdr_t pcap_hdr;
+
+    // zero
+    memset(&pcap_hdr, 0, sizeof(pcap_hdr));
+
+    // create pcap global header
+    pcap_hdr.magic_number = PCAP_MAGIC;
+    pcap_hdr.version_major = 2;
+    pcap_hdr.version_minor = 4;
+    pcap_hdr.snaplen = ETHER_MAX_LEN;
+    pcap_hdr.network = 1;
+
+    // send pcap global header
+    if (write(fd, &pcap_hdr, sizeof(pcap_hdr)) != sizeof(pcap_hdr))
+	my_fatal("failed to write pcap global header");
+}
+
+void write_pcap_rec(int fd, struct master_msg *msg) {
+    pcaprec_hdr_t pcap_rec_hdr;
+    struct timeval tv;
+    ssize_t len = 0;
+
+    // write a pcap record header
+    if (gettimeofday(&tv, NULL) == 0) {
+	pcap_rec_hdr.ts_sec = tv.tv_sec;
+	pcap_rec_hdr.ts_usec = tv.tv_usec;
+	pcap_rec_hdr.incl_len = msg->len;
+	pcap_rec_hdr.orig_len = msg->len;
+
+	if (write(fd, &pcap_rec_hdr, sizeof(pcap_rec_hdr))
+		    != sizeof(pcap_rec_hdr))
+	    my_fatal("failed to write pcap record header");
+    }
+
+    len = write(fd, msg->msg, msg->len);
+    if (len != msg->len)
+	my_log(WARN, "only %zi bytes written: %s", len, strerror(errno));
+
+    return;
+}

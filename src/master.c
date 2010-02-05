@@ -81,25 +81,8 @@ void master_init(int reqfd, int msgfd, pid_t child) {
 
     // debug
     if (options & OPT_DEBUG) {
-	// pcap
-	pcap_hdr_t pcap_hdr;
-
-	// zero
-	memset(&pcap_hdr, 0, sizeof(pcap_hdr));
-
-	// create pcap global header
-	pcap_hdr.magic_number = PCAP_MAGIC;
-	pcap_hdr.version_major = 2;
-	pcap_hdr.version_minor = 4;
-	pcap_hdr.snaplen = ETHER_MAX_LEN;
-	pcap_hdr.network = 1;
-
-	// send pcap global header
 	dfd = fileno(stdout);
-
-	if (write(dfd, &pcap_hdr, sizeof(pcap_hdr))
-	    != sizeof(pcap_hdr))
-	    my_fatal("failed to write pcap global header");
+	write_pcap_hdr(dfd);
 #ifdef USE_CAPABILITIES
     } else {
 	// keep CAP_NET_ADMIN
@@ -282,24 +265,7 @@ void master_send(int msgfd, short event) {
 
     // debug
     if (options & OPT_DEBUG) {
-	pcaprec_hdr_t pcap_rec_hdr;
-	struct timeval tv;
-
-	// write a pcap record header
-	if (gettimeofday(&tv, NULL) == 0) {
-	    pcap_rec_hdr.ts_sec = tv.tv_sec;
-	    pcap_rec_hdr.ts_usec = tv.tv_usec;
-	    pcap_rec_hdr.incl_len = msend.len;
-	    pcap_rec_hdr.orig_len = msend.len;
-
-	    if (write(dfd, &pcap_rec_hdr, sizeof(pcap_rec_hdr))
-		    != sizeof(pcap_rec_hdr))
-		my_fatal("failed to write pcap record header");
-	}
-
-	len = write(dfd, msend.msg, msend.len);
-	if (len != msend.len)
-	    my_log(WARN, "only %zi bytes written: %s", len, strerror(errno));
+	write_pcap_rec(dfd, &msend);
 	return;
     }
 

@@ -38,7 +38,7 @@ void cli_main(int argc, char *argv[]) {
 
     options = 0;
 
-    while ((ch = getopt(argc, argv, "LCEFNbhov")) != -1) {
+    while ((ch = getopt(argc, argv, "LCEFNbdhov")) != -1) {
 	switch(ch) {
 	    case 'L':
 		proto |= (1 << PROTO_LLDP);
@@ -57,6 +57,9 @@ void cli_main(int argc, char *argv[]) {
 		break;
 	    case 'b':
 		options |= OPT_BATCH;
+		break;
+	    case 'd':
+		options |= OPT_DEBUG;
 		break;
 	    case 'o':
 		options |= OPT_ONCE;
@@ -93,6 +96,10 @@ void cli_main(int argc, char *argv[]) {
     if (connect(fd, (struct sockaddr *)&sun, sizeof(sun)) == -1)
 	my_fatal("failed to open " PACKAGE_SOCKET ": %s", strerror(errno));
 
+    // debug
+    if (options & OPT_DEBUG)
+	write_pcap_hdr(fileno(stdout));
+
     while ((len = read(fd, &msg, MASTER_MSG_MAX)) != -1) {
     
 	 if (len < MASTER_MSG_MIN || len != MASTER_MSG_LEN(msg.len))
@@ -119,6 +126,12 @@ void cli_main(int argc, char *argv[]) {
 	// skip unwanted protocols
 	if (!(proto & (1 << msg.proto)))
 	    continue;
+
+	// debug
+	if (options & OPT_DEBUG) {
+	    write_pcap_rec(fileno(stdout), &msg);
+	    continue;
+	}
 
 	// decode packet
 	msg.decode = UINT16_MAX;
@@ -150,6 +163,7 @@ static void usage() {
 	    "\t-F = Print FDP\n"
 	    "\t-N = Print NDP\n"
 	    "\t-b = Print scriptable output\n"
+	    "\t-d = Dump pcap-compatible packets to stdout\n"
 	    "\t-h = Print this message\n"
 	    "\t-o = Decode only one packet\n"
 	    "\t-v = Increase verbosity\n",
