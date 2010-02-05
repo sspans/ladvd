@@ -102,7 +102,7 @@ void cli_main(int argc, char *argv[]) {
 
     while ((len = read(fd, &msg, MASTER_MSG_MAX)) > 0) {
     
-	 if (len < MASTER_MSG_MIN || len != MASTER_MSG_LEN(msg.len))
+	if (len < MASTER_MSG_MIN || len != MASTER_MSG_LEN(msg.len))
 	    continue;
 
 	if (msg.proto > PROTO_MAX)
