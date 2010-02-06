@@ -151,12 +151,11 @@ void master_signal(int sig, short event, void *pid) {
 
 
 void master_req(int reqfd, short event) {
-    struct master_req mreq;
+    struct master_req mreq = {};
     struct rawfd *rfd;
     ssize_t len;
 
     // receive request
-    memset(&mreq, 0, MASTER_REQ_MAX);
     len = read(reqfd, &mreq, MASTER_REQ_MAX);
 
     // check request size
@@ -242,12 +241,11 @@ int master_check(struct master_req *mreq) {
 
 void master_send(int msgfd, short event) {
 
-    struct master_msg msend;
+    struct master_msg msend = {};
     struct rawfd *rfd = NULL;
     ssize_t len;
 
     // receive request
-    memset(&msend, 0, MASTER_MSG_MAX);
     len = read(msgfd, &msend, MASTER_MSG_MAX);
 
     // check request size
@@ -345,17 +343,15 @@ void master_close(struct rawfd *rfd) {
 #if HAVE_LINUX_ETHTOOL_H
 ssize_t master_ethtool(struct master_req *mreq) {
 
-    struct ifreq ifr;
-    struct ethtool_cmd ecmd;
+    struct ifreq ifr = {};
+    struct ethtool_cmd ecmd = {};
 
     assert(mreq != NULL);
 
     // prepare ifr struct
-    memset(&ifr, 0, sizeof(ifr));
     strlcpy(ifr.ifr_name, mreq->name, IFNAMSIZ);
 
     // prepare ecmd struct
-    memset(&ecmd, 0, sizeof(ecmd));
     ecmd.cmd = ETHTOOL_GSET;
     ifr.ifr_data = (caddr_t)&ecmd;
 
@@ -371,14 +367,13 @@ ssize_t master_ethtool(struct master_req *mreq) {
 #ifdef SIOCSIFDESCR
 ssize_t master_descr(struct master_req *mreq) {
 
-    struct ifreq ifr;
+    struct ifreq ifr = {};
     ssize_t ret = 0;
 
     assert(mreq != NULL);
     mreq->buf[IFDESCRSIZE] = 0;
 
     // prepare ifr struct
-    memset(&ifr, 0, sizeof(ifr));
     strlcpy(ifr.ifr_name, mreq->name, IFNAMSIZ);
 #ifndef __FreeBSD__
     ifr.ifr_data = (caddr_t)&mreq->buf;
@@ -417,7 +412,7 @@ int master_socket(struct rawfd *rfd) {
 	return(fileno(stdin));
 
 #ifdef HAVE_NETPACKET_PACKET_H
-    struct sockaddr_ll sa;
+    struct sockaddr_ll sa = {};
 
     assert(rfd);
     fd = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
@@ -427,8 +422,6 @@ int master_socket(struct rawfd *rfd) {
 	return(fd);
 
     // bind the socket to rfd
-    memset(&sa, 0, sizeof (sa));
-
     sa.sll_family = AF_PACKET;
     sa.sll_ifindex = rfd->index;
     sa.sll_protocol = htons(ETH_P_ALL);
@@ -438,9 +431,8 @@ int master_socket(struct rawfd *rfd) {
 
 #ifdef HAVE_LINUX_FILTER_H
     // install socket filter
-    struct sock_fprog fprog;
+    struct sock_fprog fprog = {};
 
-    memset(&fprog, 0, sizeof(fprog));
     if (options & OPT_RECV) {
 	fprog.filter = proto_filter; 
 	fprog.len = sizeof(proto_filter) / sizeof(struct sock_filter);
@@ -458,8 +450,8 @@ int master_socket(struct rawfd *rfd) {
     int n = 0;
     char dev[50];
 
-    struct ifreq ifr;
-    struct bpf_program fprog;
+    struct ifreq ifr = {};
+    struct bpf_program fprog = {};
     int enable = 1;
 
     assert(rfd);
@@ -474,7 +466,6 @@ int master_socket(struct rawfd *rfd) {
 	return(fd);
 
     // prepare ifr struct
-    memset(&ifr, 0, sizeof(ifr));
     strlcpy(ifr.ifr_name, rfd->name, IFNAMSIZ);
 
     // bind the socket to rfd
@@ -482,7 +473,6 @@ int master_socket(struct rawfd *rfd) {
 	my_fatal("failed to bind socket to %s", rfd->name);
 
     // setup bpf receive
-    memset(&fprog, 0, sizeof(fprog));
     if (options & OPT_RECV) {
 	fprog.bf_insns = proto_filter; 
 	fprog.bf_len = sizeof(proto_filter) / sizeof(struct bpf_insn);
@@ -521,13 +511,12 @@ void master_multi(struct rawfd *rfd, struct proto *protos, int op) {
 #ifdef __FreeBSD__
     struct sockaddr_dl *saddrdl;
 #endif
-    struct ifreq ifr;
+    struct ifreq ifr = {};
     int p;
 
     if (options & OPT_DEBUG)
 	return;
 
-    memset(&ifr, 0, sizeof(ifr));
     strlcpy(ifr.ifr_name, rfd->name, IFNAMSIZ);
 
     for (p = 0; protos[p].name != NULL; p++) {
@@ -578,7 +567,7 @@ void master_multi(struct rawfd *rfd, struct proto *protos, int op) {
 
 void master_recv(int fd, short event, struct rawfd *rfd) {
     // packet
-    struct master_msg mrecv;
+    struct master_msg mrecv = {};
     struct ether_hdr *ether;
     static unsigned int rcount = 0;
     unsigned int p;
@@ -589,7 +578,6 @@ void master_recv(int fd, short event, struct rawfd *rfd) {
 #endif /* HAVE_NET_BPF_H */
 
     assert(rfd);
-    memset(&mrecv, 0, sizeof (mrecv));
 
 #ifdef HAVE_NET_BPF_H
     assert(rfd->bpf_buf.len);

@@ -372,10 +372,7 @@ uint16_t my_chksum(const void *data, size_t length, int cisco) {
 }
 
 void write_pcap_hdr(int fd) {
-    pcap_hdr_t pcap_hdr;
-
-    // zero
-    memset(&pcap_hdr, 0, sizeof(pcap_hdr));
+    pcap_hdr_t pcap_hdr = {};
 
     // create pcap global header
     pcap_hdr.magic_number = PCAP_MAGIC;
@@ -390,7 +387,7 @@ void write_pcap_hdr(int fd) {
 }
 
 void write_pcap_rec(int fd, struct master_msg *msg) {
-    pcaprec_hdr_t pcap_rec_hdr;
+    pcaprec_hdr_t pcap_rec_hdr = {};
     struct timeval tv;
     ssize_t len = 0;
 

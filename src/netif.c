@@ -123,7 +123,7 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
     int j, count = 0;
     int type, enabled;
     uint32_t index;
-    struct master_req mreq;
+    struct master_req mreq = {};
 
 #ifdef AF_PACKET
     struct sockaddr_ll saddrll;
@@ -280,7 +280,6 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 
 	my_log(INFO, "removing old interface %s", netif->name);
 
-	memset(&mreq, 0, sizeof(mreq));
 	mreq.op = MASTER_CLOSE;
 	mreq.index = netif->index;
 	my_mreq(&mreq);
@@ -345,13 +344,12 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 int netif_wireless(int sockfd, struct ifaddrs *ifaddr, struct ifreq *ifr) {
 
 #if HAVE_NET_IF_MEDIA_H
-    struct ifmediareq ifmr;
+    struct ifmediareq ifmr = {};
 #endif /* HAVE_HAVE_NET_IF_MEDIA_H */
 
 #ifdef HAVE_LINUX_WIRELESS_H
-    struct iwreq iwreq;
+    struct iwreq iwreq = {};
 
-    memset(&iwreq, 0, sizeof(iwreq));
     strlcpy(iwreq.ifr_name, ifaddr->ifa_name, sizeof(iwreq.ifr_name));
 
     return(ioctl(sockfd, SIOCGIWNAME, &iwreq));
@@ -359,10 +357,9 @@ int netif_wireless(int sockfd, struct ifaddrs *ifaddr, struct ifreq *ifr) {
 
 #ifdef HAVE_NET80211_IEEE80211_IOCTL_H
 #ifdef SIOCG80211
-    struct ieee80211req ireq;
+    struct ieee80211req ireq = {};
     u_int8_t i_data[32];
 
-    memset(&ireq, 0, sizeof(ireq));
     strlcpy(ireq.i_name, ifaddr->ifa_name, sizeof(ireq.i_name));
     ireq.i_data = &i_data;
 
@@ -380,7 +377,6 @@ int netif_wireless(int sockfd, struct ifaddrs *ifaddr, struct ifreq *ifr) {
 #endif /* HAVE_NET80211_IEEE80211_IOCTL_H */
 
 #if defined(HAVE_NET_IF_MEDIA_H) && defined(IFM_IEEE80211)
-    memset(&ifmr, 0, sizeof(ifmr));
     strlcpy(ifmr.ifm_name, ifaddr->ifa_name, sizeof(ifmr.ifm_name));
 
     if (ioctl(sockfd, SIOCGIFMEDIA, (caddr_t)&ifmr) < 0)
@@ -400,23 +396,21 @@ int netif_type(int sockfd, uint32_t index,
 	struct ifaddrs *ifaddr, struct ifreq *ifr) {
 
 #if HAVE_LINUX_ETHTOOL_H
-    struct ethtool_drvinfo drvinfo;
-    memset(&drvinfo, 0, sizeof(drvinfo));
+    struct ethtool_drvinfo drvinfo = {};
 #endif
 
 #ifdef HAVE_NET_IF_VLAN_VAR_H
-    struct vlanreq  vreq;
+    struct vlanreq vreq = {};
 #endif /* HAVE_NET_IF_VLAN_VAR_H */
 #ifdef HAVE_NET_IF_LAGG_H
-    struct lagg_reqall ra;
+    struct lagg_reqall ra = {};
 #elif HAVE_NET_IF_TRUNK_H
-    struct trunk_reqall ra;
+    struct trunk_reqall ra = {};
 #endif
 
 #ifdef HAVE_SYSFS
-    struct master_req mreq;
+    struct master_req mreq = {};
 
-    memset(&mreq, 0, sizeof(mreq));
     mreq.op = MASTER_DEVICE;
     mreq.index = index;
 
@@ -456,7 +450,6 @@ int netif_type(int sockfd, uint32_t index,
 
 	// vlan
 #ifdef HAVE_NET_IF_VLAN_VAR_H
-	memset(&vreq, 0, sizeof(struct vlanreq));
 	ifr->ifr_data = (caddr_t)&vreq;
 	if (ioctl(sockfd, SIOCGETVLAN, ifr) >= 0)
 	    return(NETIF_INVALID);
@@ -464,7 +457,6 @@ int netif_type(int sockfd, uint32_t index,
 
 	// bonding
 #if defined(HAVE_NET_IF_LAGG_H) || defined(HAVE_NET_IF_TRUNK_H)
-	memset(&ra, 0, sizeof(ra));
 	strlcpy(ra.ra_ifname, ifaddr->ifa_name, sizeof(ra.ra_ifname));
 #ifdef HAVE_NET_IF_LAGG_H
 	if (ioctl(sockfd, SIOCGLAGG, &ra) >= 0)
@@ -507,20 +499,19 @@ void netif_bond(int sockfd, struct nhead *netifs, struct netif *master,
     int i;
 
 #ifdef HAVE_LINUX_IF_BONDING_H
-    struct ifbond ifbond;
-    struct ifslave ifslave;
+    struct ifbond ifbond = {};
+    struct ifslave ifslave = {};
 #elif HAVE_NET_IF_LAGG_H
     struct lagg_reqport rpbuf[LAGG_MAX_PORTS];
-    struct lagg_reqall ra;
+    struct lagg_reqall ra = {};
 #elif HAVE_NET_IF_TRUNK_H
     struct trunk_reqport rpbuf[TRUNK_MAX_PORTS];
-    struct trunk_reqall ra;
+    struct trunk_reqall ra = {};
 #endif
 
     // check for lacp
 #if defined(HAVE_LINUX_IF_BONDING_H) && defined(BOND_MODE_8023AD)
     strlcpy(ifr->ifr_name, master->name, IFNAMSIZ);
-    memset(&ifbond, 0, sizeof(ifbond));
     ifr->ifr_data = (char *)&ifbond;
 
     if (ioctl(sockfd, SIOCBONDINFOQUERY, ifr) >= 0) {
@@ -562,8 +553,6 @@ void netif_bond(int sockfd, struct nhead *netifs, struct netif *master,
 #endif /* HAVE_LINUX_IF_BONDING_H */
 
 #if defined(HAVE_NET_IF_LAGG_H) || defined(HAVE_NET_IF_TRUNK_H)
-    memset(&ra, 0, sizeof(ra));
-
     strlcpy(ra.ra_ifname, master->name, sizeof(ra.ra_ifname));
     ra.ra_size = sizeof(rpbuf);
     ra.ra_port = rpbuf;
@@ -596,11 +585,10 @@ void netif_bond(int sockfd, struct nhead *netifs, struct netif *master,
 #endif /* HAVE_NET_IF_LAGG_H || HAVE_NET_IF_TRUNK_H */
 
 #ifdef HAVE_NET_IF_BOND_VAR_H
-    struct if_bond_req ibr;
+    struct if_bond_req ibr = {};
     struct if_bond_status *ibs;
     struct if_bond_status_req *ibsr;
 
-    memset(&ibr, 0, sizeof(ibr));
     ibr.ibr_op = IF_BOND_OP_GET_STATUS;
     ibsr = &ibr.ibr_ibru.ibru_status;
     ibsr->ibsr_version = IF_BOND_STATUS_REQ_VERSION;
@@ -653,7 +641,7 @@ void netif_bridge(int sockfd, struct nhead *netifs, struct netif *master,
 #endif
 
 #ifdef HAVE_LINUX_IF_BRIDGE_H
-    int ifindex[BRIDGE_MAX_PORTS];
+    int ifindex[BRIDGE_MAX_PORTS] = {};
     unsigned long args[4] = { BRCTL_GET_PORT_LIST,
 		    (unsigned long)ifindex, BRIDGE_MAX_PORTS, 0 };
 #endif /* HAVE_LINUX_IF_BRIDGE_H */
@@ -661,7 +649,6 @@ void netif_bridge(int sockfd, struct nhead *netifs, struct netif *master,
 
     // handle slaves
 #ifdef HAVE_LINUX_IF_BRIDGE_H
-    memset(ifindex, 0, sizeof(ifindex));
     strlcpy(ifr->ifr_name, master->name, IFNAMSIZ);
     ifr->ifr_data = (char *)&args;
 
@@ -693,9 +680,7 @@ void netif_bridge(int sockfd, struct nhead *netifs, struct netif *master,
     int len = 8192;
 
 #ifdef HAVE_NET_IF_BRIDGEVAR_H
-    struct ifdrv ifd;
-
-    memset(&ifd, 0, sizeof(ifd));
+    struct ifdrv ifd = {};
 
     strlcpy(ifd.ifd_name, master->name, sizeof(ifd.ifd_name));
     ifd.ifd_cmd = BRDGGIFS;
@@ -845,15 +830,15 @@ void netif_addrs(struct ifaddrs *ifaddrs, struct nhead *netifs,
 // perform media detection on physical interfaces
 int netif_media(struct netif *netif) {
     int sockfd, af = AF_INET;
-    struct ifreq ifr;
+    struct ifreq ifr = {};
 
 #if HAVE_LINUX_ETHTOOL_H
     struct ethtool_cmd ecmd;
-    struct master_req mreq;
+    struct master_req mreq = {};
 #endif /* HAVE_LINUX_ETHTOOL_H */
 
 #if HAVE_NET_IF_MEDIA_H
-    struct ifmediareq ifmr;
+    struct ifmediareq ifmr = {};
     int *media_list, i;
 #endif /* HAVE_HAVE_NET_IF_MEDIA_H */
 
@@ -864,7 +849,6 @@ int netif_media(struct netif *netif) {
     netif->autoneg_enabled = -1;
     netif->mau = 0;
 
-    memset(&ifr, 0, sizeof(ifr));
     strlcpy(ifr.ifr_name, netif->name, sizeof(ifr.ifr_name));
 
     // interface mtu
@@ -874,7 +858,6 @@ int netif_media(struct netif *netif) {
 	my_log(INFO, "mtu detection failed on interface %s", netif->name);
 
 #if HAVE_LINUX_ETHTOOL_H
-    memset(&mreq, 0, sizeof(mreq));
     mreq.op = MASTER_ETHTOOL;
     mreq.index = netif->index;
     mreq.len = sizeof(ecmd);
@@ -902,7 +885,6 @@ int netif_media(struct netif *netif) {
 #endif /* HAVE_LINUX_ETHTOOL_H */
 
 #if HAVE_NET_IF_MEDIA_H
-    memset(&ifmr, 0, sizeof(ifmr));
     strlcpy(ifmr.ifm_name, netif->name, sizeof(ifmr.ifm_name));
 
     if (ioctl(sockfd, SIOCGIFMEDIA, (caddr_t)&ifmr) < 0) {

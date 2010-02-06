@@ -27,7 +27,7 @@ size_t ndp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
 
     struct ether_hdr ether;
     struct ether_llc llc;
-    struct ndp_header ndp;
+    struct ndp_header ndp = {};
 
     uint8_t *pos = packet;
 
@@ -56,7 +56,6 @@ size_t ndp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
     pos += sizeof(struct ether_llc);
 
     // ndp header
-    memset(&ndp, 0, sizeof(struct ndp_header));
     ndp.addr = master->ipaddr4;
     ndp.seg[2] = netif->index;
     ndp.chassis = NDP_CHASSIS_OTHER;

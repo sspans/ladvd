@@ -27,7 +27,7 @@ size_t edp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
 
     struct ether_hdr ether;
     struct ether_llc llc;
-    struct edp_header edp;
+    struct edp_header edp = {};
 
     char *tlv;
     char *pos = packet;
@@ -62,7 +62,6 @@ size_t edp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
     pos += sizeof(struct ether_llc);
 
     // edp header
-    memset(&edp, 0, sizeof(edp));
     edp.version = 1;
     edp.sequence = htons(edp_count++);
     memcpy(&edp.hwaddr, sysinfo->hwaddr, ETHER_ADDR_LEN);

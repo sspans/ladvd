@@ -124,7 +124,7 @@ void child_init(int reqfd, int msgfd, int ifc, char *ifl[],
 void child_send(int fd, short event, void *evs) {
     struct master_msg mreq;
     struct netif *netif = NULL, *subif = NULL;
-    struct timeval tv;
+    struct timeval tv = { .tv_sec = SLEEPTIME };
     int p;
     ssize_t len;
 
@@ -185,22 +185,17 @@ void child_send(int fd, short event, void *evs) {
     if (options & OPT_RECV)
 	child_expire();
 
-    // prepare timeval
-    timerclear(&tv);
-    tv.tv_sec = SLEEPTIME;
-
     // schedule the next run
     event_add(evs, &tv);
 }
 
 void child_queue(int fd, short event) {
-    struct master_msg rmsg, *msg = NULL, *qmsg = NULL, *pmsg = NULL;
+    struct master_msg rmsg = {};
+    struct master_msg  *msg = NULL, *qmsg = NULL, *pmsg = NULL;
     struct netif *subif, *netif;
     struct ether_hdr *ether;
     time_t now;
     ssize_t len;
-
-    memset(&rmsg, 0, MASTER_MSG_MAX);
 
     my_log(INFO, "receiving message from master");
     if ((len = read(fd, &rmsg, MASTER_MSG_MAX)) == -1)
