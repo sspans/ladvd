@@ -60,7 +60,25 @@ void master_close(struct rawfd *rfd);
 int master_check(struct master_req *mreq);
 int master_socket(struct rawfd *rfd);
 void master_multi(struct rawfd *rfd, struct proto *protos, int op);
-inline struct rawfd *rfd_byindex(uint32_t index);
-inline void rfd_closeall();
+
+static inline
+struct rawfd *rfd_byindex(struct rfdhead *rawfds, uint32_t index) {
+    struct rawfd *rfd = NULL;
+
+    TAILQ_FOREACH(rfd, rawfds, entries) {
+	if (rfd->index == index)
+	    break;
+    }
+    return(rfd);
+}
+
+static inline
+void rfd_closeall(struct rfdhead *rawfds) {
+    struct rawfd *rfd, *nrfd;
+
+    TAILQ_FOREACH_SAFE(rfd, rawfds, entries, nrfd) {
+	master_close(rfd);
+    }
+}
 
 #endif /* _master_h */

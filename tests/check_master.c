@@ -171,7 +171,7 @@ START_TEST(test_master_req) {
 
     // test a correct CLOSE
     mark_point();
-    fail_unless (rfd_byindex(1) == NULL,
+    fail_unless (rfd_byindex(&rawfds, 1) == NULL,
     	"the queue should be empty");
 
     options |= OPT_DEBUG;
@@ -179,7 +179,7 @@ START_TEST(test_master_req) {
     strlcpy(msg.name, "lo0", IFNAMSIZ);
 
     master_open(&msg);
-    fail_unless (rfd_byindex(1) != NULL,
+    fail_unless (rfd_byindex(&rawfds, 1) != NULL,
     	"rfd should be added to the queue");
 
     errstr = "check";
@@ -191,7 +191,7 @@ START_TEST(test_master_req) {
     master_req(spair[1], event);
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
-    fail_unless (rfd_byindex(1) == NULL,
+    fail_unless (rfd_byindex(&rawfds, 1) == NULL,
     	"rfd should be removed from the queue");
  
     // test a correct ETHTOOL / DESCR
@@ -229,7 +229,7 @@ START_TEST(test_master_req) {
     // test a failing return message
     mark_point();
     master_open(&msg);
-    rfd = rfd_byindex(1);
+    rfd = rfd_byindex(&rawfds, 1);
     fail_unless (rfd != NULL, "rfd should be added to the queue");
     mreq.op = MASTER_CLOSE;
     fd = dup(spair[1]);
@@ -244,7 +244,7 @@ START_TEST(test_master_req) {
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (close(fd) == -1, "rfd->fd should be closed");
-    fail_unless (rfd_byindex(1) == NULL,
+    fail_unless (rfd_byindex(&rawfds, 1) == NULL,
     	"rfd should be removed from the queue");
 }
 END_TEST
@@ -313,7 +313,7 @@ START_TEST(test_master_send) {
 
     dfd = spair[1];
     master_open(&msg);
-    rfd = rfd_byindex(1);
+    rfd = rfd_byindex(&rawfds, 1);
     fail_unless (rfd != NULL, "rfd should be added to the queue");
     rfd->fd = spair[1];
 
@@ -352,7 +352,7 @@ START_TEST(test_master_send) {
 	"incorrect message logged: %s", check_wrap_errstr);
 
     options |= OPT_DEBUG;
-    rfd = rfd_byindex(1);
+    rfd = rfd_byindex(&rawfds, 1);
     master_close(rfd);
 }
 END_TEST
@@ -367,27 +367,27 @@ START_TEST(test_master_open_close) {
     mreq.index = 1;
     strlcpy(mreq.name, "lo0", IFNAMSIZ);
     master_open(&mreq);
-    rfd = rfd_byindex(1);
+    rfd = rfd_byindex(&rawfds, 1);
     fail_unless (rfd != NULL,
     	"rfd should be added to the queue");
     master_close(rfd);
-    fail_unless (rfd_byindex(1) == NULL,
+    fail_unless (rfd_byindex(&rawfds, 1) == NULL,
     	"rfd should be removed from the queue");
 
     mark_point();
     master_open(&mreq);
-    rfd = rfd_byindex(1);
+    rfd = rfd_byindex(&rawfds, 1);
     fail_unless (rfd != NULL,
     	"rfd should be added to the queue");
 
     mreq.index = 2;
     strlcpy(mreq.name, "lo1", IFNAMSIZ);
     master_open(&mreq);
-    rfd = rfd_byindex(2);
+    rfd = rfd_byindex(&rawfds, 2);
     fail_unless (rfd != NULL,
     	"rfd should be added to the queue");
 
-    rfd_closeall();
+    rfd_closeall(&rawfds);
     fail_unless (TAILQ_EMPTY(&rawfds),
     	"the queue should be empty");
 }
@@ -404,7 +404,7 @@ START_TEST(test_master_socket) {
     strlcpy(mreq.name, "lo0", IFNAMSIZ);
 
     master_open(&mreq);
-    rfd = rfd_byindex(1);
+    rfd = rfd_byindex(&rawfds, 1);
     fail_unless (rfd != NULL, "rfd should be added to the queue");
 
 #ifdef HAVE_NET_BPF_H
@@ -470,7 +470,7 @@ START_TEST(test_master_socket) {
 #endif
 
     // reset
-    rfd = rfd_byindex(1);
+    rfd = rfd_byindex(&rawfds, 1);
     master_close(rfd);
     check_wrap_fake = 0;
     check_wrap_fail = 0;
@@ -542,7 +542,7 @@ START_TEST(test_master_recv) {
     mreq.index = 1;
     strlcpy(mreq.name, "lo0", IFNAMSIZ);
     master_open(&mreq);
-    rfd = rfd_byindex(1);
+    rfd = rfd_byindex(&rawfds, 1);
     fail_unless (rfd != NULL, "rfd should be added to the queue");
 
 #ifdef HAVE_NET_BPF_H
@@ -630,7 +630,7 @@ START_TEST(test_master_recv) {
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
-    rfd = rfd_byindex(1);
+    rfd = rfd_byindex(&rawfds, 1);
     master_close(rfd);
 }
 END_TEST

@@ -137,7 +137,7 @@ void master_signal(int sig, short event, void *pid) {
 	case SIGTERM:
 	    kill(*(pid_t *)pid, sig);
 	case SIGCHLD:
-	    rfd_closeall();
+	    rfd_closeall(&rawfds);
 	    unlink(PACKAGE_SOCKET);
 	    my_log(CRIT, "quitting");
 	    exit(EXIT_SUCCESS);
@@ -169,7 +169,7 @@ void master_req(int reqfd, short event) {
     switch (mreq.op) {
 	// close socket
 	case MASTER_CLOSE:
-	    if ((rfd = rfd_byindex(mreq.index)) != NULL)
+	    if ((rfd = rfd_byindex(&rawfds, mreq.index)) != NULL)
 		master_close(rfd);
 	    break;
 #if HAVE_LINUX_ETHTOOL_H
@@ -268,10 +268,10 @@ void master_send(int msgfd, short event) {
     }
 
     // create rfd if needed
-    if (rfd_byindex(msend.index) == NULL)
+    if (rfd_byindex(&rawfds, msend.index) == NULL)
 	master_open(&msend);
 
-    assert((rfd = rfd_byindex(msend.index)) != NULL);
+    assert((rfd = rfd_byindex(&rawfds, msend.index)) != NULL);
     len = write(rfd->fd, msend.msg, msend.len);
 
     // close the socket if the device vanished
@@ -642,22 +642,4 @@ void master_recv(int fd, short event, struct rawfd *rfd) {
 #endif /* HAVE_NET_BPF_H */
 }
 
-
-inline struct rawfd *rfd_byindex(uint32_t index) {
-    struct rawfd *rfd = NULL;
-
-    TAILQ_FOREACH(rfd, &rawfds, entries) {
-	if (rfd->index == index)
-	    break;
-    }
-    return(rfd);
-}
-
-inline void rfd_closeall() {
-    struct rawfd *rfd, *nrfd;
-
-    TAILQ_FOREACH_SAFE(rfd, &rawfds, entries, nrfd) {
-	master_close(rfd);
-    }
-}
 
