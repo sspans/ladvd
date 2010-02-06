@@ -223,7 +223,7 @@ void child_queue(int fd, short event) {
     rmsg.decode |= (1 << PEER_HOSTNAME);
     rmsg.decode |= (1 << PEER_PORTNAME);
     if (rmsg.len != protos[rmsg.proto].decode(&rmsg)) {
-	PEER_FREE(rmsg.peer);
+	peer_free(rmsg.peer);
     	return;
     }
 
@@ -319,7 +319,7 @@ void child_expire() {
 	    subif->update = 1;
 
 	TAILQ_REMOVE(&mqueue, msg, entries);
-	PEER_FREE(msg->peer);
+	peer_free(msg->peer);
 	free(msg);
     }
 

@@ -120,163 +120,6 @@ int my_nonblock(int s) {
     return flags;
 }
 
-ssize_t my_mreq(struct master_req *mreq) {
-    ssize_t len = 0;
-
-    assert(mreq != NULL);
-
-    len = write(msock, mreq, MASTER_REQ_LEN(mreq->len));
-    if (len < MASTER_REQ_MIN || len != MASTER_REQ_LEN(mreq->len))
-	my_fatal("only %zi bytes written: %s", len, strerror(errno));
-
-    memset(mreq, 0, MASTER_REQ_MAX);
-    len = read(msock, mreq, MASTER_REQ_MAX);
-    if (len < MASTER_REQ_MIN || len != MASTER_REQ_LEN(mreq->len))
-	my_fatal("invalid reply received from master");
-
-    return(mreq->len);
-};
-
-struct netif *netif_iter(struct netif *netif, struct nhead *netifs) {
-
-    if (netifs == NULL)
-	return NULL;
-
-    if (netif == NULL)
-	netif = TAILQ_FIRST(netifs);
-    else
-	netif = TAILQ_NEXT(netif, entries);
-
-    for (; netif != NULL; netif = TAILQ_NEXT(netif, entries)) {
-	// skip autodetected slaves
-	if (!(options & OPT_ARGV) && (netif->slave == 1))
-	    continue;
-
-	// skip unlisted interfaces
-	if ((options & OPT_ARGV) && (netif->argv == 0))
-	    continue;
-
-	// skip masters without slaves
-	if ((netif->type > 0) && (netif->subif == NULL)) {
-	    my_log(INFO, "skipping interface %s", netif->name);
-	    continue;
-	}
-
-	break;
-    }
-
-    return(netif);
-}
-
-struct netif *subif_iter(struct netif *subif, struct netif *netif) {
-
-    if (netif == NULL)
-	return NULL;
-
-    if (subif == NULL) {
-	if (netif->type > 0)
-	    return(netif->subif);
-	else
-	    return(netif);
-    } else if (subif == netif) {
-	return(NULL);
-    } else {
-	return(subif->subif);
-    }
-}
-
-struct netif *netif_byindex(struct nhead *netifs, uint32_t index) {
-    struct netif *netif = NULL;
-
-    assert(netifs);
-
-    TAILQ_FOREACH(netif, netifs, entries) {
-	if (netif->index == index)
-	    break;
-    }
-    return(netif);
-}
-
-struct netif *netif_byname(struct nhead *netifs, char *name) {
-    struct netif *netif;
-
-    assert((netifs != NULL) && (name != NULL));
-
-    TAILQ_FOREACH(netif, netifs, entries) {
-	if (strcmp(netif->name, name) == 0)
-	    break;
-    }
-    return(netif);
-}
-
-void netif_protos(struct netif *netif, struct mhead *mqueue) {
-    struct netif *subif = NULL;
-    struct master_msg *qmsg = NULL;
-    uint16_t protos = 0;
-    
-    while ((subif = subif_iter(subif, netif)) != NULL) {
-	TAILQ_FOREACH(qmsg, mqueue, entries) {
-	    if (subif->index == qmsg->index)
-		protos |= (1 << qmsg->proto);
-	}
-    }
-    netif->protos = protos;
-}
-
-void netif_descr(struct netif *netif, struct mhead *mqueue) {
-    struct master_msg *qmsg = NULL;
-    struct master_req *mreq = NULL;
-    char *peer = NULL, *port = NULL;
-    char descr[IFDESCRSIZE], paddr[ETHER_ADDR_LEN];
-    uint16_t peers = 0;
-
-    TAILQ_FOREACH(qmsg, mqueue, entries) {
-	if (netif->index != qmsg->index)
-	    continue;
-
-	if (!peer && qmsg->peer[PEER_HOSTNAME])
-	    peer = qmsg->peer[PEER_HOSTNAME];
-	if (!port && qmsg->peer[PEER_PORTNAME])
-	    port = qmsg->peer[PEER_PORTNAME];
-
-	// this assumes a sorted queue
-	if (memcmp(paddr, qmsg->msg + ETHER_ADDR_LEN, ETHER_ADDR_LEN) == 0)
-	    continue;
-
-	memcpy(paddr, qmsg->msg + ETHER_ADDR_LEN, ETHER_ADDR_LEN);
-	peers++;
-    }
-
-    if (peers == 0) {
-	memset(descr, 0, IFDESCRSIZE);
-    } else if (peers == 1) {
-	if (peer && port)
-	    snprintf(descr, IFDESCRSIZE, "connected to %s (%s)", peer, port);
-	else if (peer)
-	    snprintf(descr, IFDESCRSIZE, "connected to %s", peer);
-	else
-	    memset(descr, 0, IFDESCRSIZE);
-    } else {
-	snprintf(descr, IFDESCRSIZE, "connected to %" PRIu16 " peers", peers);
-    }
-
-    // only update if changed
-    if (strncmp(descr, netif->description, IFDESCRSIZE) == 0)
-	return;
-
-    mreq = my_malloc(MASTER_REQ_MAX);
-    mreq->op = MASTER_DESCR;
-    mreq->index = netif->index;
-    mreq->len = IFDESCRSIZE;
-    mreq->len = strlen(descr) + 1;
-    memcpy(mreq->buf, descr, mreq->len);
-
-    if (!my_mreq(mreq))
-	my_log(CRIT, "ifdescr ioctl failed on %s", netif->name);
-
-    free(mreq);
-}
-
 // adapted from openssh's safely_chroot
 void my_chroot(const char *path) {
     const char *cp;
@@ -369,6 +212,139 @@ uint16_t my_chksum(const void *data, size_t length, int cisco) {
     sum = (sum >> 16) + (sum & 0xffff);
     sum += (sum >> 16);
     return (uint16_t)~sum;
+}
+
+ssize_t my_mreq(struct master_req *mreq) {
+    ssize_t len = 0;
+
+    assert(mreq != NULL);
+
+    len = write(msock, mreq, MASTER_REQ_LEN(mreq->len));
+    if (len < MASTER_REQ_MIN || len != MASTER_REQ_LEN(mreq->len))
+	my_fatal("only %zi bytes written: %s", len, strerror(errno));
+
+    memset(mreq, 0, MASTER_REQ_MAX);
+    len = read(msock, mreq, MASTER_REQ_MAX);
+    if (len < MASTER_REQ_MIN || len != MASTER_REQ_LEN(mreq->len))
+	my_fatal("invalid reply received from master");
+
+    return(mreq->len);
+};
+
+struct netif *netif_iter(struct netif *netif, struct nhead *netifs) {
+
+    if (netifs == NULL)
+	return NULL;
+
+    if (netif == NULL)
+	netif = TAILQ_FIRST(netifs);
+    else
+	netif = TAILQ_NEXT(netif, entries);
+
+    for (; netif != NULL; netif = TAILQ_NEXT(netif, entries)) {
+	// skip autodetected slaves
+	if (!(options & OPT_ARGV) && (netif->slave == 1))
+	    continue;
+
+	// skip unlisted interfaces
+	if ((options & OPT_ARGV) && (netif->argv == 0))
+	    continue;
+
+	// skip masters without slaves
+	if ((netif->type > 0) && (netif->subif == NULL)) {
+	    my_log(INFO, "skipping interface %s", netif->name);
+	    continue;
+	}
+
+	break;
+    }
+
+    return(netif);
+}
+
+struct netif *subif_iter(struct netif *subif, struct netif *netif) {
+
+    if (netif == NULL)
+	return NULL;
+
+    if (subif == NULL) {
+	if (netif->type > 0)
+	    return(netif->subif);
+	else
+	    return(netif);
+    } else if (subif == netif) {
+	return(NULL);
+    } else {
+	return(subif->subif);
+    }
+}
+
+void netif_protos(struct netif *netif, struct mhead *mqueue) {
+    struct netif *subif = NULL;
+    struct master_msg *qmsg = NULL;
+    uint16_t protos = 0;
+    
+    while ((subif = subif_iter(subif, netif)) != NULL) {
+	TAILQ_FOREACH(qmsg, mqueue, entries) {
+	    if (subif->index == qmsg->index)
+		protos |= (1 << qmsg->proto);
+	}
+    }
+    netif->protos = protos;
+}
+
+void netif_descr(struct netif *netif, struct mhead *mqueue) {
+    struct master_msg *qmsg = NULL;
+    struct master_req *mreq = NULL;
+    char *peer = NULL, *port = NULL;
+    char descr[IFDESCRSIZE], paddr[ETHER_ADDR_LEN];
+    uint16_t peers = 0;
+
+    TAILQ_FOREACH(qmsg, mqueue, entries) {
+	if (netif->index != qmsg->index)
+	    continue;
+
+	if (!peer && qmsg->peer[PEER_HOSTNAME])
+	    peer = qmsg->peer[PEER_HOSTNAME];
+	if (!port && qmsg->peer[PEER_PORTNAME])
+	    port = qmsg->peer[PEER_PORTNAME];
+
+	// this assumes a sorted queue
+	if (memcmp(paddr, qmsg->msg + ETHER_ADDR_LEN, ETHER_ADDR_LEN) == 0)
+	    continue;
+
+	memcpy(paddr, qmsg->msg + ETHER_ADDR_LEN, ETHER_ADDR_LEN);
+	peers++;
+    }
+
+    if (peers == 0) {
+	memset(descr, 0, IFDESCRSIZE);
+    } else if (peers == 1) {
+	if (peer && port)
+	    snprintf(descr, IFDESCRSIZE, "connected to %s (%s)", peer, port);
+	else if (peer)
+	    snprintf(descr, IFDESCRSIZE, "connected to %s", peer);
+	else
+	    memset(descr, 0, IFDESCRSIZE);
+    } else {
+	snprintf(descr, IFDESCRSIZE, "connected to %" PRIu16 " peers", peers);
+    }
+
+    // only update if changed
+    if (strncmp(descr, netif->description, IFDESCRSIZE) == 0)
+	return;
+
+    mreq = my_malloc(MASTER_REQ_MAX);
+    mreq->op = MASTER_DESCR;
+    mreq->index = netif->index;
+    mreq->len = IFDESCRSIZE;
+    mreq->len = strlen(descr) + 1;
+    memcpy(mreq->buf, descr, mreq->len);
+
+    if (!my_mreq(mreq))
+	my_log(CRIT, "ifdescr ioctl failed on %s", netif->name);
+
+    free(mreq);
 }
 
 void write_pcap_hdr(int fd) {

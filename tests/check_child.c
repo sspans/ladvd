@@ -40,7 +40,7 @@ void read_packet(struct master_msg *msg, const char *suffix) {
     memset(msg->msg, 0, ETHER_MAX_LEN);
     msg->len = 0;
     msg->ttl = 0;
-    PEER_FREE(msg->peer);
+    peer_free(msg->peer);
 
     if ((prefix = getenv("srcdir")) == NULL)
 	prefix = ".";

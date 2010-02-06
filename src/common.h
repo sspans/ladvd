@@ -180,16 +180,16 @@ struct master_req {
 #define PEER_IPV4	6
 #define PEER_IPV6	7
 #define PEER_MAX	8
-#define PEER_FREE(p) \
-    { \
-	int s; \
-	for (s = 0; s < PEER_MAX; s++) {\
-	    if (!p[s]) \
-		continue; \
-	    free(p[s]); \
-	    p[s] = NULL; \
-	} \
-    };
+static inline
+void peer_free(char *p[]) {
+    int s;
+    for (s = 0; s < PEER_MAX; s++) {
+	if (!p[s])
+	    continue;
+	free(p[s]);
+	p[s] = NULL;
+    }
+}
 
 struct master_msg {
     uint32_t index;

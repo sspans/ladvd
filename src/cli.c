@@ -141,7 +141,7 @@ void cli_main(int argc, char *argv[]) {
 	printf("peer %s (%s) on interface %s\n",
 		msg.peer[PEER_HOSTNAME], protos[msg.proto].name, msg.name);
 
-	PEER_FREE(msg.peer);
+	peer_free(msg.peer);
 
 	if (options & OPT_ONCE)
 	    exit(EXIT_SUCCESS);

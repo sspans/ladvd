@@ -41,20 +41,44 @@ int my_socket(int af, int type, int proto);
 void my_socketpair(int spair[]);
 int my_nonblock(int s);
 
-ssize_t my_mreq(struct master_req *mreq);
-
-struct netif *netif_iter(struct netif *netif, struct nhead *);
-struct netif *subif_iter(struct netif *subif, struct netif *netif);
-struct netif *netif_byindex(struct nhead *, uint32_t index);
-struct netif *netif_byname(struct nhead *, char *name);
-void netif_protos(struct netif *netif, struct mhead *mqueue);
-void netif_descr(struct netif *netif, struct mhead *mqueue);
-
 void my_chroot(const char *path);
 void my_drop_privs(struct passwd *pwd);
 
 int read_line(const char *path, char *line, uint16_t len);
 uint16_t my_chksum(const void *data, size_t length, int cisco);
+
+ssize_t my_mreq(struct master_req *mreq);
+
+struct netif *netif_iter(struct netif *netif, struct nhead *);
+struct netif *subif_iter(struct netif *subif, struct netif *netif);
+void netif_protos(struct netif *netif, struct mhead *mqueue);
+void netif_descr(struct netif *netif, struct mhead *mqueue);
+
+static inline
+struct netif *netif_byindex(struct nhead *netifs, uint32_t index) {
+    struct netif *netif = NULL;
+
+    assert(netifs);
+
+    TAILQ_FOREACH(netif, netifs, entries) {
+	if (netif->index == index)
+	    break;
+    }
+    return(netif);
+}
+
+static inline
+struct netif *netif_byname(struct nhead *netifs, char *name) {
+    struct netif *netif;
+
+    assert((netifs != NULL) && (name != NULL));
+
+    TAILQ_FOREACH(netif, netifs, entries) {
+	if (strcmp(netif->name, name) == 0)
+	    break;
+    }
+    return(netif);
+}
 
 #define PCAP_MAGIC	0xA1B2C3D4
 

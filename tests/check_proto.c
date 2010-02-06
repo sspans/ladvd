@@ -401,7 +401,7 @@ void read_packet(struct master_msg *msg, const char *suffix) {
     memset(msg->msg, 0, ETHER_MAX_LEN);
     msg->len = 0;
     msg->ttl = 0;
-    PEER_FREE(msg->peer);
+    peer_free(msg->peer);
 
     if ((prefix = getenv("srcdir")) == NULL)
 	prefix = ".";
@@ -580,7 +580,7 @@ START_TEST(test_lldp_decode) {
     fail_unless (strcmp(msg.peer[PEER_PORTNAME], "Gi0/1") == 0,
 	"port id should be 'Gi0/1' not '%s'", msg.peer[PEER_PORTNAME]);
 
-    PEER_FREE(msg.peer);
+    peer_free(msg.peer);
 }
 END_TEST
 
@@ -726,7 +726,7 @@ START_TEST(test_cdp_decode) {
 	"port id should be 'GigabitEthernet0/1' not '%s'",
 	msg.peer[PEER_PORTNAME]);
 
-    PEER_FREE(msg.peer);
+    peer_free(msg.peer);
 }
 END_TEST
 
@@ -805,7 +805,7 @@ START_TEST(test_edp_decode) {
     fail_unless (msg.peer[PEER_PORTNAME] == NULL,
 	"port id should be empty, not '%s'", msg.peer[PEER_PORTNAME]);
 
-    PEER_FREE(msg.peer);
+    peer_free(msg.peer);
 }
 END_TEST
 
@@ -898,7 +898,7 @@ START_TEST(test_fdp_decode) {
     fail_unless (strcmp(msg.peer[PEER_PORTNAME], "ethernet1/1") == 0,
 	"port id should be 'ethernet1/1' not '%s'", msg.peer[PEER_PORTNAME]);
 
-    PEER_FREE(msg.peer);
+    peer_free(msg.peer);
 }
 END_TEST
 
