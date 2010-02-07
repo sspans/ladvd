@@ -320,7 +320,7 @@ START_TEST(test_netif) {
     msg->proto = PROTO_LLDP;
     memcpy(msg->msg + ETHER_ADDR_LEN, "\x02\x00\x01", 3);
     msg->peer[PEER_HOSTNAME] = my_strdup("foo");
-    msg->peer[PEER_PORTNAME] = my_strdup("42");
+    msg->peer[PEER_PORTNAME] = my_strdup("FastEthernet6/20");
     TAILQ_INSERT_TAIL(&mqueue, msg, entries);
 
     msg = my_malloc(MASTER_MSG_MAX);
@@ -402,7 +402,7 @@ START_TEST(test_netif) {
 	"incorrect interface description: %s", mreq->buf);
 
     netif = netif_byname(netifs, "eth0");
-    descr = "connected to foo (42)";
+    descr = "connected to foo (Fa6/20)";
     WRAP_WRITE(spair[0], mreq, MASTER_REQ_LEN(mreq->len));
     netif_descr(netif, &mqueue);
     WRAP_REQ_READ(spair[0], mreq, len);
