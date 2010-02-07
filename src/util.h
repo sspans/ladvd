@@ -53,6 +53,7 @@ struct netif *netif_iter(struct netif *netif, struct nhead *);
 struct netif *subif_iter(struct netif *subif, struct netif *netif);
 void netif_protos(struct netif *netif, struct mhead *mqueue);
 void netif_descr(struct netif *netif, struct mhead *mqueue);
+void portname_abbr(char *);
 
 static inline
 struct netif *netif_byindex(struct nhead *netifs, uint32_t index) {

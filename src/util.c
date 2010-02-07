@@ -307,7 +307,7 @@ void netif_descr(struct netif *netif, struct mhead *mqueue) {
 	if (!peer && qmsg->peer[PEER_HOSTNAME])
 	    peer = qmsg->peer[PEER_HOSTNAME];
 	if (!port && qmsg->peer[PEER_PORTNAME])
-	    port = qmsg->peer[PEER_PORTNAME];
+	    port = my_strdup(qmsg->peer[PEER_PORTNAME]);
 
 	// this assumes a sorted queue
 	if (memcmp(paddr, qmsg->msg + ETHER_ADDR_LEN, ETHER_ADDR_LEN) == 0)
@@ -320,6 +320,8 @@ void netif_descr(struct netif *netif, struct mhead *mqueue) {
     if (peers == 0) {
 	memset(descr, 0, IFDESCRSIZE);
     } else if (peers == 1) {
+	if (port)
+	    portname_abbr(port);
 	if (peer && port)
 	    snprintf(descr, IFDESCRSIZE, "connected to %s (%s)", peer, port);
 	else if (peer)
@@ -329,6 +331,9 @@ void netif_descr(struct netif *netif, struct mhead *mqueue) {
     } else {
 	snprintf(descr, IFDESCRSIZE, "connected to %" PRIu16 " peers", peers);
     }
+
+    if (port)
+	free(port);
 
     // only update if changed
     if (strncmp(descr, netif->description, IFDESCRSIZE) == 0)
@@ -345,6 +350,23 @@ void netif_descr(struct netif *netif, struct mhead *mqueue) {
 	my_log(CRIT, "ifdescr ioctl failed on %s", netif->name);
 
     free(mreq);
+}
+
+void portname_abbr(char *portname) {
+    int m;
+    size_t len;
+    char *media_types[] = { "Ethernet", "FastEthernet",
+			    "GigabitEthernet", "TenGigabitEthernet", NULL};
+
+    assert(portname);
+
+    for (m = 0; media_types[m] != NULL; m++) {
+	if (strstr(portname, media_types[m]) != portname)
+	    continue;
+	len = strlen(media_types[m]);
+	memmove(portname + 2, portname + len, strlen(portname + len) + 1);
+	break;
+    }
 }
 
 void write_pcap_hdr(int fd) {
