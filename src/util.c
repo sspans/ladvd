@@ -355,8 +355,8 @@ void netif_descr(struct netif *netif, struct mhead *mqueue) {
 void portname_abbr(char *portname) {
     int m;
     size_t len;
-    char *media_types[] = { "Ethernet", "FastEthernet",
-			    "GigabitEthernet", "TenGigabitEthernet", NULL};
+    char *media_types[] = { "FastEthernet", "GigabitEthernet",
+			    "TenGigabitEthernet", NULL};
 
     assert(portname);
 
@@ -365,7 +365,12 @@ void portname_abbr(char *portname) {
 	    continue;
 	len = strlen(media_types[m]);
 	memmove(portname + 2, portname + len, strlen(portname + len) + 1);
-	break;
+	return;
+    }
+    
+    if (strcasestr(portname, "ethernet") == portname) {
+	len = strlen("ethernet");
+	memmove(portname + 3, portname + len, strlen(portname + len) + 1);
     }
 }
 
