@@ -35,7 +35,7 @@ struct ether_hdr {
     uint8_t dst[ETHER_ADDR_LEN];
     uint8_t src[ETHER_ADDR_LEN];
     uint16_t type;
-} __attribute__ ((__packed__));
+} __packed;
 
 #ifndef ETHER_HDR_LEN
 #define ETHER_HDR_LEN	sizeof(struct ether_hdr)
@@ -48,7 +48,7 @@ struct ether_llc {
     uint8_t control;
     uint8_t org[3];
     uint16_t protoid;
-} __attribute__ ((__packed__));
+} __packed;
 
 #ifndef LLC_SNAP_LSAP
 #define LLC_SNAP_LSAP   0xaa

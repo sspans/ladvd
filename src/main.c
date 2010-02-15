@@ -29,7 +29,7 @@ uint32_t options = OPT_DAEMON;
 extern struct sysinfo sysinfo;
 extern char *__progname;
 
-static void usage() __attribute__ ((__noreturn__));
+static void usage() __noreturn;
 
 int main(int argc, char *argv[]) {
 
@@ -222,7 +222,7 @@ int main(int argc, char *argv[]) {
 }
 
 
-__attribute__ ((__noreturn__))
+__noreturn
 static void usage() {
 
     fprintf(stderr, PACKAGE_NAME " version " PACKAGE_VERSION "\n" 

@@ -64,6 +64,22 @@
 #include <netinet/if_ether.h>
 #endif
 
+#if __GNUC__ >= 3
+#define __noreturn	__attribute__ ((noreturn))
+#define __malloc	__attribute__ ((malloc))
+#define __must_check	__attribute__ ((warn_unused_result))
+#define __packed	__attribute__ ((packed))
+#define likely(x)	__builtin_expect (!!(x), 1)
+#define unlikely(x)	__builtin_expect (!!(x), 0)
+#else
+#define __noreturn	/* no noreturn */
+#define __malloc	/* no malloc */
+#define __must_check	/* no warn_unused_result */
+#define __packed	/* no packed */
+#define likely(x)	(x)
+#define unlikely(x)	(x)
+#endif
+
 #include "ether.h"
 #include "compat/compat.h"
 
@@ -232,7 +248,7 @@ struct proto {
     size_t (*decode) (struct master_msg *);
 };
 
-void cli_main(int argc, char *argv[]) __attribute__ ((__noreturn__));
+void cli_main(int argc, char *argv[]) __noreturn;
 void child_init(int reqfd, int msgfd, int ifc, char *ifl[], struct passwd *pwd);
 void master_init(int reqfd, int msgfd, pid_t pid);
 void master_signal(int fd, short event, void *pid);

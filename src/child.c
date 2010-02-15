@@ -306,7 +306,9 @@ void child_expire() {
 
     // remove expired messages
     TAILQ_FOREACH_SAFE(msg, &mqueue, entries, nmsg) {
-	if (((msg->received + msg->ttl) >= now) || msg->lock)
+	if (likely((msg->received + msg->ttl) >= now))
+	    continue;
+	if (unlikely(msg->lock))
 	    continue;
 
 	hostname = msg->peer[PEER_HOSTNAME];
@@ -325,7 +327,7 @@ void child_expire() {
 
     // update interfaces
     TAILQ_FOREACH(subif, &netifs, entries) { 
-	if (!subif->update)
+	if (likely(!subif->update))
 	    continue;
 
 	// fetch the parent netif

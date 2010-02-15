@@ -121,6 +121,7 @@ int my_nonblock(int s) {
 }
 
 // adapted from openssh's safely_chroot
+__nonnull()
 void my_chroot(const char *path) {
     const char *cp;
     char component[MAXPATHLEN];
@@ -160,6 +161,7 @@ void my_chroot(const char *path) {
 	my_fatal("chdir(/) after chroot: %s", strerror(errno));
 }
 
+__nonnull()
 void my_drop_privs(struct passwd *pwd) {
     if (setgroups(0, NULL) == -1)
 	my_fatal("unable to setgroups: %s", strerror(errno));
@@ -171,6 +173,7 @@ void my_drop_privs(struct passwd *pwd) {
    	my_fatal("unable to setresuid: %s", strerror(errno));
 }
 
+__nonnull()
 int read_line(const char *path, char *line, uint16_t len) {
     FILE *file;
     int ret = 0;
@@ -193,6 +196,7 @@ int read_line(const char *path, char *line, uint16_t len) {
 /*
  * Actually, this is the standard IP checksum algorithm.
  */
+__nonnull()
 uint16_t my_chksum(const void *data, size_t length, int cisco) {
     uint32_t sum = 0;
     const uint16_t *d = (const uint16_t *)data;

@@ -23,10 +23,10 @@
 #include <sys/file.h>
 #include <sys/un.h>
 
-static void usage() __attribute__ ((__noreturn__));
+static void usage() __noreturn;
 extern struct proto protos[];
 
-__attribute__ ((__noreturn__))
+__noreturn
 void cli_main(int argc, char *argv[]) {
     int ch, i;
     uint8_t verbose, proto = 0;
@@ -151,7 +151,7 @@ void cli_main(int argc, char *argv[]) {
 }
 
 
-__attribute__ ((__noreturn__))
+__noreturn
 static void usage() {
     extern char *__progname;
 
