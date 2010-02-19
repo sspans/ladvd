@@ -13,9 +13,9 @@ check_WRAPFLAGS = `$(EGREP) '^[MV]?WRAP' $(srcdir)/check_wrap.c | \
 	$(SED) -e 's/^[MV]*WRAP(\([_a-z]*\)\,.*/-Wl,--wrap,\1/g'`
 
 AM_CPPFLAGS = -I$(top_srcdir)/src
-LDADD =  @CHECK_LIBS@ $(check_LTLIBRARIES) $(EVENT_LIB) $(CAP_LIB) \
-	$(top_builddir)/src/libproto.la $(top_builddir)/src/libmisc.la \
-	$(top_builddir)/src/libcompat.la
+LDADD = $(check_LTLIBRARIES) $(top_builddir)/src/libmisc.la \
+    $(top_builddir)/src/libproto.la $(top_builddir)/src/libcompat.la \
+    $(EVENT_LIB) $(CAP_LIB) @CHECK_LIBS@
 
 check_compat_SOURCES = check_compat.c \
 	$(top_srcdir)/src/compat/compat.h
