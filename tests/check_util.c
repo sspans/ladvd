@@ -466,16 +466,10 @@ START_TEST(test_read_line) {
     const char *file = "testfile";
     char *prefix, *path = NULL;
 
-    fail_unless (read_line(NULL, line, 0) == 0,
-	"0 should be returned on an invalid path argument");
-
     if ((prefix = getenv("srcdir")) == NULL)
 	prefix = ".";
 
     fail_if(asprintf(&path, "%s/%s", prefix, file) == -1, "asprintf failed");
-
-    fail_unless (read_line(path, NULL, 0) == 0,
-	"0 should be returned on an invalid line argument");
 
     fail_unless (read_line("non-existant", line, 0) == 0,
 	"0 should be returned on a missing file");
