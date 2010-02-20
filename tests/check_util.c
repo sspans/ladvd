@@ -29,7 +29,7 @@ uint32_t options = OPT_DAEMON | OPT_CHECK;
 
 START_TEST(test_my) {
     char *ptr = NULL;
-    int s = 0;
+    int s = -1;
     const char *errstr = NULL;
 
     mark_point();
@@ -96,6 +96,11 @@ START_TEST(test_my) {
     check_wrap_fail &= ~FAIL_STRDUP;
     fail_unless (strcmp(check_wrap_errstr, "strdup failed") == 0,
 	"error not logged");
+
+    // skip the socket tests if there is no networking
+    if ((s = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
+	return;
+    close(s);
 
     mark_point();
     s = my_socket(AF_INET, SOCK_DGRAM, 0);

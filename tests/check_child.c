@@ -59,9 +59,14 @@ START_TEST(test_child_init) {
     struct master_req *mreq;
     struct netif *netif, *nnetif;
     const char *errstr = NULL;
-    int spair[2], null;
+    int spair[2], null, s;
     struct passwd *pwd;
     pid_t pid;
+
+    // skip the test if there is no networking
+    if ((s = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
+	return;
+    close(s);
 
     options |= OPT_ONCE|OPT_DEBUG;
     loglevel = CRIT;
