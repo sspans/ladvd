@@ -56,7 +56,7 @@ rm -rf %buildroot
 
 %pre
 %groupadd %uid -r %{name} &>/dev/null || :
-%useradd  %uid -r -s /sbin/nologin -d %homedir -M          \
+%useradd  %uid -r -s /sbin/nologin -d %homedir -M \
 -c '%gecos' -g %{name} %{name} &>/dev/null || :
 
 
@@ -70,16 +70,25 @@ rm -rf %buildroot
 
 
 %preun
+%if 0%{?suse_version}
+%stop_on_removal %{name}
+%else
 if [ "$1" = "0" ]; then
 	%service %{name} stop
 	/sbin/chkconfig --del %{name}
 fi
+%endif
 
 
 %postun
+%if 0%{?suse_version}
+%restart_on_update %{name} 
+%{insserv_cleanup}  
+%else
 if [ "$1" -ge "1" ]; then
 	/sbin/service %{name} condrestart >/dev/null 2>&1
 fi
+%endif
 %userremove %{name}
 %groupremove %{name}
 
