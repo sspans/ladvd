@@ -22,6 +22,6 @@ ladvd_SOURCES = $(common_headers) main.h main.c cli.c
 ladvd_LDADD = $(noinst_LTLIBRARIES) $(EVENT_LIB) $(CAP_LIB)
 
 install-exec-hook:
-	$(LN_S) $(DESTDIR)$(sbindir)/@PACKAGE_NAME@$(EXEEXT) \
+	$(LN_S) @PACKAGE_NAME@$(EXEEXT) \
 	    $(DESTDIR)$(sbindir)/@PACKAGE_CLI@$(EXEEXT)
 
