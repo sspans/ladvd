@@ -59,14 +59,9 @@ START_TEST(test_child_init) {
     struct master_req *mreq;
     struct netif *netif, *nnetif;
     const char *errstr = NULL;
-    int spair[2], null, s;
+    int spair[2], null;
     struct passwd *pwd;
     pid_t pid;
-
-    // skip the test if there is no networking
-    if ((s = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
-	return;
-    close(s);
 
     options |= OPT_ONCE|OPT_DEBUG;
     loglevel = CRIT;
@@ -85,6 +80,12 @@ START_TEST(test_child_init) {
 	exit (0);
     }
     close(spair[1]);
+
+    msock = spair[0];
+
+    // skip the test if there are no ethernet interfaces
+    if (netif_fetch(0, NULL, &sysinfo, &netifs) == 0)
+	return;
 
     mark_point();
     null = open(_PATH_DEVNULL, O_WRONLY);
