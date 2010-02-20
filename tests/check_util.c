@@ -108,11 +108,6 @@ START_TEST(test_my) {
     close(s);
     s = 0;
 
-    s = my_socket(AF_INET6, SOCK_DGRAM, 0);
-    fail_unless (s != -1, "a valid socket should be returned");
-    close(s);
-    s = 0;
-
     errstr = "opening socket failed";
     WRAP_FATAL_START();
     s = my_socket(AF_MAX, 0, 0);
