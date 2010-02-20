@@ -11,8 +11,8 @@ Release:	1
 License:	ISC
 URL:		http://www.blinkenlights.nl/software/ladvd/
 Source0:	ladvd-0.8.6.tar.gz
-Source1:        ladvd.sysconfig
-Source2:        ladvd.init
+Source1:        ladvd.init
+Source2:        ladvd.sysconfig
 Group:          Productivity/Networking/System
 Summary:        CDP/LLDP sender for unix 
 
