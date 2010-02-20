@@ -44,7 +44,7 @@ make DESTDIR=%buildroot install
 rm -rf %{buildroot}%{_docdir}/%{name}
 install -D -m 755 %{SOURCE1} %{buildroot}%{_initrddir}/%{name}
 %if 0%{?suse_version}
-    install -D -m 644 %{SOURCE2} %{buildroot}/var/adm/fillup-templates/sysconfig.%{name}
+    install -D -m 700 %{SOURCE2} %{buildroot}/var/adm/fillup-templates/sysconfig.%{name}
 %else
     install -D -m 644 %{SOURCE2} %{buildroot}%{_sysconfdir}/sysconfig/%{name}
 %endif
@@ -87,7 +87,11 @@ fi
 %files
 %defattr(-,root,root)
 %doc doc/ChangeLog doc/README doc/LICENSE doc/TODO
+%if 0%{?suse_version}
+/var/adm/fillup-templates/sysconfig.%{name}
+%else
 %config(noreplace) %{_sysconfdir}/sysconfig/%{name}
+%endif
 %{_initrddir}/%{name}
 %{_sbindir}/%{name}
 %{_sbindir}/%{name}c
