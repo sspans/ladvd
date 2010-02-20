@@ -1,0 +1,83 @@
+#!/bin/bash
+#
+# ladvd        Startup script for the cdp/lldp sender
+#
+# chkconfig: - 85 15
+# description: ladvd uses cdp / lldp frames to inform switches \
+#              about connected hosts, which simplifies ethernet \
+#              switch management.
+# processname: ladvd
+# pidfile: /var/run/ladvd.pid
+#
+### BEGIN INIT INFO
+# Provides:	    ladvd
+# Required-Start:   $network
+# Required-Stop:    $network
+# Default-Start:    3 5
+# Default-Stop:	    0 1 6
+# Short-Description: start and stop cdp/lldp sender
+# Description:	    start and stop cdp/lldp sender
+### END INIT INFO
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+[ -f /etc/sysconfig/network ] && . /etc/sysconfig/network
+
+[ "${NETWORKING}" = "yes" ] || exit 0
+
+[ -r /etc/sysconfig/ladvd ] && . /etc/sysconfig/ladvd
+
+start() 
+{
+	# create the privsep empty dir if necessary
+	if [ ! -d /var/run/ladvd ]; then
+	    mkdir /var/run/ladvd
+	    chmod 0755 /var/run/ladvd
+	fi
+
+	echo -n $"Starting ladvd: "
+	daemon /usr/sbin/ladvd $LADVDARGS
+	RETVAL=$?
+	echo
+	[ $RETVAL = 0 ] && touch /var/lock/subsys/ladvd
+	return $RETVAL
+}
+
+stop() 
+{
+	echo -n $"Shutting down ladvd: "
+	killproc ladvd
+	RETVAL=$?
+	rm -f  /var/lock/subsys/ladvd
+	echo
+	return $RETVAL
+}
+
+[ -f /usr/sbin/ladvd ] || exit 0
+
+# See how we were called.
+case "$1" in
+  start)
+	start
+        ;;
+  stop)
+	stop
+        ;;
+  force-reload|restart|reload)
+	stop
+	start
+	;;
+  try-restart|condrestart)
+	[ -e /var/lock/subsys/ladvd ] && (stop; start)
+	;;
+  status)
+  	status ladvd
+	RETVAL=$?
+	;;
+  *)
+	echo $"Usage: $0 {start|stop|status|restart|reload|condrestart}"
+	exit 3
+esac
+
+exit $RETVAL
