@@ -29,9 +29,19 @@ dpkg-buildpackage -S
 cd ${RELEASE}/debian
 rm -rf ladvd-*
 
+# create osc repository
+cd ${RELEASE}
+osc checkout home:sten-blinkenlights ladvd
+mv home\:sten-blinkenlights/ladvd osc
+cp *.tar.gz osc
+cp ../rpm/* osc
+cp debian/* osc
+
 # return to the root
 cd ${BASE}
 
 echo for ubuntu uploads run:
 echo "cd ${RELEASE}/debian && dput my-ppa ladvd_*_source.changes"
+echo for OpenSuSE BuildService uploads run:
+echo "cd ${RELEASE}/osc && osc commit"
 
