@@ -1,2 +1,11 @@
-# Arguments to ladvd
-LADVDARGS="-a" 
+## Path:           Network/ladvd
+## Description:    Network Time Protocol (NTP) server settings  
+## Type:           string  
+## Default:        "-a"  
+#  
+# Arguments when starting ladvd. The most important one is:
+# -a	Auto-enable protocols based on received packets.
+# 
+# Optionally a list of interfaces which ladvd should utilize can be supplied.
+#  
+LADVD_OPTIONS="-a" 

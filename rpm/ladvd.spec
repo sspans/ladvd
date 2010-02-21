@@ -44,7 +44,8 @@ make DESTDIR=%buildroot install
 rm -rf %{buildroot}%{_docdir}/%{name}
 install -D -m 755 %{SOURCE1} %{buildroot}%{_initrddir}/%{name}
 %if 0%{?suse_version}
-    install -D -m 700 %{SOURCE2} %{buildroot}/var/adm/fillup-templates/sysconfig.%{name}
+    %{__install} -D -m 0644 %{SOURCE2} \  
+	%{buildroot}/var/adm/fillup-templates/sysconfig.%{name}
 %else
     install -D -m 644 %{SOURCE2} %{buildroot}%{_sysconfdir}/sysconfig/%{name}
 %endif
@@ -55,14 +56,14 @@ rm -rf %buildroot
 
 
 %pre
-%groupadd %uid -r %{name} &>/dev/null || :
-%useradd  %uid -r -s /sbin/nologin -d %homedir -M \
--c '%gecos' -g %{name} %{name} &>/dev/null || :
+/usr/sbin/groupadd -r %{name} &>/dev/null || :
+/usr/sbin/useradd  -r -s /sbin/nologin -d %{homedir} -M \
+    -c '%{gecos}' -g %{name} %{name} &>/dev/null || :
 
 
 %post
 %if 0%{?suse_version}
-%{fillup_and_insserv}
+%fillup_and_insserv %{name}
 %else
 /sbin/chkconfig --add %{name}
 %service %{name} restart
@@ -88,9 +89,9 @@ fi
 if [ "$1" -ge "1" ]; then
 	/sbin/service %{name} condrestart >/dev/null 2>&1
 fi
-%endif
 %userremove %{name}
 %groupremove %{name}
+%endif
 
 
 %files

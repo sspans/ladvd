@@ -37,7 +37,7 @@ start()
 	fi
 
 	echo -n $"Starting ladvd: "
-	daemon /usr/sbin/ladvd $LADVDARGS
+	daemon /usr/sbin/ladvd $LADVD_OPTIONS
 	RETVAL=$?
 	echo
 	[ $RETVAL = 0 ] && touch /var/lock/subsys/ladvd
