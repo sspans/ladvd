@@ -43,7 +43,7 @@ make check
 
 %install
 rm -rf %{buildroot}
-make DESTDIR=%buildroot install
+make DESTDIR=%buildroot install-strip
 rm -rf %{buildroot}%{_docdir}/%{name}
 install -D -m 755 %{SOURCE1} %{buildroot}%{_initrddir}/%{name}
 %if 0%{?suse_version}
