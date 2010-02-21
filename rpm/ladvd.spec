@@ -34,7 +34,10 @@ IPv6) are detected dynamically.
 
 %build
 %configure --docdir=%{_docdir}/%{name}
-make %{?_smp_mflags}
+make
+
+
+%check
 make check
 
 
