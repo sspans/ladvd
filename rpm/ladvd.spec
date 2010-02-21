@@ -44,8 +44,7 @@ make DESTDIR=%buildroot install
 rm -rf %{buildroot}%{_docdir}/%{name}
 install -D -m 755 %{SOURCE1} %{buildroot}%{_initrddir}/%{name}
 %if 0%{?suse_version}
-    %{__install} -D -m 0644 %{SOURCE2} \  
-	%{buildroot}/var/adm/fillup-templates/sysconfig.%{name}
+    %{__install} -D -m 0644 %{SOURCE2} %{buildroot}/var/adm/fillup-templates/sysconfig.%{name}
 %else
     install -D -m 644 %{SOURCE2} %{buildroot}%{_sysconfdir}/sysconfig/%{name}
 %endif
