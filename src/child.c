@@ -353,6 +353,7 @@ void child_cli_accept(int socket, short event) {
     struct sockaddr sa;
     socklen_t addrlen = sizeof(sa);
     struct child_session *session = NULL;
+    struct timeval tv = { .tv_sec = 1 };
 
     if ((fd = accept(socket, &sa, &addrlen)) == -1) {
 	my_log(WARN, "cli connection failed");
@@ -365,11 +366,15 @@ void child_cli_accept(int socket, short event) {
 
     session = my_malloc(sizeof(struct child_session));
     event_set(&session->event, fd, EV_WRITE, (void *)child_cli_write, session);
-    event_add(&session->event, NULL);
+    event_add(&session->event, &tv);
 }
 
 void child_cli_write(int fd, short event, struct child_session *sess) {
     struct master_msg *msg = sess->msg;
+    struct timeval tv = { .tv_sec = 1 };
+
+    if (event == EV_TIMEOUT)
+	goto cleanup;
 
     // grab the first message
     if (!msg)
@@ -384,21 +389,19 @@ void child_cli_write(int fd, short event, struct child_session *sess) {
 
 	// bail unless non-block
 	if (errno != EAGAIN)
-	    msg = NULL;
-	break;
-    }
+	    break;
 
-    // schedule a new event
-    if (msg) {
+	// schedule a new event
 	msg->lock++;
 	sess->msg = msg;
 	event_set(&sess->event, fd, EV_WRITE, (void *)child_cli_write, sess);
-	event_add(&sess->event, NULL);
-    // cleanup
-    } else {
-	event_del(&sess->event);
-	free(sess);
-	close(fd);
+	event_add(&sess->event, &tv);
+	return;
     }
+
+cleanup:
+    event_del(&sess->event);
+    free(sess);
+    close(fd);
 }
 
