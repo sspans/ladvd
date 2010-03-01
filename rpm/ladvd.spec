@@ -1,3 +1,8 @@
+
+# http://fedoraproject.org/wiki/Packaging:RPMMacros
+# http://en.opensuse.org/Packaging/RPM_Macros
+# http://www.rpm.org/wiki/Problems/Distributions
+
 %global homedir /var/run/ladvd
 %global gecos CDP/LLDP sender for unix
 
@@ -34,7 +39,7 @@ IPv6) are detected dynamically.
 
 %build
 %configure --docdir=%{_docdir}/%{name}
-make
+make %{?_smp_mflags}
 
 
 %check
@@ -43,18 +48,18 @@ make check
 
 %install
 rm -rf %{buildroot}
-make DESTDIR=%buildroot install-strip
+make DESTDIR=%{buildroot} install-strip
 rm -rf %{buildroot}%{_docdir}/%{name}
-install -D -m 755 %{SOURCE1} %{buildroot}%{_initrddir}/%{name}
+install -D -m 755 %{SOURCE1} %{buildroot}%{_initddir}/%{name}
 %if 0%{?suse_version}
-    %{__install} -D -m 0644 %{SOURCE2} %{buildroot}/var/adm/fillup-templates/sysconfig.%{name}
+    install -D -m 0644 %{SOURCE2} %{buildroot}/var/adm/fillup-templates/sysconfig.%{name}
 %else
     install -D -m 644 %{SOURCE2} %{buildroot}%{_sysconfdir}/sysconfig/%{name}
 %endif
 
 
 %clean
-rm -rf %buildroot
+rm -rf %{buildroot}
 
 
 %pre
@@ -64,35 +69,35 @@ rm -rf %buildroot
 
 
 %post
-%if 0%{?suse_version}
-%fillup_and_insserv %{name}
-%else
+%if ! 0%{?suse_version}
 /sbin/chkconfig --add %{name}
 %service %{name} restart
+%else
+%fillup_and_insserv %{name}
+%restart_on_update %{name}
 %endif
 
 
 %preun
-%if 0%{?suse_version}
-%stop_on_removal %{name}
-%else
+%if ! 0%{?suse_version}
 if [ "$1" = "0" ]; then
-	%service %{name} stop
+	%service %{name} stop >/dev/null 2>&1
 	/sbin/chkconfig --del %{name}
 fi
+%else
+%stop_on_removal %{name}
 %endif
 
 
 %postun
-%if 0%{?suse_version}
-%restart_on_update %{name} 
-%{insserv_cleanup}  
-%else
+%if ! 0%{?suse_version}
 if [ "$1" -ge "1" ]; then
-	/sbin/service %{name} condrestart >/dev/null 2>&1
+	/sbin/service %{name} condrestart >/dev/null 2>&1 || :
 fi
 %userremove %{name}
 %groupremove %{name}
+%else
+%{insserv_cleanup}  
 %endif
 
 
@@ -104,7 +109,7 @@ fi
 %else
 %config(noreplace) %{_sysconfdir}/sysconfig/%{name}
 %endif
-%{_initrddir}/%{name}
+%{_initddir}/%{name}
 %{_sbindir}/%{name}
 %{_sbindir}/%{name}c
 %{_mandir}/man8/%{name}.8*
