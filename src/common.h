@@ -64,20 +64,21 @@
 #include <netinet/if_ether.h>
 #endif
 
+#ifndef __noreturn
+# define __noreturn	__attribute__ ((noreturn))
+#endif
+#ifndef __packed
+# define __packed	__attribute__ ((packed))
+#endif
+#ifndef __nonnull
+# define __nonnull(x)	__attribute__ ((__nonnull__ x))
+#endif
 #if __GNUC__ >= 3
-#define __noreturn	__attribute__ ((noreturn))
-#define __malloc	__attribute__ ((malloc))
-#define __must_check	__attribute__ ((warn_unused_result))
-#define __packed	__attribute__ ((packed))
-#define likely(x)	__builtin_expect (!!(x), 1)
-#define unlikely(x)	__builtin_expect (!!(x), 0)
+# define likely(x)	__builtin_expect (!!(x), 1)
+# define unlikely(x)	__builtin_expect (!!(x), 0)
 #else
-#define __noreturn	/* no noreturn */
-#define __malloc	/* no malloc */
-#define __must_check	/* no warn_unused_result */
-#define __packed	/* no packed */
-#define likely(x)	(x)
-#define unlikely(x)	(x)
+# define likely(x)	(x)
+# define unlikely(x)	(x)
 #endif
 
 #include "ether.h"
