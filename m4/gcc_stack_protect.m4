@@ -57,7 +57,7 @@ AC_DEFUN([GCC_STACK_PROTECT_CC],[
     AC_CACHE_CHECK([whether ${CC} accepts -fstack-protector],
       ssp_cv_cc,
       [ssp_old_cflags="$CFLAGS"
-       CFLAGS="$CFLAGS -fstack-protector -Werror"
+       CFLAGS="-fstack-protector -Werror"
        AC_TRY_LINK([
 	    #include <stdio.h>
 	    #include <stdarg.h>
