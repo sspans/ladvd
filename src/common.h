@@ -20,8 +20,6 @@
 #ifndef _common_h
 #define _common_h
 
-#define __USE_GNU
-
 #include "config.h"
 #include <stdarg.h>
 #include <stddef.h>
