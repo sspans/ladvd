@@ -19,6 +19,7 @@
 
 #include "config.h"
 #include <check.h>
+#include <paths.h>
 
 #include "common.h"
 #include "util.h"
@@ -463,7 +464,7 @@ END_TEST
 START_TEST(test_read_line) {
     char line[128];
     const char *data = "0123456789ABCDEF";
-    const char *null = "/dev/null";
+    const char *null =  _PATH_DEVNULL;
     const char *file = "testfile";
     char *prefix, *path = NULL;
 
@@ -615,7 +616,7 @@ START_TEST(test_my_priv) {
 
     mark_point();
     errstr = "bad ownership or modes for chroot";
-    strlcpy(path, "/dev/null", MAXPATHLEN);
+    strlcpy(path, _PATH_DEVNULL, MAXPATHLEN);
     WRAP_FATAL_START();
     my_chroot(path);
     WRAP_FATAL_END();
@@ -623,8 +624,8 @@ START_TEST(test_my_priv) {
 	"incorrect message logged: %s", check_wrap_errstr);
 
     mark_point();
-    errstr = "chroot path \"/dev/mem\" is not a directory";
-    strlcpy(path, "/dev/mem", MAXPATHLEN);
+    errstr = "chroot path \"" _PATH_MEM "\" is not a directory";
+    strlcpy(path, _PATH_MEM, MAXPATHLEN);
     WRAP_FATAL_START();
     my_chroot(path);
     WRAP_FATAL_END();
