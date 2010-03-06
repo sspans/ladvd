@@ -120,7 +120,7 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
     int sockfd, af = AF_INET;
     struct ifaddrs *ifaddrs, *ifaddr = NULL;
     struct ifreq ifr;
-    int j, count = 0;
+    int count = 0;
     int type, enabled;
     uint32_t index;
     struct master_req mreq = {};
@@ -316,7 +316,7 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
     if (ifc > 0) {
 	count = 0;
 
-	for (j=0; j < ifc; j++) {
+	for (int j = 0; j < ifc; j++) {
 	    netif = netif_byname(netifs, ifl[j]);
 	    if (netif == NULL) {
 		my_log(CRIT, "interface %s is invalid", ifl[j]);
@@ -496,7 +496,6 @@ void netif_bond(int sockfd, struct nhead *netifs, struct netif *master,
 		struct ifreq *ifr) {
 
     struct netif *subif = NULL, *csubif = master;
-    int i;
 
 #ifdef HAVE_LINUX_IF_BONDING_H
     struct ifbond ifbond = {};
@@ -531,7 +530,7 @@ void netif_bond(int sockfd, struct nhead *netifs, struct netif *master,
     if (ifbond.num_slaves <= 0)
 	return;
 
-    for (i = 0; i < ifbond.num_slaves; i++) {
+    for (int i = 0; i < ifbond.num_slaves; i++) {
 	ifslave.slave_id = i;
 	ifr->ifr_data = (char *)&ifslave;
 
@@ -568,7 +567,7 @@ void netif_bond(int sockfd, struct nhead *netifs, struct netif *master,
 	    master->lacp = 1;
 #endif
     
-    for (i = 0; i < ra.ra_ports; i++) {
+    for (int i = 0; i < ra.ra_ports; i++) {
 	subif = netif_byname(netifs, rpbuf[i].rp_portname);
 
 	if (subif != NULL) {
@@ -610,7 +609,7 @@ void netif_bond(int sockfd, struct nhead *netifs, struct netif *master,
     if ((ioctl(sockfd, SIOCGIFBOND, ifr) >= 0) && (ibsr->ibsr_total > 0)) {
 	ibs = (struct if_bond_status *)ibsr->ibsr_buffer;
 
-	for (i = 0; i < ibsr->ibsr_total; i++) {
+	for (int i = 0; i < ibsr->ibsr_total; i++) {
 	    subif = netif_byname(netifs, ibs->ibs_if_name);
 
 	    if (subif != NULL) {
@@ -637,7 +636,6 @@ void netif_bridge(int sockfd, struct nhead *netifs, struct netif *master,
 #if defined(HAVE_LINUX_IF_BRIDGE_H) || \
     defined(HAVE_NET_IF_BRIDGEVAR_H) || defined(HAVE_NET_IF_BRIDGE_H)
     struct netif *subif = NULL, *csubif = master;
-    int i;
 #endif
 
 #ifdef HAVE_LINUX_IF_BRIDGE_H
@@ -658,7 +656,7 @@ void netif_bridge(int sockfd, struct nhead *netifs, struct netif *master,
 	return;
     }
 
-    for (i = 0; i < BRIDGE_MAX_PORTS; i++) {
+    for (int i = 0; i < BRIDGE_MAX_PORTS; i++) {
 	subif = netif_byindex(netifs, ifindex[i]);
 
 	if (subif != NULL) {
@@ -717,7 +715,7 @@ void netif_bridge(int sockfd, struct nhead *netifs, struct netif *master,
 	len *= 2;
     }
 
-    for (i = 0; i < bifc.ifbic_len / sizeof(*req); i++) {
+    for (int i = 0; i < bifc.ifbic_len / sizeof(*req); i++) {
 	req = bifc.ifbic_req + i;
 
 	subif = netif_byname(netifs, req->ifbr_ifsname);
@@ -839,7 +837,7 @@ int netif_media(struct netif *netif) {
 
 #if HAVE_NET_IF_MEDIA_H
     struct ifmediareq ifmr = {};
-    int *media_list, i;
+    int *media_list;
 #endif /* HAVE_HAVE_NET_IF_MEDIA_H */
 
     sockfd = my_socket(af, SOCK_DGRAM, 0);
@@ -922,7 +920,7 @@ int netif_media(struct netif *netif) {
     }
 
     // autoneg support
-    for (i = 0; i < ifmr.ifm_count; i++) {
+    for (int i = 0; i < ifmr.ifm_count; i++) {
 	if (IFM_SUBTYPE(ifmr.ifm_ulist[i]) == IFM_AUTO) {
 	    my_log(INFO, "autoneg supported on %s", netif->name);
 	    netif->autoneg_supported = 1;

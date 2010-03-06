@@ -89,14 +89,14 @@ int my_socket(int af, int type, int proto) {
 }
 
 void my_socketpair(int spair[]) {
-    int i, rbuf = MASTER_MSG_MAX * 10;
+    int rbuf = MASTER_MSG_MAX * 10;
 
     assert(spair != NULL);
 
     if (socketpair(AF_UNIX, SOCK_DGRAM, 0, spair) == -1)
 	my_fatal("msg socketpair creation failed: %s", strerror(errno));
 
-    for (i = 0; i<2; i++) {
+    for (int i = 0; i<2; i++) {
 	if (setsockopt(spair[i], SOL_SOCKET, SO_RCVBUF,
 		       &rbuf, sizeof(rbuf)) == -1)
 	    my_fatal("failed to set rcvbuf: %s", strerror(errno));
@@ -357,14 +357,13 @@ void netif_descr(struct netif *netif, struct mhead *mqueue) {
 }
 
 void portname_abbr(char *portname) {
-    int m;
     size_t len;
     char *media_types[] = { "FastEthernet", "GigabitEthernet",
 			    "TenGigabitEthernet", NULL};
 
     assert(portname);
 
-    for (m = 0; media_types[m] != NULL; m++) {
+    for (int m = 0; media_types[m] != NULL; m++) {
 	if (strstr(portname, media_types[m]) != portname)
 	    continue;
 	len = strlen(media_types[m]);

@@ -512,14 +512,13 @@ void master_multi(struct rawfd *rfd, struct proto *protos, int op) {
     struct sockaddr_dl *saddrdl;
 #endif
     struct ifreq ifr = {};
-    int p;
 
     if (options & OPT_DEBUG)
 	return;
 
     strlcpy(ifr.ifr_name, rfd->name, IFNAMSIZ);
 
-    for (p = 0; protos[p].name != NULL; p++) {
+    for (int p = 0; protos[p].name != NULL; p++) {
 
 	// only enabled protos
 	if ((protos[p].enabled == 0) && !(options & OPT_AUTO))
@@ -570,7 +569,7 @@ void master_recv(int fd, short event, struct rawfd *rfd) {
     struct master_msg mrecv = {};
     struct ether_hdr *ether;
     static unsigned int rcount = 0;
-    unsigned int p;
+    int p;
     ssize_t len = 0;
 #ifdef HAVE_NET_BPF_H
     void *bp, *endp;

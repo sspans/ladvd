@@ -125,7 +125,6 @@ void child_send(int fd, short event, void *evs) {
     struct master_msg mreq;
     struct netif *netif = NULL, *subif = NULL;
     struct timeval tv = { .tv_sec = SLEEPTIME };
-    int p;
     ssize_t len;
 
     // update netifs
@@ -151,7 +150,7 @@ void child_send(int fd, short event, void *evs) {
 		my_log(CRIT, "error fetching interface media details");
 
 	    // generate and send packets
-	    for (p = 0; protos[p].name != NULL; p++) {
+	    for (int p = 0; protos[p].name != NULL; p++) {
 
 		// only enabled protos
 		if (!(protos[p].enabled) && !(netif->protos & (1 << p)))
