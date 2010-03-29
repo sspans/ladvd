@@ -31,7 +31,7 @@ size_t lldp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
     size_t length = ETHER_MAX_LEN;
     tlv_t type;
 
-    uint8_t cap = 0, cap_active = 0;
+    uint16_t cap = 0, cap_active = 0;
     struct netif *master;
 
     const uint8_t lldp_dst[] = LLDP_MULTICAST_ADDR;
@@ -382,9 +382,7 @@ size_t lldp_decode(struct master_msg *msg) {
     uint16_t tlv_length;
     uint8_t tlv_subtype;
 
-    const char *errstr = NULL;
-    uint16_t peer_type;
-    uint8_t addr_len, addr_type;
+    uint16_t lldp_cap, cap;
 
     assert(msg);
 
@@ -478,61 +476,25 @@ size_t lldp_decode(struct master_msg *msg) {
 		return 0;
 	    }
 	    break;
-	case LLDP_TYPE_SYSTEM_DESCR:
-	    if (!DECODE_STRING(msg, PEER_SOFTWARE, tlv_length)) {
-		my_log(INFO, "Corrupt LLDP packet: invalid System Descr TLV");
+	case LLDP_TYPE_SYSTEM_CAP:
+	    if ((tlv_length != 4) || !SKIP(2) || !GRAB_UINT16(lldp_cap)) {
+		my_log(INFO, "Invalid LLDP packet: invalid Capabilities TLV");
 		return 0;
 	    }
+	    if (lldp_cap == LLDP_CAP_STATION_ONLY) {
+		cap = CAP_HOST;
+	    } else {
+		cap |= (lldp_cap & LLDP_CAP_OTHER) ? CAP_OTHER : 0;
+		cap |= (lldp_cap & LLDP_CAP_REPEATER) ? CAP_REPEATER : 0;
+		cap |= (lldp_cap & LLDP_CAP_BRIDGE) ? CAP_BRIDGE : 0;
+		cap |= (lldp_cap & LLDP_CAP_WLAN_AP) ? CAP_WLAN : 0;
+		cap |= (lldp_cap & LLDP_CAP_ROUTER) ? CAP_ROUTER : 0;
+		cap |= (lldp_cap & LLDP_CAP_PHONE) ? CAP_PHONE : 0;
+		cap |= (lldp_cap & LLDP_CAP_DOCSIS) ? CAP_DOCSIS : 0;
+	    }
+	    tlv_value_str(msg, PEER_CAP, sizeof(cap), &cap);
 	    break;
 	case LLDP_TYPE_MGMT_ADDR:
-	    if (!DECODE_WANTED(msg, PEER_IPV4) &&
-		!DECODE_WANTED(msg, PEER_IPV6)) {
-		if (!SKIP(tlv_length)) {
-		    my_log(INFO, "Corrupt LLDP packet: invalid TLV Length");
-		    return 0;
-		}
-		break;
-	    }
-
-	    errstr = "Corrupt LLDP packet: invalid Mgmt Address TLV";
-
-	    if (!GRAB_UINT8(addr_len)) {
-		my_log(INFO, errstr);
-		return 0;
-	    }
-	    tlv_length--;
-	    if (addr_len < 2 || addr_len > 32) {
-		my_log(INFO, errstr);
-		return 0;
-	    }
-	    if (!GRAB_UINT8(addr_type)) {
-		my_log(INFO, errstr);
-		return 0;
-	    }
-	    tlv_length--;
-	    addr_len--;
-
-	    if (addr_type == LLDP_AFNUM_INET)
-		peer_type = PEER_IPV4;
-	    else if (addr_type == LLDP_AFNUM_INET6)
-		peer_type = PEER_IPV6;
-	    else
-		peer_type = 0;
-	    
-	    if (peer_type) {
-		if (!DECODE_STRING(msg, peer_type, addr_len)) {
-		    my_log(INFO, errstr);
-		    return 0;
-		}
-		tlv_length -= addr_len;
-	    }
-
-	    if (!SKIP(tlv_length)) {
-		my_log(INFO, errstr);
-		return 0;
-	    }
-	    break; 
-	case LLDP_TYPE_SYSTEM_CAP:
 	case LLDP_TYPE_PRIVATE:
 	default:
 	    if (8 < tlv_type && tlv_type < 127) {
