@@ -130,8 +130,8 @@ struct sysinfo {
     char hostname[256];
     char country[3];
     char location[256];
-    int8_t cap;
-    int8_t cap_active;
+    int16_t cap;
+    int16_t cap_active;
     uint8_t hwaddr[ETHER_ADDR_LEN];
     uint16_t physif_count;
 
@@ -147,11 +147,17 @@ struct sysinfo {
     char asset_id[LLDP_INVENTORY_SIZE + 1];
 };
 
-#define CAP_BRIDGE	(1 << 0)
-#define CAP_HOST	(1 << 1)
-#define CAP_ROUTER	(1 << 2)
-#define CAP_SWITCH	(1 << 3)
-#define CAP_WLAN	(1 << 4)
+#define CAP_REPEATER	(1 << 0)
+#define CAP_BRIDGE	(1 << 1)
+#define CAP_HOST	(1 << 2)
+#define CAP_ROUTER	(1 << 3)
+#define CAP_SWITCH	(1 << 4)
+#define CAP_WLAN	(1 << 5)
+#define CAP_DOCSIS	(1 << 6)
+#define CAP_PHONE	(1 << 7)
+#define CAP_OTHER	(1 << 8)
+#define CAP_MAX		9
+#define CAP_STRING	"rBHRSWCTO"
 
 #define NETIF_INVALID	-1
 #define NETIF_REGULAR	0
@@ -188,13 +194,8 @@ struct master_req {
 
 #define PEER_HOSTNAME	0
 #define PEER_PORTNAME	1
-#define PEER_HARDWARE	2
-#define PEER_SOFTWARE	3
-#define PEER_MTU	4
-#define PEER_ETHER	5
-#define PEER_IPV4	6
-#define PEER_IPV6	7
-#define PEER_MAX	8
+#define PEER_CAP	2
+#define PEER_MAX	3
 static inline
 void peer_free(char *p[]) {
     int s;
