@@ -107,7 +107,7 @@ size_t ndp_decode(struct master_msg *msg) {
     size_t length;
     struct ndp_header ndp;
 
-    char *pos, *str;
+    char *pos;
 
     assert(msg);
 
@@ -120,16 +120,6 @@ size_t ndp_decode(struct master_msg *msg) {
     if (length < sizeof(ndp)) {
 	my_log(INFO, "missing NDP header");
 	return 0;
-    }
-
-    memcpy(&ndp, pos, sizeof(ndp));
-    str = my_malloc(INET_ADDRSTRLEN);
-    if (!inet_ntop(AF_INET, &ndp.addr, str, INET_ADDRSTRLEN)) {
-	my_log(INFO, "failed to copy peer addr");
-	free(str);
-	return 0;
-    } else {
-	msg->peer[PEER_IPV4] = str;
     }
 
     // XXX: this should be improved
