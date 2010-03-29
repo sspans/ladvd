@@ -23,17 +23,19 @@
 #include <sys/file.h>
 #include <sys/un.h>
 
+static void print_brief(struct master_msg *);
 static void usage() __noreturn;
 extern struct proto protos[];
+time_t now;
 
 __noreturn
 void cli_main(int argc, char *argv[]) {
     int ch, i;
-    uint8_t verbose, proto = 0;
+    uint8_t verbose = 0, proto = 0;
     uint32_t *indexes = NULL;
     struct sockaddr_un sun;
     int fd = -1;
-    struct master_msg msg;
+    struct master_msg msg = {};
     ssize_t len;
 
     options = 0;
@@ -96,12 +98,19 @@ void cli_main(int argc, char *argv[]) {
     if (connect(fd, (struct sockaddr *)&sun, sizeof(sun)) == -1)
 	my_fatal("failed to open " PACKAGE_SOCKET ": %s", strerror(errno));
 
+    if ((now = time(NULL)) == (time_t)-1)
+	my_fatal("failed fetch time: %s", strerror(errno));
+
     // debug
-    if (options & OPT_DEBUG)
+    if (options & OPT_DEBUG) {
 	write_pcap_hdr(fileno(stdout));
+    } else if (!(options & OPT_BATCH) && !verbose){
+	printf("Device ID           Local Intf    Proto   "
+	       "Hold-time    Capability    Port ID\n");
+    }
 
     while ((len = read(fd, &msg, MASTER_MSG_MAX)) > 0) {
-    
+
 	if (len < MASTER_MSG_MIN || len != MASTER_MSG_LEN(msg.len))
 	    continue;
 
@@ -120,9 +129,6 @@ void cli_main(int argc, char *argv[]) {
 		continue;
 	}
 
-	if (if_indextoname(msg.index, msg.name) == NULL)
-	    continue;
-
 	// skip unwanted protocols
 	if (!(proto & (1 << msg.proto)))
 	    continue;
@@ -137,9 +143,15 @@ void cli_main(int argc, char *argv[]) {
 	msg.decode = UINT16_MAX;
 	if (msg.len != protos[msg.proto].decode(&msg))
 	    continue;
-
-	printf("peer %s (%s) on interface %s\n",
-		msg.peer[PEER_HOSTNAME], protos[msg.proto].name, msg.name);
+	// skip expired packets
+	if (msg.ttl < (now - msg.received))
+	    continue;
+	
+	if (!verbose)
+	    print_brief(&msg);
+	// XXX: TODO
+	//else
+	//    print_detail(&msg);
 
 	peer_free(msg.peer);
 
@@ -150,6 +162,37 @@ void cli_main(int argc, char *argv[]) {
     exit(EXIT_SUCCESS);
 }
 
+#define STR(x)	(x) ? x : ""
+
+void print_brief(struct master_msg *msg) {
+    uint16_t holdtime = msg->ttl - (now - msg->received);
+    static unsigned int count = 0;
+    char *hostname = msg->peer[PEER_HOSTNAME];
+    char *portname = msg->peer[PEER_PORTNAME];
+    char *cap = msg->peer[PEER_CAP];
+
+    if (options & OPT_BATCH) {
+	printf("INTERFACE%u=%s\n", count, STR(msg->name));
+	printf("HOSTNAME%u=%s\n", count, STR(hostname));
+	printf("PORTNAME%u=%s\n", count, STR(portname));
+	printf("PROTOCOL%u=%s\n", count, protos[msg->proto].name);
+	printf("CAPABILITIES%u=%s\n", count, STR(cap));
+	printf("TTL%u=%" PRIu16 "\n", count, msg->ttl);
+	printf("HOLDTIME%u=%" PRIu16 "\n", count, holdtime);
+	count++;
+	return;
+    }
+
+    // shorten
+    if (hostname)
+	hostname[strcspn(hostname, ".")] = '\0';
+    if (portname)
+	portname_abbr(portname);
+
+    printf("%-19.19s %-13.13s %-7.7s %-12" PRIu16 " %-13.13s %-10.10s\n",
+	STR(hostname), STR(msg->name), protos[msg->proto].name,
+	holdtime, STR(cap),  STR(portname));
+}
 
 __noreturn
 static void usage() {
