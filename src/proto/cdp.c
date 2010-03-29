@@ -261,6 +261,8 @@ size_t cdp_decode(struct master_msg *msg) {
     uint16_t tlv_type;
     uint16_t tlv_length;
 
+    uint32_t cdp_cap, cap;
+
     assert(msg);
 
     packet = msg->msg;
@@ -305,38 +307,24 @@ size_t cdp_decode(struct master_msg *msg) {
 		    return 0;
 		}
 		break;
+	case CDP_TYPE_CAPABILITIES:
+		if ((tlv_length != 4) || !GRAB_UINT32(cdp_cap)) {
+		    my_log(INFO, "Corrupt CDP packet: invalid Cap TLV");
+		    return 0;
+		}
+		cap |= (cdp_cap & CDP_CAP_ROUTER) ? CAP_ROUTER : 0;
+		cap |= (cdp_cap & CDP_CAP_TRANSPARENT_BRIDGE) ? CAP_BRIDGE : 0;
+		cap |= (cdp_cap & CDP_CAP_SOURCE_BRIDGE) ? CAP_BRIDGE : 0;
+		cap |= (cdp_cap & CDP_CAP_SWITCH) ? CAP_SWITCH : 0;
+		cap |= (cdp_cap & CDP_CAP_HOST) ? CAP_HOST : 0;
+		cap |= (cdp_cap & CDP_CAP_REPEATER) ? CAP_REPEATER : 0;
+		tlv_value_str(msg, PEER_CAP, sizeof(cap), &cap);
+		break;
 	case CDP_TYPE_IOS_VERSION:
-		if (!DECODE_STRING(msg, PEER_SOFTWARE, tlv_length)) {
-		    my_log(INFO, "Corrupt CDP packet: invalid IOS Version TLV");
-		    return 0;
-		}
-		break;
 	case CDP_TYPE_PLATFORM:
-		if (!DECODE_STRING(msg, PEER_HARDWARE, tlv_length)) {
-		    my_log(INFO, "Corrupt CDP packet: invalid Platform TLV");
-		    return 0;
-		}
-		break;
 	case CDP_TYPE_MTU:
-		if (!DECODE_WANTED(msg, tlv_type)) { 
-		    if (!SKIP(tlv_length)) {
-			my_log(INFO, "Corrupt CDP packet: invalid TLV length");
-			return 0;
-		    }
-		    break;
-		}
-
-		uint32_t mtu = 0;
-		if (tlv_length != 4 || GRAB_UINT32(mtu)) {
-		    my_log(INFO, "Corrupt CDP packet: invalid MTU TLV");
-		    return 0;
-		}
-		if (asprintf(&msg->peer[PEER_MTU], "%" PRIu32, mtu) == -1)
-		    msg->peer[PEER_MTU] = NULL;
-		break;
 	case CDP_TYPE_ADDRESS:
 	case CDP_TYPE_DUPLEX:
-	case CDP_TYPE_CAPABILITIES:
 		// XXX: todo
 	default:
 		my_log(DEBUG, "unknown TLV: type %d, length %d, leaves %zu",
