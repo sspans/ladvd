@@ -211,6 +211,7 @@ void child_queue(int fd, short event) {
     // skip unknown interfaces
     if ((subif = netif_byindex(&netifs, rmsg.index)) == NULL)
 	return;
+    strlcpy(rmsg.name, subif->name, sizeof(rmsg.name));
 
     // skip locally generated packets
     ether = (struct ether_hdr *)rmsg.msg;
