@@ -222,6 +222,9 @@ size_t fdp_decode(struct master_msg *msg) {
     uint16_t tlv_type;
     uint16_t tlv_length;
 
+    uint16_t cap;
+    char *cap_str = NULL;
+
     assert(msg);
 
     packet = msg->msg;
@@ -265,6 +268,20 @@ size_t fdp_decode(struct master_msg *msg) {
 		    return 0;
 		}
 		break;
+	case FDP_TYPE_CAPABILITIES:
+		if (!GRAB_STRING(cap_str, tlv_length)) {
+		    my_log(INFO, "Corrupt FDP packet: invalid Cap TLV");
+		    return 0;
+		}
+		if (strcmp(cap_str, "Router") == 0)
+		   cap |= CAP_ROUTER; 
+		else if (strcmp(cap_str, "Switch") == 0)
+		   cap |= CAP_SWITCH; 
+		else if (strcmp(cap_str, "Bridge") == 0)
+		   cap |= CAP_BRIDGE; 
+		else if (strcmp(cap_str, "Host") == 0)
+		   cap |= CAP_HOST; 
+		tlv_value_str(msg, PEER_CAP, sizeof(cap), &cap);
 	default:
 		my_log(DEBUG, "unknown TLV: type %d, length %d, leaves %zu",
 			    tlv_type, tlv_length, length);

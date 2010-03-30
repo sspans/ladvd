@@ -261,7 +261,8 @@ size_t cdp_decode(struct master_msg *msg) {
     uint16_t tlv_type;
     uint16_t tlv_length;
 
-    uint32_t cdp_cap, cap;
+    uint32_t cdp_cap;
+    uint16_t cap;
 
     assert(msg);
 
