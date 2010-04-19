@@ -109,9 +109,9 @@ void cli_main(int argc, char *argv[]) {
 	write_pcap_hdr(fileno(stdout));
     } else if (!(options & OPT_BATCH) && !verbose){
 	printf("Capability Codes:\n"
-	    "\t(r) Repeater, (B) Bridge, (H) Host, (R) Router, (S) Switch,\n"
-	    "\t(W) WLAN Access Point, (C) DOCSIS Device, (T) Telephone, "
-	    "(O) Other\n\n");
+	    "\tr - Repeater, B - Bridge, H - Host, R - Router, S - Switch,\n"
+	    "\tW - WLAN Access Point, C - DOCSIS Device, T - Telephone, "
+	    "O - Other\n\n");
 	printf("Device ID           Local Intf    Proto   "
 	       "Hold-time    Capability    Port ID\n");
     }
