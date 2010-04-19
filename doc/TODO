@@ -1,9 +1,7 @@
 
-FOR 0.8.5:
+FOR 1.0.0:
 
 CODE:
-- socket & cli to display received packets
-- parse functions for the cli
 - linux ifalias support
 - support macosx (package)
 - support solaris
