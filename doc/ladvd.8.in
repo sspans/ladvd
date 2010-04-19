@@ -7,7 +7,7 @@ ladvd \- send link layer advertisements
 .B ...
 .SH DESCRIPTION
 .B ladvd
-sends LLDP link layer advertisements on all available interfaces. This makes connected hosts visible on managed switches. By default it will run as a privilege-separated daemon. Additional protocols can be enabled using the -C, -E, -F and -N options. Optionally a list of interfaces which
+sends LLDP (Link Layer Discovery Protocol) advertisements on all available interfaces. This makes connected hosts visible on managed switches. By default it will run as a privilege-separated daemon. Additional protocols can be enabled using the -C, -E, -F and -N options. Optionally a list of interfaces which
 .B ladvd
 should utilize can be supplied.
 .SH INTERFACES

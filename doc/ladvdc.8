@@ -1,0 +1,35 @@
+.TH ladvdc 8 "April 19 2010" ladvdc
+.SH NAME
+ladvdc \- display link layer advertisements
+.SH SYNOPSIS
+.BI "ladvdc " 
+.BI "[ " INTERFACE " ] [ " INTERFACE " ]"
+.B ...
+.SH DESCRIPTION
+.B ladvdc
+displays link layer advertisements received by
+.BR ladvd (8).
+Optionally a list of protocols and/or interfaces can be supplied to limit the amount of information displayed.
+.SH OPTIONS
+.IP -b
+Print output in a format suitable for inclusion in shell scripts.
+.IP -d
+Dump pcap-compatible packets to stdout which can be piped to tcpdump (via "| tcpdump -r -") or redirected to a file for further analysis.
+.IP -h
+Print usage instructions.
+.IP -o
+Only print the first advertisement.
+.IP -v
+Increase verbosity.
+.IP -L
+Parse LLDP (Link Layer Discovery Protocol).
+.IP -C
+Parse CDP (Cisco Discovery Protocol).
+.IP -E
+Parse EDP (Extreme Discovery Protocol).
+.IP -F
+Parse FDP (Foundry Discovery Protocol).
+.IP -N
+Parse NDP (Nortel Discovery Protocol) formerly called SynOptics Network Management Protocol (SONMP).
+.SH AUTHOR
+Sten Spans <sten@blinkenlights.nl>
