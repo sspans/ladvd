@@ -538,7 +538,7 @@ void master_multi(struct rawfd *rfd, struct proto *protos, int op) {
 	op = (op) ? PACKET_ADD_MEMBERSHIP:PACKET_DROP_MEMBERSHIP;
 
 	if (setsockopt(rfd->fd, SOL_PACKET, op, &mreq, sizeof(mreq)) < 0)
-	    my_fatal("unable to change %s multicast on %s: %s",
+	    my_log(CRIT, "unable to change %s multicast on %s: %s",
 		     protos[p].name, rfd->name, strerror(errno));
 
 #elif defined AF_LINK
@@ -557,7 +557,7 @@ void master_multi(struct rawfd *rfd, struct proto *protos, int op) {
 #endif
 	if ((ioctl(sock, (op) ? SIOCADDMULTI: SIOCDELMULTI, &ifr) < 0) &&
 	    (errno != EADDRINUSE))
-	    my_fatal("unable to change %s multicast on %s: %s",
+	    my_log(CRIT, "unable to change %s multicast on %s: %s",
 		     protos[p].name, rfd->name, strerror(errno));
 #endif
     }
