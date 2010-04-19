@@ -91,7 +91,10 @@ void cli_main(int argc, char *argv[]) {
     }
 
     // open socket connection
-    fd = my_socket(AF_UNIX, SOCK_SEQPACKET, 0);
+    fd = socket(AF_UNIX, SOCK_SEQPACKET, 0);
+    // XXX: make do with a stream and hope for the best
+    if (fd == -1)
+	fd = my_socket(AF_UNIX, SOCK_STREAM, 0);
     memset(&sun, 0, sizeof(sun));
     sun.sun_family = AF_UNIX;
     strlcpy(sun.sun_path, PACKAGE_SOCKET, sizeof(sun.sun_path));

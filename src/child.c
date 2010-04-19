@@ -56,7 +56,10 @@ void child_init(int reqfd, int msgfd, int ifc, char *ifl[],
     // configure unix socket
     if (!(options & (OPT_DEBUG|OPT_ONCE))) {
 
-	csock = my_socket(AF_UNIX, SOCK_SEQPACKET, 0);
+	csock = socket(AF_UNIX, SOCK_SEQPACKET, 0);
+	// XXX: make do with a stream and hope for the best
+	if (csock == -1)
+	    csock = my_socket(AF_UNIX, SOCK_STREAM, 0);
 	memset(&sun, 0, sizeof(sun));
 	sun.sun_family = AF_UNIX;
 	strlcpy(sun.sun_path, PACKAGE_SOCKET, sizeof(sun.sun_path));
