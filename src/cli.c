@@ -169,6 +169,12 @@ void cli_main(int argc, char *argv[]) {
     exit(EXIT_SUCCESS);
 }
 
+inline void swapchr(char *str, int c, int d) {
+    while ((str = strchr(str, c)) != NULL) {
+	*str = d;
+	 str++;
+    }
+}
 #define STR(x)	(x) ? x : ""
 
 void print_brief(struct master_msg *msg) {
@@ -179,13 +185,17 @@ void print_brief(struct master_msg *msg) {
     char *cap = msg->peer[PEER_CAP];
 
     if (options & OPT_BATCH) {
-	printf("INTERFACE%u=%s\n", count, STR(msg->name));
-	printf("HOSTNAME%u=%s\n", count, STR(hostname));
-	printf("PORTNAME%u=%s\n", count, STR(portname));
-	printf("PROTOCOL%u=%s\n", count, protos[msg->proto].name);
-	printf("CAPABILITIES%u=%s\n", count, STR(cap));
-	printf("TTL%u=%" PRIu16 "\n", count, msg->ttl);
-	printf("HOLDTIME%u=%" PRIu16 "\n", count, holdtime);
+
+	swapchr(hostname, '\'', '\"');
+	swapchr(portname, '\'', '\"');
+
+	printf("INTERFACE%u='%s'\n", count, STR(msg->name));
+	printf("HOSTNAME%u='%s'\n", count, STR(hostname));
+	printf("PORTNAME%u='%s'\n", count, STR(portname));
+	printf("PROTOCOL%u='%s'\n", count, protos[msg->proto].name);
+	printf("CAPABILITIES%u='%s'\n", count, STR(cap));
+	printf("TTL%u='%" PRIu16 "'\n", count, msg->ttl);
+	printf("HOLDTIME%u='%" PRIu16 "'\n", count, holdtime);
 	count++;
 	return;
     }
