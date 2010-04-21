@@ -22,14 +22,17 @@
 #include "proto/protos.h"
 #include <sys/file.h>
 #include <sys/un.h>
+#include <netdb.h>
 
 static void usage() __noreturn;
 extern struct proto protos[];
 
 void init_brief();
+void init_post();
 void init_debug();
-void print_batch(struct master_msg *msg, uint16_t holdtime);
 void print_brief(struct master_msg *msg, uint16_t holdtime);
+void print_batch(struct master_msg *msg, uint16_t holdtime);
+void print_post(struct master_msg *msg, uint16_t holdtime);
 void print_debug(struct master_msg *msg, uint16_t holdtime);
 
 struct mode {
@@ -41,7 +44,7 @@ struct mode modes[] = {
   { &init_brief, &print_brief },
   { NULL, &print_batch },
   { NULL, NULL },
-  { NULL, NULL },
+  { &init_post, &print_post },
   { &init_debug, &print_debug }
 };
 
@@ -51,6 +54,12 @@ struct mode modes[] = {
 #define MODE_POST   3
 #define MODE_DEBUG  4
 
+struct {
+    int sock;
+    char *host;
+    char *path;
+} post;
+    
 __noreturn
 void cli_main(int argc, char *argv[]) {
     int ch, i;
@@ -65,7 +74,7 @@ void cli_main(int argc, char *argv[]) {
 
     options = 0;
 
-    while ((ch = getopt(argc, argv, "LCEFNbdfpoh")) != -1) {
+    while ((ch = getopt(argc, argv, "LCEFNbdfp:oh")) != -1) {
 	switch(ch) {
 	    case 'L':
 		proto |= (1 << PROTO_LLDP);
@@ -93,6 +102,18 @@ void cli_main(int argc, char *argv[]) {
 		break;
 	    case 'p':
 		mode = MODE_POST;
+		if ((strlen(optarg) < 8) || strncmp(optarg, "http://", 7))
+		    usage();
+		char *host = my_strdup(optarg + 7);
+		char *path = strchr(host, '/');
+		if (path) {
+		    post.path = my_strdup(path);
+		    *path = '\0';
+		} else {
+		    post.path = my_strdup("/");
+		}
+		post.host = my_strdup(host);
+		free(host);
 		break;
 	    case 'o':
 		options |= OPT_ONCE;
@@ -232,6 +253,75 @@ void print_batch(struct master_msg *msg, uint16_t holdtime) {
     printf("HOLDTIME%u='%" PRIu16 "'\n", count, holdtime);
 
     count++;
+}
+
+void init_post() {
+    struct addrinfo hints = {}, *res, *res0;
+    int error;
+
+    hints.ai_family = PF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+    error = getaddrinfo(post.host, "http", &hints, &res0);
+    if (error)
+        my_fatal("%s lookup failed: %s", post.host, gai_strerror(error));
+
+    post.sock = -1;
+
+    for (res = res0; res; res = res->ai_next) {
+        post.sock = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+        if (post.sock == -1)
+	    continue;
+
+        if (connect(post.sock, res->ai_addr, res->ai_addrlen) < 0) {
+            close(post.sock);
+            post.sock = -1;
+            continue;
+        }
+
+	break;  /* okay we got one */
+    }
+
+    if (post.sock == -1)
+        my_fatal("%s socket connection failed", post.host);
+
+    freeaddrinfo(res0);
+}
+
+void print_post(struct master_msg *msg, uint16_t holdtime) {
+    int ret;
+    char *peer_hostname = msg->peer[PEER_HOSTNAME];
+    char *peer_portname = msg->peer[PEER_PORTNAME];
+    char *cap = msg->peer[PEER_CAP];
+    char *http_hdr = NULL, *post_data = NULL;
+    struct sysinfo sysinfo = {};
+
+    sysinfo_fetch(&sysinfo);
+
+    // XXX: url-encode
+    ret = asprintf(&post_data,
+	"hostname=%s&interface=%s&peer_hostname=%s&peer_portname=%s&"
+	"protocol=%s&capabilities=%s&ttl=%d&holdtime=%d\r\n\r\n",
+	sysinfo.hostname, STR(msg->name),
+	STR(peer_hostname), STR(peer_portname),
+	protos[msg->proto].name, STR(cap), msg->ttl, holdtime);
+    if (ret == -1)
+	my_fatal("asprintf failed");
+
+    ret = asprintf(&http_hdr, 
+	"POST %s HTTP/1.1\r\n" "Host: %s\r\n"
+	"User-Agent: " PACKAGE_CLI "/" PACKAGE_VERSION "\r\n"
+	"Content-Type: application/x-www-form-urlencoded\r\n"
+	"Content-Length: %zd\r\n\r\n", post.path, post.host, strlen(post_data));
+    if (ret == -1)
+	my_fatal("asprintf failed");
+
+    ret = write(post.sock, http_hdr, strlen(http_hdr));
+    ret = write(post.sock, post_data, strlen(post_data));
+
+    free(http_hdr);
+    free(post_data);
+
+    // XXX: should we read the reply ?
 }
 
 void init_debug() {
