@@ -58,7 +58,7 @@ void child_init(int reqfd, int msgfd, int ifc, char *ifl[],
 
 	csock = socket(AF_UNIX, SOCK_SEQPACKET, 0);
 	// XXX: make do with a stream and hope for the best
-	if (csock == -1)
+	if ((csock == -1) && (errno == EPROTONOSUPPORT))
 	    csock = my_socket(AF_UNIX, SOCK_STREAM, 0);
 	memset(&sun, 0, sizeof(sun));
 	sun.sun_family = AF_UNIX;
