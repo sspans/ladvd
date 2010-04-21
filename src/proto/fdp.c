@@ -282,6 +282,7 @@ size_t fdp_decode(struct master_msg *msg) {
 		else if (strcmp(cap_str, "Host") == 0)
 		   cap |= CAP_HOST; 
 		tlv_value_str(msg, PEER_CAP, sizeof(cap), &cap);
+		break;
 	default:
 		my_log(DEBUG, "unknown TLV: type %d, length %d, leaves %zu",
 			    tlv_type, tlv_length, length);
