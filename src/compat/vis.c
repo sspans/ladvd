@@ -34,7 +34,7 @@
 
 #include <ctype.h>
 #include <string.h>
-
+#include <stdio.h>
 #include "vis.h"
 
 #define	isoctal(c)	(((u_char)(c)) >= '0' && ((u_char)(c)) <= '7')
@@ -55,6 +55,22 @@
 char *
 vis(char *dst, int c, int flag, int nextc)
 {
+	if (flag & VIS_HTTPSTYLE) {
+		/* Described in RFC 1808 */
+		if (!(isalnum(c) /* alpha-numeric */
+		    /* safe */
+		    || c == '$' || c == '-' || c == '_' || c == '.' || c == '+'
+		    /* extra */
+		    || c == '!' || c == '*' || c == '\'' || c == '('
+		    || c == ')' || c == ',')) {
+			*dst++ = '%';
+			snprintf(dst, 4, (c < 16 ? "0%X" : "%X"), c);
+			dst += 2;
+			*dst = '\0';
+			return (dst);
+		}
+	}
+
 	if (isvisible(c)) {
 		*dst++ = c;
 		if (c == '\\' && (flag & VIS_NOSLASH) == 0)
