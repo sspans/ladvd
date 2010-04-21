@@ -23,24 +23,49 @@
 #include <sys/file.h>
 #include <sys/un.h>
 
-static void print_brief(struct master_msg *);
 static void usage() __noreturn;
 extern struct proto protos[];
-time_t now;
+
+void init_brief();
+void init_debug();
+void print_batch(struct master_msg *msg, uint16_t holdtime);
+void print_brief(struct master_msg *msg, uint16_t holdtime);
+void print_debug(struct master_msg *msg, uint16_t holdtime);
+
+struct mode {
+    void (*init) ();
+    void (*print) (struct master_msg *, uint16_t);
+};
+
+struct mode modes[] = {
+  { &init_brief, &print_brief },
+  { NULL, &print_batch },
+  { NULL, NULL },
+  { NULL, NULL },
+  { &init_debug, &print_debug }
+};
+
+#define MODE_BRIEF  0
+#define MODE_BATCH  1
+#define MODE_FULL   2
+#define MODE_POST   3
+#define MODE_DEBUG  4
 
 __noreturn
 void cli_main(int argc, char *argv[]) {
     int ch, i;
-    uint8_t verbose = 0, proto = 0;
+    uint8_t mode = MODE_BRIEF, proto = 0;
     uint32_t *indexes = NULL;
     struct sockaddr_un sun;
     int fd = -1;
+    time_t now;
     struct master_msg msg = {};
+    uint16_t holdtime;
     ssize_t len;
 
     options = 0;
 
-    while ((ch = getopt(argc, argv, "LCEFNbdhov")) != -1) {
+    while ((ch = getopt(argc, argv, "LCEFNbdfpoh")) != -1) {
 	switch(ch) {
 	    case 'L':
 		proto |= (1 << PROTO_LLDP);
@@ -58,16 +83,19 @@ void cli_main(int argc, char *argv[]) {
 		proto |= (1 << PROTO_NDP);
 		break;
 	    case 'b':
-		options |= OPT_BATCH;
+		mode = MODE_BATCH;
 		break;
 	    case 'd':
-		options |= OPT_DEBUG;
+		mode = MODE_DEBUG;
+		break;
+	    case 'f':
+		mode = MODE_FULL;
+		break;
+	    case 'p':
+		mode = MODE_POST;
 		break;
 	    case 'o':
 		options |= OPT_ONCE;
-		break;
-	    case 'v':
-		verbose++;
 		break;
 	    default:
 		usage();
@@ -104,17 +132,8 @@ void cli_main(int argc, char *argv[]) {
     if ((now = time(NULL)) == (time_t)-1)
 	my_fatal("failed fetch time: %s", strerror(errno));
 
-    // debug
-    if (options & OPT_DEBUG) {
-	write_pcap_hdr(fileno(stdout));
-    } else if (!(options & OPT_BATCH) && !verbose){
-	printf("Capability Codes:\n"
-	    "\tr - Repeater, B - Bridge, H - Host, R - Router, S - Switch,\n"
-	    "\tW - WLAN Access Point, C - DOCSIS Device, T - Telephone, "
-	    "O - Other\n\n");
-	printf("Device ID           Local Intf    Proto   "
-	       "Hold-time    Capability    Port ID\n");
-    }
+    if (modes[mode].init)
+	modes[mode].init();
 
     while ((len = read(fd, &msg, MASTER_MSG_MAX)) > 0) {
 
@@ -140,12 +159,6 @@ void cli_main(int argc, char *argv[]) {
 	if (!(proto & (1 << msg.proto)))
 	    continue;
 
-	// debug
-	if (options & OPT_DEBUG) {
-	    write_pcap_rec(fileno(stdout), &msg);
-	    continue;
-	}
-
 	// decode packet
 	msg.decode = UINT16_MAX;
 	if (msg.len != protos[msg.proto].decode(&msg))
@@ -153,12 +166,11 @@ void cli_main(int argc, char *argv[]) {
 	// skip expired packets
 	if (msg.ttl < (now - msg.received))
 	    continue;
+
+	holdtime = msg.ttl - (now - msg.received);
 	
-	if (!verbose)
-	    print_brief(&msg);
-	// XXX: TODO
-	//else
-	//    print_detail(&msg);
+	if (modes[mode].print)
+	    modes[mode].print(&msg, holdtime);
 
 	peer_free(msg.peer);
 
@@ -177,28 +189,19 @@ inline void swapchr(char *str, int c, int d) {
 }
 #define STR(x)	(x) ? x : ""
 
-void print_brief(struct master_msg *msg) {
-    uint16_t holdtime = msg->ttl - (now - msg->received);
-    static unsigned int count = 0;
+void init_brief() {
+    printf("Capability Codes:\n"
+	"\tr - Repeater, B - Bridge, H - Host, R - Router, S - Switch,\n"
+	"\tW - WLAN Access Point, C - DOCSIS Device, T - Telephone, "
+	"O - Other\n\n");
+    printf("Device ID           Local Intf    Proto   "
+	"Hold-time    Capability    Port ID\n");
+}
+
+void print_brief(struct master_msg *msg, uint16_t holdtime) {
     char *hostname = msg->peer[PEER_HOSTNAME];
     char *portname = msg->peer[PEER_PORTNAME];
     char *cap = msg->peer[PEER_CAP];
-
-    if (options & OPT_BATCH) {
-
-	swapchr(hostname, '\'', '\"');
-	swapchr(portname, '\'', '\"');
-
-	printf("INTERFACE%u='%s'\n", count, STR(msg->name));
-	printf("HOSTNAME%u='%s'\n", count, STR(hostname));
-	printf("PORTNAME%u='%s'\n", count, STR(portname));
-	printf("PROTOCOL%u='%s'\n", count, protos[msg->proto].name);
-	printf("CAPABILITIES%u='%s'\n", count, STR(cap));
-	printf("TTL%u='%" PRIu16 "'\n", count, msg->ttl);
-	printf("HOLDTIME%u='%" PRIu16 "'\n", count, holdtime);
-	count++;
-	return;
-    }
 
     // shorten
     if (hostname)
@@ -209,6 +212,34 @@ void print_brief(struct master_msg *msg) {
     printf("%-19.19s %-13.13s %-7.7s %-12" PRIu16 " %-13.13s %-10.10s\n",
 	STR(hostname), STR(msg->name), protos[msg->proto].name,
 	holdtime, STR(cap),  STR(portname));
+}
+
+void print_batch(struct master_msg *msg, uint16_t holdtime) {
+    char *hostname = msg->peer[PEER_HOSTNAME];
+    char *portname = msg->peer[PEER_PORTNAME];
+    char *cap = msg->peer[PEER_CAP];
+    static unsigned int count = 0;
+
+    swapchr(hostname, '\'', '\"');
+    swapchr(portname, '\'', '\"');
+
+    printf("INTERFACE%u='%s'\n", count, STR(msg->name));
+    printf("HOSTNAME%u='%s'\n", count, STR(hostname));
+    printf("PORTNAME%u='%s'\n", count, STR(portname));
+    printf("PROTOCOL%u='%s'\n", count, protos[msg->proto].name);
+    printf("CAPABILITIES%u='%s'\n", count, STR(cap));
+    printf("TTL%u='%" PRIu16 "'\n", count, msg->ttl);
+    printf("HOLDTIME%u='%" PRIu16 "'\n", count, holdtime);
+
+    count++;
+}
+
+void init_debug() {
+    write_pcap_hdr(fileno(stdout));
+}
+
+void print_debug(struct master_msg *msg, uint16_t holdtime) {
+    write_pcap_rec(fileno(stdout), msg);
 }
 
 __noreturn
@@ -224,9 +255,9 @@ static void usage() {
 	    "\t-N = Print NDP\n"
 	    "\t-b = Print scriptable output\n"
 	    "\t-d = Dump pcap-compatible packets to stdout\n"
+	    "\t-f = Print full decode\n"
 	    "\t-h = Print this message\n"
-	    "\t-o = Decode only one packet\n"
-	    "\t-v = Increase verbosity\n",
+	    "\t-o = Decode only one packet\n",
 	    __progname);
 
     exit(EXIT_FAILURE);
