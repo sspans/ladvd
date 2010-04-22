@@ -208,6 +208,7 @@ inline void swapchr(char *str, int c, int d) {
 	 str++;
     }
 }
+
 #define STR(x)	(x) ? x : ""
 
 void init_brief() {
@@ -287,23 +288,39 @@ void init_post() {
     freeaddrinfo(res0);
 }
 
+char * encode_post(char *src) {
+    char *str = NULL;
+    size_t len;
+
+    if (!src)
+	return my_strdup("");
+
+    len = strlen(src) * 4 + 1;
+    str = my_malloc(len);
+    strnvis(str, src, len, VIS_NL|VIS_TAB|VIS_HTTPSTYLE);
+    swapchr(str, ' ', '+'); 
+
+    return(str);
+}
+
 void print_post(struct master_msg *msg, uint16_t holdtime) {
     int ret;
-    char *peer_hostname = msg->peer[PEER_HOSTNAME];
-    char *peer_portname = msg->peer[PEER_PORTNAME];
+    char *peer_host, *peer_port;
     char *cap = msg->peer[PEER_CAP];
     char *http_hdr = NULL, *post_data = NULL;
     struct sysinfo sysinfo = {};
 
     sysinfo_fetch(&sysinfo);
 
-    // XXX: url-encode
+    // url-encode the received strings
+    peer_host = encode_post(msg->peer[PEER_HOSTNAME]);
+    peer_port = encode_post(msg->peer[PEER_PORTNAME]);
+
     ret = asprintf(&post_data,
 	"hostname=%s&interface=%s&peer_hostname=%s&peer_portname=%s&"
 	"protocol=%s&capabilities=%s&ttl=%" PRIu16 "&holdtime=%" PRIu16
 	"\r\n\r\n",
-	sysinfo.hostname, STR(msg->name),
-	STR(peer_hostname), STR(peer_portname),
+	sysinfo.hostname, STR(msg->name), peer_host, peer_port,
 	protos[msg->proto].name, STR(cap), msg->ttl, holdtime);
     if (ret == -1)
 	my_fatal("asprintf failed");
@@ -319,6 +336,8 @@ void print_post(struct master_msg *msg, uint16_t holdtime) {
     ret = write(post.sock, http_hdr, strlen(http_hdr));
     ret = write(post.sock, post_data, strlen(post_data));
 
+    free(peer_host);
+    free(peer_port);
     free(http_hdr);
     free(post_data);
 
