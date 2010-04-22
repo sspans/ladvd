@@ -15,10 +15,14 @@ Optionally a list of protocols and/or interfaces can be supplied to limit the am
 Print output in a format suitable for inclusion in shell scripts.
 .IP -d
 Dump pcap-compatible packets to stdout which can be piped to tcpdump (via "| tcpdump -r -") or redirected to a file for further analysis.
+.IP -f
+Print a full decode of each advertisement (not implemented).
 .IP -h
 Print usage instructions.
 .IP -o
 Only print the first advertisement.
+.IP -p http://example.tld/cgi-bin/ladvd.cgi
+Post decoded packets to the supplied url.
 .IP -v
 Increase verbosity.
 .IP -L

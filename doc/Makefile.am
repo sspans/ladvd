@@ -1,6 +1,6 @@
 
 dist_doc_DATA = LICENSE ChangeLog README TODO
-man_MANS = ladvd.8
+man_MANS = ladvd.8 ladvdc.8
 
 EXTRA_DIST = ladvd.8.in
 
