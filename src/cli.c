@@ -346,9 +346,9 @@ static void usage() {
 	    "\t-b = Print scriptable output\n"
 	    "\t-d = Dump pcap-compatible packets to stdout\n"
 	    "\t-f = Print full decode\n"
-	    "\t-o = Decode only one packet\n",
+	    "\t-o = Decode only one packet\n"
 	    "\t-p <url> = Post decode to url\n"
-	    "\t-h = Print this message\n"
+	    "\t-h = Print this message\n",
 	    __progname);
 
     exit(EXIT_FAILURE);
