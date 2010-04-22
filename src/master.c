@@ -162,6 +162,13 @@ void master_req(int reqfd, short event) {
     if (len < MASTER_REQ_MIN || len != MASTER_REQ_LEN(mreq.len))
 	my_fatal("invalid request received");
 
+    // validate ifindex
+    if (if_indextoname(mreq.index, mreq.name) == NULL) {
+	my_log(CRIT, "interface %s vanished", mreq.name);
+	mreq.len = 0;
+	goto out;
+    }
+
     // validate request
     if (master_check(&mreq) != EXIT_SUCCESS)
 	my_fatal("invalid request supplied");
@@ -194,6 +201,7 @@ void master_req(int reqfd, short event) {
 	    my_fatal("invalid request received");
     }
 
+out:
     len = write(reqfd, &mreq, MASTER_REQ_LEN(mreq.len));
     if (len != MASTER_REQ_LEN(mreq.len))
 	    my_fatal("failed to return request to child");
@@ -205,14 +213,6 @@ int master_check(struct master_req *mreq) {
     assert(mreq);
     assert(mreq->len <= ETHER_MAX_LEN);
     assert(mreq->op < MASTER_MAX);
-
-    // validate ifindex
-    if (if_indextoname(mreq->index, mreq->name) == NULL) {
-	if (mreq->op == MASTER_CLOSE)
-	    return(EXIT_SUCCESS);
-	my_log(CRIT, "invalid ifindex supplied");
-	return(EXIT_FAILURE);
-    }
 
     switch (mreq->op) {
 	case MASTER_CLOSE:
