@@ -110,7 +110,7 @@ void master_init(int reqfd, int msgfd, pid_t child) {
     event_add(&ev_msg, NULL);
 
     // handle signals
-    signal_set(&ev_sigchld, SIGCHLD, master_signal, NULL);
+    signal_set(&ev_sigchld, SIGCHLD, master_signal, &child);
     signal_set(&ev_sigint, SIGINT, master_signal, &child);
     signal_set(&ev_sigterm, SIGTERM, master_signal, &child);
     signal_set(&ev_sighup, SIGHUP, master_signal, NULL);
@@ -132,11 +132,23 @@ void master_init(int reqfd, int msgfd, pid_t child) {
 
 
 void master_signal(int sig, short event, void *pid) {
+    int status;
+
     switch (sig) {
 	case SIGINT:
 	case SIGTERM:
-	    kill(*(pid_t *)pid, sig);
 	case SIGCHLD:
+	    if (waitpid(*(pid_t *)pid, &status, WNOHANG) > 0) {
+		if (WIFEXITED(status))
+		    my_log(CRIT, "child exited with return code %d", 
+			    WEXITSTATUS(status));
+		if (WIFSIGNALED(status))
+		    my_log(CRIT, "child exited on signal %d%s",
+			    WTERMSIG(status),
+			    WCOREDUMP(status) ? " (core dumped)" : "");
+	    } else {
+		kill(*(pid_t *)pid, sig);
+	    }
 	    rfd_closeall(&rawfds);
 	    unlink(PACKAGE_SOCKET);
 	    my_log(CRIT, "quitting");
