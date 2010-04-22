@@ -56,7 +56,7 @@ START_TEST(test_master_signal) {
     sig = SIGCHLD;
     errstr = "quitting";
     WRAP_FATAL_START();
-    master_signal(sig, event, NULL);
+    master_signal(sig, event, &pid);
     WRAP_FATAL_END();
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -137,12 +137,13 @@ START_TEST(test_master_req) {
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
-    // test a message with incorrect content
+    // test a message with incorrect ifindex
     mark_point();
     mreq.op = MASTER_MAX - 1;
     mreq.len = ETHER_MIN_LEN;
 
-    errstr = "invalid request supplied";
+    errstr = "check";
+    my_log(CRIT, errstr);
     WRAP_WRITE(spair[0], &mreq, MASTER_REQ_LEN(mreq.len));
     WRAP_FATAL_START();
     master_req(spair[1], event);
@@ -259,13 +260,6 @@ START_TEST(test_master_check) {
     mreq.op = MASTER_CLOSE;
     fail_unless(master_check(&mreq) == EXIT_SUCCESS,
 	"MASTER_CLOSE check failed");
-
-    mark_point();
-    mreq.op = MASTER_MAX - 1;
-    mreq.len = ETHER_MIN_LEN;
-
-    fail_unless(master_check(&mreq) == EXIT_FAILURE,
-	"master_check should fail");
 
 #ifdef HAVE_LINUX_ETHTOOL_H
     mark_point();
