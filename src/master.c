@@ -164,7 +164,6 @@ void master_req(int reqfd, short event) {
 
     // validate ifindex
     if (if_indextoname(mreq.index, mreq.name) == NULL) {
-	my_log(CRIT, "interface %s vanished", mreq.name);
 	mreq.len = 0;
 	goto out;
     }
