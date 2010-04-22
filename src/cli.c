@@ -300,7 +300,8 @@ void print_post(struct master_msg *msg, uint16_t holdtime) {
     // XXX: url-encode
     ret = asprintf(&post_data,
 	"hostname=%s&interface=%s&peer_hostname=%s&peer_portname=%s&"
-	"protocol=%s&capabilities=%s&ttl=%d&holdtime=%d\r\n\r\n",
+	"protocol=%s&capabilities=%s&ttl=%" PRIu16 "&holdtime=%" PRIu16
+	"\r\n\r\n",
 	sysinfo.hostname, STR(msg->name),
 	STR(peer_hostname), STR(peer_portname),
 	protos[msg->proto].name, STR(cap), msg->ttl, holdtime);
@@ -311,7 +312,7 @@ void print_post(struct master_msg *msg, uint16_t holdtime) {
 	"POST %s HTTP/1.1\r\n" "Host: %s\r\n"
 	"User-Agent: " PACKAGE_CLI "/" PACKAGE_VERSION "\r\n"
 	"Content-Type: application/x-www-form-urlencoded\r\n"
-	"Content-Length: %zd\r\n\r\n", post.path, post.host, strlen(post_data));
+	"Content-Length: %zu\r\n\r\n", post.path, post.host, strlen(post_data));
     if (ret == -1)
 	my_fatal("asprintf failed");
 
