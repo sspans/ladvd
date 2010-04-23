@@ -103,9 +103,9 @@ void cli_main(int argc, char *argv[]) {
 		break;
 	    case 'p':
 		mode = MODE_POST;
-		if ((strlen(optarg) < 8) || strncmp(optarg, "http://", 7))
-		    usage();
-		char *host = my_strdup(optarg + 7);
+		if (strncmp(optarg, "http://", 7) == 0)
+		    optarg += 7;
+		char *host = my_strdup(optarg);
 		char *path = strchr(host, '/');
 		if (path) {
 		    post.path = my_strdup(path);
