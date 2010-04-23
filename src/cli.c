@@ -58,6 +58,7 @@ struct {
     int sock;
     char *host;
     char *path;
+    struct sysinfo sysinfo;
 } post;
     
 __noreturn
@@ -259,6 +260,7 @@ void print_batch(struct master_msg *msg, uint16_t holdtime) {
 void init_post() {
     struct addrinfo hints = {}, *res, *res0;
     int error;
+    struct timeval tv = { .tv_usec = 500000 };
 
     hints.ai_family = PF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
@@ -286,6 +288,11 @@ void init_post() {
         my_fatal("%s socket connection failed", post.host);
 
     freeaddrinfo(res0);
+
+    // configure receive timeout
+    setsockopt(post.sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+
+    sysinfo_fetch(&post.sysinfo);
 }
 
 char * encode_post(char *src) {
@@ -305,43 +312,48 @@ char * encode_post(char *src) {
 
 void print_post(struct master_msg *msg, uint16_t holdtime) {
     int ret;
-    char *peer_host, *peer_port;
+    char *peer_host, *peer_port, *str;
     char *cap = msg->peer[PEER_CAP];
-    char *http_hdr = NULL, *post_data = NULL;
-    struct sysinfo sysinfo = {};
-
-    sysinfo_fetch(&sysinfo);
+    struct iovec http_post[2];
+    char buf[1024];
 
     // url-encode the received strings
     peer_host = encode_post(msg->peer[PEER_HOSTNAME]);
     peer_port = encode_post(msg->peer[PEER_PORTNAME]);
 
-    ret = asprintf(&post_data,
+    ret = asprintf(&str,
 	"hostname=%s&interface=%s&peer_hostname=%s&peer_portname=%s&"
 	"protocol=%s&capabilities=%s&ttl=%" PRIu16 "&holdtime=%" PRIu16
 	"\r\n\r\n",
-	sysinfo.hostname, STR(msg->name), peer_host, peer_port,
+	post.sysinfo.hostname, STR(msg->name), peer_host, peer_port,
 	protos[msg->proto].name, STR(cap), msg->ttl, holdtime);
     if (ret == -1)
 	my_fatal("asprintf failed");
 
-    ret = asprintf(&http_hdr, 
+    http_post[1].iov_base = str;
+    http_post[1].iov_len = strlen(str);
+
+    ret = asprintf(&str,
 	"POST %s HTTP/1.1\r\n" "Host: %s\r\n"
 	"User-Agent: " PACKAGE_CLI "/" PACKAGE_VERSION "\r\n"
 	"Content-Type: application/x-www-form-urlencoded\r\n"
-	"Content-Length: %zu\r\n\r\n", post.path, post.host, strlen(post_data));
+	"Content-Length: %zu\r\n\r\n",
+	post.path, post.host, http_post[1].iov_len);
     if (ret == -1)
 	my_fatal("asprintf failed");
 
-    ret = write(post.sock, http_hdr, strlen(http_hdr));
-    ret = write(post.sock, post_data, strlen(post_data));
+    http_post[0].iov_base = str;
+    http_post[0].iov_len = strlen(str);
+
+    if (writev(post.sock, http_post, 2) == -1)
+	my_fatal("failed to send HTTP header");
 
     free(peer_host);
     free(peer_port);
-    free(http_hdr);
-    free(post_data);
+    free(http_post[0].iov_base);
+    free(http_post[1].iov_base);
 
-    // XXX: should we read the reply ?
+    while (read(post.sock, &buf, sizeof(buf)) > 0) {};
 }
 
 void init_debug() {
