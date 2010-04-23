@@ -29,13 +29,12 @@
 uint32_t options = OPT_DAEMON | OPT_CHECK;
 
 START_TEST(test_proto_packet) {
-    struct master_msg msg;
+    struct master_msg msg = {};
     struct netif master, netif;
-    struct sysinfo sysinfo;
+    struct sysinfo sysinfo = {};
     const char *errstr = NULL;
 
     mark_point();
-    memset(&sysinfo, 0, sizeof(struct sysinfo));
     errstr = "check";
     my_log(CRIT, errstr);
     WRAP_FATAL_START();
@@ -148,12 +147,11 @@ START_TEST(test_proto_packet) {
 END_TEST
 
 START_TEST(test_lldp_check) {
-    struct master_msg msg;
-    struct ether_hdr ether;
+    struct master_msg msg = {};
+    struct ether_hdr ether = {};
     static uint8_t lldp_dst[] = LLDP_MULTICAST_ADDR;
 
     mark_point();
-    memset(&msg, 0, MASTER_MSG_MAX);
     msg.len = ETHER_MIN_LEN;
     fail_unless (lldp_check(msg.msg, msg.len) == NULL,
 	    "empty packets should generate a NULL");
@@ -184,14 +182,13 @@ START_TEST(test_lldp_check) {
 END_TEST
 
 START_TEST(test_cdp_check) {
-    struct master_msg msg;
-    struct ether_hdr ether;
-    struct ether_llc llc;
+    struct master_msg msg = {};
+    struct ether_hdr ether = {};
+    struct ether_llc llc = {};
     static uint8_t cdp_dst[] = CDP_MULTICAST_ADDR;
     static uint8_t cdp_org[] = LLC_ORG_CISCO;
 
     mark_point();
-    memset(msg.msg, 0, ETHER_MAX_LEN);
     msg.len = ETHER_MIN_LEN;
     fail_unless (cdp_check(msg.msg, msg.len) == NULL,
 	    "empty packets should generate a NULL");
@@ -237,14 +234,13 @@ START_TEST(test_cdp_check) {
 END_TEST
 
 START_TEST(test_edp_check) {
-    struct master_msg msg;
-    struct ether_hdr ether;
-    struct ether_llc llc;
+    struct master_msg msg = {};
+    struct ether_hdr ether = {};
+    struct ether_llc llc = {};
     static uint8_t edp_dst[] = EDP_MULTICAST_ADDR;
     static uint8_t edp_org[] = LLC_ORG_EXTREME;
 
     mark_point();
-    memset(msg.msg, 0, ETHER_MAX_LEN);
     msg.len = ETHER_MIN_LEN;
     fail_unless (edp_check(msg.msg, msg.len) == NULL,
 	    "empty packets should generate a NULL");
@@ -290,14 +286,13 @@ START_TEST(test_edp_check) {
 END_TEST
 
 START_TEST(test_fdp_check) {
-    struct master_msg msg;
-    struct ether_hdr ether;
-    struct ether_llc llc;
+    struct master_msg msg = {};
+    struct ether_hdr ether = {};
+    struct ether_llc llc = {};
     static uint8_t fdp_dst[] = FDP_MULTICAST_ADDR;
     static uint8_t fdp_org[] = LLC_ORG_FOUNDRY;
 
     mark_point();
-    memset(msg.msg, 0, ETHER_MAX_LEN);
     msg.len = ETHER_MIN_LEN;
     fail_unless (fdp_check(msg.msg, msg.len) == NULL,
 	    "empty packets should generate a NULL");
@@ -343,14 +338,13 @@ START_TEST(test_fdp_check) {
 END_TEST
 
 START_TEST(test_ndp_check) {
-    struct master_msg msg;
-    struct ether_hdr ether;
-    struct ether_llc llc;
+    struct master_msg msg = {};
+    struct ether_hdr ether = {};
+    struct ether_llc llc = {};
     static uint8_t ndp_dst[] = NDP_MULTICAST_ADDR;
     static uint8_t ndp_org[] = LLC_ORG_NORTEL;
 
     mark_point();
-    memset(msg.msg, 0, ETHER_MAX_LEN);
     msg.len = ETHER_MIN_LEN;
     fail_unless (ndp_check(msg.msg, msg.len) == NULL,
 	    "empty packets should generate a NULL");
@@ -418,11 +412,10 @@ void read_packet(struct master_msg *msg, const char *suffix) {
 }
 
 START_TEST(test_lldp_decode) {
-    struct master_msg msg;
+    struct master_msg msg = {};
     const char *errstr = NULL;
 
     loglevel = INFO;
-    memset(&msg, 0, MASTER_MSG_MAX);
     msg.decode = UINT16_MAX;
 
     errstr = "Invalid LLDP packet: missing Chassis ID TLV";
@@ -586,11 +579,10 @@ START_TEST(test_lldp_decode) {
 END_TEST
 
 START_TEST(test_cdp_decode) {
-    struct master_msg msg;
+    struct master_msg msg = {};
     const char *errstr = NULL;
 
     loglevel = INFO;
-    memset(&msg, 0, MASTER_MSG_MAX);
     msg.decode = UINT16_MAX;
 
     errstr = "missing CDP header";
@@ -732,11 +724,10 @@ START_TEST(test_cdp_decode) {
 END_TEST
 
 START_TEST(test_edp_decode) {
-    struct master_msg msg;
+    struct master_msg msg = {};
     const char *errstr = NULL;
 
     loglevel = INFO;
-    memset(&msg, 0, MASTER_MSG_MAX);
     msg.decode = UINT16_MAX;
 
     errstr = "missing EDP header";
@@ -811,11 +802,10 @@ START_TEST(test_edp_decode) {
 END_TEST
 
 START_TEST(test_fdp_decode) {
-    struct master_msg msg;
+    struct master_msg msg = {};
     const char *errstr = NULL;
 
     loglevel = INFO;
-    memset(&msg, 0, MASTER_MSG_MAX);
     msg.decode = UINT16_MAX;
 
     errstr = "missing FDP header";
