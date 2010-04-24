@@ -382,7 +382,7 @@ size_t lldp_decode(struct master_msg *msg) {
     uint16_t tlv_length;
     uint8_t tlv_subtype;
 
-    uint16_t lldp_cap, cap;
+    uint16_t lldp_cap = 0, cap = 0;
 
     assert(msg);
 

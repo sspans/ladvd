@@ -222,7 +222,7 @@ size_t fdp_decode(struct master_msg *msg) {
     uint16_t tlv_type;
     uint16_t tlv_length;
 
-    uint16_t cap;
+    uint16_t cap = 0;
     char *cap_str = NULL;
 
     assert(msg);
