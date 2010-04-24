@@ -430,6 +430,9 @@ int netif_type(int sockfd, uint32_t index,
 	// handle bridge
 	} else if (strcmp(drvinfo.driver, "bridge") == 0) {
 	    return(NETIF_BRIDGE);
+	// handle vlan
+	} else if (strcmp(drvinfo.driver, "802.1Q VLAN Support") == 0) {
+	    return(NETIF_INVALID);
 	// handle tun/tap
 	} else if (strcmp(drvinfo.driver, "tun") == 0) {
 	    return(NETIF_REGULAR);
