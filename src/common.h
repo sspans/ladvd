@@ -130,8 +130,8 @@ struct sysinfo {
     char hostname[256];
     char country[3];
     char location[256];
-    int16_t cap;
-    int16_t cap_active;
+    uint16_t cap;
+    uint16_t cap_active;
     uint8_t hwaddr[ETHER_ADDR_LEN];
     uint16_t physif_count;
 

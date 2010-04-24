@@ -106,6 +106,10 @@ void sysinfo_fetch(struct sysinfo *sysinfo) {
 #endif
 #endif
 
+    // default to CAP_HOST
+    sysinfo->cap = CAP_HOST;
+    sysinfo->cap_active = CAP_HOST;
+
     // check for forwarding
     sysinfo_forwarding(sysinfo);
 }

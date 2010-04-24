@@ -146,9 +146,9 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
     // zero
     count = 0;
 
-    // default to CAP_HOST
-    sysinfo->cap = CAP_HOST;
-    sysinfo->cap_active = CAP_HOST;
+    // unset all but CAP_HOST and CAP_ROUTER
+    sysinfo->cap &= (CAP_HOST|CAP_ROUTER);
+    sysinfo->cap_active &= (CAP_HOST|CAP_ROUTER);
     // reset counter
     sysinfo->physif_count = 0;
 
