@@ -420,7 +420,7 @@ int master_socket(struct rawfd *rfd) {
     int fd = -1;
 
     if (options & OPT_DEBUG)
-	return(fileno(stdin));
+	return(dup(dfd));
 
 #ifdef HAVE_NETPACKET_PACKET_H
     struct sockaddr_ll sa = {};

@@ -354,9 +354,10 @@ END_TEST
 
 START_TEST(test_master_open_close) {
     struct rawfd *rfd;
-    struct master_msg mreq;
+    struct master_msg mreq = {};
 
     options |= OPT_DEBUG;
+    dfd = fileno(stdout);
 
     mark_point();
     mreq.index = 1;
@@ -389,7 +390,7 @@ START_TEST(test_master_open_close) {
 END_TEST
 
 START_TEST(test_master_socket) {
-    struct master_msg mreq;
+    struct master_msg mreq = {};
     struct rawfd *rfd;
     const char *errstr;
 
@@ -465,10 +466,15 @@ START_TEST(test_master_socket) {
 #endif
 
     // reset
-    rfd = rfd_byindex(&rawfds, 1);
-    master_close(rfd);
     check_wrap_fake = 0;
     check_wrap_fail = 0;
+
+    rfd = rfd_byindex(&rawfds, 1);
+    fail_unless (rfd != NULL,
+    	"rfd not found");
+    master_close(rfd);
+    fail_unless (TAILQ_EMPTY(&rawfds),
+    	"the queue should be empty");
 }
 END_TEST
 
