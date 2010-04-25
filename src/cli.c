@@ -23,48 +23,60 @@
 #include <sys/file.h>
 #include <sys/un.h>
 #include <netdb.h>
+#if HAVE_EVHTTP_H
+#include <evhttp.h>
+#endif /* HAVE_EVHTTP_H */
 
 static void usage() __noreturn;
 extern struct proto protos[];
 
-void init_brief();
-void init_post();
-void init_debug();
-void print_brief(struct master_msg *msg, uint16_t holdtime);
-void print_batch(struct master_msg *msg, uint16_t holdtime);
-void print_post(struct master_msg *msg, uint16_t holdtime);
-void print_debug(struct master_msg *msg, uint16_t holdtime);
+void batch_write(struct master_msg *msg, uint16_t holdtime);
+void cli_header();
+void cli_write(struct master_msg *msg, uint16_t holdtime);
+void debug_header();
+void debug_write(struct master_msg *msg, uint16_t holdtime);
+#if HAVE_EVHTTP_H
+void http_connect();
+void http_request(struct master_msg *msg, uint16_t holdtime);
+void http_reply(struct evhttp_request *req, void *arg);
+void http_dispatch();
+#endif /* HAVE_EVHTTP_H */
 
 struct mode {
     void (*init) ();
-    void (*print) (struct master_msg *, uint16_t);
+    void (*write) (struct master_msg *, uint16_t);
+    void (*dispatch) ();
 };
 
 struct mode modes[] = {
-  { &init_brief, &print_brief },
-  { NULL, &print_batch },
-  { NULL, NULL },
-  { &init_post, &print_post },
-  { &init_debug, &print_debug }
+  { NULL, &batch_write, NULL },
+  { &cli_header, &cli_write, NULL },
+  { &debug_header, &debug_write, NULL },
+  { NULL, NULL, NULL },
+#if HAVE_EVHTTP_H
+  { &http_connect, &http_request, &http_dispatch },
+#endif /* HAVE_EVHTTP_H */
 };
 
-#define MODE_BRIEF  0
-#define MODE_BATCH  1
-#define MODE_FULL   2
-#define MODE_POST   3
-#define MODE_DEBUG  4
+#define MODE_BATCH  0
+#define MODE_CLI    1
+#define MODE_DEBUG  2
+#define MODE_FULL   3
+#define MODE_HTTP   4
 
-struct {
-    int sock;
-    char *host;
-    char *path;
-    struct sysinfo sysinfo;
-} post;
-    
+#if HAVE_EVHTTP_H
+char *http_host = NULL;
+char *http_path = NULL;
+struct sysinfo sysinfo = {};
+
+struct evhttp_connection *evcon = NULL;
+struct evhttp_request *lreq = NULL;
+#endif /* HAVE_EVHTTP_H */
+
 __noreturn
 void cli_main(int argc, char *argv[]) {
     int ch, i;
-    uint8_t mode = MODE_BRIEF, proto = 0;
+    uint8_t proto = 0, mode = MODE_CLI;
     uint32_t *indexes = NULL;
     struct sockaddr_un sun;
     int fd = -1;
@@ -101,21 +113,23 @@ void cli_main(int argc, char *argv[]) {
 	    case 'f':
 		mode = MODE_FULL;
 		break;
+#if HAVE_EVHTTP_H
 	    case 'p':
-		mode = MODE_POST;
+		mode = MODE_HTTP;
 		if (strncmp(optarg, "http://", 7) == 0)
 		    optarg += 7;
 		char *host = my_strdup(optarg);
 		char *path = strchr(host, '/');
 		if (path) {
-		    post.path = my_strdup(path);
+		    http_path = my_strdup(path);
 		    *path = '\0';
 		} else {
-		    post.path = my_strdup("/");
+		    http_path = my_strdup("/");
 		}
-		post.host = my_strdup(host);
+		http_host = my_strdup(host);
 		free(host);
 		break;
+#endif /* HAVE_EVHTTP_H */
 	    case 'o':
 		options |= OPT_ONCE;
 		break;
@@ -191,14 +205,18 @@ void cli_main(int argc, char *argv[]) {
 
 	holdtime = msg.ttl - (now - msg.received);
 	
-	if (modes[mode].print)
-	    modes[mode].print(&msg, holdtime);
+	if (modes[mode].write)
+	    modes[mode].write(&msg, holdtime);
 
 	peer_free(msg.peer);
 
 	if (options & OPT_ONCE)
-	    exit(EXIT_SUCCESS);
+	    goto out;
     }
+
+out:
+    if (modes[mode].dispatch)
+	modes[mode].dispatch();
 
     exit(EXIT_SUCCESS);
 }
@@ -212,32 +230,7 @@ inline void swapchr(char *str, int c, int d) {
 
 #define STR(x)	(x) ? x : ""
 
-void init_brief() {
-    printf("Capability Codes:\n"
-	"\tr - Repeater, B - Bridge, H - Host, R - Router, S - Switch,\n"
-	"\tW - WLAN Access Point, C - DOCSIS Device, T - Telephone, "
-	"O - Other\n\n");
-    printf("Device ID           Local Intf    Proto   "
-	"Hold-time    Capability    Port ID\n");
-}
-
-void print_brief(struct master_msg *msg, uint16_t holdtime) {
-    char *hostname = msg->peer[PEER_HOSTNAME];
-    char *portname = msg->peer[PEER_PORTNAME];
-    char *cap = msg->peer[PEER_CAP];
-
-    // shorten
-    if (hostname)
-	hostname[strcspn(hostname, ".")] = '\0';
-    if (portname)
-	portname_abbr(portname);
-
-    printf("%-19.19s %-13.13s %-7.7s %-12" PRIu16 " %-13.13s %-10.10s\n",
-	STR(hostname), STR(msg->name), protos[msg->proto].name,
-	holdtime, STR(cap),  STR(portname));
-}
-
-void print_batch(struct master_msg *msg, uint16_t holdtime) {
+void batch_write(struct master_msg *msg, uint16_t holdtime) {
     char *hostname = msg->peer[PEER_HOSTNAME];
     char *portname = msg->peer[PEER_PORTNAME];
     char *cap = msg->peer[PEER_CAP];
@@ -257,112 +250,110 @@ void print_batch(struct master_msg *msg, uint16_t holdtime) {
     count++;
 }
 
-void init_post() {
-    struct addrinfo hints = {}, *res, *res0;
-    int error;
-    struct timeval tv = { .tv_usec = 500000 };
-
-    hints.ai_family = PF_UNSPEC;
-    hints.ai_socktype = SOCK_STREAM;
-    error = getaddrinfo(post.host, "http", &hints, &res0);
-    if (error)
-        my_fatal("%s lookup failed: %s", post.host, gai_strerror(error));
-
-    post.sock = -1;
-
-    for (res = res0; res; res = res->ai_next) {
-        post.sock = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-        if (post.sock == -1)
-	    continue;
-
-        if (connect(post.sock, res->ai_addr, res->ai_addrlen) < 0) {
-            close(post.sock);
-            post.sock = -1;
-            continue;
-        }
-
-	break;  /* okay we got one */
-    }
-
-    if (post.sock == -1)
-        my_fatal("%s socket connection failed", post.host);
-
-    freeaddrinfo(res0);
-
-    // configure receive timeout
-    setsockopt(post.sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
-
-    sysinfo_fetch(&post.sysinfo);
+void cli_header() {
+    printf("Capability Codes:\n"
+	"\tr - Repeater, B - Bridge, H - Host, R - Router, S - Switch,\n"
+	"\tW - WLAN Access Point, C - DOCSIS Device, T - Telephone, "
+	"O - Other\n\n");
+    printf("Device ID           Local Intf    Proto   "
+	"Hold-time    Capability    Port ID\n");
 }
 
-char * encode_post(char *src) {
-    char *str = NULL;
-    size_t len;
-
-    if (!src)
-	return my_strdup("");
-
-    len = strlen(src) * 4 + 1;
-    str = my_malloc(len);
-    strnvis(str, src, len, VIS_NL|VIS_TAB|VIS_HTTPSTYLE);
-    swapchr(str, ' ', '+'); 
-
-    return(str);
-}
-
-void print_post(struct master_msg *msg, uint16_t holdtime) {
-    int ret;
-    char *peer_host, *peer_port, *str;
+void cli_write(struct master_msg *msg, uint16_t holdtime) {
+    char *hostname = msg->peer[PEER_HOSTNAME];
+    char *portname = msg->peer[PEER_PORTNAME];
     char *cap = msg->peer[PEER_CAP];
-    struct iovec http_post[2];
-    char buf[1024];
+
+    // shorten
+    if (hostname)
+	hostname[strcspn(hostname, ".")] = '\0';
+    if (portname)
+	portname_abbr(portname);
+
+    printf("%-19.19s %-13.13s %-7.7s %-12" PRIu16 " %-13.13s %-10.10s\n",
+	STR(hostname), STR(msg->name), protos[msg->proto].name,
+	holdtime, STR(cap),  STR(portname));
+}
+
+void debug_header() {
+    write_pcap_hdr(fileno(stdout));
+}
+
+void debug_write(struct master_msg *msg, uint16_t holdtime) {
+    write_pcap_rec(fileno(stdout), msg);
+}
+
+#if HAVE_EVHTTP_H
+void http_connect() {
+    struct servent *sp;
+    short port;
+
+    if ((sp = getservbyname("http", "tcp")) == NULL)
+	my_fatal("HTTP port not found");
+    port = ntohs(sp->s_port);
+
+    // initalize the event library
+    event_init();
+
+    evcon = evhttp_connection_new(http_host, port);
+    if (evcon == NULL)
+        my_fatal("HTTP connection failed");
+
+    sysinfo_fetch(&sysinfo);
+}
+
+void http_request(struct master_msg *msg, uint16_t holdtime) {
+    int ret;
+    char *peer_host, *peer_port, *data;
+    char *cap = msg->peer[PEER_CAP];
+    struct evhttp_request *req = NULL;
 
     // url-encode the received strings
-    peer_host = encode_post(msg->peer[PEER_HOSTNAME]);
-    peer_port = encode_post(msg->peer[PEER_PORTNAME]);
+    peer_host = evhttp_encode_uri(msg->peer[PEER_HOSTNAME]);
+    peer_port = evhttp_encode_uri(msg->peer[PEER_PORTNAME]);
 
-    ret = asprintf(&str,
+    ret = asprintf(&data,
 	"hostname=%s&interface=%s&peer_hostname=%s&peer_portname=%s&"
 	"protocol=%s&capabilities=%s&ttl=%" PRIu16 "&holdtime=%" PRIu16
 	"\r\n\r\n",
-	post.sysinfo.hostname, STR(msg->name), peer_host, peer_port,
+	sysinfo.hostname, STR(msg->name), peer_host, peer_port,
 	protos[msg->proto].name, STR(cap), msg->ttl, holdtime);
     if (ret == -1)
 	my_fatal("asprintf failed");
 
-    http_post[1].iov_base = str;
-    http_post[1].iov_len = strlen(str);
-
-    ret = asprintf(&str,
-	"POST %s HTTP/1.1\r\n" "Host: %s\r\n"
-	"User-Agent: " PACKAGE_CLI "/" PACKAGE_VERSION "\r\n"
-	"Content-Type: application/x-www-form-urlencoded\r\n"
-	"Content-Length: %zu\r\n\r\n",
-	post.path, post.host, http_post[1].iov_len);
+    req = evhttp_request_new(http_reply, NULL);
     if (ret == -1)
-	my_fatal("asprintf failed");
+	my_fatal("failed to allocate HTTP request");
 
-    http_post[0].iov_base = str;
-    http_post[0].iov_len = strlen(str);
+    evhttp_add_header(req->output_headers, "Host", http_host);
+    evbuffer_add(req->output_buffer, data, strlen(data));
 
-    if (writev(post.sock, http_post, 2) == -1)
-	my_fatal("failed to send HTTP header");
+    if (evhttp_make_request(evcon, req, EVHTTP_REQ_POST, http_path) == -1)
+	my_fatal("failed to create HTTP request");
+    lreq = req;
 
     free(peer_host);
     free(peer_port);
-    free(http_post[0].iov_base);
-    free(http_post[1].iov_base);
-
-    while (read(post.sock, &buf, sizeof(buf)) > 0) {};
+    free(data);
 }
 
-void init_debug() {
-    write_pcap_hdr(fileno(stdout));
+void http_reply(struct evhttp_request *req, void *arg) {
+    if (req == NULL)
+	my_fatal("HTTP request failed");
+
+    if (req->response_code >= HTTP_BADREQUEST)
+	my_log(CRIT, "HTTP error %d received", req->response_code);
 }
 
-void print_debug(struct master_msg *msg, uint16_t holdtime) {
-    write_pcap_rec(fileno(stdout), msg);
+void http_dispatch() {
+    // auto-close the connection after the last request
+    if (lreq)
+	evhttp_add_header(lreq->output_headers, "Connection", "close");
+
+    event_dispatch();
+    evhttp_connection_free(evcon);
 }
+#endif /* HAVE_EVHTTP_H */
 
 __noreturn
 static void usage() {
@@ -379,7 +370,9 @@ static void usage() {
 	    "\t-d = Dump pcap-compatible packets to stdout\n"
 	    "\t-f = Print full decode\n"
 	    "\t-o = Decode only one packet\n"
+#if HAVE_EVHTTP_H
 	    "\t-p <url> = Post decode to url\n"
+#endif /* HAVE_EVHTTP_H */
 	    "\t-h = Print this message\n",
 	    __progname);
 
