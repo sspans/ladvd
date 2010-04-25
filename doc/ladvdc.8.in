@@ -21,8 +21,8 @@ Print a full decode of each advertisement (not implemented).
 Print usage instructions.
 .IP -o
 Only print the first advertisement.
-.IP -p http://example.tld/cgi-bin/ladvd.cgi
-Post decoded packets to the supplied url.
+HTTP_POST .IP "-p http://domain.tld/script"
+HTTP_POST Post decoded packets to the supplied url.
 .IP -v
 Increase verbosity.
 .IP -L

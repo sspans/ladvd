@@ -181,6 +181,9 @@ fi
 AC_CHECK_LIB(event, event_init, AC_SUBST(EVENT_LIB,"-levent"),
 				AC_MSG_ERROR([libevent is required]))
 
+# evhttp is needed for ladvdc post support
+AC_CHECK_HEADERS([evhttp.h], [ AM_CONDITIONAL([HTTP_ENABLED], [true]) ])
+
 # Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS([fcntl.h grp.h pwd.h stdarg.h stdint.h stdio.h syslog.h \
