@@ -342,7 +342,7 @@ void http_request(struct master_msg *msg, uint16_t holdtime) {
 }
 
 void http_reply(struct evhttp_request *req, void *arg) {
-    if (req == NULL)
+    if ((req == NULL) || (req->evcon == NULL))
 	my_fatal("HTTP request failed");
 
     if (req->response_code >= HTTP_BADREQUEST)

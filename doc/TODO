@@ -1,7 +1,6 @@
 
 FOR 0.9.0:
-- http connection failed error
-- http error return code
+- http error exit code
 - lldpfuzz testing
 
 FOR 1.0.0:
