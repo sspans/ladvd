@@ -326,6 +326,10 @@ void http_request(struct master_msg *msg, uint16_t holdtime) {
 	my_fatal("failed to allocate HTTP request");
 
     evhttp_add_header(req->output_headers, "Host", http_host);
+    evhttp_add_header(req->output_headers, "User-Agent", 
+		PACKAGE_CLI "/" PACKAGE_VERSION);
+    evhttp_add_header(req->output_headers, "Content-Type",
+		"application/x-www-form-urlencoded");
     evbuffer_add(req->output_buffer, data, strlen(data));
 
     if (evhttp_make_request(evcon, req, EVHTTP_REQ_POST, http_path) == -1)
