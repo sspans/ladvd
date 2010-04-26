@@ -1,6 +1,5 @@
 
 FOR 0.9.0:
-- http error exit code
 - lldpfuzz testing
 
 FOR 1.0.0:

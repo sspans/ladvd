@@ -29,6 +29,7 @@
 
 static void usage() __noreturn;
 extern struct proto protos[];
+int status = EXIT_SUCCESS;
 
 void batch_write(struct master_msg *msg, uint16_t holdtime);
 void cli_header();
@@ -218,7 +219,7 @@ out:
     if (modes[mode].dispatch)
 	modes[mode].dispatch();
 
-    exit(EXIT_SUCCESS);
+    exit(status);
 }
 
 inline void swapchr(char *str, int c, int d) {
@@ -342,11 +343,14 @@ void http_request(struct master_msg *msg, uint16_t holdtime) {
 }
 
 void http_reply(struct evhttp_request *req, void *arg) {
-    if ((req == NULL) || (req->evcon == NULL))
+    if ((req == NULL) || (req->response_code == 0))
 	my_fatal("HTTP request failed");
 
-    if (req->response_code >= HTTP_BADREQUEST)
-	my_log(CRIT, "HTTP error %d received", req->response_code);
+    if (req->response_code < HTTP_BADREQUEST)
+	return;
+
+    my_log(CRIT, "HTTP error %d received", req->response_code);
+    status = EXIT_FAILURE;
 }
 
 void http_dispatch() {
