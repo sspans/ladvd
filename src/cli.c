@@ -277,6 +277,8 @@ void cli_write(struct master_msg *msg, uint16_t holdtime) {
 }
 
 void debug_header() {
+    if (isatty(fileno(stdout)))
+	my_fatal("please redirect stdout to tcpdump or a file");
     write_pcap_hdr(fileno(stdout));
 }
 

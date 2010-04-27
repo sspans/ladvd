@@ -81,6 +81,8 @@ void master_init(int reqfd, int msgfd, pid_t child) {
 
     // debug
     if (options & OPT_DEBUG) {
+	if (isatty(fileno(stdout)))
+	    my_fatal("please redirect stdout to tcpdump or a file");
 	dfd = fileno(stdout);
 	write_pcap_hdr(dfd);
 #ifdef USE_CAPABILITIES
