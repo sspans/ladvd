@@ -382,7 +382,7 @@ size_t lldp_decode(struct master_msg *msg) {
     uint16_t tlv_length;
     uint8_t tlv_subtype;
 
-    uint16_t lldp_cap = 0, cap = 0;
+    uint16_t lldp_cap_avail = 0, lldp_cap = 0, cap = 0;
 
     assert(msg);
 
@@ -477,10 +477,23 @@ size_t lldp_decode(struct master_msg *msg) {
 	    }
 	    break;
 	case LLDP_TYPE_SYSTEM_CAP:
-	    if ((tlv_length != 4) || !SKIP(2) || !GRAB_UINT16(lldp_cap)) {
+	    if ((tlv_length != 4) || !GRAB_UINT16(lldp_cap_avail) ||
+		!GRAB_UINT16(lldp_cap)) {
 		my_log(INFO, "Invalid LLDP packet: invalid Capabilities TLV");
 		return 0;
 	    }
+
+	    if (lldp_cap_avail != (lldp_cap|lldp_cap_avail)) {
+		my_log(INFO, "Invalid LLDP packet: unavailable cap enabled");
+		return 0;
+	    }
+
+	    if ((lldp_cap_avail & LLDP_CAP_STATION_ONLY) &&
+		(lldp_cap_avail &~ LLDP_CAP_STATION_ONLY)) {
+		my_log(INFO, "Invalid LLDP packet: host-only cap combined");
+		return 0;
+	    }
+
 	    if (lldp_cap == LLDP_CAP_STATION_ONLY) {
 		cap = CAP_HOST;
 	    } else {

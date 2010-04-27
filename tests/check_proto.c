@@ -575,6 +575,79 @@ START_TEST(test_lldp_decode) {
 	"port id should be 'Gi0/1' not '%s'", msg.peer[PEER_PORTNAME]);
 
     peer_free(msg.peer);
+
+    mark_point();
+    my_log(CRIT, "check");
+    errstr = "Invalid LLDP packet: invalid Chassis ID TLV";
+    read_packet(&msg, "proto/lldp/A1.fuzzer.chassis_id.long");
+    fail_unless (lldp_decode(&msg) == 0, "invalid packets should return 0");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    my_log(CRIT, "check");
+    errstr = "Invalid LLDP packet: invalid Chassis ID TLV";
+    read_packet(&msg, "proto/lldp/A2.fuzzer.chassis_id.short");
+    fail_unless (lldp_decode(&msg) == 0, "invalid packets should return 0");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    my_log(CRIT, "check");
+    errstr = "Invalid LLDP packet: invalid Chassis ID TLV";
+    read_packet(&msg, "proto/lldp/A3.fuzzer.chassis_id.broken");
+    fail_unless (lldp_decode(&msg) == 0, "invalid packets should return 0");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    my_log(CRIT, "check");
+    errstr = "Invalid LLDP packet: invalid Chassis ID TLV";
+    read_packet(&msg, "proto/lldp/A4.fuzzer.chassis_id.one");
+    fail_unless (lldp_decode(&msg) == 0, "invalid packets should return 0");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    my_log(CRIT, "check");
+    errstr = "Corrupt LLDP packet: invalid END TLV";
+    read_packet(&msg, "proto/lldp/A6.fuzzer.end.short");
+    fail_unless (lldp_decode(&msg) == 0, "invalid packets should return 0");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    my_log(CRIT, "check");
+    errstr = "Corrupt LLDP packet: invalid END TLV";
+    read_packet(&msg, "proto/lldp/A7.fuzzer.end.trail");
+    fail_unless (lldp_decode(&msg) == 0, "invalid packets should return 0");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    my_log(CRIT, "check");
+    errstr = "Invalid LLDP packet: unavailable cap enabled";
+    read_packet(&msg, "proto/lldp/A8.fuzzer.cap.conflict");
+    fail_unless (lldp_decode(&msg) == 0, "invalid packets should return 0");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    my_log(CRIT, "check");
+    errstr = "Invalid LLDP packet: host-only cap combined";
+    read_packet(&msg, "proto/lldp/A9.fuzzer.cap.host");
+    fail_unless (lldp_decode(&msg) == 0, "invalid packets should return 0");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    my_log(CRIT, "check");
+    errstr = "Invalid LLDP packet: missing Port ID TLV";
+    read_packet(&msg, "proto/lldp/AA.fuzzer.port_id.missing");
+    fail_unless (lldp_decode(&msg) == 0, "invalid packets should return 0");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    /*
+    my_log(CRIT, "check");
+    errstr = "Invalid LLDP packet: missing Port ID TLV";
+    read_packet(&msg, "proto/lldp/AB.fuzzer.addr.invalid");
+    fail_unless (lldp_decode(&msg) == 0, "invalid packets should return 0");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+    */
 }
 END_TEST
 
@@ -912,7 +985,7 @@ Suite * proto_suite (void) {
     suite_add_tcase(s, tc_check);
 
     // proto_peer test cases
-    TCase *tc_decode = tcase_create("proto_deocde");
+    TCase *tc_decode = tcase_create("proto_decode");
     tcase_add_test(tc_decode, test_lldp_decode);
     tcase_add_test(tc_decode, test_cdp_decode);
     tcase_add_test(tc_decode, test_edp_decode);
