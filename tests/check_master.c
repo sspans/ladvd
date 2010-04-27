@@ -394,11 +394,12 @@ START_TEST(test_master_socket) {
     struct rawfd *rfd;
     const char *errstr;
 
-    mark_point();
     options |= OPT_DEBUG;
     mreq.index = 1;
     strlcpy(mreq.name, "lo0", IFNAMSIZ);
+    dfd = fileno(stdout);
 
+    mark_point();
     master_open(&mreq);
     rfd = rfd_byindex(&rawfds, 1);
     fail_unless (rfd != NULL, "rfd should be added to the queue");
@@ -538,6 +539,7 @@ START_TEST(test_master_recv) {
 
     options |= OPT_DEBUG;
     loglevel = INFO;
+    dfd = fileno(stdout);
 
     mark_point();
     mreq.index = 1;
