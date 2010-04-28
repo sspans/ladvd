@@ -628,14 +628,14 @@ START_TEST(test_lldp_decode) {
 
     my_log(CRIT, "check");
     errstr = "Invalid LLDP packet: host-only cap combined";
-    read_packet(&msg, "proto/lldp/A9.fuzzer.cap.host");
+    read_packet(&msg, "proto/lldp/A8.fuzzer.cap.host");
     fail_unless (lldp_decode(&msg) == 0, "invalid packets should return 0");
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     my_log(CRIT, "check");
     errstr = "Invalid LLDP packet: missing Port ID TLV";
-    read_packet(&msg, "proto/lldp/AA.fuzzer.port_id.missing");
+    read_packet(&msg, "proto/lldp/A9.fuzzer.port_id.missing");
     fail_unless (lldp_decode(&msg) == 0, "invalid packets should return 0");
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -643,7 +643,7 @@ START_TEST(test_lldp_decode) {
     /*
     my_log(CRIT, "check");
     errstr = "Invalid LLDP packet: missing Port ID TLV";
-    read_packet(&msg, "proto/lldp/AB.fuzzer.addr.invalid");
+    read_packet(&msg, "proto/lldp/AA.fuzzer.addr.invalid");
     fail_unless (lldp_decode(&msg) == 0, "invalid packets should return 0");
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
