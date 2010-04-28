@@ -659,6 +659,13 @@ START_TEST(test_lldp_decode) {
 	"incorrect message logged: %s", check_wrap_errstr);
 
     my_log(CRIT, "check");
+    errstr = "Invalid LLDP packet: invalid Capabilities TLV";
+    read_packet(&msg, "proto/lldp/A8.fuzzer.cap.short");
+    fail_unless (lldp_decode(&msg) == 0, "invalid packets should return 0");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    my_log(CRIT, "check");
     errstr = "Invalid LLDP packet: missing Port ID TLV";
     read_packet(&msg, "proto/lldp/A9.fuzzer.port_id.missing");
     fail_unless (lldp_decode(&msg) == 0, "invalid packets should return 0");
