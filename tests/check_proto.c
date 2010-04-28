@@ -472,6 +472,11 @@ START_TEST(test_lldp_decode) {
     fail_unless (lldp_decode(&msg) == 0, "incomplete packets should return 0");
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
+    errstr = "Corrupt LLDP packet: invalid Port ID TLV";
+    read_packet(&msg, "proto/lldp/17.port_id.broken");
+    fail_unless (lldp_decode(&msg) == 0, "incomplete packets should return 0");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
 
     errstr = "Invalid LLDP packet: invalid TTL TLV";
     read_packet(&msg, "proto/lldp/21.ttl.broken");
