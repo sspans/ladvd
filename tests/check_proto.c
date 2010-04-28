@@ -504,6 +504,11 @@ START_TEST(test_lldp_decode) {
     fail_unless (lldp_decode(&msg) == 0, "broken packets should return 0");
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
+    errstr = "Corrupt LLDP packet: invalid System Name TLV";
+    read_packet(&msg, "proto/lldp/33.system_name.broken");
+    fail_unless (lldp_decode(&msg) == 0, "broken packets should return 0");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
 
     errstr = "Corrupt LLDP packet: invalid TLV Type";
     read_packet(&msg, "proto/lldp/91.tlv.unknown");
