@@ -202,7 +202,9 @@ out:
     exit(status);
 }
 
-inline void swapchr(char *str, int c, int d) {
+inline void swapchr(char *str, const int c, const int d) {
+    assert(str);
+
     while ((str = strchr(str, c)) != NULL) {
 	*str = d;
 	 str++;
