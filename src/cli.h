@@ -39,6 +39,4 @@ void http_reply(struct evhttp_request *req, void *arg);
 void http_dispatch();
 #endif /* HAVE_EVHTTP_H */
 
-static void usage() __noreturn;
-
 #endif /* _cli_h */

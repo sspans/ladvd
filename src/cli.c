@@ -27,6 +27,7 @@
 
 extern struct proto protos[];
 int status = EXIT_SUCCESS;
+static void usage() __noreturn;
 
 struct mode modes[] = {
   { NULL, &batch_write, NULL },
