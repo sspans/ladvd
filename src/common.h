@@ -53,6 +53,9 @@
 #include <pwd.h>
 
 #include <event.h>
+#if HAVE_EVHTTP_H
+#include <evhttp.h>
+#endif /* HAVE_EVHTTP_H */
 
 #if HAVE_NET_IF_H
 #include <net/if.h>

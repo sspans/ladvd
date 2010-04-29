@@ -20,34 +20,13 @@
 #include "common.h"
 #include "util.h"
 #include "proto/protos.h"
+#include "cli.h"
 #include <sys/file.h>
 #include <sys/un.h>
 #include <netdb.h>
-#if HAVE_EVHTTP_H
-#include <evhttp.h>
-#endif /* HAVE_EVHTTP_H */
 
-static void usage() __noreturn;
 extern struct proto protos[];
 int status = EXIT_SUCCESS;
-
-void batch_write(struct master_msg *msg, uint16_t holdtime);
-void cli_header();
-void cli_write(struct master_msg *msg, uint16_t holdtime);
-void debug_header();
-void debug_write(struct master_msg *msg, uint16_t holdtime);
-#if HAVE_EVHTTP_H
-void http_connect();
-void http_request(struct master_msg *msg, uint16_t holdtime);
-void http_reply(struct evhttp_request *req, void *arg);
-void http_dispatch();
-#endif /* HAVE_EVHTTP_H */
-
-struct mode {
-    void (*init) ();
-    void (*write) (struct master_msg *, uint16_t);
-    void (*dispatch) ();
-};
 
 struct mode modes[] = {
   { NULL, &batch_write, NULL },
@@ -231,7 +210,7 @@ inline void swapchr(char *str, int c, int d) {
 
 #define STR(x)	(x) ? x : ""
 
-void batch_write(struct master_msg *msg, uint16_t holdtime) {
+void batch_write(struct master_msg *msg, const uint16_t holdtime) {
     char *hostname = msg->peer[PEER_HOSTNAME];
     char *portname = msg->peer[PEER_PORTNAME];
     char *cap = msg->peer[PEER_CAP];
@@ -260,7 +239,7 @@ void cli_header() {
 	"Hold-time    Capability    Port ID\n");
 }
 
-void cli_write(struct master_msg *msg, uint16_t holdtime) {
+void cli_write(struct master_msg *msg, const uint16_t holdtime) {
     char *hostname = msg->peer[PEER_HOSTNAME];
     char *portname = msg->peer[PEER_PORTNAME];
     char *cap = msg->peer[PEER_CAP];
@@ -282,7 +261,7 @@ void debug_header() {
     write_pcap_hdr(fileno(stdout));
 }
 
-void debug_write(struct master_msg *msg, uint16_t holdtime) {
+void debug_write(struct master_msg *msg, const uint16_t holdtime) {
     write_pcap_rec(fileno(stdout), msg);
 }
 
@@ -305,7 +284,7 @@ void http_connect() {
     sysinfo_fetch(&sysinfo);
 }
 
-void http_request(struct master_msg *msg, uint16_t holdtime) {
+void http_request(struct master_msg *msg, const uint16_t holdtime) {
     int ret;
     char *peer_host, *peer_port, *data;
     char *cap = msg->peer[PEER_CAP];
