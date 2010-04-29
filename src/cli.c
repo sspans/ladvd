@@ -203,7 +203,8 @@ out:
 }
 
 inline void swapchr(char *str, const int c, const int d) {
-    assert(str);
+    if (!str)
+	return;
 
     while ((str = strchr(str, c)) != NULL) {
 	*str = d;
