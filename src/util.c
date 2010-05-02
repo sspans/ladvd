@@ -393,24 +393,27 @@ void write_pcap_hdr(int fd) {
 }
 
 void write_pcap_rec(int fd, struct master_msg *msg) {
+    struct iovec iov[2];
     pcaprec_hdr_t pcap_rec_hdr = {};
     struct timeval tv;
     ssize_t len = 0;
 
-    // write a pcap record header
+    // create a pcap record header
     if (gettimeofday(&tv, NULL) == 0) {
 	pcap_rec_hdr.ts_sec = tv.tv_sec;
 	pcap_rec_hdr.ts_usec = tv.tv_usec;
-	pcap_rec_hdr.incl_len = msg->len;
-	pcap_rec_hdr.orig_len = msg->len;
-
-	if (write(fd, &pcap_rec_hdr, sizeof(pcap_rec_hdr))
-		    != sizeof(pcap_rec_hdr))
-	    my_fatal("failed to write pcap record header");
     }
+    pcap_rec_hdr.incl_len = msg->len;
+    pcap_rec_hdr.orig_len = msg->len;
 
-    len = write(fd, msg->msg, msg->len);
-    if (len != msg->len)
+    iov[0].iov_base = &pcap_rec_hdr;
+    iov[0].iov_len = sizeof(pcap_rec_hdr);
+
+    iov[1].iov_base = msg->msg;
+    iov[2].iov_len = msg->len;
+
+    len = writev(fd, iov, 2);
+    if (len != (sizeof(pcap_rec_hdr) + msg->len))
 	my_log(WARN, "only %zi bytes written: %s", len, strerror(errno));
 
     return;

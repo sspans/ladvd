@@ -328,7 +328,7 @@ START_TEST(test_master_send) {
     memcpy(ether.dst, lldp_dst, ETHER_ADDR_LEN);
     ether.type = htons(ETHERTYPE_LLDP);
     memcpy(msg.msg, &ether, sizeof(ether));
-    errstr = "failed to write pcap record header";
+    errstr = "only -1 bytes written: Bad file descriptor";
     dfd = -1;
     WRAP_FATAL_START();
     WRAP_WRITE(spair[0], &msg, MASTER_MSG_LEN(msg.len)); 
