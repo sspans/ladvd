@@ -192,6 +192,94 @@ START_TEST(test_debug) {
 }
 END_TEST
 
+#if HAVE_EVHTTP_H
+START_TEST(test_http) {
+    struct master_msg msg = {};
+    const char *errstr = NULL;
+    extern char *http_host, *http_path;
+    extern struct evhttp_request *lreq;
+    extern struct evhttp_connection *evcon;
+    extern int status;
+
+    options |= OPT_DEBUG;
+    http_host = "localhost";
+    http_path = "/cgi-bin/test.cgi";
+
+    mark_point();
+    http_connect();
+
+    mark_point();
+    http_request(&msg, 0);
+
+    mark_point();
+    strlcpy(msg.name, "eth0", IFNAMSIZ);
+    msg.proto = PROTO_CDP;
+    msg.peer[PEER_HOSTNAME] = strdup("router");
+    msg.peer[PEER_PORTNAME] = strdup("Fas'tEthernet42/64");
+    http_request(&msg, 0);
+
+    mark_point();
+    errstr = "HTTP request failed";
+    my_log(CRIT, "check");
+    WRAP_FATAL_START();
+    http_reply(lreq, NULL);
+    WRAP_FATAL_END();
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    mark_point();
+    lreq->response_code = 200;
+    http_reply(lreq, NULL);
+    fail_unless (status == EXIT_SUCCESS,
+	"incorrect exit status returned: %d", status);
+
+    mark_point();
+    lreq->response_code = 404;
+    errstr = "HTTP error 404 received";
+    my_log(CRIT, "check");
+    http_reply(lreq, NULL);
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+    fail_unless (status == EXIT_FAILURE,
+	"incorrect exit status returned: %d", status);
+
+    mark_point();
+    evhttp_connection_free(evcon);
+    lreq = NULL;
+
+
+    mark_point();
+    errstr = "failed to create HTTP request";
+    my_log(CRIT, "check");
+    evcon = evhttp_connection_new("256.256.256.256", 0);
+    WRAP_FATAL_START();
+    http_request(&msg, 0);
+    WRAP_FATAL_END();
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+    evhttp_connection_free(evcon);
+
+    mark_point();
+    errstr = "HTTP request failed";
+    my_log(CRIT, "check");
+    evcon = evhttp_connection_new("localhost", 0);
+    http_request(&msg, 0);
+    WRAP_FATAL_START();
+    http_dispatch();
+    WRAP_FATAL_END();
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    mark_point();
+    // free the active connection
+    evhttp_connection_free(evcon);
+    lreq = NULL;
+    evcon = evhttp_connection_new(http_host, 80);
+    http_dispatch();
+}
+END_TEST
+#endif /* HAVE_EVHTTP_H */
+
 Suite * cli_suite (void) {
     Suite *s = suite_create("cli.c");
 
@@ -202,6 +290,9 @@ Suite * cli_suite (void) {
     tcase_add_test(tc_cli, test_batch_write);
     tcase_add_test(tc_cli, test_cli);
     tcase_add_test(tc_cli, test_debug);
+#if HAVE_EVHTTP_H
+    tcase_add_test(tc_cli, test_http);
+#endif /* HAVE_EVHTTP_H */
     suite_add_tcase(s, tc_cli);
 
     return s;

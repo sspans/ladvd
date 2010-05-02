@@ -298,8 +298,8 @@ void http_request(struct master_msg *msg, const uint16_t holdtime) {
     struct evhttp_request *req = NULL;
 
     // url-encode the received strings
-    peer_host = evhttp_encode_uri(msg->peer[PEER_HOSTNAME]);
-    peer_port = evhttp_encode_uri(msg->peer[PEER_PORTNAME]);
+    peer_host = evhttp_encode_uri(STR(msg->peer[PEER_HOSTNAME]));
+    peer_port = evhttp_encode_uri(STR(msg->peer[PEER_PORTNAME]));
 
     ret = asprintf(&data,
 	"hostname=%s&interface=%s&peer_hostname=%s&peer_portname=%s&"
