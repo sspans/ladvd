@@ -55,19 +55,140 @@ void read_packet(struct master_msg *msg, const char *suffix) {
 
 START_TEST(test_batch_write) {
     struct master_msg msg = {};
-    int backup, null;
+    int ostdout, spair[2];
+    ssize_t len;
+    char buf[1024];
 
     options |= OPT_DEBUG;
 
-    backup = dup(fileno(stdout));
+    ostdout= dup(fileno(stdout));
     close(fileno(stdout));
-    null = open(_PATH_DEVNULL, O_WRONLY);
+    fail_if(socketpair(AF_UNIX, SOCK_STREAM, 0, spair) == -1,
+	    "socketpair creation failed");
 
+    mark_point();
     batch_write(&msg, 42);
+    len = read(spair[1], buf, 1024);
+    fail_if(strstr(buf, "INTERFACE0=") != buf,
+	    "invalid batch_write output");
+    fail_if(strstr(buf, "HOLDTIME0=") == NULL,
+    	    "invalid batch_write output");
+	
+    
+    mark_point();
+    strlcpy(msg.name, "eth0", IFNAMSIZ);
+    msg.proto = PROTO_CDP;
+    msg.peer[PEER_HOSTNAME] = strdup("router");
+    msg.peer[PEER_PORTNAME] = strdup("Fas'tEthernet42/64");
+    batch_write(&msg, 42);
+    len = read(spair[1], buf, 1024);
+    fail_if(strstr(buf, "INTERFACE1=") != buf,
+	    "invalid batch_write output");
+    fail_if(strstr(buf, "HOLDTIME1=") == NULL,
+	    "invalid batch_write output");
+	
+    
+    close(spair[0]);
+    close(spair[1]);
+    len = dup(ostdout);
+    close(ostdout);
+    peer_free(msg.peer);
+}
+END_TEST
 
-    close(null);
-    null = dup(backup);
-    close(backup);
+START_TEST(test_cli) {
+    int ostdout, spair[2];
+    ssize_t len;
+    struct master_msg msg = {};
+    char buf[1024];
+
+    options |= OPT_DEBUG;
+
+    ostdout = dup(fileno(stdout));
+    close(fileno(stdout));
+    fail_if(socketpair(AF_UNIX, SOCK_STREAM, 0, spair) == -1,
+	    "socketpair creation failed");
+
+    mark_point();
+    cli_header();
+    len = read(spair[1], buf, 1024);
+    fail_if(strstr(buf, "Capability Codes:") != buf,
+	    "invalid cli_header output");
+    fail_if(strstr(buf, "Device ID") == NULL,
+	    "invalid cli_header output");
+	
+    mark_point();
+    strlcpy(msg.name, "eth0", IFNAMSIZ);
+    msg.proto = PROTO_CDP;
+    msg.peer[PEER_HOSTNAME] = strdup("router.local");
+    msg.peer[PEER_PORTNAME] = strdup("TenGigabitEthernet42/64");
+    cli_write(&msg, 42);
+    len = read(spair[1], buf, 1024);
+    fail_if(strstr(buf, "router") != buf,
+	    "invalid cli_write output");
+    fail_if(strstr(buf, "Te42/64") == NULL,
+	    "invalid cli_write output");
+	
+    close(spair[0]);
+    close(spair[1]);
+    len = dup(ostdout);
+    close(ostdout);
+    peer_free(msg.peer);
+}
+END_TEST
+
+START_TEST(test_debug) {
+    const char *errstr = NULL;
+    int ostdout, spair[2];
+    ssize_t len;
+    pcap_hdr_t pcap_hdr = {};
+    struct master_msg msg = {};
+    char buf[1024];
+
+    options |= OPT_DEBUG;
+
+    mark_point();
+    errstr = "please redirect stdout to tcpdump or a file";
+    my_log(CRIT, "check");
+    WRAP_FATAL_START();
+    debug_header();
+    WRAP_FATAL_END();
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    ostdout = dup(fileno(stdout));
+    close(fileno(stdout));
+    my_socketpair(spair);
+    errstr = "check";
+    my_log(CRIT, errstr);
+
+    mark_point();
+    debug_header();
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+        "incorrect message logged: %s", check_wrap_errstr);
+    len = read(spair[1], &pcap_hdr, sizeof(pcap_hdr));
+    fail_unless(len == sizeof(pcap_hdr),
+                "failed to read pcap header");
+    fail_unless(pcap_hdr.magic_number == PCAP_MAGIC,
+                "invalid pcap header returned");
+    fail_unless(pcap_hdr.snaplen == ETHER_MAX_LEN,
+                "invalid pcap header returned");
+    fail_unless(pcap_hdr.network == 1,
+                "invalid pcap header returned");
+
+    mark_point();
+    msg.len = ETHER_MIN_LEN;
+    debug_write(&msg, 0);
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+        "incorrect message logged: %s", check_wrap_errstr);
+    len = read(spair[1], buf, 1024);
+    fail_unless(len == (sizeof(pcaprec_hdr_t) + msg.len),
+                "failed to read pcap record"); 
+
+    close(spair[0]);
+    close(spair[1]);
+    len = dup(ostdout);
+    close(ostdout);
 }
 END_TEST
 
@@ -79,6 +200,8 @@ Suite * cli_suite (void) {
     // cli test case
     TCase *tc_cli = tcase_create("cli");
     tcase_add_test(tc_cli, test_batch_write);
+    tcase_add_test(tc_cli, test_cli);
+    tcase_add_test(tc_cli, test_debug);
     suite_add_tcase(s, tc_cli);
 
     return s;
