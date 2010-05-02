@@ -127,7 +127,6 @@ START_TEST(test_my_mreq) {
     const char *errstr = NULL;
 
     loglevel = INFO;
-    
     my_socketpair(spair);
 
     mark_point();
@@ -532,7 +531,6 @@ START_TEST(test_my_cksum) {
 }
 END_TEST
 
-
 START_TEST(test_my_priv) {
     struct passwd *pwd;
     const char *errstr = NULL;
@@ -669,6 +667,95 @@ START_TEST(test_my_priv) {
 }
 END_TEST
 
+START_TEST(test_portname_abbr) {
+    char *portname = NULL;
+
+    portname = my_strdup("FastEthernet42/42");
+    portname_abbr(portname);
+    fail_unless(strcmp(portname, "Fa42/42") == 0,
+	"unexpected portname: %s", portname);
+    free(portname);
+
+    portname = my_strdup("GigabitEthernet42");
+    portname_abbr(portname);
+    fail_unless(strcmp(portname, "Gi42") == 0,
+	"unexpected portname: %s", portname);
+    free(portname);
+
+    portname = my_strdup("TenGigabitEthernet0/86");
+    portname_abbr(portname);
+    fail_unless(strcmp(portname, "Te0/86") == 0,
+	"unexpected portname: %s", portname);
+    free(portname);
+
+    portname = my_strdup("Ethernet0/86");
+    portname_abbr(portname);
+    fail_unless(strcmp(portname, "Eth0/86") == 0,
+	"unexpected portname: %s", portname);
+    free(portname);
+
+    portname = my_strdup("eth0");
+    portname_abbr(portname);
+    fail_unless(strcmp(portname, "eth0") == 0,
+	"unexpected portname: %s", portname);
+    free(portname);
+}
+END_TEST
+
+START_TEST(test_pcap) {
+    int spair[2];
+    ssize_t len;
+    const char *errstr = NULL;
+    char buf[1024];
+    pcap_hdr_t pcap_hdr = {};
+    struct master_msg msg = {};
+
+    loglevel = INFO;
+    my_socketpair(spair);
+
+    mark_point();
+    errstr = "failed to write pcap global header";
+    my_log(CRIT, "check");
+    WRAP_FATAL_START();
+    write_pcap_hdr(-1);
+    WRAP_FATAL_END();
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    mark_point();
+    write_pcap_hdr(spair[0]);
+    len = read(spair[1], &pcap_hdr, sizeof(pcap_hdr));
+    fail_unless(len == sizeof(pcap_hdr),
+		"failed to read pcap header");
+    fail_unless(pcap_hdr.magic_number == PCAP_MAGIC,
+		"invalid pcap header returned");
+    fail_unless(pcap_hdr.snaplen == ETHER_MAX_LEN,
+		"invalid pcap header returned");
+    fail_unless(pcap_hdr.network == 1,
+		"invalid pcap header returned");
+
+    mark_point();
+    errstr = "check";
+    my_log(CRIT, errstr);
+    msg.len = 1;
+    write_pcap_rec(spair[0], &msg);
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+    len = read(spair[1], buf, 1024);
+    fail_unless(len == (sizeof(pcaprec_hdr_t) + msg.len),
+		"failed to read pcap record");
+
+    mark_point();
+    msg.len = ETHER_MIN_LEN;
+    write_pcap_rec(spair[0], &msg);
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+    len = read(spair[1], buf, 1024);
+    fail_unless(len == (sizeof(pcaprec_hdr_t) + msg.len),
+		"failed to read pcap record");
+}
+END_TEST
+
 Suite * util_suite (void) {
     Suite *s = suite_create("util.c");
 
@@ -680,6 +767,8 @@ Suite * util_suite (void) {
     tcase_add_test(tc_util, test_read_line);
     tcase_add_test(tc_util, test_my_cksum);
     tcase_add_test(tc_util, test_my_priv);
+    tcase_add_test(tc_util, test_portname_abbr);
+    tcase_add_test(tc_util, test_pcap);
     suite_add_tcase(s, tc_util);
 
     return s;

@@ -410,7 +410,7 @@ void write_pcap_rec(int fd, struct master_msg *msg) {
     iov[0].iov_len = sizeof(pcap_rec_hdr);
 
     iov[1].iov_base = msg->msg;
-    iov[2].iov_len = msg->len;
+    iov[1].iov_len = msg->len;
 
     len = writev(fd, iov, 2);
     if (len != (sizeof(pcap_rec_hdr) + msg->len))
