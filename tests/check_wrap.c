@@ -52,12 +52,14 @@ WRAP(setresuid, SETRESUID, (uid_t r, uid_t e, uid_t s), (r, e, s));
 WRAP(setgroups, SETGRP, (int n, const gid_t *s), (n, s));
 WRAP(chdir, CHDIR, (const char *path), (path));
 WRAP(chroot, CHROOT, (const char *dirname), (dirname));
-WRAP(kill, KILL, (pid_t pid, int sig), (pid, sig));
 WRAP(socket, SOCKET, (int d, int t, int p), (d,t,p));
 WRAP(bind, BIND, (int s, const struct sockaddr *a, socklen_t al), (s,a,al));
+WRAP(connect, CONNECT, (int s, const struct sockaddr *a, socklen_t al),
+    (s,a,al));
 WRAP(setsockopt, SETSOCKOPT,
     (int s, int level, int optname, const void *optval, socklen_t optlen),
     (s, level, optname, optval, optlen));
+WRAP(kill, KILL, (pid_t pid, int sig), (pid, sig));
 
 VWRAP(malloc, MALLOC, (size_t size), (size));
 VWRAP(calloc, CALLOC, (size_t nmemb, size_t size), (nmemb, size));
