@@ -123,7 +123,7 @@ void cli_main(int argc, char *argv[]) {
     argv += optind;
 
     // default to all protocols
-    if (proto == 0)
+    if (!proto)
 	proto = UINT8_MAX;
 
     if (argc) {
@@ -140,6 +140,9 @@ void cli_main(int argc, char *argv[]) {
     // XXX: make do with a stream and hope for the best
     if ((fd == -1) && (errno == EPROTONOSUPPORT))
 	fd = my_socket(AF_UNIX, SOCK_STREAM, 0);
+    if (fd == -1)
+	my_fatal("failed to create socket: %s", strerror(errno));
+
     memset(&sun, 0, sizeof(sun));
     sun.sun_family = AF_UNIX;
     strlcpy(sun.sun_path, PACKAGE_SOCKET, sizeof(sun.sun_path));
@@ -147,7 +150,7 @@ void cli_main(int argc, char *argv[]) {
 	my_fatal("failed to open " PACKAGE_SOCKET ": %s", strerror(errno));
 
     if ((now = time(NULL)) == (time_t)-1)
-	my_fatal("failed fetch time: %s", strerror(errno));
+	my_fatal("failed to fetch time: %s", strerror(errno));
 
     if (modes[mode].init)
 	modes[mode].init();
