@@ -60,6 +60,9 @@ void child_init(int reqfd, int msgfd, int ifc, char *ifl[],
 	// XXX: make do with a stream and hope for the best
 	if ((csock == -1) && (errno == EPROTONOSUPPORT))
 	    csock = my_socket(AF_UNIX, SOCK_STREAM, 0);
+	if (fd == -1)
+	    my_fatal("failed to create socket: %s", strerror(errno));
+
 	memset(&sun, 0, sizeof(sun));
 	sun.sun_family = AF_UNIX;
 	strlcpy(sun.sun_path, PACKAGE_SOCKET, sizeof(sun.sun_path));

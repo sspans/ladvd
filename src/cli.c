@@ -59,7 +59,7 @@ void cli_main(int argc, char *argv[]) {
     int ch, i;
     uint8_t proto = 0, mode = MODE_CLI;
     uint32_t *indexes = NULL;
-    struct sockaddr_un sun;
+    struct sockaddr_un sun = {};
     int fd = -1;
     time_t now;
     struct master_msg msg = {};
@@ -143,9 +143,9 @@ void cli_main(int argc, char *argv[]) {
     if (fd == -1)
 	my_fatal("failed to create socket: %s", strerror(errno));
 
-    memset(&sun, 0, sizeof(sun));
     sun.sun_family = AF_UNIX;
     strlcpy(sun.sun_path, PACKAGE_SOCKET, sizeof(sun.sun_path));
+
     if (connect(fd, (struct sockaddr *)&sun, sizeof(sun)) == -1)
 	my_fatal("failed to open " PACKAGE_SOCKET ": %s", strerror(errno));
 
