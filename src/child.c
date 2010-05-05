@@ -263,6 +263,8 @@ void child_queue(int fd, short event) {
     }
 
     if (msg != NULL) {
+	// free the old peer decode
+	peer_free(msg->peer);
 	// copy everything upto the tailq_entry
 	memcpy(msg, &rmsg, offsetof(struct master_msg, entries));
     } else {
