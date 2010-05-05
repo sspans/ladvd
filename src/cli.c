@@ -178,8 +178,10 @@ void cli_main(int argc, char *argv[]) {
 
 	// decode packet
 	msg.decode = UINT16_MAX;
-	if (protos[msg.proto].decode(&msg) == 0)
+	if (protos[msg.proto].decode(&msg) == 0) {
+	    peer_free(msg.peer);
 	    continue;
+	}
 	// skip expired packets
 	if (msg.ttl < (now - msg.received))
 	    continue;
