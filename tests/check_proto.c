@@ -599,8 +599,6 @@ START_TEST(test_lldp_decode) {
     fail_unless (strcmp(msg.peer[PEER_PORTNAME], "Gi0/1") == 0,
 	"port id should be 'Gi0/1' not '%s'", msg.peer[PEER_PORTNAME]);
 
-    peer_free(msg.peer);
-
     mark_point();
     my_log(CRIT, "check");
     errstr = "Invalid LLDP packet: invalid Chassis ID TLV";
