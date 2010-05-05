@@ -47,14 +47,14 @@
 #define FAKE_SETSOCKOPT	(1 << 9)
 #define FAKE_OPEN	(1 << 10)
 #define FAKE_KILL	(1 << 11)
-#define FAIL_EXIT	(1 << 31)
+#define FAKE_EXIT	(1 << 31)
 
 #define WRAP_FATAL_START() \
     if (!setjmp(check_wrap_env)) { \
-	check_wrap_fail |= FAIL_EXIT;
+	check_wrap_fake |= FAKE_EXIT;
 #define WRAP_FATAL_END() \
     } \
-    check_wrap_fail &= ~FAIL_EXIT;
+    check_wrap_fake &= ~FAKE_EXIT;
 
 extern jmp_buf check_wrap_env;
 extern uint32_t check_wrap_fake;

@@ -107,7 +107,7 @@ MWRAP(open, int, (const char *pathname, int flags, ...)) {
 
 MWRAP(exit, void, (int status)) {
 
-    if (check_wrap_fail & FAIL_EXIT)
+    if (check_wrap_fake & FAKE_EXIT)
 	longjmp(check_wrap_env,1);
     __real_exit(status);
 }
