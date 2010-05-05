@@ -155,12 +155,9 @@ void cli_main(int argc, char *argv[]) {
     if (modes[mode].init)
 	modes[mode].init();
 
-    while ((len = read(fd, &msg, MASTER_MSG_MAX)) > 0) {
+    while ((len = read(fd, &msg, MASTER_MSG_MAX)) == MASTER_MSG_MAX) {
 
-	if (len < MASTER_MSG_MIN || len != MASTER_MSG_LEN(msg.len))
-	    continue;
-
-	if (msg.proto > PROTO_MAX)
+	if (msg.proto >= PROTO_MAX)
 	    continue;
 	if ((msg.len < ETHER_MIN_LEN) || (msg.len > ETHER_MAX_LEN))
 	    continue;
@@ -181,7 +178,7 @@ void cli_main(int argc, char *argv[]) {
 
 	// decode packet
 	msg.decode = UINT16_MAX;
-	if (msg.len != protos[msg.proto].decode(&msg))
+	if (protos[msg.proto].decode(&msg) == 0)
 	    continue;
 	// skip expired packets
 	if (msg.ttl < (now - msg.received))

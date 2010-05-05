@@ -228,7 +228,7 @@ void child_queue(int fd, short event) {
     my_log(INFO, "decoding peer name and ttl");
     rmsg.decode |= (1 << PEER_HOSTNAME);
     rmsg.decode |= (1 << PEER_PORTNAME);
-    if (rmsg.len != protos[rmsg.proto].decode(&rmsg)) {
+    if (protos[rmsg.proto].decode(&rmsg) == 0) {
 	peer_free(rmsg.peer);
     	return;
     }
@@ -390,7 +390,7 @@ void child_cli_write(int fd, short event, struct child_session *sess) {
 	msg->lock--;
 
     for (; msg != NULL; msg = TAILQ_NEXT(msg, entries)) {
-	if (write(fd, msg, MASTER_MSG_LEN(msg->len)) != -1)
+	if (write(fd, msg, MASTER_MSG_MAX) != -1)
 	    continue;
 
 	// bail unless non-block

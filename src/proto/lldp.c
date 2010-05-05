@@ -457,11 +457,11 @@ size_t lldp_decode(struct master_msg *msg) {
 
 	switch(tlv_type) {
 	case LLDP_TYPE_END:
-	    if ((tlv_length != 0) || (length != 0)) {
+	    if (tlv_length != 0) {
 		my_log(INFO, "Corrupt LLDP packet: invalid END TLV");
 		return 0;
 	    }
-	    break;
+	    goto out;
 	case LLDP_TYPE_SYSTEM_NAME:
 	    if (tlv_length > 255) {
 		my_log(INFO, "Corrupt LLDP packet: invalid System Name TLV");
@@ -522,8 +522,14 @@ size_t lldp_decode(struct master_msg *msg) {
 	}
     }
 
+out:
     if (tlv_type != 0) {
 	my_log(INFO, "Corrupt LLDP packet: missing END TLV");
+	return 0;
+    }
+
+    if ((length != 0) && (msg->len != ETHER_MIN_LEN)) {
+	my_log(INFO, "Corrupt LLDP packet: invalid END TLV");
 	return 0;
     }
 
