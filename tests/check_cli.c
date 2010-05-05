@@ -49,17 +49,200 @@ void read_packet(struct master_msg *msg, const char *suffix) {
     mark_point();
     fail_if((fd = open(path, O_RDONLY)) == -1, "failed to open %s", path);
     msg->len = read(fd, msg->msg, ETHER_MAX_LEN);
+    msg->len = MAX(msg->len, ETHER_MIN_LEN);
 
     free(path);
 }
+
+START_TEST(test_cli_main) {
+    const char *errstr = NULL;
+    int ofd[3], spair[6];
+    int argc;
+    char *argv[7], ifname[IFNAMSIZ];
+    ssize_t len;
+    char buf[1024];
+    struct master_msg msg = {};
+    int sbuf = MASTER_MSG_MAX * 10;
+    time_t now;
+
+    argc = 6;
+    argv[0] = PACKAGE_CLI;
+    argv[1] = "-LCEF";
+#if HAVE_EVHTTP_H
+    argv[2] = "-p";
+    argv[3] = "http://foo/bar";
+#else
+    argv[2] = "-f";
+    argv[3] = "-f";
+#endif /* HAVE_EVHTTP_H */
+    argv[4] = "-bdf";
+    argv[5] = "";
+    argv[6] = NULL;
+
+    check_wrap_fail = 0;
+    check_wrap_fake = 0;
+    now = time(NULL);
+
+    ofd[0] = dup(fileno(stdin));
+    close(fileno(stdin));
+    fail_if(socketpair(AF_UNIX, SOCK_STREAM, 0, &spair[0]) == -1,
+	    "socketpair creation failed");
+    setsockopt(spair[0], SOL_SOCKET, SO_RCVBUF, &sbuf, sizeof(sbuf));
+    setsockopt(spair[1], SOL_SOCKET, SO_SNDBUF, &sbuf, sizeof(sbuf));
+
+    ofd[1] = dup(fileno(stdout));
+    close(fileno(stdout));
+    fail_if(socketpair(AF_UNIX, SOCK_STREAM, 0, &spair[2]) == -1,
+	    "socketpair creation failed");
+
+    ofd[2] = dup(fileno(stderr));
+    close(fileno(stderr));
+    fail_if(socketpair(AF_UNIX, SOCK_STREAM, 0, &spair[4]) == -1,
+	    "socketpair creation failed");
+
+    mark_point();
+    memset(buf, 0, 1024);
+    argv[5] = "-Noq";
+    WRAP_FATAL_START();
+    cli_main(argc, argv);
+    WRAP_FATAL_END();
+    len = read(spair[5], buf, 1024);
+    fail_if(strstr(buf, "Usage:") == NULL,
+    	    "invalid usage output: %s", buf);
+
+    mark_point();
+    memset(buf, 0, 1024);
+    argv[5] = "invalid";
+    options = OPT_DAEMON | OPT_CHECK;
+    optind = 1;
+    WRAP_FATAL_START();
+    cli_main(argc, argv);
+    WRAP_FATAL_END();
+    len = read(spair[5], buf, 1024);
+    fail_if(strstr(buf, "Usage:") == NULL,
+    	    "invalid usage output: %s", buf);
+
+    // XXX: we asume ifindex 1 exists
+    mark_point();
+    memset(buf, 0, 1024);
+    argv[5] = if_indextoname(1, ifname);
+    optind = 1;
+    errstr = "failed to create socket:";
+    check_wrap_fail |= FAIL_SOCKET;
+    WRAP_FATAL_START();
+    cli_main(argc, argv);
+    WRAP_FATAL_END();
+    len = read(spair[5], buf, 1024);
+    fail_unless (strncmp(buf, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", buf);
+
+    mark_point();
+    memset(buf, 0, 1024);
+    optind = 1;
+    errstr = "failed to open " PACKAGE_SOCKET ":";
+    check_wrap_fail &= ~FAIL_SOCKET;
+    check_wrap_fail |= FAIL_CONNECT;
+    check_wrap_fake |= FAKE_SOCKET;
+    WRAP_FATAL_START();
+    cli_main(argc, argv);
+    WRAP_FATAL_END();
+    len = read(spair[5], buf, 1024);
+    fail_unless (strncmp(buf, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", buf);
+
+    // valid lldp
+    mark_point();
+    read_packet(&msg, "proto/lldp/41.good.small");
+    msg.received = now;
+    msg.proto = PROTO_LLDP;
+    msg.index = 1;
+    strlcpy(msg.name, ifname, IFNAMSIZ);
+    len = write(spair[1], &msg, MASTER_MSG_MAX);
+
+    // invalid proto
+    mark_point();
+    read_packet(&msg, "proto/cdp/43.good.big");
+    msg.proto = PROTO_MAX;
+    len = write(spair[1], &msg, MASTER_MSG_MAX);
+
+    // invalid len
+    mark_point();
+    msg.proto = PROTO_CDP;
+    msg.len += ETHER_MAX_LEN;
+    len = write(spair[1], &msg, MASTER_MSG_MAX);
+
+    // invalid ifindex
+    mark_point();
+    msg.len -= ETHER_MAX_LEN;
+    msg.index = 0;
+    len = write(spair[1], &msg, MASTER_MSG_MAX);
+
+    // unwanted proto
+    mark_point();
+    msg.index = 1;
+    msg.proto = PROTO_NDP;
+    len = write(spair[1], &msg, MASTER_MSG_MAX);
+
+    // invalid packet
+    mark_point();
+    msg.proto = PROTO_LLDP;
+    read_packet(&msg, "proto/lldp/A3.fuzzer.chassis_id.broken");
+    len = write(spair[1], &msg, MASTER_MSG_MAX);
+
+    // old message
+    mark_point();
+    msg.proto = PROTO_LLDP;
+    read_packet(&msg, "proto/lldp/45.good.vlan");
+    msg.received = 0;
+    len = write(spair[1], &msg, MASTER_MSG_MAX);
+
+    // valid
+    mark_point();
+    msg.received = now;
+    strlcpy(msg.name, ifname, IFNAMSIZ);
+    len = write(spair[1], &msg, MASTER_MSG_MAX);
+
+    mark_point();
+    memset(buf, 0, 1024);
+    optind = 1;
+    shutdown(spair[1], SHUT_WR);
+    signal(SIGPIPE, SIG_IGN);
+    check_wrap_fail &= ~FAIL_CONNECT;
+    check_wrap_fake |= FAKE_CONNECT;
+    errstr = "check";
+    my_log(CRIT, errstr);
+    WRAP_FATAL_START();
+    cli_main(argc, argv);
+    WRAP_FATAL_END();
+    len = read(spair[5], buf, 1024);
+    fail_unless (strncmp(buf, errstr, strlen(errstr)) == 0,
+    	"incorrect message logged: %s", buf);
+
+    close(spair[0]);
+    close(spair[1]);
+    len = dup(ofd[0]);
+    close(ofd[0]);
+
+    close(spair[2]);
+    close(spair[3]);
+    len = dup(ofd[1]);
+    close(ofd[1]);
+
+    close(spair[4]);
+    close(spair[5]);
+    len = dup(ofd[2]);
+    close(ofd[2]);
+
+    check_wrap_fail = 0;
+    check_wrap_fake = 0;
+}
+END_TEST
 
 START_TEST(test_batch_write) {
     struct master_msg msg = {};
     int ostdout, spair[2];
     ssize_t len;
     char buf[1024];
-
-    options |= OPT_DEBUG;
 
     ostdout= dup(fileno(stdout));
     close(fileno(stdout));
@@ -102,8 +285,6 @@ START_TEST(test_cli) {
     struct master_msg msg = {};
     char buf[1024];
 
-    options |= OPT_DEBUG;
-
     ostdout = dup(fileno(stdout));
     close(fileno(stdout));
     fail_if(socketpair(AF_UNIX, SOCK_STREAM, 0, spair) == -1,
@@ -144,8 +325,6 @@ START_TEST(test_debug) {
     pcap_hdr_t pcap_hdr = {};
     struct master_msg msg = {};
     char buf[1024];
-
-    options |= OPT_DEBUG;
 
     mark_point();
     errstr = "please redirect stdout to tcpdump or a file";
@@ -201,7 +380,6 @@ START_TEST(test_http) {
     extern struct evhttp_connection *evcon;
     extern int status;
 
-    options |= OPT_DEBUG;
     http_host = "localhost";
     http_path = "/cgi-bin/test.cgi";
 
@@ -287,6 +465,7 @@ Suite * cli_suite (void) {
 
     // cli test case
     TCase *tc_cli = tcase_create("cli");
+    tcase_add_test(tc_cli, test_cli_main);
     tcase_add_test(tc_cli, test_batch_write);
     tcase_add_test(tc_cli, test_cli);
     tcase_add_test(tc_cli, test_debug);
