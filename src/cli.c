@@ -192,6 +192,7 @@ void cli_main(int argc, char *argv[]) {
 	    modes[mode].write(&msg, holdtime);
 
 	peer_free(msg.peer);
+	memset(&msg, 0, MASTER_MSG_SIZ);
 
 	if (options & OPT_ONCE)
 	    goto out;

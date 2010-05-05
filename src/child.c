@@ -270,8 +270,8 @@ void child_queue(int fd, short event) {
     } else {
 	char *hostname = NULL;
 
-	msg = my_malloc(MASTER_MSG_MAX);
-	memcpy(msg, &rmsg, MASTER_MSG_MAX);
+	msg = my_malloc(MASTER_MSG_SIZ);
+	memcpy(msg, &rmsg, offsetof(struct master_msg, entries));
 	// group messages per peer
 	if (pmsg)
 	    TAILQ_INSERT_AFTER(&mqueue, pmsg, msg, entries);

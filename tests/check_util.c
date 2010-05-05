@@ -315,7 +315,7 @@ START_TEST(test_netif) {
     fail_unless (netif_byname(netifs, "eth3") == NULL,
 	"NULL should be returned on not found netif");
 
-    msg = my_malloc(MASTER_MSG_MAX);
+    msg = my_malloc(MASTER_MSG_SIZ);
     netif = netif_byname(netifs, "eth0");
     msg->index = netif->index;
     msg->proto = PROTO_LLDP;
@@ -324,7 +324,7 @@ START_TEST(test_netif) {
     msg->peer[PEER_PORTNAME] = my_strdup("FastEthernet6/20");
     TAILQ_INSERT_TAIL(&mqueue, msg, entries);
 
-    msg = my_malloc(MASTER_MSG_MAX);
+    msg = my_malloc(MASTER_MSG_SIZ);
     netif = netif_byname(netifs, "eth2");
     msg->index = netif->index;
     msg->proto = PROTO_CDP;
@@ -332,7 +332,7 @@ START_TEST(test_netif) {
     msg->peer[PEER_HOSTNAME] = my_strdup("bar");
     TAILQ_INSERT_TAIL(&mqueue, msg, entries);
 
-    msg = my_malloc(MASTER_MSG_MAX);
+    msg = my_malloc(MASTER_MSG_SIZ);
     netif = netif_byname(netifs, "eth1");
     msg->index = netif->index;
     msg->proto = PROTO_LLDP;
@@ -341,7 +341,7 @@ START_TEST(test_netif) {
     msg->peer[PEER_PORTNAME] = my_strdup("Ethernet4");
     TAILQ_INSERT_TAIL(&mqueue, msg, entries);
 
-    msg = my_malloc(MASTER_MSG_MAX);
+    msg = my_malloc(MASTER_MSG_SIZ);
     netif = netif_byname(netifs, "eth1");
     msg->index = netif->index;
     msg->proto = PROTO_LLDP;
@@ -350,7 +350,7 @@ START_TEST(test_netif) {
     msg->peer[PEER_PORTNAME] = my_strdup("Ethernet5");
     TAILQ_INSERT_TAIL(&mqueue, msg, entries);
 
-    msg = my_malloc(MASTER_MSG_MAX);
+    msg = my_malloc(MASTER_MSG_SIZ);
     netif = netif_byname(netifs, "eth1");
     msg->index = netif->index;
     msg->proto = PROTO_FDP;
@@ -359,7 +359,7 @@ START_TEST(test_netif) {
     msg->peer[PEER_PORTNAME] = my_strdup("Ethernet5");
     TAILQ_INSERT_TAIL(&mqueue, msg, entries);
 
-    msg = my_malloc(MASTER_MSG_MAX);
+    msg = my_malloc(MASTER_MSG_SIZ);
     netif = netif_byname(netifs, "lagg0");
     msg->index = netif->index;
     msg->proto = PROTO_LLDP;
