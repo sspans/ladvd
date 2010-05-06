@@ -243,14 +243,13 @@ void child_queue(int fd, short event) {
 	netif = subif;
 
     TAILQ_FOREACH(qmsg, &mqueue, entries) {
-	// save a pointer if the message peer matches
-	if ((pmsg == NULL) &&
-	    (memcmp(rmsg.msg + ETHER_ADDR_LEN, qmsg->msg + ETHER_ADDR_LEN,
-		    ETHER_ADDR_LEN) == 0))
-	    pmsg = qmsg;
 	// match ifindex
 	if (rmsg.index != qmsg->index)
 	    continue;
+	// save a pointer if the message peer matches
+	if (memcmp(rmsg.msg + ETHER_ADDR_LEN, qmsg->msg + ETHER_ADDR_LEN,
+		    ETHER_ADDR_LEN) == 0)
+	    pmsg = qmsg;
 	// match protocol
 	if (rmsg.proto != qmsg->proto)
 	    continue;
