@@ -25,7 +25,9 @@
 #include <sys/select.h>
 #include <sys/wait.h>
 
-#ifdef USE_CAPABILITIES
+#ifdef HAVE_LIBCAP_NG
+#include <cap-ng.h>
+#elif defined(HAVE_LIBCAP)
 #include <sys/prctl.h>
 #include <sys/capability.h>
 #endif
@@ -64,10 +66,10 @@ void master_init(int reqfd, int msgfd, pid_t child) {
     struct event ev_cmd, ev_msg;
     struct event ev_sigchld, ev_sigint, ev_sigterm,  ev_sighup;
 
-#ifdef USE_CAPABILITIES
+#ifdef HAVE_LIBCAP
     // capabilities
     cap_t caps;
-#endif /* USE_CAPABILITIES */
+#endif /* HAVE_LIBCAP */
 
     // init the queues
     TAILQ_INIT(&rawfds);
@@ -85,7 +87,14 @@ void master_init(int reqfd, int msgfd, pid_t child) {
 	    my_fatal("please redirect stdout to tcpdump or a file");
 	dfd = fileno(stdout);
 	write_pcap_hdr(dfd);
-#ifdef USE_CAPABILITIES
+#if HAVE_LIBCAP_NG
+    } else {
+	capng_clear(CAPNG_SELECT_BOTH);
+	capng_updatev(CAPNG_ADD, CAPNG_EFFECTIVE|CAPNG_PERMITTED, CAP_KILL,
+		    CAP_NET_ADMIN, CAP_NET_RAW, CAP_NET_BROADCAST, -1);
+	if (capng_apply(CAPNG_SELECT_BOTH) == -1)
+	    my_fatal("unable to set capabilities");
+#elif HAVE_LIBCAP
     } else {
 	// keep CAP_NET_ADMIN
 	caps = cap_from_text("cap_net_admin=ep cap_net_raw=ep "
@@ -98,7 +107,7 @@ void master_init(int reqfd, int msgfd, pid_t child) {
 	    my_fatal("unable to set capabilities: %s", strerror(errno));
 
 	(void) cap_free(caps);
-#endif /* USE_CAPABILITIES */
+#endif /* HAVE_LIBCAP */
     }
 
 

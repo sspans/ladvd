@@ -279,16 +279,18 @@ AC_CHECK_HEADERS([sys/sysctl.h], [], AC_MSG_ERROR([required header missing]),
 ])
 
 # linux capabilities
-AC_CHECK_HEADERS([sys/prctl.h sys/capability.h])
-if test "$ac_cv_header_sys_capability_h" = "yes" ; then
-    AC_CHECK_LIB(cap, cap_init, ac_need_libcap=1)
-    if test "$ac_cv_lib_cap_cap_init" = "yes"; then
-	AC_DEFINE(USE_CAPABILITIES,1,
-	[define if capabilities should be used])
-	AC_SUBST(CAP_LIB,"-lcap")
-	use_capabilities=yes
+LIBCAP_NG_PATH
+
+AS_IF([test x$CAPNG_LDADD != x], [], [
+    AC_CHECK_HEADERS([sys/prctl.h sys/capability.h])
+    if test "$ac_cv_header_sys_capability_h" = "yes" ; then
+	AC_CHECK_LIB(cap, cap_init, ac_need_libcap=1)
+	if test "$ac_cv_lib_cap_cap_init" = "yes"; then
+	    AC_DEFINE(HAVE_LIBCAP,1, [define if libcap is available])
+	    AC_SUBST(CAP_LDADD,"-lcap")
+	fi
     fi
-fi
+])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST

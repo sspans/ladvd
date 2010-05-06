@@ -19,7 +19,7 @@ libmisc_la_SOURCES = $(common_headers) child.h child.c master.h master.c \
 
 sbin_PROGRAMS = ladvd
 ladvd_SOURCES = $(common_headers) main.h main.c cli.h cli.c
-ladvd_LDADD = $(noinst_LTLIBRARIES) $(EVENT_LIB) $(CAP_LIB)
+ladvd_LDADD = $(noinst_LTLIBRARIES) $(EVENT_LIB) $(CAPNG_LDADD) $(CAP_LDADD)
 
 install-exec-hook:
 	$(LN_S) @PACKAGE_NAME@$(EXEEXT) \
