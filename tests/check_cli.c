@@ -29,7 +29,6 @@
 #include "check_wrap.h"
 
 uint32_t options = OPT_DAEMON | OPT_CHECK;
-extern struct sysinfo sysinfo;
 
 void read_packet(struct master_msg *msg, const char *suffix) {
     int fd;
@@ -460,8 +459,6 @@ END_TEST
 
 Suite * cli_suite (void) {
     Suite *s = suite_create("cli.c");
-
-    sysinfo_fetch(&sysinfo);
 
     // cli test case
     TCase *tc_cli = tcase_create("cli");

@@ -48,7 +48,7 @@ struct mode modes[] = {
 #if HAVE_EVHTTP_H
 char *http_host = NULL;
 char *http_path = NULL;
-struct sysinfo sysinfo = {};
+char *hostname = NULL;
 
 struct evhttp_connection *evcon = NULL;
 struct evhttp_request *lreq = NULL;
@@ -62,7 +62,7 @@ void cli_main(int argc, char *argv[]) {
     struct sockaddr_un sun = {};
     int fd = -1;
     time_t now;
-    struct master_msg msg = {};
+    struct master_msg *msg;
     uint16_t holdtime;
     ssize_t len;
 
@@ -127,7 +127,7 @@ void cli_main(int argc, char *argv[]) {
 	proto = UINT8_MAX;
 
     if (argc) {
-	indexes = my_calloc(argc, sizeof(msg.index));
+	indexes = my_calloc(argc, sizeof(msg->index));
 	for (i = 0; i < argc; i++) {
 	    indexes[i] = if_nametoindex(argv[i]);
 	    if (!indexes[i])
@@ -155,17 +155,19 @@ void cli_main(int argc, char *argv[]) {
     if (modes[mode].init)
 	modes[mode].init();
 
-    while ((len = read(fd, &msg, MASTER_MSG_MAX)) == MASTER_MSG_MAX) {
+    msg = my_malloc(MASTER_MSG_SIZ);
 
-	if (msg.proto >= PROTO_MAX)
+    while ((len = read(fd, msg, MASTER_MSG_MAX)) == MASTER_MSG_MAX) {
+
+	if (msg->proto >= PROTO_MAX)
 	    continue;
-	if ((msg.len < ETHER_MIN_LEN) || (msg.len > ETHER_MAX_LEN))
+	if ((msg->len < ETHER_MIN_LEN) || (msg->len > ETHER_MAX_LEN))
 	    continue;
 	
 	// skip unwanted interfaces
 	if (indexes) {
 	    for (i = 0; i < argc; i++) {
-		if (indexes[i] == msg.index)
+		if (indexes[i] == msg->index)
 		    break;
 	    }
 	    if (i == argc)
@@ -173,26 +175,26 @@ void cli_main(int argc, char *argv[]) {
 	}
 
 	// skip unwanted protocols
-	if (!(proto & (1 << msg.proto)))
+	if (!(proto & (1 << msg->proto)))
 	    continue;
 
 	// decode packet
-	msg.decode = UINT16_MAX;
-	if (protos[msg.proto].decode(&msg) == 0) {
-	    peer_free(msg.peer);
+	msg->decode = UINT16_MAX;
+	if (protos[msg->proto].decode(msg) == 0) {
+	    peer_free(msg->peer);
 	    continue;
 	}
 	// skip expired packets
-	if (msg.ttl < (now - msg.received))
+	if (msg->ttl < (now - msg->received))
 	    continue;
 
-	holdtime = msg.ttl - (now - msg.received);
+	holdtime = msg->ttl - (now - msg->received);
 	
 	if (modes[mode].write)
-	    modes[mode].write(&msg, holdtime);
+	    modes[mode].write(msg, holdtime);
 
-	peer_free(msg.peer);
-	memset(&msg, 0, MASTER_MSG_SIZ);
+	peer_free(msg->peer);
+	memset(msg, 0, MASTER_MSG_SIZ);
 
 	if (options & OPT_ONCE)
 	    goto out;
@@ -218,17 +220,17 @@ inline void swapchr(char *str, const int c, const int d) {
 #define STR(x)	(x) ? x : ""
 
 void batch_write(struct master_msg *msg, const uint16_t holdtime) {
-    char *hostname = msg->peer[PEER_HOSTNAME];
-    char *portname = msg->peer[PEER_PORTNAME];
+    char *peer_host = msg->peer[PEER_HOSTNAME];
+    char *peer_port = msg->peer[PEER_PORTNAME];
     char *cap = msg->peer[PEER_CAP];
     static unsigned int count = 0;
 
-    swapchr(hostname, '\'', '\"');
-    swapchr(portname, '\'', '\"');
+    swapchr(peer_host, '\'', '\"');
+    swapchr(peer_port, '\'', '\"');
 
     printf("INTERFACE%u='%s'\n", count, STR(msg->name));
-    printf("HOSTNAME%u='%s'\n", count, STR(hostname));
-    printf("PORTNAME%u='%s'\n", count, STR(portname));
+    printf("HOSTNAME%u='%s'\n", count, STR(peer_host));
+    printf("PORTNAME%u='%s'\n", count, STR(peer_port));
     printf("PROTOCOL%u='%s'\n", count, protos[msg->proto].name);
     printf("CAPABILITIES%u='%s'\n", count, STR(cap));
     printf("TTL%u='%" PRIu16 "'\n", count, msg->ttl);
@@ -247,19 +249,19 @@ void cli_header() {
 }
 
 void cli_write(struct master_msg *msg, const uint16_t holdtime) {
-    char *hostname = msg->peer[PEER_HOSTNAME];
-    char *portname = msg->peer[PEER_PORTNAME];
+    char *peer_host = msg->peer[PEER_HOSTNAME];
+    char *peer_port = msg->peer[PEER_PORTNAME];
     char *cap = msg->peer[PEER_CAP];
 
     // shorten
-    if (hostname)
-	hostname[strcspn(hostname, ".")] = '\0';
-    if (portname)
-	portname_abbr(portname);
+    if (peer_host)
+	peer_host[strcspn(peer_host, ".")] = '\0';
+    if (peer_port)
+	portname_abbr(peer_port);
 
     printf("%-19.19s %-13.13s %-7.7s %-12" PRIu16 " %-13.13s %-10.10s\n",
-	STR(hostname), STR(msg->name), protos[msg->proto].name,
-	holdtime, STR(cap),  STR(portname));
+	STR(peer_host), STR(msg->name), protos[msg->proto].name,
+	holdtime, STR(cap),  STR(peer_port));
 }
 
 void debug_header() {
@@ -276,6 +278,7 @@ void debug_write(struct master_msg *msg, const uint16_t holdtime) {
 void http_connect() {
     struct servent *sp;
     short port;
+    struct hostent *hp;
 
     if ((sp = getservbyname("http", "tcp")) == NULL)
 	my_fatal("HTTP port not found");
@@ -288,7 +291,12 @@ void http_connect() {
     if (evcon == NULL)
         my_fatal("HTTP connection failed");
 
-    sysinfo_fetch(&sysinfo);
+    hostname = my_malloc(_POSIX_HOST_NAME_MAX);
+    if (gethostname(hostname, _POSIX_HOST_NAME_MAX) == -1)
+	my_fatal("gethostname failed: %s", strerror(errno));
+    if ((hp = gethostbyname(hostname)) == NULL)
+	my_fatal("cant resolve hostname: %s",hstrerror(h_errno));
+    strlcpy(hostname, hp->h_name, _POSIX_HOST_NAME_MAX);
 }
 
 void http_request(struct master_msg *msg, const uint16_t holdtime) {
@@ -305,7 +313,7 @@ void http_request(struct master_msg *msg, const uint16_t holdtime) {
 	"hostname=%s&interface=%s&peer_hostname=%s&peer_portname=%s&"
 	"protocol=%s&capabilities=%s&ttl=%" PRIu16 "&holdtime=%" PRIu16
 	"\r\n\r\n",
-	sysinfo.hostname, STR(msg->name), peer_host, peer_port,
+	hostname, STR(msg->name), peer_host, peer_port,
 	protos[msg->proto].name, STR(cap), msg->ttl, holdtime);
     if (ret == -1)
 	my_fatal("asprintf failed");
