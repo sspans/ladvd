@@ -519,7 +519,7 @@ int master_socket(struct rawfd *rfd) {
 void master_multi(struct rawfd *rfd, struct proto *protos, int op) {
 
 #ifdef AF_PACKET
-    struct packet_mreq mreq;
+    struct packet_mreq mreq = {};
 #endif
 #ifdef __FreeBSD__
     struct sockaddr_dl *saddrdl;
