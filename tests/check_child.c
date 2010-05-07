@@ -430,7 +430,7 @@ START_TEST(test_child_cli) {
     memcpy(&ether.dst, lldp_dst, ETHER_ADDR_LEN);
     ether.type = htons(ETHERTYPE_LLDP);
 
-    for (i = 0; i < 255; i++) {
+    for (i = 0; i < 64; i++) {
 	memset(&ether.src, i, ETHER_ADDR_LEN);
 	memcpy(msg.msg, &ether, sizeof(ether));
 	WRAP_WRITE(spair[0], &msg, MASTER_MSG_LEN(msg.len));
@@ -459,10 +459,6 @@ Suite * child_suite (void) {
 
     // child test case
     TCase *tc_child = tcase_create("child");
-
-    // we need a larger timeout to handle 255 messages
-    tcase_set_timeout(tc_child, 10);
-
     tcase_add_test(tc_child, test_child_init);
     tcase_add_test(tc_child, test_child_send);
     tcase_add_test(tc_child, test_child_queue);
