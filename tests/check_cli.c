@@ -375,12 +375,24 @@ START_TEST(test_http) {
     struct master_msg msg = {};
     const char *errstr = NULL;
     extern char *http_host, *http_path;
+    static struct event_base *base;
+    struct evhttp *httpd;
     extern struct evhttp_request *lreq;
     extern struct evhttp_connection *evcon;
     extern int status;
+    extern short http_port;
 
     http_host = "localhost";
     http_path = "/cgi-bin/test.cgi";
+
+    mark_point();
+    base = event_init();
+    httpd = evhttp_new(base);
+    for (http_port = 8080; http_port < 8090; http_port++) {
+        if (evhttp_bind_socket(httpd, http_host, http_port) != -1)
+	    break;
+    }
+    fail_unless (http_port < 8090, "failed to start httpd on %s", http_host);
 
     mark_point();
     http_connect();
@@ -437,14 +449,14 @@ START_TEST(test_http) {
     evhttp_connection_free(evcon);
 
     mark_point();
-    errstr = "HTTP request failed";
+    errstr = "failed";
     my_log(CRIT, "check");
     evcon = evhttp_connection_new("localhost", 0);
-    http_request(&msg, 0);
     WRAP_FATAL_START();
+    http_request(&msg, 0);
     http_dispatch();
     WRAP_FATAL_END();
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+    fail_unless (strstr(check_wrap_errstr, errstr) != NULL,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     mark_point();

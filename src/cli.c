@@ -49,6 +49,7 @@ struct mode modes[] = {
 char *http_host = NULL;
 char *http_path = NULL;
 char *hostname = NULL;
+short http_port = 0;
 
 struct evhttp_connection *evcon = NULL;
 struct evhttp_request *lreq = NULL;
@@ -277,17 +278,18 @@ void debug_write(struct master_msg *msg, const uint16_t holdtime) {
 #if HAVE_EVHTTP_H
 void http_connect() {
     struct servent *sp;
-    short port;
     struct hostent *hp;
 
-    if ((sp = getservbyname("http", "tcp")) == NULL)
-	my_fatal("HTTP port not found");
-    port = ntohs(sp->s_port);
+    if (!http_port) {
+	if ((sp = getservbyname("http", "tcp")) == NULL)
+	    my_fatal("HTTP port not found");
+	http_port = ntohs(sp->s_port);
+    }
 
     // initalize the event library
     event_init();
 
-    evcon = evhttp_connection_new(http_host, port);
+    evcon = evhttp_connection_new(http_host, http_port);
     if (evcon == NULL)
         my_fatal("HTTP connection failed");
 
