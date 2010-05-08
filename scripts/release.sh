@@ -33,6 +33,7 @@ rm -rf ladvd-*
 cd ${RELEASE}
 osc checkout home:sten-blinkenlights ladvd
 mv home\:sten-blinkenlights/ladvd osc
+rm -rf home\:sten-blinkenlights/ladvd
 cp *.tar.gz osc
 cp ../rpm/* osc
 cp debian/* osc
