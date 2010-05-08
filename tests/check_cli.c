@@ -244,9 +244,10 @@ START_TEST(test_batch_write) {
     char buf[1024];
 
     ostdout = dup(STDOUT_FILENO);
-    close(STDOUT_FILENO);
+    fail_if(ostdout == -1, "dup failed: %s", strerror(errno));
+    fail_if(close(STDOUT_FILENO) == -1, "close failed: %s", strerror(errno));
     fail_if(socketpair(AF_UNIX, SOCK_STREAM, 0, spair) == -1,
-	    "socketpair creation failed");
+	    "socketpair creation failed: %s", strerror(errno));
 
     mark_point();
     batch_write(&msg, 42);
@@ -285,9 +286,10 @@ START_TEST(test_cli) {
     char buf[1024];
 
     ostdout = dup(STDOUT_FILENO);
-    close(STDOUT_FILENO);
+    fail_if(ostdout == -1, "dup failed: %s", strerror(errno));
+    fail_if(close(STDOUT_FILENO) == -1, "close failed: %s", strerror(errno));
     fail_if(socketpair(AF_UNIX, SOCK_STREAM, 0, spair) == -1,
-	    "socketpair creation failed");
+	    "socketpair creation failed: %s", strerror(errno));
 
     mark_point();
     cli_header();
