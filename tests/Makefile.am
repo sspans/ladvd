@@ -29,7 +29,7 @@ check_master_SOURCES = check_master.c $(common_headers) \
 	$(top_srcdir)/src/main.h $(top_srcdir)/src/master.h
 check_child_SOURCES = check_child.c $(common_headers) \
 	$(top_srcdir)/src/main.h $(top_srcdir)/src/child.h
-check_cli_SOURCES = check_cli.c $(common_headers) $(top_srcdir)/src/cli.c
+check_cli_SOURCES = check_cli.c $(common_headers) $(top_srcdir)/src/cli.h
 
 check_LTLIBRARIES = libcheckwrap.la
 libcheckwrap_la_SOURCES = check_wrap.h check_wrap.c

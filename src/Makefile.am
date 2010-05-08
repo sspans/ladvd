@@ -15,10 +15,10 @@ libproto_la_SOURCES = config.h proto/protos.h proto/tlv.c proto/tlv.h \
 	proto/fdp.c proto/fdp.h \
 	proto/ndp.c proto/ndp.h
 libmisc_la_SOURCES = $(common_headers) child.h child.c master.h master.c \
-	util.c sysinfo.c netif.c
+	cli.h cli.c util.c sysinfo.c netif.c
 
 sbin_PROGRAMS = ladvd
-ladvd_SOURCES = $(common_headers) main.h main.c cli.h cli.c
+ladvd_SOURCES = $(common_headers) main.h main.c
 ladvd_LDADD = $(noinst_LTLIBRARIES) $(EVENT_LIB) $(CAPNG_LDADD) $(CAP_LDADD)
 
 install-exec-hook:
