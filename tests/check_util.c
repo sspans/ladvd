@@ -51,8 +51,8 @@ START_TEST(test_my) {
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0, "message not logged");
 
     mark_point();
-    s = dup(fileno(stderr));
-    close(fileno(stderr));
+    s = dup(STDERR_FILENO);
+    close(STDERR_FILENO);
     fail_if(socketpair(AF_UNIX, SOCK_STREAM, 0, spair) == -1,
 		    "socketpair creation failed");
     options &= ~OPT_DAEMON;

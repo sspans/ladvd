@@ -83,9 +83,9 @@ void master_init(int reqfd, int msgfd, pid_t child) {
 
     // debug
     if (options & OPT_DEBUG) {
-	if (isatty(fileno(stdout)))
+	if (isatty(STDOUT_FILENO))
 	    my_fatal("please redirect stdout to tcpdump or a file");
-	dfd = fileno(stdout);
+	dfd = STDOUT_FILENO;
 	write_pcap_hdr(dfd);
 #if HAVE_LIBCAP_NG
     } else {

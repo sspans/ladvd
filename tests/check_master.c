@@ -357,7 +357,7 @@ START_TEST(test_master_open_close) {
     struct master_msg mreq = {};
 
     options |= OPT_DEBUG;
-    dfd = fileno(stdout);
+    dfd = STDOUT_FILENO;
 
     mark_point();
     mreq.index = 1;
@@ -397,7 +397,7 @@ START_TEST(test_master_socket) {
     options |= OPT_DEBUG;
     mreq.index = 1;
     strlcpy(mreq.name, "lo0", IFNAMSIZ);
-    dfd = fileno(stdout);
+    dfd = STDOUT_FILENO;
 
     mark_point();
     master_open(&mreq);
@@ -539,7 +539,7 @@ START_TEST(test_master_recv) {
 
     options |= OPT_DEBUG;
     loglevel = INFO;
-    dfd = fileno(stdout);
+    dfd = STDOUT_FILENO;
 
     mark_point();
     mreq.index = 1;

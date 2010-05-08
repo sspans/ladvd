@@ -82,20 +82,20 @@ START_TEST(test_cli_main) {
     check_wrap_fake = 0;
     now = time(NULL);
 
-    ofd[0] = dup(fileno(stdin));
-    close(fileno(stdin));
+    ofd[0] = dup(STDIN_FILENO);
+    close(STDIN_FILENO);
     fail_if(socketpair(AF_UNIX, SOCK_STREAM, 0, &spair[0]) == -1,
 	    "socketpair creation failed");
     setsockopt(spair[0], SOL_SOCKET, SO_RCVBUF, &sbuf, sizeof(sbuf));
     setsockopt(spair[1], SOL_SOCKET, SO_SNDBUF, &sbuf, sizeof(sbuf));
 
-    ofd[1] = dup(fileno(stdout));
-    close(fileno(stdout));
+    ofd[1] = dup(STDOUT_FILENO);
+    close(STDOUT_FILENO);
     fail_if(socketpair(AF_UNIX, SOCK_STREAM, 0, &spair[2]) == -1,
 	    "socketpair creation failed");
 
-    ofd[2] = dup(fileno(stderr));
-    close(fileno(stderr));
+    ofd[2] = dup(STDERR_FILENO);
+    close(STDERR_FILENO);
     fail_if(socketpair(AF_UNIX, SOCK_STREAM, 0, &spair[4]) == -1,
 	    "socketpair creation failed");
 
@@ -243,8 +243,8 @@ START_TEST(test_batch_write) {
     ssize_t len;
     char buf[1024];
 
-    ostdout= dup(fileno(stdout));
-    close(fileno(stdout));
+    ostdout = dup(STDOUT_FILENO);
+    close(STDOUT_FILENO);
     fail_if(socketpair(AF_UNIX, SOCK_STREAM, 0, spair) == -1,
 	    "socketpair creation failed");
 
@@ -284,8 +284,8 @@ START_TEST(test_cli) {
     struct master_msg msg = {};
     char buf[1024];
 
-    ostdout = dup(fileno(stdout));
-    close(fileno(stdout));
+    ostdout = dup(STDOUT_FILENO);
+    close(STDOUT_FILENO);
     fail_if(socketpair(AF_UNIX, SOCK_STREAM, 0, spair) == -1,
 	    "socketpair creation failed");
 
@@ -334,8 +334,8 @@ START_TEST(test_debug) {
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
-    ostdout = dup(fileno(stdout));
-    close(fileno(stdout));
+    ostdout = dup(STDOUT_FILENO);
+    close(STDOUT_FILENO);
     my_socketpair(spair);
     errstr = "check";
     my_log(CRIT, errstr);

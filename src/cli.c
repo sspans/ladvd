@@ -266,13 +266,13 @@ void cli_write(struct master_msg *msg, const uint16_t holdtime) {
 }
 
 void debug_header() {
-    if (isatty(fileno(stdout)))
+    if (isatty(STDOUT_FILENO))
 	my_fatal("please redirect stdout to tcpdump or a file");
-    write_pcap_hdr(fileno(stdout));
+    write_pcap_hdr(STDOUT_FILENO);
 }
 
 void debug_write(struct master_msg *msg, const uint16_t holdtime) {
-    write_pcap_rec(fileno(stdout), msg);
+    write_pcap_rec(STDOUT_FILENO, msg);
 }
 
 #if HAVE_EVHTTP_H
