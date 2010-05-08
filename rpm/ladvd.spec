@@ -8,7 +8,7 @@
 
 Name:		ladvd
 BuildRequires:  libevent-devel
-BuildRequires:  libcap-devel
+BuildRequires:  libcap-ng-devel or libcap-devel
 BuildRequires:  pkgconfig
 BuildRequires:  check-devel
 Version:	0.8.6
