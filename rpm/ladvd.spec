@@ -8,7 +8,7 @@
 
 Name:		ladvd
 BuildRequires:  libevent-devel
-%if 0%{?fedora_version} >= 12
+%if 0%{?fedora} >= 12
 BuildRequires:  libcap-ng-devel
 %else
 BuildRequires:  libcap-devel
