@@ -29,7 +29,8 @@ build-stamp:  config.status
 
 	# Add here commands to compile the package.
 	$(MAKE)
-	#docbook-to-man debian/ladvd.sgml > ladvd.1
+
+	$(MAKE) check
 
 	touch $@
 
