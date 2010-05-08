@@ -8,7 +8,11 @@
 
 Name:		ladvd
 BuildRequires:  libevent-devel
-BuildRequires:  libcap-ng-devel or libcap-devel
+%if 0%{?fedora_version} >= 12
+BuildRequires:  libcap-ng-devel
+%else
+BuildRequires:  libcap-devel
+%endif
 BuildRequires:  pkgconfig
 BuildRequires:  check-devel
 Version:	0.8.6
