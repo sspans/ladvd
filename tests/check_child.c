@@ -455,7 +455,11 @@ Suite * child_suite (void) {
 
     TAILQ_INIT(&netifs);
     TAILQ_INIT(&mqueue);
+    memset(&sysinfo, 0, sizeof(struct sysinfo));
+    WRAP_FATAL_START();
     sysinfo_fetch(&sysinfo);
+    WRAP_FATAL_END();
+    strlcpy(sysinfo.hostname, "myhostname", sizeof(sysinfo.hostname));
 
     // child test case
     TCase *tc_child = tcase_create("child");

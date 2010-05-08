@@ -32,18 +32,9 @@ START_TEST(test_proto_packet) {
     struct master_msg msg = {};
     struct netif master, netif;
     struct sysinfo sysinfo = {};
-    const char *errstr = NULL;
 
     mark_point();
-    errstr = "check";
-    my_log(CRIT, errstr);
-    WRAP_FATAL_START();
-    sysinfo_fetch(&sysinfo);
-    WRAP_FATAL_END();
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
-        "incorrect message logged: %s", check_wrap_errstr);
-
-    mark_point();
+    strlcpy(sysinfo.uts_str, "Testing", sizeof(sysinfo.uts_str));
     sysinfo.cap_active = CAP_ROUTER;
     sysinfo.country[0] = 'Z';
     sysinfo.country[1] = 'Z';
