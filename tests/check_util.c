@@ -59,6 +59,7 @@ START_TEST(test_my) {
     errstr = "test_my: debug\n";
     memset(buf, 0, 1024);
     my_log(INFO, "debug");
+    fflush(stderr);
     len = read(spair[1], buf, 1024);
     fail_unless(strcmp(buf, errstr) == 0, "invalid output: %s", buf);
     options |= OPT_DAEMON;

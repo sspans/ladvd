@@ -61,7 +61,7 @@ START_TEST(test_cli_main) {
     ssize_t len;
     char buf[1024];
     struct master_msg msg = {};
-    int sbuf = MASTER_MSG_MAX * 10;
+    int sobuf = MASTER_MSG_MAX * 10;
     time_t now;
 
     argc = 6;
@@ -86,18 +86,23 @@ START_TEST(test_cli_main) {
     close(STDIN_FILENO);
     fail_if(socketpair(AF_UNIX, SOCK_STREAM, 0, &spair[0]) == -1,
 	    "socketpair creation failed");
-    setsockopt(spair[0], SOL_SOCKET, SO_RCVBUF, &sbuf, sizeof(sbuf));
-    setsockopt(spair[1], SOL_SOCKET, SO_SNDBUF, &sbuf, sizeof(sbuf));
+    setsockopt(spair[0], SOL_SOCKET, SO_RCVBUF, &sobuf, sizeof(sobuf));
+    setsockopt(spair[1], SOL_SOCKET, SO_SNDBUF, &sobuf, sizeof(sobuf));
 
+    sobuf = 1024;
     ofd[1] = dup(STDOUT_FILENO);
     close(STDOUT_FILENO);
     fail_if(socketpair(AF_UNIX, SOCK_STREAM, 0, &spair[2]) == -1,
 	    "socketpair creation failed");
+    setsockopt(spair[2], SOL_SOCKET, SO_SNDBUF, &sobuf, sizeof(sobuf));
+    setsockopt(spair[3], SOL_SOCKET, SO_RCVBUF, &sobuf, sizeof(sobuf));
 
     ofd[2] = dup(STDERR_FILENO);
     close(STDERR_FILENO);
     fail_if(socketpair(AF_UNIX, SOCK_STREAM, 0, &spair[4]) == -1,
 	    "socketpair creation failed");
+    setsockopt(spair[4], SOL_SOCKET, SO_SNDBUF, &sobuf, sizeof(sobuf));
+    setsockopt(spair[5], SOL_SOCKET, SO_RCVBUF, &sobuf, sizeof(sobuf));
 
     mark_point();
     memset(buf, 0, 1024);
@@ -105,6 +110,7 @@ START_TEST(test_cli_main) {
     WRAP_FATAL_START();
     cli_main(argc, argv);
     WRAP_FATAL_END();
+    fflush(stderr);
     len = read(spair[5], buf, 1024);
     fail_if(strstr(buf, "Usage:") == NULL,
     	    "invalid usage output: %s", buf);
@@ -117,6 +123,7 @@ START_TEST(test_cli_main) {
     WRAP_FATAL_START();
     cli_main(argc, argv);
     WRAP_FATAL_END();
+    fflush(stderr);
     len = read(spair[5], buf, 1024);
     fail_if(strstr(buf, "Usage:") == NULL,
     	    "invalid usage output: %s", buf);
@@ -131,6 +138,7 @@ START_TEST(test_cli_main) {
     WRAP_FATAL_START();
     cli_main(argc, argv);
     WRAP_FATAL_END();
+    fflush(stderr);
     len = read(spair[5], buf, 1024);
     fail_unless (strncmp(buf, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", buf);
@@ -145,6 +153,7 @@ START_TEST(test_cli_main) {
     WRAP_FATAL_START();
     cli_main(argc, argv);
     WRAP_FATAL_END();
+    fflush(stderr);
     len = read(spair[5], buf, 1024);
     fail_unless (strncmp(buf, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", buf);
@@ -213,6 +222,7 @@ START_TEST(test_cli_main) {
     WRAP_FATAL_START();
     cli_main(argc, argv);
     WRAP_FATAL_END();
+    fflush(stderr);
     len = read(spair[5], buf, 1024);
     fail_unless (strncmp(buf, errstr, strlen(errstr)) == 0,
     	"incorrect message logged: %s", buf);
@@ -242,15 +252,19 @@ START_TEST(test_batch_write) {
     int ostdout, spair[2];
     ssize_t len;
     char buf[1024];
+    int sobuf = 1024;
 
     ostdout = dup(STDOUT_FILENO);
     fail_if(ostdout == -1, "dup failed: %s", strerror(errno));
     fail_if(close(STDOUT_FILENO) == -1, "close failed: %s", strerror(errno));
     fail_if(socketpair(AF_UNIX, SOCK_STREAM, 0, spair) == -1,
 	    "socketpair creation failed: %s", strerror(errno));
+    setsockopt(spair[0], SOL_SOCKET, SO_SNDBUF, &sobuf, sizeof(sobuf));
+    setsockopt(spair[1], SOL_SOCKET, SO_RCVBUF, &sobuf, sizeof(sobuf));
 
     mark_point();
     batch_write(&msg, 42);
+    fflush(stdout);
     len = read(spair[1], buf, 1024);
     fail_if(strstr(buf, "INTERFACE0=") != buf,
 	    "invalid batch_write output");
@@ -264,6 +278,7 @@ START_TEST(test_batch_write) {
     msg.peer[PEER_HOSTNAME] = strdup("router");
     msg.peer[PEER_PORTNAME] = strdup("Fas'tEthernet42/64");
     batch_write(&msg, 42);
+    fflush(stdout);
     len = read(spair[1], buf, 1024);
     fail_if(strstr(buf, "INTERFACE1=") != buf,
 	    "invalid batch_write output");
@@ -284,15 +299,19 @@ START_TEST(test_cli) {
     ssize_t len;
     struct master_msg msg = {};
     char buf[1024];
+    int sobuf = 1024;
 
     ostdout = dup(STDOUT_FILENO);
     fail_if(ostdout == -1, "dup failed: %s", strerror(errno));
     fail_if(close(STDOUT_FILENO) == -1, "close failed: %s", strerror(errno));
     fail_if(socketpair(AF_UNIX, SOCK_STREAM, 0, spair) == -1,
 	    "socketpair creation failed: %s", strerror(errno));
+    setsockopt(spair[0], SOL_SOCKET, SO_SNDBUF, &sobuf, sizeof(sobuf));
+    setsockopt(spair[1], SOL_SOCKET, SO_RCVBUF, &sobuf, sizeof(sobuf));
 
     mark_point();
     cli_header();
+    fflush(stdout);
     len = read(spair[1], buf, 1024);
     fail_if(strstr(buf, "Capability Codes:") != buf,
 	    "invalid cli_header output");
@@ -305,6 +324,7 @@ START_TEST(test_cli) {
     msg.peer[PEER_HOSTNAME] = strdup("router.local");
     msg.peer[PEER_PORTNAME] = strdup("TenGigabitEthernet42/64");
     cli_write(&msg, 42);
+    fflush(stdout);
     len = read(spair[1], buf, 1024);
     fail_if(strstr(buf, "router") != buf,
 	    "invalid cli_write output");
@@ -346,6 +366,7 @@ START_TEST(test_debug) {
 
     mark_point();
     debug_header();
+    fflush(stdout);
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
         "incorrect message logged: %s", check_wrap_errstr);
     len = read(spair[1], &pcap_hdr, sizeof(pcap_hdr));
@@ -361,6 +382,7 @@ START_TEST(test_debug) {
     mark_point();
     msg.len = ETHER_MIN_LEN;
     debug_write(&msg, 0);
+    fflush(stdout);
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
         "incorrect message logged: %s", check_wrap_errstr);
     len = read(spair[1], buf, 1024);
