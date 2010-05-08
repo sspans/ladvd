@@ -326,13 +326,15 @@ START_TEST(test_debug) {
     char buf[1024];
 
     mark_point();
-    errstr = "please redirect stdout to tcpdump or a file";
-    my_log(CRIT, "check");
-    WRAP_FATAL_START();
-    debug_header();
-    WRAP_FATAL_END();
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
-	"incorrect message logged: %s", check_wrap_errstr);
+    if (isatty(STDOUT_FILENO)) { 
+	errstr = "please redirect stdout to tcpdump or a file";
+	my_log(CRIT, "check");
+	WRAP_FATAL_START();
+	debug_header();
+	WRAP_FATAL_END();
+	fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	    "incorrect message logged: %s", check_wrap_errstr);
+    }
 
     ostdout = dup(STDOUT_FILENO);
     close(STDOUT_FILENO);
