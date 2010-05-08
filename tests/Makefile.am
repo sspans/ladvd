@@ -20,7 +20,7 @@ LDADD = $(check_LTLIBRARIES) $(top_builddir)/src/libmisc.la \
     $(top_builddir)/src/libproto.la $(top_builddir)/src/libcompat.la \
     $(EVENT_LIB) $(CAPNG_LDADD) $(CAP_LDADD) @CHECK_LIBS@
 common_headers = $(top_srcdir)/src/common.h $(top_srcdir)/src/util.h \
-	    $(top_srcdir)/proto/protos.h
+	    $(top_srcdir)/src/proto/protos.h
 
 check_compat_SOURCES = check_compat.c $(top_srcdir)/src/compat/compat.h
 check_util_SOURCES = check_util.c $(common_headers)
