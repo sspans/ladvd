@@ -54,7 +54,7 @@ make check
 rm -rf %{buildroot}
 make DESTDIR=%{buildroot} install-strip
 rm -rf %{buildroot}%{_docdir}/%{name}
-install -D -m 755 %{SOURCE1} %{buildroot}%{_initddir}/%{name}
+install -D -m 755 %{SOURCE1} %{buildroot}%{_initrddir}/%{name}
 %if 0%{?suse_version}
     install -D -m 0644 %{SOURCE2} %{buildroot}/var/adm/fillup-templates/sysconfig.%{name}
 %else
@@ -113,7 +113,7 @@ fi
 %else
 %config(noreplace) %{_sysconfdir}/sysconfig/%{name}
 %endif
-%{_initddir}/%{name}
+%{_initrddir}/%{name}
 %{_sbindir}/%{name}
 %{_sbindir}/%{name}c
 %{_mandir}/man8/%{name}.8*
