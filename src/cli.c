@@ -208,7 +208,7 @@ out:
     exit(status);
 }
 
-inline void swapchr(char *str, const int c, const int d) {
+static inline void swapchr(char *str, const int c, const int d) {
     if (!str)
 	return;
 
