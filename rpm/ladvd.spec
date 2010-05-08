@@ -19,7 +19,7 @@ Version:	0.8.6
 Release:	1
 License:	ISC
 URL:		http://www.blinkenlights.nl/software/ladvd/
-Source0:	ladvd-0.8.6.tar.gz
+Source0:	ladvd-%{version}.tar.gz
 Source1:        ladvd.init
 Source2:        ladvd.sysconfig
 Group:          Productivity/Networking/System
