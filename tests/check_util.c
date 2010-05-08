@@ -31,8 +31,10 @@ uint32_t options = OPT_DAEMON | OPT_CHECK;
 
 START_TEST(test_my) {
     char *ptr = NULL;
-    int s = -1;
+    int s = -1, spair[2];
     const char *errstr = NULL;
+    char buf[1024];
+    ssize_t len;
 
     mark_point();
     loglevel = INFO;
@@ -42,15 +44,29 @@ START_TEST(test_my) {
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
+    mark_point();
     loglevel = DEBUG;
     errstr = "0123456789";
     my_log(INFO, errstr);
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0, "message not logged");
 
+    mark_point();
+    s = dup(fileno(stderr));
+    close(fileno(stderr));
+    fail_if(socketpair(AF_UNIX, SOCK_STREAM, 0, spair) == -1,
+		    "socketpair creation failed");
     options &= ~OPT_DAEMON;
+    errstr = "test_my: debug\n";
     my_log(INFO, "debug");
+    len = read(spair[1], buf, 1024);
+    fail_unless(strcmp(buf, errstr) == 0, "invalid output: %s", buf);
     options |= OPT_DAEMON;
+    len = dup(s);
+    close(s);
+    close(spair[0]);
+    close(spair[1]);
 
+    mark_point();
     WRAP_FATAL_START();
     my_fatal("error");
     WRAP_FATAL_END();
