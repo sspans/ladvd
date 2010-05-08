@@ -117,6 +117,7 @@ fi
 %{_sbindir}/%{name}
 %{_sbindir}/%{name}c
 %{_mandir}/man8/%{name}.8*
+%{_mandir}/man8/%{name}c.8*
 
 
 %changelog
