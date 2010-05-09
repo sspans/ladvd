@@ -42,6 +42,7 @@ void child_init(int reqfd, int msgfd, int ifc, char *ifl[],
     extern int msock;
     int csock = -1;
     struct sockaddr_un sun;
+    mode_t old_umask;
 
     sargc = ifc;
     sargv = ifl;
@@ -67,6 +68,8 @@ void child_init(int reqfd, int msgfd, int ifc, char *ifl[],
 	sun.sun_family = AF_UNIX;
 	strlcpy(sun.sun_path, PACKAGE_SOCKET, sizeof(sun.sun_path));
 
+	old_umask = umask(S_IXUSR|S_IRWXG|S_IRWXO);
+
 	if ((unlink(PACKAGE_SOCKET) == -1) && (errno != ENOENT))
 	    my_fatal("failed to remove " PACKAGE_SOCKET ": %s",
 		strerror(errno));
@@ -77,12 +80,14 @@ void child_init(int reqfd, int msgfd, int ifc, char *ifl[],
 	    my_fatal("failed to listen on " PACKAGE_SOCKET ": %s",
 		strerror(errno));
 
-	if (fchmod(csock, S_IRUSR|S_IRGRP) == -1)
+	if (chmod(PACKAGE_SOCKET, S_IRWXU|S_IRWXG) == -1)
 	    my_fatal("failed to chmod " PACKAGE_SOCKET ": %s",
 		strerror(errno));
-	if (fchown(csock, -1, pwd->pw_gid) == -1)
+	if (chown(PACKAGE_SOCKET, -1, pwd->pw_gid) == -1)
 	    my_fatal("failed to chown " PACKAGE_SOCKET ": %s",
 		strerror(errno));
+
+	umask(old_umask);
     }
 
     // drop privileges
