@@ -148,7 +148,7 @@ void cli_main(int argc, char *argv[]) {
     strlcpy(sun.sun_path, PACKAGE_SOCKET, sizeof(sun.sun_path));
 
     if (connect(fd, (struct sockaddr *)&sun, sizeof(sun)) == -1) {
-	if (errno == EPERM)
+	if (errno == EACCES)
 	    my_fatal("please add yourself to the " PACKAGE_USER " group");
 	else
 	    my_fatal("failed to open " PACKAGE_SOCKET ": %s", strerror(errno));
