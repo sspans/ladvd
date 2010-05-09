@@ -138,7 +138,7 @@ START_TEST(test_my) {
 END_TEST
 
 START_TEST(test_my_mreq) {
-    struct master_req mreq;
+    struct master_req mreq = {};
     int spair[2];
     extern int msock;
     size_t ret;
@@ -184,16 +184,16 @@ START_TEST(test_netif) {
     struct nhead nqueue;
     struct nhead *netifs = &nqueue;
     struct netif tnetifs[6];
-    struct netif *netif, *subif;
+    struct netif *netif = NULL, *subif = NULL;
     struct mhead mqueue;
-    struct master_msg *msg = NULL;
+    struct master_msg *msg = NULL, *nmsg = NULL;
     struct master_req *mreq = NULL;
     char *descr = NULL;
     int spair[2];
     ssize_t len;
     extern int msock;
 
-    TAILQ_INIT(netifs);
+    TAILQ_INIT(&nqueue);
     TAILQ_INIT(&mqueue);
     my_socketpair(spair);
 
@@ -475,6 +475,16 @@ START_TEST(test_netif) {
 	"incorrect message length: %d", mreq->len);
     fail_unless (strncmp(mreq->buf, descr, IFDESCRSIZE) == 0,
 	"incorrect interface description: %s", mreq->buf);
+
+    free(mreq);
+    TAILQ_FOREACH_SAFE(msg, &mqueue, entries, nmsg) {
+	TAILQ_REMOVE(&mqueue, msg, entries);
+	peer_free(msg->peer);
+	free(msg);
+    }
+    TAILQ_FOREACH_SAFE(netif, &nqueue, entries, subif) {
+	TAILQ_REMOVE(&nqueue, netif, entries);
+    }
 }
 END_TEST
 
@@ -519,6 +529,8 @@ START_TEST(test_read_line) {
 
     fail_unless (strncmp(line, data, strlen(data)) == 0,
 	"invalid line returned");
+
+    free(path);
 }
 END_TEST
 
@@ -552,7 +564,7 @@ END_TEST
 START_TEST(test_my_priv) {
     struct passwd *pwd;
     const char *errstr = NULL;
-    char path[MAXPATHLEN + 1];
+    char path[MAXPATHLEN + 1] = {};
 
     loglevel = INFO;
     pwd = getpwnam("root");
