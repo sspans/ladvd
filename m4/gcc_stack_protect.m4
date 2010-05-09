@@ -62,6 +62,7 @@ AC_DEFUN([GCC_STACK_PROTECT_CC],[
 	    #include <stdio.h>
 	    #include <stdarg.h>
 	], [
+	    char s[80];
 	    va_list ap;
 	    vprintf("test", ap);
 	], ssp_cv_cc=yes, ssp_cv_cc=no)
