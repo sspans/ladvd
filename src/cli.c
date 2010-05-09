@@ -208,6 +208,7 @@ out:
     if (modes[mode].dispatch)
 	modes[mode].dispatch();
 
+    free(msg);
     exit(status);
 }
 
