@@ -37,6 +37,7 @@ void child_init(int reqfd, int msgfd, int ifc, char *ifl[],
 
     // events
     struct event evs, evq, eva;
+    struct event ev_sigterm, ev_sigint;
 
     // master socket
     extern int msock;
@@ -116,6 +117,11 @@ void child_init(int reqfd, int msgfd, int ifc, char *ifl[],
     if (options & OPT_RECV) {
 	event_set(&evq, msgfd, EV_READ|EV_PERSIST, (void *)child_queue, NULL);
 	event_add(&evq, NULL);
+
+	signal_set(&ev_sigint, SIGINT, child_free, NULL);
+	signal_set(&ev_sigterm, SIGTERM, child_free, NULL);
+	signal_add(&ev_sigint, NULL);
+	signal_add(&ev_sigterm, NULL);
     }
 
     // accept cli connections
@@ -358,6 +364,17 @@ void child_expire() {
 
 	subif->update = 0;
     }
+}
+
+void child_free(int sig, short event, void *arg) {
+    struct master_msg *msg = NULL, *nmsg = NULL;
+
+    TAILQ_FOREACH_SAFE(msg, &mqueue, entries, nmsg) {
+	TAILQ_REMOVE(&mqueue, msg, entries);
+	peer_free(msg->peer);
+	free(msg);
+    }
+    exit(EXIT_SUCCESS);
 }
 
 void child_cli_accept(int socket, short event) {

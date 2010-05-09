@@ -28,6 +28,7 @@ struct child_session {
 void child_send(int fd, short event, void *);
 void child_queue(int fd, short event);
 void child_expire();
+void child_free(int sig, short event, void *);
 void child_cli_accept(int socket, short event);
 void child_cli_write(int fd, short event, struct child_session *);
 
