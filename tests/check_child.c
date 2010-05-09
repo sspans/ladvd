@@ -107,6 +107,7 @@ START_TEST(test_child_init) {
     TAILQ_FOREACH_SAFE(netif, &netifs, entries, nnetif) {
 	TAILQ_REMOVE(&netifs, netif, entries);
     }
+    close(spair[0]);
 }
 END_TEST
 
