@@ -301,7 +301,8 @@ void netif_descr(struct netif *netif, struct mhead *mqueue) {
     struct master_msg *qmsg = NULL;
     struct master_req *mreq = NULL;
     char *peer = NULL, *port = NULL;
-    char descr[IFDESCRSIZE], paddr[ETHER_ADDR_LEN];
+    char descr[IFDESCRSIZE] = {};
+    char paddr[ETHER_ADDR_LEN] = {};
     uint16_t peers = 0;
 
     TAILQ_FOREACH(qmsg, mqueue, entries) {
