@@ -51,6 +51,7 @@ void read_packet(struct master_msg *msg, const char *suffix) {
     msg->len = MAX(msg->len, ETHER_MIN_LEN);
 
     free(path);
+    close(fd);
 }
 
 

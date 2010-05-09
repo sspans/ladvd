@@ -400,6 +400,7 @@ void read_packet(struct master_msg *msg, const char *suffix) {
     msg->len = read(fd, msg->msg, ETHER_MAX_LEN);
 
     free(path);
+    close(fd);
 }
 
 START_TEST(test_lldp_decode) {
