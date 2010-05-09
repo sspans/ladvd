@@ -234,8 +234,8 @@ START_TEST(test_master_req) {
     rfd = rfd_byindex(&rawfds, 1);
     fail_unless (rfd != NULL, "rfd should be added to the queue");
     mreq.op = MASTER_CLOSE;
-    fd = dup(spair[1]);
-    rfd->fd = fd;
+    close(rfd->fd);
+    rfd->fd = dup(spair[1]);
     WRAP_WRITE(spair[0], &mreq, MASTER_REQ_LEN(mreq.len));
     close(spair[0]);
 
@@ -248,6 +248,8 @@ START_TEST(test_master_req) {
     fail_unless (close(fd) == -1, "rfd->fd should be closed");
     fail_unless (rfd_byindex(&rawfds, 1) == NULL,
     	"rfd should be removed from the queue");
+
+    close(spair[1]);
 }
 END_TEST
 
@@ -310,7 +312,6 @@ START_TEST(test_master_send) {
     master_open(&msg);
     rfd = rfd_byindex(&rawfds, 1);
     fail_unless (rfd != NULL, "rfd should be added to the queue");
-    rfd->fd = spair[1];
 
     // incorrect msend msg.len should be skipped
     mark_point();
@@ -339,6 +340,7 @@ START_TEST(test_master_send) {
 
     mark_point();
     errstr = "only -1 bytes written";
+    close(rfd->fd);
     rfd->fd = -1;
     options &= ~OPT_DEBUG;
     WRAP_WRITE(spair[0], &msg, MASTER_MSG_LEN(msg.len)); 
@@ -347,8 +349,10 @@ START_TEST(test_master_send) {
 	"incorrect message logged: %s", check_wrap_errstr);
 
     options |= OPT_DEBUG;
-    rfd = rfd_byindex(&rawfds, 1);
-    master_close(rfd);
+
+    close(spair[0]);
+    close(spair[1]);
+    rfd_closeall(&rawfds);
 }
 END_TEST
 
@@ -518,6 +522,8 @@ START_TEST(test_master_multi) {
 
     // reset
     check_wrap_fake = 0;
+    close(spair[0]);
+    close(spair[1]);
 }
 END_TEST
 
@@ -557,6 +563,7 @@ START_TEST(test_master_recv) {
     // test a failing receive
     mark_point();
     errstr = "receiving message failed";
+    close(rfd->fd);
     rfd->fd = -1;
     WRAP_FATAL_START();
     master_recv(rfd->fd, event, rfd);
@@ -633,8 +640,7 @@ START_TEST(test_master_recv) {
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
-    rfd = rfd_byindex(&rawfds, 1);
-    master_close(rfd);
+    rfd_closeall(&rawfds);
 }
 END_TEST
 
