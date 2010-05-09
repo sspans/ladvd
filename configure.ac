@@ -1,7 +1,7 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_INIT([ladvd], [0.8.6], [sten@blinkenlights.nl])
+AC_INIT([ladvd], [0.9.0], [sten@blinkenlights.nl])
 AC_CANONICAL_TARGET
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([src/config.h.in])

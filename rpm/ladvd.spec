@@ -15,7 +15,7 @@ BuildRequires:  libcap-devel
 %endif
 BuildRequires:  pkgconfig
 BuildRequires:  check-devel
-Version:	0.8.6
+Version:	0.9.0
 Release:	1
 License:	ISC
 URL:		http://www.blinkenlights.nl/software/ladvd/
