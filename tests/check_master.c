@@ -105,8 +105,8 @@ END_TEST
 
 START_TEST(test_master_req) {
     struct master_req mreq;
-    struct master_msg msg;
-    struct ether_hdr ether;
+    struct master_msg msg = {};
+    struct ether_hdr ether = {};
     static uint8_t lldp_dst[] = LLDP_MULTICAST_ADDR;
     struct rawfd *rfd;
     const char *errstr = NULL;
@@ -292,8 +292,8 @@ END_TEST
 
 START_TEST(test_master_send) {
     struct rawfd *rfd;
-    struct master_msg msg;
-    struct ether_hdr ether;
+    struct master_msg msg = {};
+    struct ether_hdr ether = {};
     static uint8_t lldp_dst[] = LLDP_MULTICAST_ADDR;
     int spair[2];
     const char *errstr;
@@ -527,13 +527,13 @@ START_TEST(test_master_recv) {
     int spair[2];
     short event = 0;
     const char *errstr = NULL;
-    char buf[ETHER_MAX_LEN * 2];
+    char buf[ETHER_MAX_LEN * 2] = {};
     char *msg;
     int hlen = 0;
 #ifdef HAVE_NET_BPF_H
     struct bpf_hdr *bhp, *ebhp;
 #endif /* HAVE_NET_BPF_H */
-    struct ether_hdr ether;
+    struct ether_hdr ether = {};
     static uint8_t lldp_dst[] = CDP_MULTICAST_ADDR;
 
 
