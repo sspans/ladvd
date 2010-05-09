@@ -63,9 +63,9 @@ START_TEST(test_my) {
     len = read(spair[1], buf, 1024);
     fail_unless(strcmp(buf, errstr) == 0, "invalid output: %s", buf);
     options |= OPT_DAEMON;
+    close(spair[0]);
     len = dup(s);
     close(s);
-    close(spair[0]);
     close(spair[1]);
 
     mark_point();
@@ -485,6 +485,9 @@ START_TEST(test_netif) {
     TAILQ_FOREACH_SAFE(netif, &nqueue, entries, subif) {
 	TAILQ_REMOVE(&nqueue, netif, entries);
     }
+
+    close(spair[0]);
+    close(spair[1]);
 }
 END_TEST
 
@@ -783,6 +786,9 @@ START_TEST(test_pcap) {
     len = read(spair[1], buf, 1024);
     fail_unless(len == (sizeof(pcaprec_hdr_t) + msg.len),
 		"failed to read pcap record");
+
+    close(spair[0]);
+    close(spair[1]);
 }
 END_TEST
 
