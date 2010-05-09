@@ -8,8 +8,9 @@ ladvdc \- display link layer advertisements
 .SH DESCRIPTION
 .B ladvdc
 displays link layer advertisements received by
-.BR ladvd (8).
-Optionally a list of protocols and/or interfaces can be supplied to limit the amount of information displayed.
+.BR ladvd (8)
+running in receive mode (via -a or -z).
+Optionally a list of protocols and/or interfaces can be supplied to limit the amount of information displayed. Only users in the PACKAGE_USER group are allowed to connect to the daemon. 
 .SH OPTIONS
 .IP -b
 Print output in a format suitable for inclusion in shell scripts.

@@ -19,7 +19,7 @@ will recognize bundled interfaces (bridges, bonding) and use these to transmit a
 command-line. The only reason for specifying interfaces is to explicitly exclude a particular interface.
 .SH OPTIONS
 .IP -a
-Auto-enable protocols based on received packets.
+Auto-enable protocols based on received packets (also enables receive mode).
 .IP -d
 Dump pcap-compatible packets to stdout which can be piped to tcpdump (via "| tcpdump -r -") or redirected to a file for further analysis.
 .IP -f
@@ -41,7 +41,7 @@ Increase logging verbosity.
 .IP -w
 Use wireless interfaces.
 .IP -z
-Save received peer information in interface descriptions (requires SIOCSIFDESCR support)
+Save received peer information in interface descriptions (requires SIOCSIFDESCR support). This also enables receive mode.
 .IP "-c <CC>"
 Specify a two-letter ISO 3166 country code (required for LLDP location support).
 .IP "-l <location>"
