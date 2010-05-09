@@ -53,6 +53,11 @@ void read_packet(struct master_msg *msg, const char *suffix) {
     free(path);
 }
 
+
+void fake_log_cb(int severity, const char *msg) {
+}
+
+
 START_TEST(test_cli_main) {
     const char *errstr = NULL;
     int ofd[3], spair[6];
@@ -410,6 +415,7 @@ START_TEST(test_http) {
 
     http_host = "localhost";
     http_path = "/cgi-bin/test.cgi";
+    event_set_log_callback(&fake_log_cb);
 
     mark_point();
     base = event_init();
