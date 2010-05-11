@@ -69,6 +69,9 @@ START_TEST(test_cli_main) {
     struct master_msg msg = {};
     int sobuf = MASTER_MSG_MAX * 10;
     time_t now;
+#if HAVE_EVHTTP_H
+    extern char *http_host, *http_path;
+#endif /* HAVE_EVHTTP_H */
 
     argc = 6;
     argv[0] = PACKAGE_CLI;
@@ -134,6 +137,14 @@ START_TEST(test_cli_main) {
     fail_if(strstr(buf, "Usage:") == NULL,
     	    "invalid usage output: %s", buf);
 
+    // cleanup
+#if HAVE_EVHTTP_H
+    free(http_host);
+    http_host = NULL;
+    free(http_path);
+    http_path = NULL;
+#endif /* HAVE_EVHTTP_H */
+
     // XXX: we asume ifindex 1 exists
     mark_point();
     memset(buf, 0, 1024);
@@ -149,6 +160,14 @@ START_TEST(test_cli_main) {
     fail_unless (strncmp(buf, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", buf);
 
+    // cleanup
+#if HAVE_EVHTTP_H
+    free(http_host);
+    http_host = NULL;
+    free(http_path);
+    http_path = NULL;
+#endif /* HAVE_EVHTTP_H */
+
     mark_point();
     memset(buf, 0, 1024);
     optind = 1;
@@ -163,6 +182,14 @@ START_TEST(test_cli_main) {
     len = read(spair[5], buf, 1024);
     fail_unless (strncmp(buf, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", buf);
+
+    // cleanup
+#if HAVE_EVHTTP_H
+    free(http_host);
+    http_host = NULL;
+    free(http_path);
+    http_path = NULL;
+#endif /* HAVE_EVHTTP_H */
 
     // valid lldp
     mark_point();
@@ -233,6 +260,15 @@ START_TEST(test_cli_main) {
     fail_unless (strncmp(buf, errstr, strlen(errstr)) == 0,
     	"incorrect message logged: %s", buf);
 
+    // cleanup
+#if HAVE_EVHTTP_H
+    free(http_host);
+    http_host = NULL;
+    free(http_path);
+    http_path = NULL;
+#endif /* HAVE_EVHTTP_H */
+
+    // close fds
     close(spair[0]);
     close(spair[1]);
     len = dup(ofd[0]);
@@ -501,6 +537,8 @@ START_TEST(test_http) {
     evcon = evhttp_connection_new(http_host, 80);
     http_dispatch();
 
+    evhttp_free(httpd);
+    event_base_free(base);
     peer_free(msg.peer);
 }
 END_TEST

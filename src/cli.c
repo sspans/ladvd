@@ -97,6 +97,8 @@ void cli_main(int argc, char *argv[]) {
 		break;
 #if HAVE_EVHTTP_H
 	    case 'p':
+		if (http_host)
+		    usage();
 		mode = MODE_HTTP;
 		if (strncmp(optarg, "http://", 7) == 0)
 		    optarg += 7;
@@ -324,6 +326,9 @@ void http_request(struct master_msg *msg, const uint16_t holdtime) {
     if (ret == -1)
 	my_fatal("asprintf failed");
 
+    free(peer_host);
+    free(peer_port);
+
     req = evhttp_request_new(http_reply, NULL);
     if (ret == -1)
 	my_fatal("failed to allocate HTTP request");
@@ -339,8 +344,6 @@ void http_request(struct master_msg *msg, const uint16_t holdtime) {
 	my_fatal("failed to create HTTP request");
     lreq = req;
 
-    free(peer_host);
-    free(peer_port);
     free(data);
 }
 
