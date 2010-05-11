@@ -122,9 +122,9 @@ START_TEST(test_cli_main) {
     	    "invalid usage output: %s", buf);
 
     mark_point();
+    options = OPT_DAEMON | OPT_CHECK;
     memset(buf, 0, 1024);
     argv[5] = "invalid";
-    options = OPT_DAEMON | OPT_CHECK;
     optind = 1;
     WRAP_FATAL_START();
     cli_main(argc, argv);
@@ -250,6 +250,7 @@ START_TEST(test_cli_main) {
 
     check_wrap_fail = 0;
     check_wrap_fake = 0;
+    options = OPT_DAEMON | OPT_CHECK;
 }
 END_TEST
 
