@@ -12,7 +12,7 @@ if HTTP_ENABLED
 	sed -e 's/^HTTP_POST //' -e s/PACKAGE_USER/@PACKAGE_USER@/ \
 		< @top_srcdir@/doc/$@.in > $@
 else
-	sed -e 's/^HTTP_POST .*/d' -e s/PACKAGE_USER/@PACKAGE_USER@/ \
+	sed -e '/^HTTP_POST .*/d' -e s/PACKAGE_USER/@PACKAGE_USER@/ \
 		< @top_srcdir@/doc/$@.in > $@
 endif
 
