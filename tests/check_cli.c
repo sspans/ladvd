@@ -436,6 +436,7 @@ START_TEST(test_http) {
     mark_point();
     strlcpy(msg.name, "eth0", IFNAMSIZ);
     msg.proto = PROTO_CDP;
+    msg.decode = (1 << PEER_HOSTNAME)|(1 << PEER_PORTNAME);
     msg.peer[PEER_HOSTNAME] = strdup("router");
     msg.peer[PEER_PORTNAME] = strdup("Fas'tEthernet42/64");
     http_request(&msg, 0);
@@ -498,6 +499,8 @@ START_TEST(test_http) {
     lreq = NULL;
     evcon = evhttp_connection_new(http_host, 80);
     http_dispatch();
+
+    peer_free(msg.peer);
 }
 END_TEST
 #endif /* HAVE_EVHTTP_H */
