@@ -1,12 +1,13 @@
 FOR 0.9.0:
+- make lintian happy
+- (linux) vlan detection
 - static functions?
 - restrict pointers?
-- (linux) vlan detection
-- make lintian happy
 
 FOR 1.0.0:
 
 CODE:
+- test multilevel interfaces
 - linux ifalias support
 - support macosx (package)
 - support solaris
