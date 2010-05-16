@@ -1,3 +1,8 @@
+FOR 0.9.0:
+- static functions?
+- restrict pointers?
+- (linux) vlan detection
+- make lintian happy
 
 FOR 1.0.0:
 
