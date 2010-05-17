@@ -39,6 +39,9 @@
 #include <net/bpf.h>
 #endif /* HAVE_NET_BPF_H */
 
+const char *ifname = NULL;
+unsigned int ifindex = 0;
+
 uint32_t options = OPT_DAEMON | OPT_CHECK;
 extern int dfd;
 extern int mfd;
@@ -156,7 +159,7 @@ START_TEST(test_master_req) {
     dfd = spair[1];
     options |= OPT_DEBUG;
     mreq.op = MASTER_CLOSE;
-    mreq.index = 1;
+    mreq.index = ifindex;
     mreq.len = 0;
     memcpy(ether.dst, lldp_dst, ETHER_ADDR_LEN);
     ether.type = htons(ETHERTYPE_LLDP);
@@ -173,27 +176,27 @@ START_TEST(test_master_req) {
 
     // test a correct CLOSE
     mark_point();
-    fail_unless (rfd_byindex(&rawfds, 1) == NULL,
+    fail_unless (rfd_byindex(&rawfds, ifindex) == NULL,
     	"the queue should be empty");
 
     options |= OPT_DEBUG;
-    msg.index = 1;
-    strlcpy(msg.name, "lo0", IFNAMSIZ);
+    msg.index = ifindex;
+    strlcpy(msg.name, ifname, IFNAMSIZ);
 
     master_open(&msg);
-    fail_unless (rfd_byindex(&rawfds, 1) != NULL,
+    fail_unless (rfd_byindex(&rawfds, ifindex) != NULL,
     	"rfd should be added to the queue");
 
     errstr = "check";
     my_log(CRIT, errstr);
     mreq.op = MASTER_CLOSE;
-    mreq.index = 1;
-    strlcpy(mreq.name, "lo0", IFNAMSIZ);
+    mreq.index = ifindex;
+    strlcpy(mreq.name, ifname, IFNAMSIZ);
     WRAP_WRITE(spair[0], &mreq, MASTER_REQ_LEN(mreq.len));
     master_req(spair[1], event);
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
-    fail_unless (rfd_byindex(&rawfds, 1) == NULL,
+    fail_unless (rfd_byindex(&rawfds, ifindex) == NULL,
     	"rfd should be removed from the queue");
  
     // test a correct ETHTOOL / DESCR
@@ -231,7 +234,7 @@ START_TEST(test_master_req) {
     // test a failing return message
     mark_point();
     master_open(&msg);
-    rfd = rfd_byindex(&rawfds, 1);
+    rfd = rfd_byindex(&rawfds, ifindex);
     fail_unless (rfd != NULL, "rfd should be added to the queue");
     mreq.op = MASTER_CLOSE;
     close(rfd->fd);
@@ -246,7 +249,7 @@ START_TEST(test_master_req) {
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (close(fd) == -1, "rfd->fd should be closed");
-    fail_unless (rfd_byindex(&rawfds, 1) == NULL,
+    fail_unless (rfd_byindex(&rawfds, ifindex) == NULL,
     	"rfd should be removed from the queue");
 
     close(spair[1]);
@@ -266,7 +269,7 @@ START_TEST(test_master_check) {
 #ifdef HAVE_LINUX_ETHTOOL_H
     mark_point();
     mreq.op = MASTER_ETHTOOL;
-    mreq.index = 1;
+    mreq.index = ifindex;
     mreq.len = sizeof(struct ethtool_cmd);
     fail_unless(master_check(&mreq) == EXIT_SUCCESS,
 	"MASTER_ETHTOOL check failed");
@@ -275,7 +278,7 @@ START_TEST(test_master_check) {
 #ifdef SIOCSIFDESCR
     mark_point();
     mreq.op = MASTER_DESCR;
-    mreq.index = 1;
+    mreq.index = ifindex;
     mreq.len = 0;
     fail_unless(master_check(&mreq) == EXIT_SUCCESS,
 	"MASTER_DESCR check failed");
@@ -304,13 +307,13 @@ START_TEST(test_master_send) {
     loglevel = INFO;
     options |= OPT_DEBUG;
     my_socketpair(spair);
-    msg.index = 1;
+    msg.index = ifindex;
     msg.len = ETHER_MIN_LEN;
-    strlcpy(msg.name, "lo0", IFNAMSIZ);
+    strlcpy(msg.name, ifname, IFNAMSIZ);
 
     dfd = spair[1];
     master_open(&msg);
-    rfd = rfd_byindex(&rawfds, 1);
+    rfd = rfd_byindex(&rawfds, ifindex);
     fail_unless (rfd != NULL, "rfd should be added to the queue");
 
     // incorrect msend msg.len should be skipped
@@ -364,19 +367,19 @@ START_TEST(test_master_open_close) {
     dfd = STDOUT_FILENO;
 
     mark_point();
-    mreq.index = 1;
-    strlcpy(mreq.name, "lo0", IFNAMSIZ);
+    mreq.index = ifindex;
+    strlcpy(mreq.name, ifname, IFNAMSIZ);
     master_open(&mreq);
-    rfd = rfd_byindex(&rawfds, 1);
+    rfd = rfd_byindex(&rawfds, ifindex);
     fail_unless (rfd != NULL,
     	"rfd should be added to the queue");
     master_close(rfd);
-    fail_unless (rfd_byindex(&rawfds, 1) == NULL,
+    fail_unless (rfd_byindex(&rawfds, ifindex) == NULL,
     	"rfd should be removed from the queue");
 
     mark_point();
     master_open(&mreq);
-    rfd = rfd_byindex(&rawfds, 1);
+    rfd = rfd_byindex(&rawfds, ifindex);
     fail_unless (rfd != NULL,
     	"rfd should be added to the queue");
 
@@ -399,13 +402,13 @@ START_TEST(test_master_socket) {
     const char *errstr;
 
     options |= OPT_DEBUG;
-    mreq.index = 1;
-    strlcpy(mreq.name, "lo0", IFNAMSIZ);
+    mreq.index = ifindex;
+    strlcpy(mreq.name, ifname, IFNAMSIZ);
     dfd = STDOUT_FILENO;
 
     mark_point();
     master_open(&mreq);
-    rfd = rfd_byindex(&rawfds, 1);
+    rfd = rfd_byindex(&rawfds, ifindex);
     fail_unless (rfd != NULL, "rfd should be added to the queue");
 
 #ifdef HAVE_NET_BPF_H
@@ -474,7 +477,7 @@ START_TEST(test_master_socket) {
     check_wrap_fake = 0;
     check_wrap_fail = 0;
 
-    rfd = rfd_byindex(&rawfds, 1);
+    rfd = rfd_byindex(&rawfds, ifindex);
     fail_unless (rfd != NULL,
     	"rfd not found");
     master_close(rfd);
@@ -490,8 +493,8 @@ START_TEST(test_master_multi) {
 
     my_socketpair(spair);
     rfd.fd = spair[1];
-    rfd.index = 1;
-    strlcpy(rfd.name, "lo0", IFNAMSIZ);
+    rfd.index = ifindex;
+    strlcpy(rfd.name, ifname, IFNAMSIZ);
 
     mark_point();
     options |= OPT_DEBUG;
@@ -548,10 +551,10 @@ START_TEST(test_master_recv) {
     dfd = STDOUT_FILENO;
 
     mark_point();
-    mreq.index = 1;
-    strlcpy(mreq.name, "lo0", IFNAMSIZ);
+    mreq.index = ifindex;
+    strlcpy(mreq.name, ifname, IFNAMSIZ);
     master_open(&mreq);
-    rfd = rfd_byindex(&rawfds, 1);
+    rfd = rfd_byindex(&rawfds, ifindex);
     fail_unless (rfd != NULL, "rfd should be added to the queue");
 
 #ifdef HAVE_NET_BPF_H
@@ -660,6 +663,13 @@ Suite * master_suite (void) {
     tcase_add_test(tc_master, test_master_multi);
     tcase_add_test(tc_master, test_master_recv);
     suite_add_tcase(s, tc_master);
+
+    ifname = "lo";
+    ifindex = if_nametoindex(ifname);
+    if (!ifindex) {
+	ifname = "lo0";
+	ifindex = if_nametoindex(ifname);
+    }
 
     return s;
 }

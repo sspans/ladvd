@@ -28,6 +28,7 @@
 #include "cli.h"
 #include "check_wrap.h"
 
+unsigned int ifindex = 0;
 uint32_t options = OPT_DAEMON | OPT_CHECK;
 
 void read_packet(struct master_msg *msg, const char *suffix) {
@@ -145,10 +146,12 @@ START_TEST(test_cli_main) {
     http_path = NULL;
 #endif /* HAVE_EVHTTP_H */
 
-    // XXX: we asume ifindex 1 exists
+    mark_point();
+    fail_unless(ifindex, "missing loopback interface");
+
     mark_point();
     memset(buf, 0, 1024);
-    argv[5] = if_indextoname(1, ifname);
+    argv[5] = if_indextoname(ifindex, ifname);
     optind = 1;
     errstr = "failed to create socket:";
     check_wrap_fail |= FAIL_SOCKET;
@@ -558,12 +561,16 @@ Suite * cli_suite (void) {
 #endif /* HAVE_EVHTTP_H */
     suite_add_tcase(s, tc_cli);
 
+    ifindex = if_nametoindex("lo");
+    if (!ifindex)
+	ifindex = if_nametoindex("lo0");
+
     return s;
 }
 
 int main (void) {
     int number_failed;
-    Suite *s = cli_suite ();
+    Suite *s = cli_suite();
     SRunner *sr = srunner_create (s);
     srunner_run_all (sr, CK_NORMAL);
     number_failed = srunner_ntests_failed (sr);

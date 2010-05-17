@@ -28,6 +28,9 @@
 #include "child.h"
 #include "check_wrap.h"
 
+const char *ifname = NULL;
+unsigned int ifindex = 0;
+
 uint32_t options = OPT_DAEMON | OPT_CHECK;
 extern struct nhead netifs;
 extern struct mhead mqueue;
@@ -191,10 +194,10 @@ START_TEST(test_child_queue) {
     // locally generated packet
     mark_point();
     memset(&netif, 0, sizeof(struct netif));
-    netif.index = 1;
-    strlcpy(netif.name, "lo0", IFNAMSIZ);
+    netif.index = ifindex;
+    strlcpy(netif.name, ifname, IFNAMSIZ);
     TAILQ_INSERT_TAIL(&netifs, &netif, entries);
-    msg.index = 1;
+    msg.index = ifindex;
     WRAP_WRITE(spair[0], &msg, MASTER_MSG_LEN(msg.len));
     child_queue(spair[1], event);
     fail_unless(strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
@@ -258,12 +261,12 @@ START_TEST(test_child_expire) {
     my_socketpair(spair);
 
     memset(&netif, 0, sizeof(struct netif));
-    netif.index = 1;
-    strlcpy(netif.name, "lo0", IFNAMSIZ);
+    netif.index = ifindex;
+    strlcpy(netif.name, ifname, IFNAMSIZ);
     TAILQ_INSERT_TAIL(&netifs, &netif, entries);
 
     memset(&msg, 0, sizeof(struct master_msg));
-    msg.index = 1;
+    msg.index = ifindex;
     msg.len = ETHER_MIN_LEN;
     msg.proto = PROTO_LLDP;
 
@@ -358,13 +361,13 @@ START_TEST(test_child_cli) {
 
     // create netif, queue messages
     memset(&netif, 0, sizeof(struct netif));
-    netif.index = 1;
-    strlcpy(netif.name, "lo0", IFNAMSIZ);
+    netif.index = ifindex;
+    strlcpy(netif.name, ifname, IFNAMSIZ);
     TAILQ_INSERT_TAIL(&netifs, &netif, entries);
 
     memset(&msg, 0, sizeof(struct master_msg));
     msg.len = ETHER_MIN_LEN;
-    msg.index = 1;
+    msg.index = ifindex;
 
     // valid message contents
     mark_point();
@@ -471,6 +474,13 @@ Suite * child_suite (void) {
     tcase_add_test(tc_child, test_child_expire);
     tcase_add_test(tc_child, test_child_cli);
     suite_add_tcase(s, tc_child);
+
+    ifname = "lo";
+    ifindex = if_nametoindex(ifname);
+    if (!ifindex) {
+	ifname = "lo0";
+	ifindex = if_nametoindex(ifname);
+    }
 
     return s;
 }
