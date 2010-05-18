@@ -2,12 +2,12 @@ Source: ladvd
 Section: net
 Priority: extra
 Maintainer: Sten Spans <sten@blinkenlights.nl>
-Build-Depends: debhelper (>= 4), autotools-dev, libcap-ng-dev | libcap-dev, libevent-dev, check, pkg-config, build-essential, lsb-base
-Standards-Version: 3.7.2
+Build-Depends: debhelper (>= 5), autotools-dev, libcap-ng-dev | libcap-dev, libevent-dev, check, pkg-config, lsb-base
+Standards-Version: 3.8.3
 
 Package: ladvd
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends: adduser, lsb-base, netbase, ${shlibs:Depends}, ${misc:Depends}
 Description: a minimal CDP/LLDP sender
  ladvd sends link layer advertisements on all available interfaces.
  This makes connected hosts visible on managed switches. By default it

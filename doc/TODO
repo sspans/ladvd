@@ -1,5 +1,4 @@
 FOR 0.9.0:
-- make lintian happy
 - (linux) vlan detection
 - static functions?
 - restrict pointers?

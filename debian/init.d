@@ -45,11 +45,11 @@ case "$1" in
 		--exec $DAEMON
 	log_end_msg $?
 	;;
-  restart)
+  restart|force-reload)
 	$0 stop && sleep 2 && $0 start
 	;;
   *)
-	echo "Usage: $0 {start|stop|restart}"
+	echo "Usage: $0 {start|stop|restart|force-reload}"
 	exit 1
 	;;
 esac
