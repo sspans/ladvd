@@ -26,13 +26,7 @@ int8_t loglevel = CRIT;
 int msock = -1;
 pid_t pid = 0;
 
-void __my_log(const char *func, int8_t prio, const char *fmt, ...) {
-
-    va_list ap;
-    va_start(ap, fmt);
-
-    if (prio > loglevel)
-	return;
+static void my_vlog(const char *func, const char *fmt, va_list ap) {
 
     if (options & OPT_DAEMON) {
 	vsyslog(LOG_INFO, fmt, ap);
@@ -42,14 +36,32 @@ void __my_log(const char *func, int8_t prio, const char *fmt, ...) {
 	vfprintf(stderr, fmt, ap);
 	fprintf(stderr, "\n");
     }
+}
+
+void __my_log(const char *func, int8_t prio, const char *fmt, ...) {
+    va_list ap;
+
+    if (prio > loglevel)
+	return;
+
+    va_start(ap, fmt);
+    my_vlog(func, fmt, ap);
+    va_end(ap);
+}
+
+__noreturn
+void __my_fatal(const char *func, const char *fmt, ...) {
+    va_list ap;
+
+    va_start(ap, fmt);
+    my_vlog(func, fmt, ap);
     va_end(ap);
 
-    if (prio == FATAL) {
-	if (!pid)
-	    exit(EXIT_FAILURE);
-	// exit via a sigterm signal
+    // exit via a sigterm signal
+    if (pid)
 	master_signal(SIGTERM, 0, &pid);
-    }
+
+    exit(EXIT_FAILURE);
 }
 
 void * my_malloc(size_t size) {

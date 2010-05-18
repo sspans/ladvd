@@ -22,7 +22,6 @@
 
 #include <pwd.h>
 
-#define FATAL	-1
 #define CRIT	0
 #define WARN	1
 #define INFO	2
@@ -31,8 +30,9 @@
 extern int8_t loglevel;
 
 #define my_log(p, ...)	    __my_log(__func__, p, __VA_ARGS__)
-#define my_fatal(...)	    __my_log(__func__, FATAL, __VA_ARGS__)
+#define my_fatal(...)	    __my_fatal(__func__, __VA_ARGS__)
 void __my_log(const char *func, int8_t prio, const char *fmt, ...);
+void __my_fatal(const char *func, const char *fmt, ...) __noreturn;
 
 void *my_malloc(size_t size);
 void *my_calloc(size_t, size_t);
