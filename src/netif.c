@@ -169,10 +169,6 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 	if (ifaddr->ifa_addr->sa_family != NETIF_AF)
 	    continue;
 
-	// reset type
-	type = 0;
-	enabled = 0;
-
 	// prepare ifr struct
 	memset(&ifr, 0, sizeof(ifr));
 	strlcpy(ifr.ifr_name, ifaddr->ifa_name, sizeof(ifr.ifr_name));
@@ -201,6 +197,7 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 #endif
 
 	// check for interfaces that are down
+	enabled = 0;
 	if (ioctl(sockfd, SIOCGIFFLAGS, (caddr_t)&ifr) >= 0)
 	    enabled = (ifr.ifr_flags & IFF_UP) ? 1 : 0;
 
