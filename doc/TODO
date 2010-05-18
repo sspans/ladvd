@@ -1,11 +1,9 @@
-FOR 0.9.0:
-- (linux) vlan detection
-- static functions?
-- restrict pointers?
 
 FOR 1.0.0:
 
 CODE:
+- static functions?
+- restrict pointers?
 - test multilevel interfaces
 - linux ifalias support
 - support macosx (package)

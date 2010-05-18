@@ -53,6 +53,10 @@
 #endif /* HAVE_NET_IF_TYPES_H */
 
 
+#ifdef HAVE_LINUX_IF_VLAN_H
+#include <linux/if_vlan.h>
+#endif /* HAVE_LINUX_IF_VLAN_H */
+
 #ifdef HAVE_NET_IF_VLAN_VAR_H
 #include <net/if_vlan_var.h>
 #endif /* HAVE_NET_IF_VLAN_VAR_H */
@@ -396,6 +400,9 @@ int netif_type(int sockfd, uint32_t index,
     struct ethtool_drvinfo drvinfo = {};
 #endif
 
+#ifdef HAVE_LINUX_IF_VLAN_H
+    struct vlan_ioctl_args if_request = {};
+#endif /* HAVE_LINUX_IF_VLAN_H */
 #ifdef HAVE_NET_IF_VLAN_VAR_H
     struct vlanreq vreq = {};
 #endif /* HAVE_NET_IF_VLAN_VAR_H */
@@ -414,6 +421,15 @@ int netif_type(int sockfd, uint32_t index,
     if (my_mreq(&mreq))
 	return(NETIF_REGULAR);
 #endif /* HAVE_SYSFS */
+
+#ifdef HAVE_LINUX_IF_VLAN_H
+    // vlan
+    if_request.cmd = GET_VLAN_REALDEV_NAME_CMD;
+    strlcpy(if_request.device1, ifaddr->ifa_name, sizeof(if_request.device1));
+
+    if (ioctl(sockfd, SIOCSIFVLAN, &if_request) >= 0)
+	return(NETIF_INVALID);
+#endif /* HAVE_LINUX_IF_VLAN_H */
 
 #if HAVE_LINUX_ETHTOOL_H
     // use ethtool to detect various drivers

@@ -226,7 +226,7 @@ AC_CHECK_HEADERS([net/if_types.h])
 AC_CHECK_HEADERS([linux/filter.h])
 
 # vlan / bridge / bonding
-AC_CHECK_HEADERS([linux/if_bridge.h linux/if_bonding.h], [], [],
+AC_CHECK_HEADERS([linux/if_vlan.h linux/if_bridge.h linux/if_bonding.h], [], [],
 [
 #include <sys/types.h>
 #include <sys/socket.h>
