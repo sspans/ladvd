@@ -65,7 +65,6 @@ void cli_main(int argc, char *argv[]) {
     time_t now;
     struct master_msg *msg;
     uint16_t holdtime;
-    ssize_t len;
 
     options = 0;
 
@@ -163,7 +162,7 @@ void cli_main(int argc, char *argv[]) {
 
     msg = my_malloc(MASTER_MSG_SIZ);
 
-    while ((len = read(fd, msg, MASTER_MSG_MAX)) == MASTER_MSG_MAX) {
+    while (read(fd, msg, MASTER_MSG_MAX) == MASTER_MSG_MAX) {
 
 	if (msg->proto >= PROTO_MAX)
 	    continue;
