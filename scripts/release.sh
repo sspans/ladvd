@@ -30,13 +30,14 @@ cd ${RELEASE}/debian
 rm -rf ladvd-*
 
 # create osc repository
-cd ${RELEASE}
+mkdir ${RELEASE}/osc.$$
+cd ${RELEASE}/osc.$$
 osc checkout home:sten-blinkenlights ladvd
-mv home\:sten-blinkenlights/ladvd osc
-rm -rf home\:sten-blinkenlights/ladvd
-cp *.tar.gz osc
-cp ../rpm/* osc
-cp debian/* osc
+mv home\:sten-blinkenlights/ladvd ${RELEASE}/osc
+rm -rf ${RELEASE}/osc.$$
+cp ${RELEASE}/*.tar.gz ${RELEASE}/osc
+cp ${BASE}/rpm/* ${RELEASE}/osc
+cp ${BASE}/debian/* ${RELEASE}/osc
 
 # return to the root
 cd ${BASE}
