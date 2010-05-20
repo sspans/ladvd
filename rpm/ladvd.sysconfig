@@ -1,5 +1,5 @@
 ## Path:           Network/ladvd
-## Description:    Network Time Protocol (NTP) server settings  
+## Description:    LLDP/CDP/EDP/FDP/NDP daemon settings  
 ## Type:           string  
 ## Default:        "-a"  
 #  
