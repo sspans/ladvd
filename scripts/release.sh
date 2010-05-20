@@ -22,9 +22,9 @@ gpg -ba ${RELEASE}/*tar.gz
 
 # create debian sources
 cd ${RELEASE}/debian
-tar xf ../*tar.gz
-mv ladvd-* $(echo ladvd-*).orig
-tar xf ../*tar.gz
+tgz=$(basename ../*tar.gz)
+cp ../${tgz} $(echo ${tgz%.tar.gz}| tr - _).orig.tar.gz
+tar xf *tar.gz
 cd ladvd-*
 rsync -av ${BASE}/debian . --exclude=.svn
 dpkg-buildpackage -S -sa
