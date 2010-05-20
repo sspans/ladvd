@@ -23,9 +23,11 @@ gpg -ba ${RELEASE}/*tar.gz
 # create debian sources
 cd ${RELEASE}/debian
 tar xf ../*tar.gz
+mv ladvd-* $(echo ladvd-*).orig
+tar xf ../*tar.gz
 cd ladvd-*
 rsync -av ${BASE}/debian . --exclude=.svn
-dpkg-buildpackage -S
+dpkg-buildpackage -S -sa
 cd ${RELEASE}/debian
 rm -rf ladvd-*
 
@@ -37,7 +39,7 @@ mv home\:sten-blinkenlights/ladvd ${RELEASE}/osc
 rm -rf ${RELEASE}/osc.$$
 cp ${RELEASE}/*.tar.gz ${RELEASE}/osc
 cp ${BASE}/rpm/* ${RELEASE}/osc
-cp ${BASE}/debian/* ${RELEASE}/osc
+cp ${RELEASE}/debian/* ${RELEASE}/osc
 
 # return to the root
 cd ${BASE}
