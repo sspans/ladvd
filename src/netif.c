@@ -264,7 +264,7 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 #ifndef __FreeBSD__
 	ifr.ifr_data = (caddr_t)&netif->description;
 #else
-	ifr.ifr_buffer.buffer = &netif->description
+	ifr.ifr_buffer.buffer = &netif->description;
 	ifr.ifr_buffer.length = IFDESCRSIZE;
 #endif
 	ioctl(sockfd, SIOCGIFDESCR, &ifr);
