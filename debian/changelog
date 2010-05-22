@@ -1,11 +1,12 @@
-ladvd (0.9.0-1) karmic; urgency=low
+ladvd (0.9.0-2) unstable; urgency=low
+
+  * packaging fixes suggested by Vincent Bernat
+
+ -- Sten Spans <sten@blinkenlights.nl>  Sat, 22 May 2010 23:14:50 +0200
+
+ladvd (0.9.0-1) unstable; urgency=low
 
   * Switch to dpkg-source 3.0 (quilt) format
-
- -- Sten Spans <sten@blinkenlights.nl>  Thu, 20 May 2010 20:31:48 +0200
-
-ladvd (0.9.0) karmic; urgency=low
-
   * Initial release (Closes: #572336)
 
  -- Sten Spans <sten@blinkenlights.nl>  Wed, 19 May 2010 00:13:23 +0200

@@ -9,7 +9,7 @@
 DEB_HOST_GNU_TYPE   ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
 DEB_BUILD_GNU_TYPE  ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
 
-ifeq (,$(findstring notest,$(DEB_BUILD_OPTIONS)))
+ifeq (,$(findstring nocheck,$(DEB_BUILD_OPTIONS)))
 	TEST_TARGET = test
 else
 	TEST_TARGET =
@@ -42,7 +42,8 @@ test: test-stamp
 
 test-stamp: build
 	dh_testdir
-	$(MAKE) check
+	# The /dev/mem dependency will be handled in the next upstream release
+	[ -c /dev/mem ] && $(MAKE) check
 	touch $@
 
 clean:
@@ -66,6 +67,9 @@ install: build $(TEST_TARGET)
 
 	# remove upstream copyright file
 	rm $(CURDIR)/debian/ladvd/usr/share/doc/ladvd/LICENSE
+	# rename upstream changelog
+	mv $(CURDIR)/debian/ladvd/usr/share/doc/ladvd/ChangeLog \
+	    $(CURDIR)/debian/ladvd/usr/share/doc/ladvd/changelog
 
 
 # Build architecture-independent files here.

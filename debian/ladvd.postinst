@@ -2,12 +2,11 @@
 
 set -e
 
-installinit_error() {
-	exit $?
-}
-
 if [ "$1" = "configure" ]; then
-    adduser --system --quiet --group --no-create-home ladvd || :
+    if ! getent passwd ladvd >/dev/null; then
+	adduser --system --quiet --group --no-create-home \
+	    --disabled-password --disabled-login ladvd || :
+    fi
 fi
 
 #DEBHELPER#

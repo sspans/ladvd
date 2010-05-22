@@ -2,12 +2,11 @@
 
 set -e
 
-installinit_error() {
-	exit $?
-}
-
 #DEBHELPER#
 
 if [ "$1" = "purge" ]; then
-    deluser --system --quiet ladvd || true
+    [ -d /var/run/ladvd ] && rm -rf /var/run/ladvd >/dev/null 2>&1 || :
+
+    deluser --system --quiet ladvd || :
 fi
+
