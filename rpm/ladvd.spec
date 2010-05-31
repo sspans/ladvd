@@ -60,6 +60,7 @@ install -D -m 755 %{SOURCE1} %{buildroot}%{_initrddir}/%{name}
 %else
     install -D -m 644 %{SOURCE2} %{buildroot}%{_sysconfdir}/sysconfig/%{name}
 %endif
+mkdir -p %{buildroot}%{homedir}
 
 
 %clean
@@ -117,6 +118,7 @@ fi
 %{_sbindir}/%{name}c
 %{_mandir}/man8/%{name}.8*
 %{_mandir}/man8/%{name}c.8*
+%attr(755,root,root) %dir %{homedir}
 
 
 %changelog
