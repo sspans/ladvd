@@ -75,7 +75,6 @@ rm -rf %{buildroot}
 %post
 %if ! 0%{?suse_version}
 /sbin/chkconfig --add %{name}
-%service %{name} restart
 %else
 %fillup_and_insserv %{name}
 %restart_on_update %{name}
@@ -85,7 +84,7 @@ rm -rf %{buildroot}
 %preun
 %if ! 0%{?suse_version}
 if [ "$1" = "0" ]; then
-	%service %{name} stop >/dev/null 2>&1
+	/sbin/service %{name} stop >/dev/null 2>&1 || :
 	/sbin/chkconfig --del %{name}
 fi
 %else
@@ -98,8 +97,8 @@ fi
 if [ "$1" -ge "1" ]; then
 	/sbin/service %{name} condrestart >/dev/null 2>&1 || :
 fi
-%userremove %{name}
-%groupremove %{name}
+/usr/sbin/userdel %{name} >/dev/null 2>&1 || :
+/usr/sbin/groupdel %{name} >/dev/null 2>&1 || :
 %else
 %{insserv_cleanup}  
 %endif
