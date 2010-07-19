@@ -1,3 +1,8 @@
+FOR 0.9.1:
+- RHEL 4 Fix
+- D-Link compat fixes
+- Improve local packet filtering
+- Improve device-id flexibility
 
 FOR 1.0.0:
 
