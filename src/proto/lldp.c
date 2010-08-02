@@ -528,7 +528,7 @@ out:
 	return 0;
     }
 
-    if ((length != 0) && (msg->len != ETHER_MIN_LEN)) {
+    if ((length != 0) && (msg->len > ETHER_MIN_LEN)) {
 	my_log(INFO, "Corrupt LLDP packet: invalid END TLV");
 	return 0;
     }

@@ -592,6 +592,13 @@ START_TEST(test_lldp_decode) {
 	"port id should be 'Gi0/1' not '%s'", msg.peer[PEER_PORTNAME]);
 
     mark_point();
+    read_packet(&msg, "proto/lldp/46.good.d-link");
+    fail_unless (lldp_decode(&msg) == 35, "packet length incorrect");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+    fail_unless (msg.ttl == 120, "ttl should be 120");
+
+    mark_point();
     my_log(CRIT, "check");
     errstr = "Invalid LLDP packet: invalid Chassis ID TLV";
     read_packet(&msg, "proto/lldp/A1.fuzzer.chassis_id.long");
