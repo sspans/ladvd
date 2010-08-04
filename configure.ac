@@ -223,7 +223,10 @@ AC_CHECK_HEADERS([netinet/if_ether.h], [], [],
 #include <netinet/in.h>
 ])
 AC_CHECK_HEADERS([net/if_types.h])
-AC_CHECK_HEADERS([linux/filter.h])
+AC_CHECK_HEADERS([linux/filter.h], [], [],
+[
+#include <linux/types.h>
+])
 
 # vlan / bridge / bonding
 AC_CHECK_HEADERS([linux/if_vlan.h linux/if_bridge.h linux/if_bonding.h], [], [],

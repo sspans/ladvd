@@ -400,7 +400,7 @@ int netif_type(int sockfd, uint32_t index,
     struct ethtool_drvinfo drvinfo = {};
 #endif
 
-#ifdef HAVE_LINUX_IF_VLAN_H
+#if defined(HAVE_LINUX_IF_VLAN_H) && defined(GET_VLAN_REALDEV_NAME_CMD)
     struct vlan_ioctl_args if_request = {};
 #endif /* HAVE_LINUX_IF_VLAN_H */
 #ifdef HAVE_NET_IF_VLAN_VAR_H
@@ -422,7 +422,7 @@ int netif_type(int sockfd, uint32_t index,
 	return(NETIF_REGULAR);
 #endif /* HAVE_SYSFS */
 
-#ifdef HAVE_LINUX_IF_VLAN_H
+#if defined(HAVE_LINUX_IF_VLAN_H) && defined(GET_VLAN_REALDEV_NAME_CMD)
     // vlan
     if_request.cmd = GET_VLAN_REALDEV_NAME_CMD;
     strlcpy(if_request.device1, ifaddr->ifa_name, sizeof(if_request.device1));
