@@ -2,6 +2,11 @@ FOR 0.9.1:
 - Improve <ETHER_MIN_LEN handling
 - Improve local packet filtering
 - Improve device-id flexibility
+- improve sysinfo via lsb_release
+- improve linux media detection
+- grab and report detected vlan interfaces
+- implement ladvdc verbose decoding
+- write some implementation and debugging notes
 
 FOR 1.0.0:
 
