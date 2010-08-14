@@ -92,27 +92,27 @@ START_TEST(test_cli_main) {
     check_wrap_fake = 0;
     now = time(NULL);
 
-    ofd[0] = dup(STDIN_FILENO);
-    close(STDIN_FILENO);
     fail_if(socketpair(AF_UNIX, SOCK_STREAM, 0, &spair[0]) == -1,
 	    "socketpair creation failed");
     setsockopt(spair[0], SOL_SOCKET, SO_RCVBUF, &sobuf, sizeof(sobuf));
     setsockopt(spair[1], SOL_SOCKET, SO_SNDBUF, &sobuf, sizeof(sobuf));
+    ofd[0] = dup(STDIN_FILENO);
+    dup2(spair[0], STDIN_FILENO);
 
     sobuf = 1024;
-    ofd[1] = dup(STDOUT_FILENO);
-    close(STDOUT_FILENO);
     fail_if(socketpair(AF_UNIX, SOCK_STREAM, 0, &spair[2]) == -1,
 	    "socketpair creation failed");
     setsockopt(spair[2], SOL_SOCKET, SO_SNDBUF, &sobuf, sizeof(sobuf));
     setsockopt(spair[3], SOL_SOCKET, SO_RCVBUF, &sobuf, sizeof(sobuf));
+    ofd[1] = dup(STDOUT_FILENO);
+    dup2(spair[2], STDOUT_FILENO);
 
-    ofd[2] = dup(STDERR_FILENO);
-    close(STDERR_FILENO);
     fail_if(socketpair(AF_UNIX, SOCK_STREAM, 0, &spair[4]) == -1,
 	    "socketpair creation failed");
     setsockopt(spair[4], SOL_SOCKET, SO_SNDBUF, &sobuf, sizeof(sobuf));
     setsockopt(spair[5], SOL_SOCKET, SO_RCVBUF, &sobuf, sizeof(sobuf));
+    ofd[2] = dup(STDERR_FILENO);
+    dup2(spair[4], STDERR_FILENO);
 
     mark_point();
     memset(buf, 0, 1024);
@@ -274,17 +274,17 @@ START_TEST(test_cli_main) {
     // close fds
     close(spair[0]);
     close(spair[1]);
-    len = dup(ofd[0]);
+    dup2(ofd[0], STDIN_FILENO);
     close(ofd[0]);
 
     close(spair[2]);
     close(spair[3]);
-    len = dup(ofd[1]);
+    dup2(ofd[1], STDOUT_FILENO);
     close(ofd[1]);
 
     close(spair[4]);
     close(spair[5]);
-    len = dup(ofd[2]);
+    dup2(ofd[2], STDERR_FILENO);
     close(ofd[2]);
 
     check_wrap_fail = 0;
@@ -302,11 +302,11 @@ START_TEST(test_batch_write) {
 
     ostdout = dup(STDOUT_FILENO);
     fail_if(ostdout == -1, "dup failed: %s", strerror(errno));
-    fail_if(close(STDOUT_FILENO) == -1, "close failed: %s", strerror(errno));
     fail_if(socketpair(AF_UNIX, SOCK_STREAM, 0, spair) == -1,
 	    "socketpair creation failed: %s", strerror(errno));
     setsockopt(spair[0], SOL_SOCKET, SO_SNDBUF, &sobuf, sizeof(sobuf));
     setsockopt(spair[1], SOL_SOCKET, SO_RCVBUF, &sobuf, sizeof(sobuf));
+    dup2(spair[0], STDOUT_FILENO);
 
     mark_point();
     batch_write(&msg, 42);
@@ -334,7 +334,7 @@ START_TEST(test_batch_write) {
     
     close(spair[0]);
     close(spair[1]);
-    len = dup(ostdout);
+    dup2(ostdout, STDOUT_FILENO);
     close(ostdout);
     peer_free(msg.peer);
 }
@@ -349,11 +349,11 @@ START_TEST(test_cli) {
 
     ostdout = dup(STDOUT_FILENO);
     fail_if(ostdout == -1, "dup failed: %s", strerror(errno));
-    fail_if(close(STDOUT_FILENO) == -1, "close failed: %s", strerror(errno));
     fail_if(socketpair(AF_UNIX, SOCK_STREAM, 0, spair) == -1,
 	    "socketpair creation failed: %s", strerror(errno));
     setsockopt(spair[0], SOL_SOCKET, SO_SNDBUF, &sobuf, sizeof(sobuf));
     setsockopt(spair[1], SOL_SOCKET, SO_RCVBUF, &sobuf, sizeof(sobuf));
+    dup2(spair[0], STDOUT_FILENO);
 
     mark_point();
     cli_header();
@@ -379,7 +379,7 @@ START_TEST(test_cli) {
 	
     close(spair[0]);
     close(spair[1]);
-    len = dup(ostdout);
+    dup2(ostdout, STDOUT_FILENO);
     close(ostdout);
     peer_free(msg.peer);
 }
@@ -405,8 +405,9 @@ START_TEST(test_debug) {
     }
 
     ostdout = dup(STDOUT_FILENO);
-    close(STDOUT_FILENO);
     my_socketpair(spair);
+    dup2(spair[0], STDOUT_FILENO);
+    close(ostdout);
     errstr = "check";
     my_log(CRIT, errstr);
 
@@ -437,7 +438,7 @@ START_TEST(test_debug) {
 
     close(spair[0]);
     close(spair[1]);
-    len = dup(ostdout);
+    dup2(ostdout, STDOUT_FILENO);
     close(ostdout);
 }
 END_TEST
