@@ -104,6 +104,7 @@ struct netif {
     int8_t duplex;
     int8_t autoneg_supported; 
     int8_t autoneg_enabled; 
+    uint16_t autoneg_pmd;
     uint16_t mau;
 
     uint32_t ipaddr4;

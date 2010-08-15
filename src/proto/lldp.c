@@ -180,7 +180,7 @@ size_t lldp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
 	    PUSH_UINT8(LLDP_PRIVATE_8023_SUBTYPE_MACPHY) &&
 	    PUSH_UINT8(netif->autoneg_supported +
 		       (netif->autoneg_enabled << 1)) &&
-	    PUSH_UINT16(0) &&
+	    PUSH_UINT16(netif->autoneg_pmd) &&
 	    PUSH_UINT16(netif->mau)
 	))
 	    return 0;

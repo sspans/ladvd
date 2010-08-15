@@ -872,30 +872,51 @@ int netif_media(struct netif *netif) {
 	my_log(INFO, "mtu detection failed on interface %s", netif->name);
 
 #if HAVE_LINUX_ETHTOOL_H
+    int ecmd_to_lldp_pmd[][2] = {
+	{ADVERTISED_10baseT_Half,   LLDP_MAU_PMD_10BASE_T},
+	{ADVERTISED_10baseT_Full,   LLDP_MAU_PMD_10BASE_T_FD},
+	{ADVERTISED_100baseT_Half,  LLDP_MAU_PMD_100BASE_TX},
+	{ADVERTISED_100baseT_Full,  LLDP_MAU_PMD_100BASE_TX_FD},
+	{ADVERTISED_1000baseT_Half, LLDP_MAU_PMD_1000BASE_T},
+	{ADVERTISED_1000baseT_Full, LLDP_MAU_PMD_1000BASE_T_FD},
+	{ADVERTISED_10000baseT_Full, LLDP_MAU_PMD_OTHER},
+	{ADVERTISED_Pause,	    LLDP_MAU_PMD_FDXPAUSE},
+	{ADVERTISED_Asym_Pause,	    LLDP_MAU_PMD_FDXAPAUSE},
+	{ADVERTISED_2500baseX_Full, LLDP_MAU_PMD_OTHER},
+	{0, 0}
+    };
+
     mreq.op = MASTER_ETHTOOL;
     mreq.index = netif->index;
     mreq.len = sizeof(ecmd);
 
-    if (my_mreq(&mreq) == sizeof(ecmd)) {
+    if (my_mreq(&mreq) != sizeof(ecmd)) {
+	// cleanup
+	close(sockfd);
 
-	// copy ecmd struct
-	memcpy(&ecmd, mreq.buf, sizeof(ecmd));
-
-	// duplex
-	netif->duplex = (ecmd.duplex == DUPLEX_FULL) ? 1 : 0;
-
-	// autoneg
-	if (ecmd.supported & SUPPORTED_Autoneg) {
-	    my_log(INFO, "autoneg supported on %s", netif->name);
-	    netif->autoneg_supported = 1;
-	    netif->autoneg_enabled = (ecmd.autoneg == AUTONEG_ENABLE) ? 1 : 0;
-	} else {
-	    my_log(INFO, "autoneg not supported on %s", netif->name);
-	    netif->autoneg_supported = 0;
-	}	
-    } else {
-	my_log(INFO, "ethtool ioctl failed on interface %s", netif->name);
+	return(EXIT_SUCCESS);
     }
+
+    // copy ecmd struct
+    memcpy(&ecmd, mreq.buf, sizeof(ecmd));
+
+    // duplex
+    netif->duplex = (ecmd.duplex == DUPLEX_FULL);
+
+    // autoneg
+    if (ecmd.supported & SUPPORTED_Autoneg) {
+	my_log(INFO, "autoneg supported on %s", netif->name);
+	netif->autoneg_supported = 1;
+	netif->autoneg_enabled = (ecmd.autoneg == AUTONEG_ENABLE);
+	for (int i=0; ecmd_to_lldp_pmd[i][0]; i++) {
+	    if (ecmd.advertising & ecmd_to_lldp_pmd[i][0])
+		netif->autoneg_pmd |= ecmd_to_lldp_pmd[i][1];
+	}
+    } else {
+	my_log(INFO, "autoneg not supported on %s", netif->name);
+	netif->autoneg_supported = 0;
+    }	
+    // XXX: add mau
 #endif /* HAVE_LINUX_ETHTOOL_H */
 
 #if HAVE_NET_IF_MEDIA_H
