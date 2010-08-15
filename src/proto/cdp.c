@@ -97,7 +97,7 @@ size_t cdp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
     // platform
     if (!(
 	START_CDP_TLV(CDP_TYPE_PLATFORM) &&
-	PUSH_BYTES(sysinfo->uts.sysname, strlen(sysinfo->uts.sysname))
+	PUSH_BYTES(sysinfo->platform, strlen(sysinfo->platform))
     ))
 	return 0;
     END_CDP_TLV;

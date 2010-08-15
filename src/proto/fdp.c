@@ -123,7 +123,7 @@ size_t fdp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
     // platform
     if (!(
 	START_FDP_TLV(FDP_TYPE_PLATFORM) &&
-	PUSH_BYTES(sysinfo->uts.sysname, strlen(sysinfo->uts.sysname))
+	PUSH_BYTES(sysinfo->platform, strlen(sysinfo->platform))
     ))
 	return 0;
     END_FDP_TLV;

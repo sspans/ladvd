@@ -44,6 +44,7 @@ START_TEST(test_proto_packet) {
     memset(sysinfo.hwaddr, 77, ETHER_ADDR_LEN);
     strlcpy(sysinfo.uts_str, "Testing", sizeof(sysinfo.uts_str));
     strlcpy(sysinfo.uts.sysname, "Testing", sizeof(sysinfo.uts.sysname));
+    strlcpy(sysinfo.platform, "Testing VAX", sizeof(sysinfo.platform));
     strlcpy(sysinfo.hostname, "Blanket", sizeof(sysinfo.hostname));
     strlcpy(sysinfo.location, "Towel", sizeof(sysinfo.location));
     strlcpy(sysinfo.hw_revision, "lala", LLDP_INVENTORY_SIZE);  
@@ -86,11 +87,11 @@ START_TEST(test_proto_packet) {
     msg.len = lldp_packet(msg.msg, &netif, &sysinfo);
     fail_unless(msg.len == 235, "length should not be %d", msg.len);
     msg.len = cdp_packet(msg.msg, &netif, &sysinfo);
-    fail_unless(msg.len == 154, "length should not be %d", msg.len);
+    fail_unless(msg.len == 158, "length should not be %d", msg.len);
     msg.len = edp_packet(msg.msg, &netif, &sysinfo);
     fail_unless(msg.len == 109, "length should not be %d", msg.len);
     msg.len = fdp_packet(msg.msg, &netif, &sysinfo);
-    fail_unless(msg.len == 122, "length should not be %d", msg.len);
+    fail_unless(msg.len == 126, "length should not be %d", msg.len);
     msg.len = ndp_packet(msg.msg, &netif, &sysinfo);
     fail_unless(msg.len == 33, "length should not be %d", msg.len);
 
@@ -101,11 +102,11 @@ START_TEST(test_proto_packet) {
     msg.len = lldp_packet(msg.msg, &netif, &sysinfo);
     fail_unless(msg.len == 184, "length should not be %d", msg.len);
     msg.len = cdp_packet(msg.msg, &netif, &sysinfo);
-    fail_unless(msg.len == 109, "length should not be %d", msg.len);
+    fail_unless(msg.len == 113, "length should not be %d", msg.len);
     msg.len = edp_packet(msg.msg, &netif, &sysinfo);
     fail_unless(msg.len == 89, "length should not be %d", msg.len);
     msg.len = fdp_packet(msg.msg, &netif, &sysinfo);
-    fail_unless(msg.len == 75, "length should not be %d", msg.len);
+    fail_unless(msg.len == 79, "length should not be %d", msg.len);
     msg.len = ndp_packet(msg.msg, &netif, &sysinfo);
     fail_unless(msg.len == 33, "length should not be %d", msg.len);
 
@@ -114,11 +115,11 @@ START_TEST(test_proto_packet) {
     msg.len = lldp_packet(msg.msg, &netif, &sysinfo);
     fail_unless(msg.len == 184, "length should not be %d", msg.len);
     msg.len = cdp_packet(msg.msg, &netif, &sysinfo);
-    fail_unless(msg.len == 109, "length should not be %d", msg.len);
+    fail_unless(msg.len == 113, "length should not be %d", msg.len);
     msg.len = edp_packet(msg.msg, &netif, &sysinfo);
     fail_unless(msg.len == 89, "length should not be %d", msg.len);
     msg.len = fdp_packet(msg.msg, &netif, &sysinfo);
-    fail_unless(msg.len == 77, "length should not be %d", msg.len);
+    fail_unless(msg.len == 81, "length should not be %d", msg.len);
     msg.len = ndp_packet(msg.msg, &netif, &sysinfo);
     fail_unless(msg.len == 33, "length should not be %d", msg.len);
 
@@ -127,11 +128,11 @@ START_TEST(test_proto_packet) {
     msg.len = lldp_packet(msg.msg, &netif, &sysinfo);
     fail_unless(msg.len == 184, "length should not be %d", msg.len);
     msg.len = cdp_packet(msg.msg, &netif, &sysinfo);
-    fail_unless(msg.len == 109, "length should not be %d", msg.len);
+    fail_unless(msg.len == 113, "length should not be %d", msg.len);
     msg.len = edp_packet(msg.msg, &netif, &sysinfo);
     fail_unless(msg.len == 89, "length should not be %d", msg.len);
     msg.len = fdp_packet(msg.msg, &netif, &sysinfo);
-    fail_unless(msg.len == 77, "length should not be %d", msg.len);
+    fail_unless(msg.len == 81, "length should not be %d", msg.len);
     msg.len = ndp_packet(msg.msg, &netif, &sysinfo);
     fail_unless(msg.len == 33, "length should not be %d", msg.len);
 }

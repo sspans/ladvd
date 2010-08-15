@@ -129,6 +129,9 @@ void sysinfo_fetch(struct sysinfo *sysinfo) {
 	descr, sysinfo->uts.sysname, sysinfo->uts.release,
 	sysinfo->uts.version, sysinfo->uts.machine) <= 0)
 	my_fatal("can't create uts string: %s", strerror(errno));
+    if (snprintf(sysinfo->platform, sizeof(sysinfo->platform), "%s%s %s",
+	descr, sysinfo->uts.sysname, sysinfo->uts.machine) <= 0)
+	my_fatal("can't create platform string: %s", strerror(errno));
 
     free(descr);
 
