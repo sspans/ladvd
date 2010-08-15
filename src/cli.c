@@ -166,7 +166,8 @@ void cli_main(int argc, char *argv[]) {
 
 	if (msg->proto >= PROTO_MAX)
 	    continue;
-	if ((msg->len < ETHER_MIN_LEN) || (msg->len > ETHER_MAX_LEN))
+	if ((msg->len < (ETHER_MIN_LEN - ETHER_VLAN_ENCAP_LEN)) || 
+	    (msg->len > ETHER_MAX_LEN))
 	    continue;
 	
 	// skip unwanted interfaces

@@ -222,7 +222,7 @@ void child_queue(int fd, short event) {
 	return;
 
     assert(rmsg.proto < PROTO_MAX);
-    assert(rmsg.len >= ETHER_MIN_LEN);
+    assert(rmsg.len >= (ETHER_MIN_LEN - ETHER_VLAN_ENCAP_LEN));
     assert(rmsg.len <= ETHER_MAX_LEN);
 
     // skip unknown interfaces

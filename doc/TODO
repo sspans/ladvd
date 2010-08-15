@@ -1,5 +1,4 @@
 FOR 0.9.1:
-- Improve <ETHER_MIN_LEN handling
 - Improve local packet filtering
 - Improve device-id flexibility
 - improve sysinfo via lsb_release

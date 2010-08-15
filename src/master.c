@@ -279,7 +279,7 @@ void master_send(int msgfd, short event) {
 	return;
     }
 
-    assert(msend.len >= ETHER_MIN_LEN);
+    assert(msend.len >= (ETHER_MIN_LEN - ETHER_VLAN_ENCAP_LEN));
     assert(msend.proto < PROTO_MAX);
     assert(protos[msend.proto].check(msend.msg, msend.len) != NULL);
 
@@ -630,7 +630,7 @@ void master_recv(int fd, short event, struct rawfd *rfd) {
 #endif /* HAVE_NETPACKET_PACKET_H */
 
     // skip small packets
-    if (mrecv.len < ETHER_MIN_LEN)
+    if (mrecv.len < (ETHER_MIN_LEN - ETHER_VLAN_ENCAP_LEN))
 	return;
 
     // note the ifindex
