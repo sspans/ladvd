@@ -107,7 +107,7 @@ fi
 
 %files
 %defattr(-,root,root)
-%doc doc/ChangeLog doc/README doc/LICENSE doc/TODO
+%doc doc/ChangeLog doc/README doc/LICENSE doc/TODO doc/HACKING
 %if 0%{?suse_version}
 /var/adm/fillup-templates/sysconfig.%{name}
 %else

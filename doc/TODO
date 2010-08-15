@@ -4,7 +4,7 @@ FOR 0.9.1:
 - improve linux media detection
 - grab and report detected vlan interfaces
 - implement ladvdc verbose decoding
-- write some implementation and debugging notes
+- write protocol descriptions
 
 FOR 1.0.0:
 
