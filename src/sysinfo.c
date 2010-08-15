@@ -20,7 +20,10 @@
 #include "common.h"
 #include "util.h"
 #include <netdb.h>
+#include <paths.h>
+#include <sysexits.h>
 #include <sys/sysctl.h>
+#include <sys/wait.h>
 
 #ifdef HAVE_SYSFS
 #define SYSFS_CLASS_DMI		"/sys/class/dmi/id"
@@ -41,7 +44,7 @@ void sysinfo_forwarding(struct sysinfo *);
 void sysinfo_fetch(struct sysinfo *sysinfo) {
 
     int i;
-    char *release, *endptr;
+    char *descr = NULL, *release, *endptr;
     struct hostent *hp;
     size_t len = LLDP_INVENTORY_SIZE + 1;
 
@@ -50,14 +53,84 @@ void sysinfo_fetch(struct sysinfo *sysinfo) {
     mib[0] = CTL_HW;
 #endif
 
+    // use lsb_release to fetch the Linux distro description
+#ifdef __linux__
+    int pipes[2], null, status;
+    char * const cmd[] = { "lsb_release", "-s", "-d", NULL };
+    pid_t pid;
+    FILE *fd;
+    char buf[512], *bufp;
+
+    if (pipe(pipes) == -1)
+	my_fatal("sysinfo pipe failed: %s", strerror(errno));
+
+    pid = fork();
+
+    // quit on failure
+    if (pid == -1)
+	my_fatal("sysinfo fork failed: %s", strerror(errno));
+
+    // this is the child
+    if (pid == 0) {
+	if ((null = open(_PATH_DEVNULL, O_RDWR)) == -1)
+	    exit(EX_OSERR);
+
+	dup2(null, STDIN_FILENO);
+	dup2(null, STDERR_FILENO);
+	dup2(pipes[1], STDOUT_FILENO);
+	close(pipes[1]);
+	close(pipes[0]);
+
+	if (execvp(cmd[0], cmd) == -1)
+	    exit(EX_OSERR);
+    }
+
+    // this is the parent
+    close(pipes[1]);
+    if ((fd = fdopen(pipes[0], "r")) == NULL)
+	my_fatal("sysinfo fdopen failed: %s", strerror(errno));
+
+    while (fgets(buf, 512, fd)) {
+	if (descr)
+	    continue;
+
+	bufp = buf;
+
+	// remove newline
+	buf[strcspn(buf, "\n")] = '\0';
+	// remove redhat-style quoting
+	if ((buf[0] == '"') && buf[strlen(buf) -1] == '"') {
+	    buf[strlen(buf) -1] = '\0'; 
+	    bufp++;
+	}
+
+	if (asprintf(&descr, "%s ", bufp) == -1)
+	    my_fatal("asprintf failed");
+    }
+    fclose(fd);
+
+    // dump received data if lsb_release failed
+    if ((waitpid(pid, &status, 0) != pid) ||
+        !WIFEXITED(status) || (WEXITSTATUS(status) != EX_OK)) {
+	if (descr) {
+	    free(descr);
+	    descr = NULL;
+	}
+    }
+#endif
+    if (!descr)
+	descr = my_strdup("");
+
     // sysinfo.uts
     if (uname(&sysinfo->uts) == -1)
 	my_fatal("can't fetch uname: %s", strerror(errno));
 
-    if (snprintf(sysinfo->uts_str, sizeof(sysinfo->uts_str), "%s %s %s %s",
-	sysinfo->uts.sysname, sysinfo->uts.release,
+    if (snprintf(sysinfo->uts_str, sizeof(sysinfo->uts_str), "%s%s %s %s %s",
+	descr, sysinfo->uts.sysname, sysinfo->uts.release,
 	sysinfo->uts.version, sysinfo->uts.machine) <= 0)
 	my_fatal("can't create uts string: %s", strerror(errno));
+
+    free(descr);
 
     i = 0;
     endptr = release = sysinfo->uts.release;
