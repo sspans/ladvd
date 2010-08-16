@@ -80,7 +80,7 @@
 #define LLDP_PRIVATE_8023_SUBTYPE_LINKAGGR      3
 #define LLDP_PRIVATE_8023_SUBTYPE_MTU           4
 
-// From RFC 3636 - dot3MauType
+// From IANA-MAU-MIB (introduced by RFC 4836) - dot3MauType
 #define LLDP_MAU_TYPE_UNKNOWN           0
 #define LLDP_MAU_TYPE_AUI               1
 #define LLDP_MAU_TYPE_10BASE_5          2

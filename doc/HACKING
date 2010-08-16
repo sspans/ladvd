@@ -71,3 +71,22 @@ OpenBSD:	ifmcstat (via ports)
 
 Protocol Notes:
 XXXX
+
+Links:
+
+LLDP:
+http://standards.ieee.org/getieee802/download/802.1AB-2005.pdf
+http://www.tiaonline.org/standards/technology/voip/documents/ANSI-TIA-1057_final_for_publication.pdf
+http://www.ieee802.org/1/pages/802.1AB-rev.html
+http://wiki.wireshark.org/LinkLayerDiscoveryProtocol
+
+CDP:
+http://wiki.wireshark.org/CDP
+http://www.cisco.com/univercd/cc/td/doc/product/lan/trsrb/frames.htm#xtocid12
+http://www.cisco.com/en/US/technologies/tk652/tk701/technologies_white_paper0900aecd804cd46d.html
+
+Standards:
+http://tools.ietf.org/html/rfc3636
+http://tools.ietf.org/html/rfc4836
+http://www.iana.org/assignments/ianamau-mib
+
