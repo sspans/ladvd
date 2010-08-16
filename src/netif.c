@@ -1039,6 +1039,8 @@ int netif_media(struct netif *netif) {
     }
 
     // mau
+    netif->mau = LLDP_MAU_TYPE_UNKNOWN;
+
     switch (IFM_SUBTYPE(ifmr.ifm_active)) {
 	case IFM_10_T:
 	    netif->mau = (netif->duplex) ?
@@ -1090,6 +1092,12 @@ int netif_media(struct netif *netif) {
 	    break;
 	case IFM_10G_SR:
 	    netif->mau = LLDP_MAU_TYPE_10GBASE_SR;
+	    break;
+	case IFM_10G_CX4;
+	    netif->mau = LLDP_MAU_TYPE_10GBASE_CX4;
+	    break;
+	case IFM_10G_T;
+	    netif->mau = LLDP_MAU_TYPE_10GBASE_T;
 	    break;
     }
 

@@ -6,7 +6,6 @@ FOR 0.9.1:
 - write protocol descriptions
 
 FOR 1.0.0:
-- re-check bsd ifmedia defines and IANA-MAU-MIB definitions
 - static functions?
 - restrict pointers?
 - test multilevel interfaces
