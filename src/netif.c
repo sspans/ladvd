@@ -920,7 +920,46 @@ int netif_media(struct netif *netif) {
 	my_log(INFO, "autoneg not supported on %s", netif->name);
 	netif->autoneg_supported = 0;
     }	
-    // XXX: add mau
+
+    // report a mau guesstimate
+    netif->mau = LLDP_MAU_TYPE_UNKNOWN;
+
+    switch (ecmd.port) {
+	case PORT_TP:
+	    if (ecmd.speed == SPEED_10)
+		netif->mau = (netif->duplex) ?
+		     LLDP_MAU_TYPE_10BASE_T_FD : LLDP_MAU_TYPE_10BASE_T_HD;
+	    else if (ecmd.speed == SPEED_100)
+		netif->mau = (netif->duplex) ?
+		     LLDP_MAU_TYPE_100BASE_TX_FD: LLDP_MAU_TYPE_100BASE_TX_HD;
+	    else if (ecmd.speed == SPEED_1000)
+		netif->mau = (netif->duplex) ?
+		     LLDP_MAU_TYPE_1000BASE_T_FD: LLDP_MAU_TYPE_1000BASE_T_HD;
+	    // XXX: 10GBASE_T not specified...
+	    break;
+	case PORT_FIBRE:
+	    if (ecmd.speed == SPEED_10)
+		netif->mau = (netif->duplex) ?
+		     LLDP_MAU_TYPE_10BASE_FL_FD: LLDP_MAU_TYPE_10BASE_FL_HD;
+	    else if (ecmd.speed == SPEED_100)
+		netif->mau = (netif->duplex) ?
+		     LLDP_MAU_TYPE_100BASE_FX_FD: LLDP_MAU_TYPE_100BASE_FX_HD;
+	    else if (ecmd.speed == SPEED_1000)
+		netif->mau = (netif->duplex) ?
+		     LLDP_MAU_TYPE_1000BASE_X_FD: LLDP_MAU_TYPE_1000BASE_X_HD;
+	    else if (ecmd.speed == SPEED_10000)
+		netif->mau = LLDP_MAU_TYPE_10GBASE_X;
+	    break;
+	case PORT_BNC:
+	    if (ecmd.speed == SPEED_10)
+		netif->mau = LLDP_MAU_TYPE_10BASE_2; 
+	    break;
+	case PORT_AUI:
+	    netif->mau = LLDP_MAU_TYPE_AUI;
+	    break;
+	case PORT_MII:
+	    break;
+    }
 #endif /* HAVE_LINUX_ETHTOOL_H */
 
 #if HAVE_NET_IF_MEDIA_H
@@ -995,10 +1034,8 @@ int netif_media(struct netif *netif) {
     // mau
     switch (IFM_SUBTYPE(ifmr.ifm_active)) {
 	case IFM_10_T:
-	    if (netif->duplex == 1)
-		netif->mau = LLDP_MAU_TYPE_10BASE_T_FD;
-	    else
-		netif->mau = LLDP_MAU_TYPE_10BASE_T_HD;
+	    netif->mau = (netif->duplex) ?
+		LLDP_MAU_TYPE_10BASE_T_FD : LLDP_MAU_TYPE_10BASE_T_HD;
 	    break;
 	case IFM_10_2:
 	    netif->mau = LLDP_MAU_TYPE_10BASE_2;
@@ -1007,55 +1044,39 @@ int netif_media(struct netif *netif) {
 	    netif->mau = LLDP_MAU_TYPE_10BASE_5;
 	    break;
 	case IFM_100_TX:
-	    if (netif->duplex == 1)
-		netif->mau = LLDP_MAU_TYPE_100BASE_TX_FD;
-	    else
-		netif->mau = LLDP_MAU_TYPE_100BASE_TX_HD;
+	    netif->mau = (netif->duplex) ?
+		LLDP_MAU_TYPE_100BASE_TX_FD : LLDP_MAU_TYPE_100BASE_TX_HD;
 	    break;
 	case IFM_100_FX:
-	    if (netif->duplex == 1)
-		netif->mau = LLDP_MAU_TYPE_100BASE_FX_FD;
-	    else
-		netif->mau = LLDP_MAU_TYPE_100BASE_FX_HD;
+	    netif->mau = (netif->duplex) ?
+		LLDP_MAU_TYPE_100BASE_FX_FD : LLDP_MAU_TYPE_100BASE_FX_HD;
 	    break;
 	case IFM_100_T4:
 	    netif->mau = LLDP_MAU_TYPE_100BASE_T4;
 	    break;
 	case IFM_100_T2:
-	    if (netif->duplex == 1)
-		netif->mau = LLDP_MAU_TYPE_100BASE_T2_FD;
-	    else
-		netif->mau = LLDP_MAU_TYPE_100BASE_T2_HD;
+	    netif->mau = (netif->duplex) ?
+		LLDP_MAU_TYPE_100BASE_T2_FD : LLDP_MAU_TYPE_100BASE_T2_HD;
 	    break;
 	case IFM_1000_SX:
-	    if (netif->duplex == 1)
-		netif->mau = LLDP_MAU_TYPE_1000BASE_SX_FD;
-	    else
-		netif->mau = LLDP_MAU_TYPE_1000BASE_SX_HD;
+	    netif->mau = (netif->duplex) ?
+		LLDP_MAU_TYPE_1000BASE_SX_FD : LLDP_MAU_TYPE_1000BASE_SX_HD;
 	    break;
 	case IFM_10_FL: 
-	    if (netif->duplex == 1)
-		netif->mau = LLDP_MAU_TYPE_10BASE_FL_FD;
-	    else
-		netif->mau = LLDP_MAU_TYPE_10BASE_FL_HD;
+	    netif->mau = (netif->duplex) ?
+		LLDP_MAU_TYPE_10BASE_FL_FD : LLDP_MAU_TYPE_10BASE_FL_HD;
 	    break;
 	case IFM_1000_LX:
-	    if (netif->duplex == 1)
-		netif->mau = LLDP_MAU_TYPE_1000BASE_LX_FD;
-	    else
-		netif->mau = LLDP_MAU_TYPE_1000BASE_LX_HD;
+	    netif->mau = (netif->duplex) ?
+		LLDP_MAU_TYPE_1000BASE_LX_FD : LLDP_MAU_TYPE_1000BASE_LX_HD;
 	    break;
 	case IFM_1000_CX:
-	    if (netif->duplex == 1)
-		netif->mau = LLDP_MAU_TYPE_1000BASE_CX_FD;
-	    else
-		netif->mau = LLDP_MAU_TYPE_1000BASE_CX_HD;
+	    netif->mau = (netif->duplex) ?
+		LLDP_MAU_TYPE_1000BASE_CX_FD : LLDP_MAU_TYPE_1000BASE_CX_HD;
 	    break;
 	case IFM_1000_T:
-	    if (netif->duplex == 1)
-		netif->mau = LLDP_MAU_TYPE_1000BASE_T_FD;
-	    else
-		netif->mau = LLDP_MAU_TYPE_1000BASE_T_HD;
+	    netif->mau = (netif->duplex) ?
+		LLDP_MAU_TYPE_1000BASE_T_FD : LLDP_MAU_TYPE_1000BASE_T_HD;
 	    break;
 	case IFM_10G_LR:
 	    netif->mau = LLDP_MAU_TYPE_10GBASE_LR;
