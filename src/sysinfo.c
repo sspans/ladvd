@@ -43,7 +43,7 @@ void sysinfo_forwarding(struct sysinfo *);
 
 void sysinfo_fetch(struct sysinfo *sysinfo) {
 
-    int i;
+    int i, ret;
     char *descr = NULL, *release, *endptr;
     struct hostent *hp;
     size_t len = LLDP_INVENTORY_SIZE + 1;
@@ -118,22 +118,31 @@ void sysinfo_fetch(struct sysinfo *sysinfo) {
 	}
     }
 #endif
-    if (!descr)
-	descr = my_strdup("");
 
     // sysinfo.uts
     if (uname(&sysinfo->uts) == -1)
 	my_fatal("can't fetch uname: %s", strerror(errno));
 
-    if (snprintf(sysinfo->uts_str, sizeof(sysinfo->uts_str), "%s%s %s %s %s",
-	descr, sysinfo->uts.sysname, sysinfo->uts.release,
-	sysinfo->uts.version, sysinfo->uts.machine) <= 0)
+    ret = snprintf(sysinfo->uts_str, sizeof(sysinfo->uts_str),
+	    "%s%s %s %s %s", (descr)? descr: "",
+	    sysinfo->uts.sysname, sysinfo->uts.release,
+	    sysinfo->uts.version, sysinfo->uts.machine);
+    if (ret <= 0)
 	my_fatal("can't create uts string: %s", strerror(errno));
-    if (snprintf(sysinfo->platform, sizeof(sysinfo->platform), "%s%s %s",
-	descr, sysinfo->uts.sysname, sysinfo->uts.machine) <= 0)
-	my_fatal("can't create platform string: %s", strerror(errno));
 
-    free(descr);
+    if (descr) {
+	ret = snprintf(sysinfo->platform, sizeof(sysinfo->platform),
+		"%s%s %s", descr, sysinfo->uts.sysname, sysinfo->uts.machine);
+	if (ret <= 0)
+	    my_fatal("can't create platform string: %s", strerror(errno));
+	free(descr);
+    } else {
+	ret = snprintf(sysinfo->platform, sizeof(sysinfo->platform),
+		"%s %s %s", sysinfo->uts.sysname, sysinfo->uts.release,
+		sysinfo->uts.machine);
+	if (ret <= 0)
+	    my_fatal("can't create platform string: %s", strerror(errno));
+    }
 
     i = 0;
     endptr = release = sysinfo->uts.release;
