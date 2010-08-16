@@ -935,7 +935,8 @@ int netif_media(struct netif *netif) {
 	    else if (ecmd.speed == SPEED_1000)
 		netif->mau = (netif->duplex) ?
 		     LLDP_MAU_TYPE_1000BASE_T_FD: LLDP_MAU_TYPE_1000BASE_T_HD;
-	    // XXX: 10GBASE_T not specified...
+	    else if (ecmd.speed == SPEED_10000)
+		netif->mau = LLDP_MAU_TYPE_10GBASE_T;
 	    break;
 	case PORT_FIBRE:
 	    if (ecmd.speed == SPEED_10)
@@ -959,6 +960,12 @@ int netif_media(struct netif *netif) {
 	    break;
 	case PORT_MII:
 	    break;
+#ifdef PORT_DA
+	case PORT_DA:
+	    else if (ecmd.speed == SPEED_10000)
+		netif->mau = LLDP_MAU_TYPE_10GBASE_CX4;
+	    break
+#endif
     }
 #endif /* HAVE_LINUX_ETHTOOL_H */
 
