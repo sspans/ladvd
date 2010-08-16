@@ -6,8 +6,7 @@ FOR 0.9.1:
 - write protocol descriptions
 
 FOR 1.0.0:
-
-CODE:
+- re-check bsd ifmedia defines and IEEE 802.3 mau definitions
 - static functions?
 - restrict pointers?
 - test multilevel interfaces
