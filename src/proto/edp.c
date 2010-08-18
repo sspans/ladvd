@@ -23,7 +23,8 @@
 #include "proto/tlv.h"
 
 
-size_t edp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
+size_t edp_packet(void *packet, struct netif *netif,
+	    struct nhead *netifs, struct sysinfo *sysinfo) {
 
     struct ether_hdr ether;
     struct ether_llc llc;

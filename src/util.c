@@ -281,11 +281,13 @@ struct netif *netif_iter(struct netif *netif, struct nhead *netifs) {
 struct netif *subif_iter(struct netif *subif, struct netif *netif) {
 
     if (netif == NULL)
-	return NULL;
+	return(NULL);
 
     if (subif == NULL) {
-	if (netif->type > 0)
+	if (netif->type > NETIF_REGULAR)
 	    return(netif->subif);
+	else if (netif->type < NETIF_REGULAR)
+	    return(NULL);
 	else
 	    return(netif);
     } else if (subif == netif) {

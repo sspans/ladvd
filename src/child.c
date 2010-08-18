@@ -153,6 +153,10 @@ void child_send(int fd, short event, void *evs) {
 
     while ((netif = netif_iter(netif, &netifs)) != NULL) {
 
+	// skip special interfaces
+	if (netif->type < NETIF_REGULAR)
+	    continue;
+
 	my_log(INFO, "starting loop with interface %s", netif->name); 
 
 	while ((subif = subif_iter(subif, netif)) != NULL) {
@@ -179,7 +183,8 @@ void child_send(int fd, short event, void *evs) {
 		my_log(INFO, "building %s packet for %s", 
 			    protos[p].name, subif->name);
 		mreq.proto = p;
-		mreq.len = protos[p].build_msg(mreq.msg, subif, &sysinfo);
+		mreq.len = protos[p].build_msg(mreq.msg, subif, 
+						&netifs, &sysinfo);
 
 		if (mreq.len == 0) {
 		    my_log(CRIT, "can't generate %s packet for %s",

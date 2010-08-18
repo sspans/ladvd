@@ -114,6 +114,7 @@ int netif_wireless(int, struct ifaddrs *ifaddr, struct ifreq *);
 int netif_type(int, uint32_t index, struct ifaddrs *ifaddr, struct ifreq *);
 void netif_bond(int, struct nhead *, struct netif *, struct ifreq *);
 void netif_bridge(int, struct nhead *, struct netif *, struct ifreq *);
+void netif_vlan(int, struct nhead *, struct netif *, struct ifreq *);
 void netif_addrs(struct ifaddrs *, struct nhead *, struct sysinfo *);
 
 
@@ -203,7 +204,7 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 	// check for interfaces that are down
 	enabled = 0;
 	if (ioctl(sockfd, SIOCGIFFLAGS, (caddr_t)&ifr) >= 0)
-	    enabled = (ifr.ifr_flags & IFF_UP) ? 1 : 0;
+	    enabled = (ifr.ifr_flags & IFF_UP);
 
 	// detect wireless interfaces
 	if (netif_wireless(sockfd, ifaddr, &ifr) == 0) {
@@ -229,6 +230,8 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 	    my_log(INFO, "found bridge interface %s", ifaddr->ifa_name);
 	    sysinfo->cap |= CAP_BRIDGE; 
 	    sysinfo->cap_active |= (enabled == 1) ? CAP_BRIDGE : 0;
+	} else if (type == NETIF_VLAN) {
+	    my_log(INFO, "found vlan interface %s", ifaddr->ifa_name);
 	} else if (type == NETIF_INVALID) {
 	    my_log(INFO, "skipping interface %s", ifaddr->ifa_name);
 	    continue;
@@ -289,7 +292,8 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 	free(netif);
     }
 
-    // add slave subif lists to each master
+    // add slave subif lists to each bond/bridge
+    // detect vlan interface settings
     TAILQ_FOREACH(netif, netifs, entries) {
 	switch(netif->type) {
 	    case NETIF_BONDING:
@@ -299,6 +303,10 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 	    case NETIF_BRIDGE:
 		my_log(INFO, "detecting %s settings", netif->name);
 		netif_bridge(sockfd, netifs, netif, &ifr);
+		break;
+	    case NETIF_VLAN:
+		my_log(INFO, "detecting %s settings", netif->name);
+		netif_vlan(sockfd, netifs, netif, &ifr);
 		break;
 	    default:
 		break;
@@ -400,7 +408,8 @@ int netif_type(int sockfd, uint32_t index,
     struct ethtool_drvinfo drvinfo = {};
 #endif
 
-#if defined(HAVE_LINUX_IF_VLAN_H) && defined(GET_VLAN_REALDEV_NAME_CMD)
+#if defined(HAVE_LINUX_IF_VLAN_H) && \
+    defined(HAVE_DECL_GET_VLAN_REALDEV_NAME_CMD)
     struct vlan_ioctl_args if_request = {};
 #endif /* HAVE_LINUX_IF_VLAN_H */
 #ifdef HAVE_NET_IF_VLAN_VAR_H
@@ -422,13 +431,14 @@ int netif_type(int sockfd, uint32_t index,
 	return(NETIF_REGULAR);
 #endif /* HAVE_SYSFS */
 
-#if defined(HAVE_LINUX_IF_VLAN_H) && defined(GET_VLAN_REALDEV_NAME_CMD)
+#if defined(HAVE_LINUX_IF_VLAN_H) && \
+    defined(HAVE_DECL_GET_VLAN_REALDEV_NAME_CMD)
     // vlan
     if_request.cmd = GET_VLAN_REALDEV_NAME_CMD;
     strlcpy(if_request.device1, ifaddr->ifa_name, sizeof(if_request.device1));
 
     if (ioctl(sockfd, SIOCSIFVLAN, &if_request) >= 0)
-	return(NETIF_INVALID);
+	return(NETIF_VLAN);
 #endif /* HAVE_LINUX_IF_VLAN_H */
 
 #if HAVE_LINUX_ETHTOOL_H
@@ -445,7 +455,7 @@ int netif_type(int sockfd, uint32_t index,
 	    return(NETIF_BRIDGE);
 	// handle vlan
 	} else if (strcmp(drvinfo.driver, "802.1Q VLAN Support") == 0) {
-	    return(NETIF_INVALID);
+	    return(NETIF_VLAN);
 	// handle tun/tap
 	} else if (strcmp(drvinfo.driver, "tun") == 0) {
 	    return(NETIF_REGULAR);
@@ -468,7 +478,7 @@ int netif_type(int sockfd, uint32_t index,
 #ifdef HAVE_NET_IF_VLAN_VAR_H
 	ifr->ifr_data = (caddr_t)&vreq;
 	if (ioctl(sockfd, SIOCGETVLAN, ifr) >= 0)
-	    return(NETIF_INVALID);
+	    return(NETIF_VLAN);
 #endif /* HAVE_NET_IF_VLAN_VAR_H */
 
 	// bonding
@@ -553,7 +563,8 @@ void netif_bond(int sockfd, struct nhead *netifs, struct netif *master,
 	if (ioctl(sockfd, SIOCBONDSLAVEINFOQUERY, ifr) >= 0) {
 	    subif = netif_byname(netifs, ifslave.slave_name);
 
-	    if (subif != NULL) {
+	    // XXX: multi-level bonds not supported
+	    if ((subif != NULL) && (subif->type == NETIF_REGULAR)) {
 		my_log(INFO, "found slave %s", subif->name);
 		subif->slave = 1;
 		subif->master = master;
@@ -586,7 +597,8 @@ void netif_bond(int sockfd, struct nhead *netifs, struct netif *master,
     for (int i = 0; i < ra.ra_ports; i++) {
 	subif = netif_byname(netifs, rpbuf[i].rp_portname);
 
-	if (subif != NULL) {
+	// XXX: multi-level bonds not supported
+	if ((subif != NULL) && (subif->type == NETIF_REGULAR)) {
 	    my_log(INFO, "found slave %s", subif->name);
 	    subif->slave = 1;
 	    subif->master = master;
@@ -628,7 +640,8 @@ void netif_bond(int sockfd, struct nhead *netifs, struct netif *master,
 	for (int i = 0; i < ibsr->ibsr_total; i++) {
 	    subif = netif_byname(netifs, ibs->ibs_if_name);
 
-	    if (subif != NULL) {
+	    // XXX: multi-level bonds not supported
+	    if ((subif != NULL) && (subif->type == NETIF_REGULAR)) {
 		my_log(INFO, "found slave %s", subif->name);
 		subif->slave = 1;
 		subif->master = master;
@@ -675,7 +688,8 @@ void netif_bridge(int sockfd, struct nhead *netifs, struct netif *master,
     for (int i = 0; i < BRIDGE_MAX_PORTS; i++) {
 	subif = netif_byindex(netifs, ifindex[i]);
 
-	if (subif != NULL) {
+	// XXX: multi-level bridges not supported
+	if ((subif != NULL) && (subif->type == NETIF_REGULAR)) {
 	    my_log(INFO, "found slave %s", subif->name);
 	    subif->slave = 1;
 	    subif->master = master;
@@ -735,7 +749,9 @@ void netif_bridge(int sockfd, struct nhead *netifs, struct netif *master,
 	req = bifc.ifbic_req + i;
 
 	subif = netif_byname(netifs, req->ifbr_ifsname);
-	if (subif != NULL) {
+
+	// XXX: multi-level bridges not supported
+	if ((subif != NULL) && (subif->type == NETIF_REGULAR)) {
 	    my_log(INFO, "found slave %s", subif->name);
 	    subif->slave = 1;
 	    subif->master = master;
@@ -750,6 +766,53 @@ void netif_bridge(int sockfd, struct nhead *netifs, struct netif *master,
     return;
 #endif
 
+}
+
+
+// handle vlan interfaces
+void netif_vlan(int sockfd, struct nhead *netifs, struct netif *vlan,
+		  struct ifreq *ifr) {
+
+    struct netif *netif;
+
+#ifdef HAVE_LINUX_IF_VLAN_H
+#if defined(HAVE_DECL_GET_VLAN_REALDEV_NAME_CMD) && \
+    defined(HAVE_DECL_GET_VLAN_VID_CMD)
+    struct vlan_ioctl_args if_request = {};
+
+    if_request.cmd = GET_VLAN_REALDEV_NAME_CMD;
+    strlcpy(if_request.device1, netif->name, sizeof(if_request.device1));
+
+    if (ioctl(sockfd, SIOCSIFVLAN, &if_request) < 0)
+	return;
+
+    netif = netif_byname(netifs, if_request.u.device2);
+    if (netif == NULL)
+	return;
+    vlan->vlan_parent = netif->index;
+
+    if_request.cmd = GET_VLAN_VID_CMD;
+    if (ioctl(sockfd, SIOCSIFVLAN, &if_request) >= 0)
+	vlan->vlan_id = if_request.u.VID;
+
+    return;
+#endif
+#endif /* HAVE_LINUX_IF_VLAN_H */
+
+#ifdef HAVE_NET_IF_VLAN_VAR_H
+    struct vlanreq vreq = {};
+
+    ifr->ifr_data = (caddr_t)&vreq;
+    if (ioctl(sockfd, SIOCGETVLAN, ifr) < 0)
+	return;
+
+    netif = netif_byname(netifs, vreq.vlr_parent);
+    if (netif == NULL)
+	return;
+
+    vlan->vlan_parent = netif->index;
+    vlan->vlan_id = vreq.vlr_tag;
+#endif /* HAVE_NET_IF_VLAN_VAR_H */
 }
 
 

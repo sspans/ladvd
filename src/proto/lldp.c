@@ -22,7 +22,9 @@
 #include "proto/lldp.h"
 #include "proto/tlv.h"
 
-size_t lldp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
+
+size_t lldp_packet(void *packet, struct netif *netif,
+		struct nhead *netifs, struct sysinfo *sysinfo) {
 
     struct ether_hdr ether;
 
@@ -32,7 +34,7 @@ size_t lldp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
     tlv_t type;
 
     uint16_t cap = 0, cap_active = 0;
-    struct netif *master;
+    struct netif *master, *vlanif = NULL;
 
     const uint8_t lldp_dst[] = LLDP_MULTICAST_ADDR;
 
@@ -168,6 +170,29 @@ size_t lldp_packet(void *packet, struct netif *netif, struct sysinfo *sysinfo) {
 	END_LLDP_TLV;
     }
 
+
+    // IEEE 802.1 Organizationally Specific TLV set
+
+    // vlan names
+    while ((vlanif = netif_iter(vlanif, netifs)) != NULL) {    
+	    if (vlanif->type != NETIF_VLAN)
+		continue;
+
+	    // skip unless attached to this interface or the parent
+	    if ((vlanif->vlan_parent != netif->index) &&
+		(vlanif->vlan_parent != master->index))
+		continue;
+
+	    if (!(
+		START_LLDP_TLV(LLDP_TYPE_PRIVATE) &&
+		PUSH_BYTES(OUI_IEEE_8021_PRIVATE, OUI_LEN) &&
+		PUSH_UINT8(LLDP_PRIVATE_8021_SUBTYPE_VLAN_NAME) &&
+		PUSH_UINT16(vlanif->vlan_id) &&
+		PUSH_BYTES(vlanif->name, strlen(vlanif->name))
+	    ))
+		return 0;
+	    END_LLDP_TLV;
+    }
 
 
     // IEEE 802.3 Organizationally Specific TLV set

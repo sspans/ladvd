@@ -241,6 +241,10 @@ AC_CHECK_HEADERS([linux/if_vlan.h linux/if_bridge.h linux/if_bonding.h], [], [],
 #include <sys/socket.h>
 #include <linux/netdevice.h>
 ])
+# check enums in linux/if_vlan.h
+AC_CHECK_DECLS([GET_VLAN_REALDEV_NAME_CMD,GET_VLAN_VID_CMD],[],[],
+               [[#include <linux/if_vlan.h>]])
+
 AC_CHECK_HEADERS([net/if_vlan_var.h net/if_bridge.h net/if_bridgevar.h \
 		  net/if_lagg.h net/if_trunk.h net/if_bond_var.h], [], [],
 [

@@ -111,10 +111,13 @@ struct netif {
     uint32_t ipaddr6[4];
 
     uint8_t argv;
-    uint8_t type;
+    int8_t type;
     uint8_t slave;
     uint8_t lacp;
     uint8_t lacp_index;
+
+    uint16_t vlan_id; 
+    uint32_t vlan_parent;
 
     uint16_t protos;
     uint8_t update;
@@ -165,12 +168,12 @@ struct sysinfo {
 #define CAP_MAX		9
 #define CAP_STRING	"rBHRSWCTO"
 
-#define NETIF_INVALID	-1
+#define NETIF_INVALID	INT8_MIN
+#define NETIF_VLAN	-1
 #define NETIF_REGULAR	0
 #define NETIF_BONDING	1
 #define NETIF_BRIDGE	2
-#define NETIF_OLD	255
-
+#define NETIF_OLD	INT8_MAX
 
 #define OPT_DAEMON	(1 << 0)
 #define OPT_RECV	(1 << 1)
@@ -250,7 +253,7 @@ struct proto {
     uint8_t dst_addr[ETHER_ADDR_LEN];
     uint8_t llc_org[3];
     uint16_t llc_pid;
-    size_t (*build_msg) (void *, struct netif *, struct sysinfo *);
+    size_t (*build_msg) (void *, struct netif *, struct nhead *, struct sysinfo *);
     char * (*check) (void *, size_t);
     size_t (*decode) (struct master_msg *);
 };
