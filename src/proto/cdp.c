@@ -172,31 +172,37 @@ size_t cdp_packet(void *packet, struct netif *netif,
 
 
     // mtu
-    if (netif->mtu && !(
-	START_CDP_TLV(CDP_TYPE_MTU) &&
-	PUSH_UINT32(netif->mtu)
-    ))
-	return 0;
-    END_CDP_TLV;
+    if (netif->mtu) {
+	if (!(
+	    START_CDP_TLV(CDP_TYPE_MTU) &&
+	    PUSH_UINT32(netif->mtu)
+	))
+	    return 0;
+	END_CDP_TLV;
+    }
 
 
     // duplex
-    if ((netif->duplex != -1) && !(
-	START_CDP_TLV(CDP_TYPE_DUPLEX) &&
-	PUSH_UINT8(netif->duplex)
-    ))
-	return 0;
-    END_CDP_TLV;
+    if (netif->duplex != -1) {
+	if (!(
+	    START_CDP_TLV(CDP_TYPE_DUPLEX) &&
+	    PUSH_UINT8(netif->duplex)
+	))
+	    return 0;
+	END_CDP_TLV;
+    }
 
 
     // location
-    if ((strlen(sysinfo->location) != 0) && !(
-	START_CDP_TLV(CDP_TYPE_LOCATION) &&
-	PUSH_UINT8(0) &&
-	PUSH_BYTES(sysinfo->location, strlen(sysinfo->location))
-    ))
-	return 0;
-    END_CDP_TLV;
+    if (strlen(sysinfo->location) != 0) {
+	if (!(
+	    START_CDP_TLV(CDP_TYPE_LOCATION) &&
+	    PUSH_UINT8(0) &&
+	    PUSH_BYTES(sysinfo->location, strlen(sysinfo->location))
+	))
+	    return 0;
+	END_CDP_TLV;
+    }
 
 
     // workaround cisco crc bug (>0x80 in last uneven byte)
