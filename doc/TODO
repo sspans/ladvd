@@ -1,5 +1,5 @@
 FOR 0.9.1:
-- Improve local packet filtering
+- test openbsd bridging for packet loops
 - Improve device-id flexibility
 - add edp vlan TLV
 - implement ladvdc verbose decoding

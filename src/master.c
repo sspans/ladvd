@@ -512,13 +512,25 @@ int master_socket(struct rawfd *rfd) {
 
     // disable buffering
     if (ioctl(fd, BIOCIMMEDIATE, (caddr_t)&enable) < 0)
-	my_fatal("unable to configure immediate mode for %s", rfd->name);
+	my_fatal("unable to configure BPF immediate mode for %s", rfd->name);
     // set header complete
     if (ioctl(fd, BIOCSHDRCMPLT, (caddr_t)&enable) < 0)
-	my_fatal("unable to configure immediate mode for %s", rfd->name);
+	my_fatal("unable to configure BPF header completion for %s", rfd->name);
+
+    // set direction
+#ifdef BIOCSDIRECTION
+    enable = BPF_D_IN;
+    if (ioctl(fd, BIOCSDIRECTION, (caddr_t)&enable) < 0)
+	my_fatal("unable to configure BPF direction for %s", rfd->name);
+#elif defined BIOCSDIRFILT
+    enable = BPF_DIRECTION_IN;
+    if (ioctl(fd, BIOCSDIRFILT, (caddr_t)&enable) < 0)
+	my_fatal("unable to configure BPF direction for %s", rfd->name);
+#endif
+
     // install bpf filter
     if (ioctl(fd, BIOCSETF, (caddr_t)&fprog) < 0)
-	my_fatal("unable to configure bpf filter for %s", rfd->name);
+	my_fatal("unable to configure BPF filter for %s", rfd->name);
 #endif
 
     return(fd);
@@ -593,6 +605,10 @@ void master_recv(int fd, short event, struct rawfd *rfd) {
     static unsigned int rcount = 0;
     int p;
     ssize_t len = 0;
+#ifdef HAVE_NETPACKET_PACKET_H
+    struct sockaddr_ll sa = {};
+    socklen_t sa_len = sizeof(sa);
+#endif /* HAVE_NETPACKET_PACKET_H */
 #ifdef HAVE_NET_BPF_H
     void *bp, *endp;
 #define bhp ((struct bpf_hdr *)bp)
@@ -622,11 +638,16 @@ void master_recv(int fd, short event, struct rawfd *rfd) {
 	memcpy(mrecv.msg, bp + bhp->bh_hdrlen, mrecv.len);
 
 #elif defined HAVE_NETPACKET_PACKET_H
-    if ((len = read(rfd->fd, mrecv.msg, ETHER_MAX_LEN)) == -1) {
+    if ((len = recvfrom(rfd->fd, mrecv.msg, ETHER_MAX_LEN, 0,
+			(struct sockaddr *)&sa, &sa_len)) == -1) {
 	my_log(CRIT,"receiving message failed: %s", strerror(errno));
 	return;
     }
     mrecv.len = len;
+
+    // skip locally generated packets
+    if (sa.sll_pkttype == PACKET_OUTGOING)
+	return;
 #endif /* HAVE_NETPACKET_PACKET_H */
 
     // skip small packets
