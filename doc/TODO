@@ -1,7 +1,7 @@
 FOR 0.9.1:
 - Improve local packet filtering
 - Improve device-id flexibility
-- grab and report detected vlan interfaces
+- add edp vlan TLV
 - implement ladvdc verbose decoding
 - write protocol descriptions
 
