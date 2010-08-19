@@ -579,7 +579,7 @@ START_TEST(test_master_recv) {
     bhp = (struct bpf_hdr *)buf;
     hlen = BPF_WORDALIGN(sizeof(struct bpf_hdr));
     bhp->bh_hdrlen = hlen;
-    bhp->bh_caplen = ETHER_MIN_LEN - 1;
+    bhp->bh_caplen = ETHER_MIN_LEN - ETHER_VLAN_ENCAP_LEN - 1;
     msg = buf + hlen;
 
     // create an end bhp covering the rest of buf
