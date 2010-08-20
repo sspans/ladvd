@@ -237,7 +237,7 @@ void child_queue(int fd, short event) {
 
     // skip locally generated packets
     ether = (struct ether_hdr *)rmsg.msg;
-    if (memcmp(subif->hwaddr, ether->src, ETHER_ADDR_LEN) == 0)
+    if (netif_byaddr(&netifs, ether->src) != NULL)
 	return;
 
     // decode message

@@ -81,6 +81,19 @@ struct netif *netif_byname(struct nhead *netifs, char *name) {
     return(netif);
 }
 
+static inline
+struct netif *netif_byaddr(struct nhead *netifs, uint8_t *hwaddr) {
+    struct netif *netif;
+
+    assert((netifs != NULL) && (hwaddr != NULL));
+
+    TAILQ_FOREACH(netif, netifs, entries) {
+	if (memcmp(netif->hwaddr, hwaddr, ETHER_ADDR_LEN) == 0)
+	    break;
+    }
+    return(netif);
+}
+
 #define PCAP_MAGIC	0xA1B2C3D4
 
 typedef struct pcap_hdr_s {
