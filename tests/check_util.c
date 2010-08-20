@@ -333,6 +333,8 @@ START_TEST(test_netif) {
     fail_unless (netif_byname(netifs, "eth3") == NULL,
 	"NULL should be returned on not found netif");
 
+    // XXX: netif_byaddr checks
+
     msg = my_malloc(MASTER_MSG_SIZ);
     netif = netif_byname(netifs, "eth0");
     msg->index = netif->index;
