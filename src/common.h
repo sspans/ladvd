@@ -119,7 +119,7 @@ struct netif {
     uint16_t vlan_id; 
     uint32_t vlan_parent;
 
-    uint16_t protos;
+    uint8_t protos;
     uint8_t update;
 
     struct netif *master;
