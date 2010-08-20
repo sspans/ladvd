@@ -1,10 +1,12 @@
-FOR 0.9.1:
+For 0.9.1:
 - Improve device-id flexibility
 - add edp vlan TLV
-- implement ladvdc verbose decoding
 - write protocol descriptions
 
-FOR 1.0.0:
+For 0.9.2:
+- implement ladvdc verbose decoding
+
+For 1.0.0:
 - static functions?
 - restrict pointers?
 - test multilevel interfaces
