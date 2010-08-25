@@ -38,7 +38,7 @@ size_t edp_packet(void *packet, struct netif *netif,
     static uint16_t edp_count = 0;
 
     void *edp_start;
-    struct netif *master;
+    struct netif *master, *vlanif = NULL;
 
     const uint8_t edp_dst[] = EDP_MULTICAST_ADDR;
     const uint8_t llc_org[] = LLC_ORG_EXTREME;
@@ -76,7 +76,7 @@ size_t edp_packet(void *packet, struct netif *netif,
     // display
     if (!(
 	START_EDP_TLV(EDP_TYPE_DISPLAY) &&
-	PUSH_BYTES(sysinfo->hostname, strlen(sysinfo->hostname))
+	PUSH_BYTES(sysinfo->hostname, strlen(sysinfo->hostname) + 1)
     ))
 	return 0;
     END_EDP_TLV;
@@ -85,8 +85,10 @@ size_t edp_packet(void *packet, struct netif *netif,
     // info
     if (!(
 	START_EDP_TLV(EDP_TYPE_INFO) &&
-	PUSH_UINT16(0) && PUSH_UINT16(netif->index) && PUSH_UINT16(0) &&
-	PUSH_UINT16(0) && PUSH_UINT32(0) &&
+	PUSH_UINT16(0) &&		    // slot
+	PUSH_UINT16(netif->index) &&	    // port
+	PUSH_UINT16(0) &&		    // chassis
+	PUSH_UINT32(0) && PUSH_UINT16(0) && // reserved
 	PUSH_UINT8(sysinfo->uts_rel[0]) && PUSH_UINT8(sysinfo->uts_rel[1]) &&
 	PUSH_UINT8(sysinfo->uts_rel[2]) && PUSH_UINT8(0) &&
 	PUSH_UINT16(0xffff) && PUSH_UINT16(0) &&
@@ -99,8 +101,11 @@ size_t edp_packet(void *packet, struct netif *netif,
     // vlan
     if (master->ipaddr4 != 0) {
 	if (!(
-	    START_EDP_TLV(EDP_TYPE_VLAN) && PUSH_UINT8(1 << 7) &&
-	    PUSH_BYTES("\x00\x00\x00", 3) && PUSH_UINT16(0) && PUSH_UINT16(0) &&
+	    START_EDP_TLV(EDP_TYPE_VLAN) &&
+	    PUSH_UINT8(EDP_VLAN_FLAG_IP) &&
+	    PUSH_UINT8(0) &&	    // reserved
+	    PUSH_UINT16(0) &&	    // vlan-id
+	    PUSH_UINT32(0) &&	    // reserved
 	    PUSH_BYTES(&master->ipaddr4, sizeof(master->ipaddr4)) &&
 	    PUSH_BYTES(netif->name, strlen(netif->name))
 	))
@@ -108,6 +113,27 @@ size_t edp_packet(void *packet, struct netif *netif,
 	END_EDP_TLV;
     }
 
+    while ((vlanif = netif_iter(vlanif, netifs)) != NULL) {
+	if (vlanif->type != NETIF_VLAN)
+	    continue;
+    
+	// skip unless attached to this interface or the parent
+	if ((vlanif->vlan_parent != netif->index) &&
+	    (vlanif->vlan_parent != master->index))
+	    continue;
+
+	if (!(
+	    START_EDP_TLV(EDP_TYPE_VLAN) &&
+	    PUSH_UINT8((vlanif->ipaddr4) ? EDP_VLAN_FLAG_IP : 0) &&
+	    PUSH_UINT8(0) &&			    // reserved
+	    PUSH_UINT16(vlanif->vlan_id) &&	    // vlan-id
+	    PUSH_UINT32(0) &&			    // reserved
+	    PUSH_BYTES(&vlanif->ipaddr4, sizeof(vlanif->ipaddr4)) &&
+	    PUSH_BYTES(netif->name, strlen(netif->name))
+	))
+	    return 0;
+	END_EDP_TLV;
+    }
 
     // the end
     if (!(

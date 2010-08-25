@@ -41,4 +41,6 @@ struct edp_header {
 #define EDP_TYPE_VLAN	    0x05
 #define EDP_TYPE_ESRP	    0x08
 
+#define EDP_VLAN_FLAG_IP    1 << 7
+
 #endif /* _edp_h */
