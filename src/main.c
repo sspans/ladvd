@@ -35,7 +35,6 @@ int main(int argc, char *argv[]) {
 
     int ch, i;
     char *username = PACKAGE_USER;
-    char *pidfile = PACKAGE_PID_FILE;
     char pidstr[16];
     int fd = -1;
     struct passwd *pwd = NULL;
@@ -165,15 +164,18 @@ int main(int argc, char *argv[]) {
 	    my_fatal("backgrounding failed: %s", strerror(errno));
 
 	// create pidfile
-	fd = open(pidfile, O_WRONLY|O_CREAT, 0666);
+	fd = open(PACKAGE_PID_FILE, O_WRONLY|O_CREAT, 0666);
 	if (fd == -1)
-	    my_fatal("failed to open pidfile %s: %s", pidfile, strerror(errno));
+	    my_fatal("failed to open pidfile " PACKAGE_PID_FILE ": %s",
+			strerror(errno));
 	if (flock(fd, LOCK_EX|LOCK_NB) == -1)
-	    my_fatal(PACKAGE_NAME " already running (%s locked)", pidfile);
+	    my_fatal(PACKAGE_NAME " already running ("
+			PACKAGE_PID_FILE " locked)");
 
 	if ((snprintf(pidstr, sizeof(pidstr), "%d\n", (int)getpid()) <= 0) ||
 	    (write(fd, pidstr, strlen(pidstr)) <= 0))
-	    my_fatal("failed to write pidfile: %s", strerror(errno));
+	    my_fatal("failed to write pidfile " PACKAGE_PID_FILE ": %s",
+			strerror(errno));
     
 	// init syslog before chrooting (including tz)
 	tzset();
