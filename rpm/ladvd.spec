@@ -15,6 +15,7 @@ BuildRequires:  libcap-devel
 %endif
 BuildRequires:  pkgconfig
 BuildRequires:  check-devel
+Requires:	/usr/bin/lsb_release
 Version:	0.9.0
 Release:	1
 License:	ISC
