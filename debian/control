@@ -8,6 +8,7 @@ Standards-Version: 3.8.4
 Package: ladvd
 Architecture: any
 Depends: adduser, lsb-base, ${shlibs:Depends}, ${misc:Depends}
+Suggests: lsb-release
 Description: minimal CDP/LLDP sender
  ladvd sends link layer advertisements on all available interfaces.
  This makes connected hosts visible on managed switches. By default it
