@@ -101,10 +101,10 @@ void master_init(int reqfd, int msgfd, pid_t child) {
 		"cap_net_broadcast=ep cap_kill=ep");
 
 	if (caps == NULL)
-	    my_fatal("unable to create capabilities: %s", strerror(errno));
+	    my_fatale("unable to create capabilities");
 
 	if (cap_set_proc(caps) == -1)
-	    my_fatal("unable to set capabilities: %s", strerror(errno));
+	    my_fatale("unable to set capabilities");
 
 	(void) cap_free(caps);
 #endif /* HAVE_LIBCAP */
@@ -306,7 +306,7 @@ void master_send(int msgfd, short event) {
 	    master_close(rfd);
 
     if (len != msend.len)
-	my_log(WARN, "only %zi bytes written: %s", len, strerror(errno));
+	my_loge(WARN, "only %zi bytes written", len);
 
     return;
 }
@@ -572,8 +572,8 @@ void master_multi(struct rawfd *rfd, struct proto *protos, int op) {
 	op = (op) ? PACKET_ADD_MEMBERSHIP:PACKET_DROP_MEMBERSHIP;
 
 	if (setsockopt(rfd->fd, SOL_PACKET, op, &mreq, sizeof(mreq)) < 0)
-	    my_log(CRIT, "unable to change %s multicast on %s: %s",
-		     protos[p].name, rfd->name, strerror(errno));
+	    my_loge(CRIT, "unable to change %s multicast on %s",
+		     protos[p].name, rfd->name);
 
 #elif defined AF_LINK
 #ifdef __FreeBSD__
@@ -591,8 +591,8 @@ void master_multi(struct rawfd *rfd, struct proto *protos, int op) {
 #endif
 	if ((ioctl(sock, (op) ? SIOCADDMULTI: SIOCDELMULTI, &ifr) < 0) &&
 	    (errno != EADDRINUSE))
-	    my_log(CRIT, "unable to change %s multicast on %s: %s",
-		     protos[p].name, rfd->name, strerror(errno));
+	    my_loge(CRIT, "unable to change %s multicast on %s",
+		     protos[p].name, rfd->name);
 #endif
     }
 }
@@ -620,7 +620,7 @@ void master_recv(int fd, short event, struct rawfd *rfd) {
     assert(rfd->bpf_buf.len);
 
     if ((len = read(rfd->fd, rfd->bpf_buf.data, rfd->bpf_buf.len)) == -1) {
-	my_log(CRIT,"receiving message failed: %s", strerror(errno));
+	my_loge(CRIT,"receiving message failed");
 	return;
     }
 
@@ -640,7 +640,7 @@ void master_recv(int fd, short event, struct rawfd *rfd) {
 #elif defined HAVE_NETPACKET_PACKET_H
     if ((len = recvfrom(rfd->fd, mrecv.msg, ETHER_MAX_LEN, 0,
 			(struct sockaddr *)&sa, &sa_len)) == -1) {
-	my_log(CRIT,"receiving message failed: %s", strerror(errno));
+	my_loge(CRIT,"receiving message failed");
 	return;
     }
     mrecv.len = len;

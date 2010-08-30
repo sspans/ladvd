@@ -26,35 +26,47 @@ int8_t loglevel = CRIT;
 int msock = -1;
 pid_t pid = 0;
 
-static void my_vlog(const char *func, const char *fmt, va_list ap) {
+static void my_vlog(const char *func, int err, const char *fmt, va_list ap) {
+    char *efmt;
 
     if (options & OPT_DAEMON) {
-	vsyslog(LOG_INFO, fmt, ap);
+	if (err && asprintf(&efmt, "%s: %s", fmt, strerror(err)) != -1) {
+	    vsyslog(LOG_ERR, efmt, ap);
+	    free(efmt);
+	} else {
+	    vsyslog(LOG_INFO, fmt, ap);
+	}
     } else {
 	if (loglevel == DEBUG)
 	    fprintf(stderr, "%s: ", func);
-	vfprintf(stderr, fmt, ap);
-	fprintf(stderr, "\n");
+
+	if (err && asprintf(&efmt, "%s: %s\n", fmt, strerror(err)) != -1) {
+	    vfprintf(stderr, efmt, ap);
+	    free(efmt);
+	} else {
+	    vfprintf(stderr, fmt, ap);
+	    fprintf(stderr, "\n");
+	}
     }
 }
 
-void __my_log(const char *func, int8_t prio, const char *fmt, ...) {
+void __my_log(const char *func, int8_t prio, int err, const char *fmt, ...) {
     va_list ap;
 
     if (prio > loglevel)
 	return;
 
     va_start(ap, fmt);
-    my_vlog(func, fmt, ap);
+    my_vlog(func, err, fmt, ap);
     va_end(ap);
 }
 
 __noreturn
-void __my_fatal(const char *func, const char *fmt, ...) {
+void __my_fatal(const char *func, int err, const char *fmt, ...) {
     va_list ap;
 
     va_start(ap, fmt);
-    my_vlog(func, fmt, ap);
+    my_vlog(func, err, fmt, ap);
     va_end(ap);
 
     // exit via a sigterm signal
@@ -95,7 +107,7 @@ int my_socket(int af, int type, int proto) {
     int s;
 
     if ((s = socket(af, type, proto)) == -1)
-	my_fatal("opening socket failed: %s", strerror(errno));
+	my_fatale("opening socket failed");
 
     return(s);
 }
@@ -106,16 +118,16 @@ void my_socketpair(int spair[]) {
     assert(spair != NULL);
 
     if (socketpair(AF_UNIX, SOCK_DGRAM, 0, spair) == -1)
-	my_fatal("msg socketpair creation failed: %s", strerror(errno));
+	my_fatale("socketpair creation failed");
 
     for (int i = 0; i<2; i++) {
 	if (setsockopt(spair[i], SOL_SOCKET, SO_RCVBUF,
 		       &rbuf, sizeof(rbuf)) == -1)
-	    my_fatal("failed to set rcvbuf: %s", strerror(errno));
+	    my_fatale("failed to set rcvbuf");
 
 	if (setsockopt(spair[i], SOL_SOCKET, SO_SNDBUF,
 		       &rbuf, sizeof(rbuf)) == -1)
-	    my_fatal("failed to set sndbuf: %s", strerror(errno));
+	    my_fatale("failed to set sndbuf");
     }
 }
 
@@ -154,7 +166,7 @@ void my_chroot(const char *path) {
 	}
 
 	if (stat(component, &st) != 0)
-	    my_fatal("stat(\"%s\"): %s", component, strerror(errno));
+	    my_fatale("stat(\"%s\")", component);
 	if (st.st_uid != 0 || (st.st_mode & 022) != 0)
 	    my_fatal("bad ownership or modes for chroot "
 		    "directory %s\"%s\"",
@@ -165,24 +177,23 @@ void my_chroot(const char *path) {
     }
 
     if (chdir(path) == -1)
-	my_fatal("unable to chdir to chroot path \"%s\": %s",
-		 path, strerror(errno));
+	my_fatale("unable to chdir to chroot path \"%s\"", path);
     if (chroot(path) == -1)
-	my_fatal("chroot(\"%s\"): %s", path, strerror(errno));
+	my_fatale("chroot(\"%s\")", path);
     if (chdir("/") == -1)
-	my_fatal("chdir(/) after chroot: %s", strerror(errno));
+	my_fatale("chdir(/) after chroot");
 }
 
 __nonnull()
 void my_drop_privs(struct passwd *pwd) {
     if (setgroups(0, NULL) == -1)
-	my_fatal("unable to setgroups: %s", strerror(errno));
+	my_fatale("unable to setgroups");
 
     if (setresgid(pwd->pw_gid, pwd->pw_gid, pwd->pw_gid) == -1)
-	my_fatal("unable to setresgid: %s", strerror(errno));
+	my_fatale("unable to setresgid");
 
     if (setresuid(pwd->pw_uid, pwd->pw_uid, pwd->pw_uid) == -1)
-   	my_fatal("unable to setresuid: %s", strerror(errno));
+   	my_fatale("unable to setresuid");
 }
 
 __nonnull()
@@ -237,7 +248,7 @@ ssize_t my_mreq(struct master_req *mreq) {
 
     len = write(msock, mreq, MASTER_REQ_LEN(mreq->len));
     if (len < MASTER_REQ_MIN || len != MASTER_REQ_LEN(mreq->len))
-	my_fatal("only %zi bytes written: %s", len, strerror(errno));
+	my_fatale("only %zi bytes written", len);
 
     memset(mreq, 0, MASTER_REQ_MAX);
     len = read(msock, mreq, MASTER_REQ_MAX);
@@ -429,7 +440,7 @@ void write_pcap_rec(int fd, struct master_msg *msg) {
 
     len = writev(fd, iov, 2);
     if (len != (sizeof(pcap_rec_hdr) + msg->len))
-	my_log(WARN, "only %zi bytes written: %s", len, strerror(errno));
+	my_loge(WARN, "only %zi bytes written", len);
 
     return;
 }

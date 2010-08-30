@@ -29,10 +29,12 @@
 
 extern int8_t loglevel;
 
-#define my_log(p, ...)	    __my_log(__func__, p, __VA_ARGS__)
-#define my_fatal(...)	    __my_fatal(__func__, __VA_ARGS__)
-void __my_log(const char *func, int8_t prio, const char *fmt, ...);
-void __my_fatal(const char *func, const char *fmt, ...) __noreturn;
+#define my_log(p, ...)	    __my_log(__func__, p, 0, __VA_ARGS__)
+#define my_loge(p, ...)	    __my_log(__func__, p, errno, __VA_ARGS__)
+#define my_fatal(...)	    __my_fatal(__func__, 0, __VA_ARGS__)
+#define my_fatale(...)	    __my_fatal(__func__, errno, __VA_ARGS__)
+void __my_log(const char *func, int8_t prio, int err, const char *fmt, ...);
+void __my_fatal(const char *func, int err, const char *fmt, ...) __noreturn;
 
 void *my_malloc(size_t size);
 void *my_calloc(size_t, size_t);

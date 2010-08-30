@@ -28,8 +28,10 @@ char check_wrap_errstr[1024];
 #define WRAP(name, cond, params, args) \
 int __real_##name params ;\
 int __wrap_##name params {\
-    if (check_wrap_fail & FAIL_##cond) \
+    if (check_wrap_fail & FAIL_##cond) {\
+	errno = ECANCELED; \
 	return -1; \
+    } \
     if (check_wrap_fake & FAKE_##cond) \
 	return 0; \
     return __real_##name args;\

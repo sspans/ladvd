@@ -62,13 +62,13 @@ void sysinfo_fetch(struct sysinfo *sysinfo) {
     char buf[512], *bufp;
 
     if (pipe(pipes) == -1)
-	my_fatal("sysinfo pipe failed: %s", strerror(errno));
+	my_fatale("sysinfo pipe failed");
 
     pid = fork();
 
     // quit on failure
     if (pid == -1)
-	my_fatal("sysinfo fork failed: %s", strerror(errno));
+	my_fatale("sysinfo fork failed");
 
     // this is the child
     if (pid == 0) {
@@ -88,7 +88,7 @@ void sysinfo_fetch(struct sysinfo *sysinfo) {
     // this is the parent
     close(pipes[1]);
     if ((fd = fdopen(pipes[0], "r")) == NULL)
-	my_fatal("sysinfo fdopen failed: %s", strerror(errno));
+	my_fatale("sysinfo fdopen failed");
 
     while (fgets(buf, 512, fd)) {
 	if (descr)
@@ -121,27 +121,27 @@ void sysinfo_fetch(struct sysinfo *sysinfo) {
 
     // sysinfo.uts
     if (uname(&sysinfo->uts) == -1)
-	my_fatal("can't fetch uname: %s", strerror(errno));
+	my_fatale("can't fetch uname");
 
     ret = snprintf(sysinfo->uts_str, sizeof(sysinfo->uts_str),
 	    "%s%s %s %s %s", (descr)? descr: "",
 	    sysinfo->uts.sysname, sysinfo->uts.release,
 	    sysinfo->uts.version, sysinfo->uts.machine);
     if (ret <= 0)
-	my_fatal("can't create uts string: %s", strerror(errno));
+	my_fatale("can't create uts string");
 
     if (descr) {
 	ret = snprintf(sysinfo->platform, sizeof(sysinfo->platform),
 		"%s%s %s", descr, sysinfo->uts.sysname, sysinfo->uts.machine);
 	if (ret <= 0)
-	    my_fatal("can't create platform string: %s", strerror(errno));
+	    my_fatale("can't create platform string");
 	free(descr);
     } else {
 	ret = snprintf(sysinfo->platform, sizeof(sysinfo->platform),
 		"%s %s %s", sysinfo->uts.sysname, sysinfo->uts.release,
 		sysinfo->uts.machine);
 	if (ret <= 0)
-	    my_fatal("can't create platform string: %s", strerror(errno));
+	    my_fatale("can't create platform string");
     }
 
     i = 0;

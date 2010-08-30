@@ -161,21 +161,19 @@ int main(int argc, char *argv[]) {
     if (options & OPT_DAEMON) {
 	// run in the background
 	if (daemon(0,0) == -1)
-	    my_fatal("backgrounding failed: %s", strerror(errno));
+	    my_fatale("backgrounding failed");
 
 	// create pidfile
 	fd = open(PACKAGE_PID_FILE, O_WRONLY|O_CREAT, 0666);
 	if (fd == -1)
-	    my_fatal("failed to open pidfile " PACKAGE_PID_FILE ": %s",
-			strerror(errno));
+	    my_fatale("failed to open pidfile " PACKAGE_PID_FILE);
 	if (flock(fd, LOCK_EX|LOCK_NB) == -1)
 	    my_fatal(PACKAGE_NAME " already running ("
 			PACKAGE_PID_FILE " locked)");
 
 	if ((snprintf(pidstr, sizeof(pidstr), "%d\n", (int)getpid()) <= 0) ||
 	    (write(fd, pidstr, strlen(pidstr)) <= 0))
-	    my_fatal("failed to write pidfile " PACKAGE_PID_FILE ": %s",
-			strerror(errno));
+	    my_fatale("failed to write pidfile " PACKAGE_PID_FILE);
     
 	// init syslog before chrooting (including tz)
 	tzset();
@@ -191,7 +189,7 @@ int main(int argc, char *argv[]) {
 
     // quit on failure
     if (pid == -1)
-	my_fatal("privsep fork failed: %s", strerror(errno));
+	my_fatale("privsep fork failed");
 
     // this is the parent
     if (pid != 0) {

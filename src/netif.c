@@ -143,7 +143,7 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
     sockfd = my_socket(af, SOCK_DGRAM, 0);
 
     if (getifaddrs(&ifaddrs) < 0) {
-	my_log(CRIT, "address detection failed: %s", strerror(errno));
+	my_loge(CRIT, "address detection failed");
 	(void) close(sockfd);
 	return(0);
     }
@@ -680,8 +680,7 @@ void netif_bridge(int sockfd, struct nhead *netifs, struct netif *master,
     ifr->ifr_data = (char *)&args;
 
     if (ioctl(sockfd, SIOCDEVPRIVATE, ifr) < 0) {
-	my_log(CRIT, "bridge ioctl failed on interface %s: %s",
-	       master->name, strerror(errno));
+	my_loge(CRIT, "bridge ioctl failed on interface %s", master->name);
 	return;
     }
 

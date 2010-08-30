@@ -63,7 +63,7 @@ void child_init(int reqfd, int msgfd, int ifc, char *ifl[],
 	if ((csock == -1) && (errno == EPROTONOSUPPORT))
 	    csock = my_socket(AF_UNIX, SOCK_STREAM, 0);
 	if (csock == -1)
-	    my_fatal("failed to create socket: %s", strerror(errno));
+	    my_fatale("failed to create socket");
 
 	memset(&sun, 0, sizeof(sun));
 	sun.sun_family = AF_UNIX;
@@ -72,21 +72,16 @@ void child_init(int reqfd, int msgfd, int ifc, char *ifl[],
 	old_umask = umask(S_IXUSR|S_IRWXG|S_IRWXO);
 
 	if ((unlink(PACKAGE_SOCKET) == -1) && (errno != ENOENT))
-	    my_fatal("failed to remove " PACKAGE_SOCKET ": %s",
-		strerror(errno));
+	    my_fatale("failed to remove " PACKAGE_SOCKET);
 	if (bind(csock, (struct sockaddr *)&sun, SUN_LEN(&sun)) == -1)
-	    my_fatal("failed to bind " PACKAGE_SOCKET ": %s",
-		strerror(errno));
+	    my_fatale("failed to bind " PACKAGE_SOCKET);
 	if (listen(csock, 10) == -1)
-	    my_fatal("failed to listen on " PACKAGE_SOCKET ": %s",
-		strerror(errno));
+	    my_fatale("failed to listen on " PACKAGE_SOCKET);
 
 	if (chmod(PACKAGE_SOCKET, S_IRWXU|S_IRWXG) == -1)
-	    my_fatal("failed to chmod " PACKAGE_SOCKET ": %s",
-		strerror(errno));
+	    my_fatale("failed to chmod " PACKAGE_SOCKET);
 	if (chown(PACKAGE_SOCKET, -1, pwd->pw_gid) == -1)
-	    my_fatal("failed to chown " PACKAGE_SOCKET ": %s",
-		strerror(errno));
+	    my_fatal("failed to chown " PACKAGE_SOCKET);
 
 	umask(old_umask);
     }
@@ -197,7 +192,7 @@ void child_send(int fd, short event, void *evs) {
 			    protos[p].name, mreq.len, subif->name);
 		len = write(fd, &mreq, MASTER_MSG_LEN(mreq.len));
 		if (len < MASTER_MSG_MIN || len != MASTER_MSG_LEN(mreq.len))
-		    my_fatal("only %zi bytes written: %s", len, strerror(errno));
+		    my_fatale("only %zi bytes written", len);
 	    }
 	}
     }
@@ -396,7 +391,7 @@ void child_cli_accept(int socket, short event) {
 
     my_nonblock(fd);
     if (setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &sndbuf, sizeof(sndbuf)) == -1)
-	my_log(WARN, "failed to set sndbuf: %s", strerror(errno));
+	my_loge(WARN, "failed to set sndbuf");
 
     session = my_malloc(sizeof(struct child_session));
     event_set(&session->event, fd, EV_WRITE, (void *)child_cli_write, session);

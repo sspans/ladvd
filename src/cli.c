@@ -143,7 +143,7 @@ void cli_main(int argc, char *argv[]) {
     if ((fd == -1) && (errno == EPROTONOSUPPORT))
 	fd = my_socket(AF_UNIX, SOCK_STREAM, 0);
     if (fd == -1)
-	my_fatal("failed to create socket: %s", strerror(errno));
+	my_fatale("failed to create socket");
 
     sun.sun_family = AF_UNIX;
     strlcpy(sun.sun_path, PACKAGE_SOCKET, sizeof(sun.sun_path));
@@ -152,10 +152,10 @@ void cli_main(int argc, char *argv[]) {
 	if (errno == EACCES)
 	    my_fatal("please add yourself to the " PACKAGE_USER " group");
 	else
-	    my_fatal("failed to open " PACKAGE_SOCKET ": %s", strerror(errno));
+	    my_fatale("failed to open " PACKAGE_SOCKET);
     }
     if ((now = time(NULL)) == (time_t)-1)
-	my_fatal("failed to fetch time: %s", strerror(errno));
+	my_fatale("failed to fetch time");
 
     if (modes[mode].init)
 	modes[mode].init();
@@ -301,9 +301,9 @@ void http_connect() {
 
     hostname = my_malloc(_POSIX_HOST_NAME_MAX);
     if (gethostname(hostname, _POSIX_HOST_NAME_MAX) == -1)
-	my_fatal("gethostname failed: %s", strerror(errno));
+	my_fatale("gethostname failed");
     if ((hp = gethostbyname(hostname)) == NULL)
-	my_fatal("cant resolve hostname: %s",hstrerror(h_errno));
+	my_fatal("cant resolve hostname: %s", hstrerror(h_errno));
     strlcpy(hostname, hp->h_name, _POSIX_HOST_NAME_MAX);
 }
 
