@@ -113,7 +113,7 @@ START_TEST(test_proto_packet) {
     msg.len = cdp_packet(msg.msg, &netif, &netifs, &sysinfo);
     fail_unless(msg.len == 158, "length should not be %d", msg.len);
     msg.len = edp_packet(msg.msg, &netif, &netifs, &sysinfo);
-    fail_unless(msg.len == 109, "length should not be %d", msg.len);
+    fail_unless(msg.len == 130, "length should not be %d", msg.len);
     msg.len = fdp_packet(msg.msg, &netif, &netifs, &sysinfo);
     fail_unless(msg.len == 126, "length should not be %d", msg.len);
     msg.len = ndp_packet(msg.msg, &netif, &netifs, &sysinfo);
@@ -128,7 +128,7 @@ START_TEST(test_proto_packet) {
     msg.len = cdp_packet(msg.msg, &netif, &netifs, &sysinfo);
     fail_unless(msg.len == 113, "length should not be %d", msg.len);
     msg.len = edp_packet(msg.msg, &netif, &netifs, &sysinfo);
-    fail_unless(msg.len == 89, "length should not be %d", msg.len);
+    fail_unless(msg.len == 110, "length should not be %d", msg.len);
     msg.len = fdp_packet(msg.msg, &netif, &netifs, &sysinfo);
     fail_unless(msg.len == 79, "length should not be %d", msg.len);
     msg.len = ndp_packet(msg.msg, &netif, &netifs, &sysinfo);
@@ -141,7 +141,7 @@ START_TEST(test_proto_packet) {
     msg.len = cdp_packet(msg.msg, &netif, &netifs, &sysinfo);
     fail_unless(msg.len == 113, "length should not be %d", msg.len);
     msg.len = edp_packet(msg.msg, &netif, &netifs, &sysinfo);
-    fail_unless(msg.len == 89, "length should not be %d", msg.len);
+    fail_unless(msg.len == 110, "length should not be %d", msg.len);
     msg.len = fdp_packet(msg.msg, &netif, &netifs, &sysinfo);
     fail_unless(msg.len == 81, "length should not be %d", msg.len);
     msg.len = ndp_packet(msg.msg, &netif, &netifs, &sysinfo);
@@ -154,7 +154,7 @@ START_TEST(test_proto_packet) {
     msg.len = cdp_packet(msg.msg, &netif, &netifs, &sysinfo);
     fail_unless(msg.len == 113, "length should not be %d", msg.len);
     msg.len = edp_packet(msg.msg, &netif, &netifs, &sysinfo);
-    fail_unless(msg.len == 89, "length should not be %d", msg.len);
+    fail_unless(msg.len == 110, "length should not be %d", msg.len);
     msg.len = fdp_packet(msg.msg, &netif, &netifs, &sysinfo);
     fail_unless(msg.len == 81, "length should not be %d", msg.len);
     msg.len = ndp_packet(msg.msg, &netif, &netifs, &sysinfo);
