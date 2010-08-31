@@ -102,6 +102,9 @@ PKG_CHECK_MODULES([CHECK], [check >= 0.9.4],
     AM_CONDITIONAL([TESTS_ENABLED], [true]),
     AM_CONDITIONAL([TESTS_ENABLED], [false]))
 
+# libpci
+PKG_CHECK_MODULES(PCI, libpci >= 3.0.0)
+
 # libevent
 trylibeventdir=""
 AC_ARG_WITH(libevent,
