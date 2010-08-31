@@ -1,5 +1,6 @@
 For 0.9.1:
 - improve device-id flexibility
+- supply pci vendor info if available, possibly via ifdescr
 - write protocol descriptions
 
 For 0.9.2:
