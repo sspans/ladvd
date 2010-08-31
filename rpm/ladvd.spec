@@ -13,6 +13,7 @@ BuildRequires:  libcap-ng-devel
 %else
 BuildRequires:  libcap-devel
 %endif
+BuildRequires:  pciutils-devel
 BuildRequires:  pkgconfig
 BuildRequires:  check-devel
 Requires:	/usr/bin/lsb_release
