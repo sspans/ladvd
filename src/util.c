@@ -26,28 +26,26 @@ int8_t loglevel = CRIT;
 int msock = -1;
 pid_t pid = 0;
 
+__nonnull()
 static void my_vlog(const char *func, int err, const char *fmt, va_list ap) {
-    char *efmt;
+    char *efmt = (char *)fmt;
+
+    if (err)
+	if (asprintf(&efmt, "%s: %s", fmt, strerror(err)) == -1)
+	    efmt = (char *)fmt;
 
     if (options & OPT_DAEMON) {
-	if (err && asprintf(&efmt, "%s: %s", fmt, strerror(err)) != -1) {
-	    vsyslog(LOG_ERR, efmt, ap);
-	    free(efmt);
-	} else {
-	    vsyslog(LOG_INFO, fmt, ap);
-	}
+	vsyslog((err)? LOG_ERR:LOG_INFO, efmt, ap);
     } else {
 	if (loglevel == DEBUG)
 	    fprintf(stderr, "%s: ", func);
 
-	if (err && asprintf(&efmt, "%s: %s\n", fmt, strerror(err)) != -1) {
-	    vfprintf(stderr, efmt, ap);
-	    free(efmt);
-	} else {
-	    vfprintf(stderr, fmt, ap);
-	    fprintf(stderr, "\n");
-	}
+	vfprintf(stderr, efmt, ap);
+	fprintf(stderr, "\n");
     }
+
+    if (efmt != fmt)
+	free(efmt);
 }
 
 void __my_log(const char *func, int8_t prio, int err, const char *fmt, ...) {
