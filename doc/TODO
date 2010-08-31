@@ -1,6 +1,7 @@
 For 0.9.1:
 - improve device-id flexibility
-- supply pci vendor info if available, possibly via ifdescr
+- autoneg_pmd via bsd ifmedia
+- bsd netif to pci?
 - check vlan ifdescr functionality
 - write protocol descriptions
 
