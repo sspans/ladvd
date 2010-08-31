@@ -35,6 +35,7 @@ size_t lldp_packet(void *packet, struct netif *netif,
 
     uint16_t cap = 0, cap_active = 0;
     struct netif *master, *vlanif = NULL;
+    char *description;
 
     const uint8_t lldp_dst[] = LLDP_MULTICAST_ADDR;
 
@@ -44,6 +45,12 @@ size_t lldp_packet(void *packet, struct netif *netif,
     else
 	master = netif;
 
+    // fixup description
+    description = netif->description;
+    if (!strlen(description))
+	description = master->description;
+    if (!strlen(description))
+	description = netif->device;
 
     // ethernet header
     memcpy(ether.dst, lldp_dst, ETHER_ADDR_LEN);
@@ -86,10 +93,10 @@ size_t lldp_packet(void *packet, struct netif *netif,
 
 
     // port description
-    if (((options & OPT_DESCR) == 0) && (strlen(netif->description) > 0)) {
+    if (((options & OPT_DESCR) == 0) && (strlen(description) > 0)) {
 	if (!(
 	    START_LLDP_TLV(LLDP_TYPE_PORT_DESCR) &&
-	    PUSH_BYTES(netif->description, strlen(netif->description))
+	    PUSH_BYTES(description, strlen(description))
 	))
 	    return 0;
 	END_LLDP_TLV;

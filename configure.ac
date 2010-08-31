@@ -104,6 +104,7 @@ PKG_CHECK_MODULES([CHECK], [check >= 0.9.4],
 
 # libpci
 PKG_CHECK_MODULES(PCI, libpci >= 3.0.0)
+AC_CHECK_HEADERS([pci/pci.h])
 
 # libevent
 trylibeventdir=""

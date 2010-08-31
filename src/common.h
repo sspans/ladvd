@@ -99,6 +99,7 @@ struct netif {
     uint32_t index;
     char name[IFNAMSIZ];
     char description[IFDESCRSIZE];
+    char device[IFDESCRSIZE];
     uint8_t hwaddr[ETHER_ADDR_LEN];
     uint16_t mtu;
     int8_t duplex;
@@ -245,7 +246,8 @@ TAILQ_HEAD(mhead, master_msg);
 #define MASTER_ETHTOOL	2
 #define MASTER_DESCR	3
 #define MASTER_DEVICE	4
-#define MASTER_MAX	5
+#define MASTER_PCI	5
+#define MASTER_MAX	6
 
 struct proto {
     uint8_t enabled;

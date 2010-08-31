@@ -50,9 +50,16 @@
 #ifdef HAVE_SYSFS
 #define SYSFS_CLASS_NET		"/sys/class/net"
 #define SYSFS_PATH_MAX		256
-#endif
+#ifdef HAVE_PCI_PCI_H
+#include <pci/pci.h>
+#endif /* HAVE_PCI_PCI_H */
+#endif /* HAVE_SYSFS */
 
 struct rfdhead rawfds;
+
+#ifdef HAVE_PCI_PCI_H
+struct pci_access *pacc = NULL;
+#endif /* HAVE_PCI_PCI_H */
 
 int sock = -1;
 int mfd = -1;
@@ -110,6 +117,10 @@ void master_init(int reqfd, int msgfd, pid_t child) {
 #endif /* HAVE_LIBCAP */
     }
 
+#ifdef HAVE_PCI_PCI_H
+    pacc = pci_alloc();
+    pci_init(pacc);
+#endif /* HAVE_PCI_PCI_H */
 
     // initalize the event library
     event_init();
@@ -162,6 +173,11 @@ void master_signal(int sig, short event, void *pid) {
 	    }
 	    rfd_closeall(&rawfds);
 	    unlink(PACKAGE_SOCKET);
+#ifdef HAVE_PCI_PCI_H
+	    if (pacc)
+		pci_cleanup(pacc);
+	    pacc = NULL;
+#endif /* HAVE_PCI_PCI_H */
 	    my_log(CRIT, "quitting");
 	    exit(EXIT_SUCCESS);
 	    break;
@@ -217,6 +233,11 @@ void master_req(int reqfd, short event) {
 	case MASTER_DEVICE:
 	    mreq.len = master_device(&mreq);
 	    break;
+#ifdef HAVE_PCI_PCI_H
+	case MASTER_PCI:
+	    mreq.len = master_pci(&mreq);
+	    break;
+#endif /* HAVE_PCI_PCI_H */
 #endif /* HAVE_SYSFS */
 	// invalid request
 	default:
@@ -252,6 +273,10 @@ int master_check(struct master_req *mreq) {
 #ifdef HAVE_SYSFS
 	case MASTER_DEVICE:
 	    return(EXIT_SUCCESS);
+#ifdef HAVE_PCI_PCI_H
+	case MASTER_PCI:
+	    return(EXIT_SUCCESS);
+#endif /* HAVE_PCI_PCI_H */
 #endif /* HAVE_SYSFS */
 	default:
 	    return(EXIT_FAILURE);
@@ -424,6 +449,35 @@ ssize_t master_device(struct master_req *mreq) {
     else
 	return(0);
 }
+#ifdef HAVE_PCI_PCI_H
+ssize_t master_pci(struct master_req *mreq) {
+    char path[SYSFS_PATH_MAX], subsys[16];
+    uint16_t device_id, vendor_id;
+    ssize_t ret = 0;
+
+    assert(mreq != NULL);
+    assert(pacc != NULL);
+
+    ret = snprintf(path, SYSFS_PATH_MAX,
+	    SYSFS_CLASS_NET "/%s/device/device", mreq->name);
+    if (ret == -1 || !read_line(path, subsys, sizeof(subsys)))
+	return(0);
+
+    device_id = strtoul(subsys, NULL, 16);
+
+    ret = snprintf(path, SYSFS_PATH_MAX,
+	    SYSFS_CLASS_NET "/%s/device/vendor", mreq->name);
+    if (ret == -1 || !read_line(path, subsys, sizeof(subsys)))
+	return(0);
+
+    vendor_id = strtoul(subsys, NULL, 16);
+
+    pci_lookup_name(pacc, mreq->buf, sizeof(mreq->buf),
+	    PCI_LOOKUP_VENDOR | PCI_LOOKUP_DEVICE, vendor_id, device_id);
+
+    return(strlen(mreq->buf));
+}
+#endif /* HAVE_PCI_PCI_H */
 #endif /* HAVE_SYSFS */
 
 int master_socket(struct rawfd *rfd) {
