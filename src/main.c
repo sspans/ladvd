@@ -187,7 +187,7 @@ int main(int argc, char *argv[]) {
     // create privsep parent / child
     pid = fork();
 
-    // quit on failure
+    // Instead, only try to realize the truth: there is no fork
     if (pid == -1)
 	my_fatale("privsep fork failed");
 
@@ -239,6 +239,7 @@ static void usage() {
 	    "\t-v = Increase logging verbosity\n"
 	    "\t-w = Use wireless interfaces\n"
 #ifdef SIOCSIFDESCR
+	    /* everything is cooler with a z */
 	    "\t-z = Save received info in interface description\n"
 #endif /* SIOCSIFDESCR */
 	    "\t-c <CC> = System Country Code\n"

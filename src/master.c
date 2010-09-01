@@ -652,6 +652,7 @@ void master_multi(struct rawfd *rfd, struct proto *protos, int op) {
 }
 
 
+/* You are not expected to understand this routine */
 void master_recv(int fd, short event, struct rawfd *rfd) {
     // packet
     struct master_msg mrecv = {};
