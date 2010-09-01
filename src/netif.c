@@ -780,7 +780,7 @@ void netif_bridge(int sockfd, struct nhead *netifs, struct netif *master,
 void netif_vlan(int sockfd, struct nhead *netifs, struct netif *vlan,
 		  struct ifreq *ifr) {
 
-    struct netif *netif;
+    struct netif *netif = NULL;
 
 #ifdef HAVE_LINUX_IF_VLAN_H
 #if defined(HAVE_DECL_GET_VLAN_REALDEV_NAME_CMD) && \
@@ -788,7 +788,7 @@ void netif_vlan(int sockfd, struct nhead *netifs, struct netif *vlan,
     struct vlan_ioctl_args if_request = {};
 
     if_request.cmd = GET_VLAN_REALDEV_NAME_CMD;
-    strlcpy(if_request.device1, netif->name, sizeof(if_request.device1));
+    strlcpy(if_request.device1, vlan->name, sizeof(if_request.device1));
 
     if (ioctl(sockfd, SIOCSIFVLAN, &if_request) < 0)
 	return;
