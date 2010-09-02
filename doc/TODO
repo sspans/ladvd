@@ -1,7 +1,6 @@
 For 0.9.1:
 - improve device-id flexibility
 - autoneg_pmd via bsd ifmedia
-- bsd netif to pci?
 - check vlan ifdescr functionality
 - write protocol descriptions
 
@@ -10,6 +9,7 @@ For 0.9.2:
 - improve edp TLV handling
 
 For 1.0.0:
+- openbsd netif to pci?
 - static functions?
 - restrict pointers?
 - test multilevel interfaces
