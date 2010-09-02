@@ -99,7 +99,6 @@ struct netif {
     uint32_t index;
     char name[IFNAMSIZ];
     char description[IFDESCRSIZE];
-    char device[IFDESCRSIZE];
     uint8_t hwaddr[ETHER_ADDR_LEN];
     uint16_t mtu;
     int8_t duplex;
@@ -128,6 +127,9 @@ struct netif {
 
     // should be last
     TAILQ_ENTRY(netif) entries;
+
+    uint8_t device_checked;
+    char device[IFDESCRSIZE];
 };
 
 TAILQ_HEAD(nhead, netif);
@@ -246,7 +248,7 @@ TAILQ_HEAD(mhead, master_msg);
 #define MASTER_ETHTOOL	2
 #define MASTER_DESCR	3
 #define MASTER_DEVICE	4
-#define MASTER_PCI	5
+#define MASTER_PCI_ID	5
 #define MASTER_MAX	6
 
 struct proto {
