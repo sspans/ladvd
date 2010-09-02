@@ -104,6 +104,10 @@
 #include <net80211/ieee80211_ioctl.h>
 #endif /* HAVE_NET80211_IEEE80211_IOCTL_H */
 
+#ifdef HAVE_PCI_PCI_H
+#include <pci/pci.h>
+#endif /* HAVE_PCI_PCI_H */
+
 #ifdef AF_PACKET
 #define NETIF_AF    AF_PACKET
 #elif defined(AF_LINK)
@@ -115,6 +119,9 @@ int netif_type(int, uint32_t index, struct ifaddrs *ifaddr, struct ifreq *);
 void netif_bond(int, struct nhead *, struct netif *, struct ifreq *);
 void netif_bridge(int, struct nhead *, struct netif *, struct ifreq *);
 void netif_vlan(int, struct nhead *, struct netif *, struct ifreq *);
+#ifdef HAVE_PCI_PCI_H
+void netif_pci(struct netif *);
+#endif /* HAVE_PCI_PCI_H */
 void netif_addrs(struct ifaddrs *, struct nhead *, struct sysinfo *);
 
 
@@ -263,14 +270,6 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 	strlcpy(netif->name, ifaddr->ifa_name, sizeof(netif->name));
 	netif->type = type;
 
-#if defined(HAVE_SYSFS) && defined(HAVE_PCI_PCI_H)
-	mreq.op = MASTER_PCI;
-	mreq.index = index;
-
-	if ((type == NETIF_REGULAR) && my_mreq(&mreq))
-	    strlcpy(netif->device, mreq.buf, sizeof(netif->device));
-#endif /* HAVE_SYSFS && HAVE_PCI_PCI_H*/
-
 #ifdef SIOCGIFDESCR
 #ifndef __FreeBSD__
 	ifr.ifr_data = (caddr_t)&netif->description;
@@ -303,19 +302,22 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
     // add slave subif lists to each bond/bridge
     // detect vlan interface settings
     TAILQ_FOREACH(netif, netifs, entries) {
+	my_log(INFO, "detecting %s settings", netif->name);
 	switch(netif->type) {
 	    case NETIF_BONDING:
-		my_log(INFO, "detecting %s settings", netif->name);
 		netif_bond(sockfd, netifs, netif, &ifr);
 		break;
 	    case NETIF_BRIDGE:
-		my_log(INFO, "detecting %s settings", netif->name);
 		netif_bridge(sockfd, netifs, netif, &ifr);
 		break;
 	    case NETIF_VLAN:
-		my_log(INFO, "detecting %s settings", netif->name);
 		netif_vlan(sockfd, netifs, netif, &ifr);
 		break;
+#ifdef HAVE_PCI_PCI_H
+	    case NETIF_REGULAR:
+		netif_pci(netif);
+		break;
+#endif /* HAVE_PCI_PCI_H */
 	    default:
 		break;
 	}
@@ -524,6 +526,31 @@ int netif_type(int sockfd, uint32_t index,
     return(NETIF_REGULAR);
 }
 
+
+#ifdef HAVE_PCI_PCI_H
+void netif_pci(struct netif *netif) {
+    struct master_req mreq = {};
+    uint16_t vendor_id, device_id;
+    static struct pci_access *pacc = NULL;
+
+    if (!pacc) {
+	pacc = pci_alloc();
+	pci_init(pacc);
+    }
+
+    mreq.op = MASTER_PCI;
+    mreq.index = netif->index;
+
+    if (!my_mreq(&mreq))
+	return;
+
+    memcpy(&vendor_id, mreq.buf, sizeof(vendor_id));
+    memcpy(&device_id, mreq.buf + sizeof(vendor_id), sizeof(device_id));
+
+    pci_lookup_name(pacc, netif->device, sizeof(netif->device),
+	    PCI_LOOKUP_VENDOR | PCI_LOOKUP_DEVICE, vendor_id, device_id);
+}
+#endif /* HAVE_PCI_PCI_H */
 
 // handle aggregated interfaces
 void netif_bond(int sockfd, struct nhead *netifs, struct netif *master,
