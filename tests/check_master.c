@@ -50,10 +50,6 @@ extern int dfd;
 extern int mfd;
 extern struct rfdhead rawfds;
 
-#ifdef HAVE_PCI_PCI_H
-extern struct pci_access *pacc;
-#endif /* HAVE_PCI_PCI_H */
-
 START_TEST(test_master_signal) {
     int sig = 0;
     short event = 0;
@@ -658,11 +654,6 @@ Suite * master_suite (void) {
     Suite *s = suite_create("master.c");
 
     TAILQ_INIT(&rawfds);
-
-    #ifdef HAVE_PCI_PCI_H
-    pacc = pci_alloc();
-    pci_init(pacc);
-    #endif /* HAVE_PCI_PCI_H */
 
     // master test case
     TCase *tc_master = tcase_create("master");
