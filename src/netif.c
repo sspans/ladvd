@@ -104,6 +104,10 @@
 #include <net80211/ieee80211_ioctl.h>
 #endif /* HAVE_NET80211_IEEE80211_IOCTL_H */
 
+#ifdef HAVE_NET_IF_MIB_H
+#include <net/if_mib.h>
+#endif /* HAVE_NET_IF_MIB_H */
+
 #ifdef AF_PACKET
 #define NETIF_AF    AF_PACKET
 #elif defined(AF_LINK)
@@ -520,11 +524,13 @@ int netif_type(int sockfd, uint32_t index,
 
 
 void netif_device_id(struct netif *netif) {
-    struct master_req mreq = {};
 
     if (netif->device_identified)
 	return;
     netif->device_identified = 1;
+
+#ifdef HAVE_SYSFS
+    struct master_req mreq = {};
 
     mreq.op = MASTER_DEVICE_ID;
     mreq.index = netif->index;
@@ -533,6 +539,55 @@ void netif_device_id(struct netif *netif) {
 	return;
 
     strlcpy(netif->device_name, mreq.buf, sizeof(netif->device_name));
+
+#elif defined(__FreeBSD__)
+    int name[6], ret;
+    char *dname, *dunit, desc_sysctl[64] = {};
+    size_t len = 0;
+
+    // First figure out the name of the driver
+    name[0] = CTL_NET;
+    name[1] = PF_LINK;
+    name[2] = NETLINK_GENERIC;
+    name[3] = IFMIB_IFDATA;
+    name[4] = netif->index;
+    name[5] = IFDATA_DRIVERNAME;
+
+    if (sysctl(name, 6, NULL, &len, 0, 0) < 0) 
+	return;
+
+    // + 1 for the sysctl dunit dot
+    dname = my_malloc(len + 1);
+
+    if (sysctl(name, 6, dname, &len, 0, 0) < 0) {
+	free(dname);
+	return;
+    }
+
+    // find the unit number at the end of dname
+    dunit = dname + strlen(dname);
+    while (strspn(dunit - 1, "0123456789"))
+	dunit--;
+
+    // no unit found, all too hard
+    if (!strlen(dunit)) {
+	free(dname);
+	return;
+    }
+
+    // insert dot
+    memmove(dunit + 1, dunit, strlen(dunit));
+    *dunit = '.';
+
+    ret = snprintf(desc_sysctl, sizeof(desc_sysctl), "dev.%s.%%desc", dname);
+    free(dname);
+
+    if (ret == -1)
+	return;
+
+    len = sizeof(netif->device_name);
+    sysctlbyname(desc_sysctl, netif->device_name, &len, NULL, 0);
+#endif
 }
 
 // handle aggregated interfaces

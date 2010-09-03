@@ -47,14 +47,6 @@
 #include <linux/ethtool.h>
 #endif /* HAVE_LINUX_ETHTOOL_H */
 
-#ifdef HAVE_NET_IF_MIB_H
-#include <net/if_mib.h>
-#endif /* HAVE_NET_IF_MIB_H */
-#ifdef HAVE_SYS_PCIIO_H
-#include <sys/pciio.h>
-#define _PATH_DEVPCI		"/dev/pci"
-#endif /* HAVE_NET_IF_MIB_H */
-
 #ifdef HAVE_PCI_PCI_H
 #include <pci/pci.h>
 #endif /* HAVE_PCI_PCI_H */
@@ -498,57 +490,6 @@ ssize_t master_device_id(struct master_req *mreq) {
     memset(mreq->buf, 0, sizeof(mreq->buf));
     pci_lookup_name(pacc, mreq->buf, sizeof(mreq->buf),
 	    PCI_LOOKUP_VENDOR | PCI_LOOKUP_DEVICE, vendor_id, device_id);
-
-#elif defined(__FreeBSD__)
-    int name[6], ret;
-    char desc_sysctl[64], *dunit, *dname = NULL;
-    size_t len = 0;
-
-    // First figure out the name of the driver
-    name[0] = CTL_NET;
-    name[1] = PF_LINK;
-    name[2] = NETLINK_GENERIC;
-    name[3] = IFMIB_IFDATA;
-    name[4] = mreq->index;
-    name[5] = IFDATA_DRIVERNAME;
-
-    if (sysctl(name, 6, NULL, &len, 0, 0) < 0) 
-	return(0);
-
-    // + 1 for the sysctl dunit dot
-    dname = my_malloc(len + 1);
-
-    if (sysctl(name, 6, dname, &len, 0, 0) < 0) {
-	free(dname);
-	return(0);
-    }
-
-    // find the unit number at the end of dname
-    dunit = dname + strlen(dname) - 1;
-    while (strspn(dunit - 1, "0123456789"))
-	dunit--;
-
-    // no unit found, all too hard
-    if (!strlen(dunit)) {
-	free(dname);
-	return(0);
-    }
-
-    // insert dot
-    memmove(dunit + 1, dunit, strlen(dunit));
-    *dunit = '.';
-
-    ret = snprintf(desc_sysctl, sizeof(desc_sysctl), "dev.%s.%%desc", dname);
-    free(dname);
-
-    if (ret == -1)
-	return(0);
-
-    memset(mreq->buf, 0, sizeof(mreq->buf));
-    len = sizeof(mreq->buf);
-    ret = sysctlbyname(desc_sysctl, mreq->buf, &len, NULL, 0);
-    if (ret == -1)
-	return(0);
 #else
     return(0);
 #endif
