@@ -45,13 +45,6 @@ size_t lldp_packet(void *packet, struct netif *netif,
     else
 	master = netif;
 
-    // fixup description
-    description = netif->description;
-    if (!strlen(description))
-	description = master->description;
-    if (!strlen(description))
-	description = netif->device_name;
-
     // ethernet header
     memcpy(ether.dst, lldp_dst, ETHER_ADDR_LEN);
     memcpy(ether.src, netif->hwaddr, ETHER_ADDR_LEN);
@@ -93,7 +86,16 @@ size_t lldp_packet(void *packet, struct netif *netif,
 
 
     // port description
-    if (((options & OPT_DESCR) == 0) && (strlen(description) > 0)) {
+    if (options & OPT_DESCR)
+	description = netif->device_name;
+    else if (strlen(netif->description))
+	description = netif->description;
+    else if (strlen(master->description))
+	description = master->description;
+    else
+	description = netif->device_name;
+
+    if (strlen(description) > 0) {
 	if (!(
 	    START_LLDP_TLV(LLDP_TYPE_PORT_DESCR) &&
 	    PUSH_BYTES(description, strlen(description))
