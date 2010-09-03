@@ -230,8 +230,8 @@ void master_req(int reqfd, short event) {
 	    break;
 #endif /* HAVE_SYSFS */
 #ifdef HAVE_PCI_PCI_H
-	case MASTER_PCI_ID:
-	    mreq.len = master_pci_id(&mreq);
+	case MASTER_DEVICE_ID:
+	    mreq.len = master_device_id(&mreq);
 	    break;
 #endif /* HAVE_PCI_PCI_H */
 	// invalid request
@@ -270,7 +270,7 @@ int master_check(struct master_req *mreq) {
 	    return(EXIT_SUCCESS);
 #endif /* HAVE_SYSFS */
 #ifdef HAVE_PCI_PCI_H
-	case MASTER_PCI_ID:
+	case MASTER_DEVICE_ID:
 	    return(EXIT_SUCCESS);
 #endif /* HAVE_PCI_PCI_H */
 	default:
@@ -447,7 +447,7 @@ ssize_t master_device(struct master_req *mreq) {
 #endif /* HAVE_SYSFS */
 
 #ifdef HAVE_PCI_PCI_H
-ssize_t master_pci_id(struct master_req *mreq) {
+ssize_t master_device_id(struct master_req *mreq) {
     uint16_t device_id = 0, vendor_id = 0;
     static struct pci_access *pacc = NULL;
 

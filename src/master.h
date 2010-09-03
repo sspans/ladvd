@@ -56,7 +56,7 @@ ssize_t master_descr(struct master_req *mreq);
 ssize_t master_device(struct master_req *mreq);
 #endif /* HAVE_SYSFS */
 #ifdef HAVE_PCI_PCI_H
-ssize_t master_pci_id(struct master_req *mreq);
+ssize_t master_device_id(struct master_req *mreq);
 #endif /* HAVE_PCI_PCI_H */
 void master_close(struct rawfd *rfd);
 

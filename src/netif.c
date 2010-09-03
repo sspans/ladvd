@@ -116,7 +116,7 @@ void netif_bond(int, struct nhead *, struct netif *, struct ifreq *);
 void netif_bridge(int, struct nhead *, struct netif *, struct ifreq *);
 void netif_vlan(int, struct nhead *, struct netif *, struct ifreq *);
 #ifdef HAVE_PCI_PCI_H
-void netif_pci_id(struct netif *);
+void netif_device_id(struct netif *);
 #endif /* HAVE_PCI_PCI_H */
 void netif_addrs(struct ifaddrs *, struct nhead *, struct sysinfo *);
 
@@ -311,7 +311,7 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 		break;
 #ifdef HAVE_PCI_PCI_H
 	    case NETIF_REGULAR:
-		netif_pci_id(netif);
+		netif_device_id(netif);
 		break;
 #endif /* HAVE_PCI_PCI_H */
 	    default:
@@ -524,20 +524,20 @@ int netif_type(int sockfd, uint32_t index,
 
 
 #ifdef HAVE_PCI_PCI_H
-void netif_pci_id(struct netif *netif) {
+void netif_device_id(struct netif *netif) {
     struct master_req mreq = {};
 
-    if (netif->device_checked)
+    if (netif->device_identified)
 	return;
-    netif->device_checked = 1;
+    netif->device_identified = 1;
 
-    mreq.op = MASTER_PCI_ID;
+    mreq.op = MASTER_DEVICE_ID;
     mreq.index = netif->index;
 
     if (!my_mreq(&mreq))
 	return;
 
-    strlcpy(netif->device, mreq.buf, sizeof(netif->device));
+    strlcpy(netif->device_name, mreq.buf, sizeof(netif->device_name));
 }
 #endif /* HAVE_PCI_PCI_H */
 

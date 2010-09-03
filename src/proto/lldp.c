@@ -50,7 +50,7 @@ size_t lldp_packet(void *packet, struct netif *netif,
     if (!strlen(description))
 	description = master->description;
     if (!strlen(description))
-	description = netif->device;
+	description = netif->device_name;
 
     // ethernet header
     memcpy(ether.dst, lldp_dst, ETHER_ADDR_LEN);
