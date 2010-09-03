@@ -446,20 +446,19 @@ ssize_t master_device(struct master_req *mreq) {
 }
 #endif /* HAVE_SYSFS */
 
-#ifdef HAVE_PCI_PCI_H
 ssize_t master_device_id(struct master_req *mreq) {
+
+#if defined(HAVE_SYSFS) && defined(HAVE_PCI_PCI_H)
     uint16_t device_id = 0, vendor_id = 0;
     static struct pci_access *pacc = NULL;
+    char path[SYSFS_PATH_MAX], sub_path[SYSFS_PATH_MAX] = {};
+    char *sub_base, *vendor_fn, *device_fn, id_str[16];
+    ssize_t ret = 0;
 
     if (!pacc) {
 	pacc = pci_alloc();
 	pci_init(pacc);
     }
-
-#ifdef HAVE_SYSFS
-    char path[SYSFS_PATH_MAX], sub_path[SYSFS_PATH_MAX] = {};
-    char *sub_base, *vendor_fn, *device_fn, id_str[16];
-    ssize_t ret = 0;
 
     ret = snprintf(path, SYSFS_PATH_MAX,
 	    SYSFS_CLASS_NET "/%s/device/subsystem", mreq->name);
@@ -495,16 +494,15 @@ ssize_t master_device_id(struct master_req *mreq) {
 	return(0);
 
     device_id = strtoul(id_str, NULL, 16);
-#elif defined(__FreeBSD__)
-    int name[6], pci_fd;
-    char pname[IFNAMSIZ], *dname = NULL;
-    size_t len = 0;
-    struct pci_conf_io pc = {};
-    struct pci_conf conf[255], *p;
-    int found = 0;
 
-    if ((pci_fd = open(_PATH_DEVPCI, O_RDONLY, 0)) < 0)
-	return(0);
+    memset(mreq->buf, 0, sizeof(mreq->buf));
+    pci_lookup_name(pacc, mreq->buf, sizeof(mreq->buf),
+	    PCI_LOOKUP_VENDOR | PCI_LOOKUP_DEVICE, vendor_id, device_id);
+
+#elif defined(__FreeBSD__)
+    int name[6], ret;
+    char desc_sysctl[64], *dunit, *dname = NULL;
+    size_t len = 0;
 
     // First figure out the name of the driver
     name[0] = CTL_NET;
@@ -516,55 +514,47 @@ ssize_t master_device_id(struct master_req *mreq) {
 
     if (sysctl(name, 6, NULL, &len, 0, 0) < 0) 
 	return(0);
-    
-    dname = my_malloc(len);
+
+    // + 1 for the sysctl dunit dot
+    dname = my_malloc(len + 1);
 
     if (sysctl(name, 6, dname, &len, 0, 0) < 0) {
 	free(dname);
 	return(0);
     }
 
-    // Then find a matching pci-device
-    pc.match_buf_len = sizeof(conf);
-    pc.matches = conf;
+    // find the unit number at the end of dname
+    dunit = dname + strlen(dname) - 1;
+    while (strspn(dunit - 1, "0123456789"))
+	dunit--;
 
-    do {
-        if ((ioctl(pci_fd, PCIOCGETCONF, &pc) == -1) ||
-	    (pc.status == PCI_GETCONF_LIST_CHANGED) ||
-	    (pc.status == PCI_GETCONF_ERROR)) {
-		break;
-	}
-	for (p = conf; p < &conf[pc.num_matches]; p++) {
-	    if (!p->pd_name || !strlen(p->pd_name))
-		continue;
-	    snprintf(pname, sizeof(pname), "%s%d",
-			p->pd_name, (int)p->pd_unit);
-	    if (strcmp(pname, dname) != 0)
-		    continue;
+    // no unit found, all too hard
+    if (!strlen(dunit)) {
+	free(dname);
+	return(0);
+    }
 
-	    vendor_id = p->pc_vendor;
-	    device_id = p->pc_device;
-	    found = 1;
-	    break;
-	}
-	if (found)
-	    break;
-    } while (pc.status == PCI_GETCONF_MORE_DEVS);
+    // insert dot
+    memmove(dunit + 1, dunit, strlen(dunit));
+    *dunit = '.';
 
-    close(pci_fd);
+    ret = snprintf(desc_sysctl, sizeof(desc_sysctl), "dev.%s.%%desc", dname);
     free(dname);
 
-    if (!found)
+    if (ret == -1)
+	return(0);
+
+    memset(mreq->buf, 0, sizeof(mreq->buf));
+    len = sizeof(mreq->buf);
+    ret = sysctlbyname(desc_sysctl, mreq->buf, &len, NULL, 0);
+    if (ret == -1)
 	return(0);
 #else
     return(0);
 #endif
 
-    pci_lookup_name(pacc, mreq->buf, sizeof(mreq->buf),
-	    PCI_LOOKUP_VENDOR | PCI_LOOKUP_DEVICE, vendor_id, device_id);
     return(strlen(mreq->buf));
 }
-#endif /* HAVE_PCI_PCI_H */
 
 int master_socket(struct rawfd *rfd) {
 
