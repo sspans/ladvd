@@ -115,9 +115,7 @@ int netif_type(int, uint32_t index, struct ifaddrs *ifaddr, struct ifreq *);
 void netif_bond(int, struct nhead *, struct netif *, struct ifreq *);
 void netif_bridge(int, struct nhead *, struct netif *, struct ifreq *);
 void netif_vlan(int, struct nhead *, struct netif *, struct ifreq *);
-#ifdef HAVE_PCI_PCI_H
 void netif_device_id(struct netif *);
-#endif /* HAVE_PCI_PCI_H */
 void netif_addrs(struct ifaddrs *, struct nhead *, struct sysinfo *);
 
 
@@ -309,11 +307,9 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 	    case NETIF_VLAN:
 		netif_vlan(sockfd, netifs, netif, &ifr);
 		break;
-#ifdef HAVE_PCI_PCI_H
 	    case NETIF_REGULAR:
 		netif_device_id(netif);
 		break;
-#endif /* HAVE_PCI_PCI_H */
 	    default:
 		break;
 	}
@@ -523,7 +519,6 @@ int netif_type(int sockfd, uint32_t index,
 }
 
 
-#ifdef HAVE_PCI_PCI_H
 void netif_device_id(struct netif *netif) {
     struct master_req mreq = {};
 
@@ -539,7 +534,6 @@ void netif_device_id(struct netif *netif) {
 
     strlcpy(netif->device_name, mreq.buf, sizeof(netif->device_name));
 }
-#endif /* HAVE_PCI_PCI_H */
 
 // handle aggregated interfaces
 void netif_bond(int sockfd, struct nhead *netifs, struct netif *master,
