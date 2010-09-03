@@ -29,6 +29,7 @@ case "$target_os" in
     linux-gnu*)
 	AC_DEFINE(HAVE_PROC_SYS_NET,1, [define for /proc/sys/net])
 	AC_DEFINE(HAVE_SYSFS,1, [define for /sys])
+	check_ids=yes
 	;;
     freebsd*)
 	use_pie=no
@@ -104,13 +105,17 @@ PKG_CHECK_MODULES([CHECK], [check >= 0.9.4],
     AM_CONDITIONAL([TESTS_ENABLED], [true]),
     AM_CONDITIONAL([TESTS_ENABLED], [false]))
 
-# libpci
-PKG_CHECK_MODULES(PCI, libpci >= 3.0.0,
-    AC_DEFINE(HAVE_PCI_PCI_H, 1, [have libpci]), [:])
-PKG_CHECK_MODULES(USB, usbutils,
-    AC_DEFINE_UNQUOTED(USB_PATH_IDS_DIR, 
-	["$($PKG_CONFIG --variable=usbids usbutils)"], [usb.ids location]),
-    [:])
+# libpci and usbutils
+AS_IF([test -n "$check_ids"],
+[
+    PKG_CHECK_MODULES(PCI, [libpci >= 3.0.0],
+	AC_DEFINE(HAVE_PCI_PCI_H, 1, [have libpci]), [false])
+    PKG_CHECK_MODULES(USB, [usbutils],
+	AC_DEFINE_UNQUOTED(USB_PATH_IDS_DIR, 
+	    ["$($PKG_CONFIG --variable=usbids usbutils)"], [usb.ids location]),
+        [false])
+]
+)
 
 # libevent
 trylibeventdir=""
