@@ -451,23 +451,50 @@ ssize_t master_device_id(struct master_req *mreq) {
     uint16_t device_id = 0, vendor_id = 0;
     static struct pci_access *pacc = NULL;
 
+    if (!pacc) {
+	pacc = pci_alloc();
+	pci_init(pacc);
+    }
+
 #ifdef HAVE_SYSFS
-    char path[SYSFS_PATH_MAX], subsys[16];
+    char path[SYSFS_PATH_MAX], sub_path[SYSFS_PATH_MAX] = {};
+    char *sub_base, *vendor_fn, *device_fn, id_str[16];
     ssize_t ret = 0;
 
     ret = snprintf(path, SYSFS_PATH_MAX,
-	    SYSFS_CLASS_NET "/%s/device/vendor", mreq->name);
-    if (ret == -1 || !read_line(path, subsys, sizeof(subsys)))
+	    SYSFS_CLASS_NET "/%s/device/subsystem", mreq->name);
+
+    if (ret == -1 || readlink(path, sub_path, sizeof(sub_path) - 1) == -1)
+	return(0);
+    if ((sub_base = strrchr(sub_path, '/')) == NULL)
 	return(0);
 
-    vendor_id = strtoul(subsys, NULL, 16);
+    if (strcmp(sub_base, "/pci") == 0) {
+	vendor_fn = "vendor";
+	device_fn = "device";
+	pci_set_name_list_path(pacc, PCI_PATH_IDS_DIR "/" PCI_IDS, 0);
+#ifdef USB_PATH_IDS_DIR
+    } else if (strcmp(sub_base, "/usb") == 0) {
+	vendor_fn = "idVendor";
+	device_fn = "idProduct";
+	pci_set_name_list_path(pacc, USB_PATH_IDS_DIR, 0);
+#endif /* USB_PATH_IDS_DIR */
+    } else
+	return(0);
 
     ret = snprintf(path, SYSFS_PATH_MAX,
-	    SYSFS_CLASS_NET "/%s/device/device", mreq->name);
-    if (ret == -1 || !read_line(path, subsys, sizeof(subsys)))
+	    SYSFS_CLASS_NET "/%s/device/%s", mreq->name, vendor_fn);
+    if (ret == -1 || !read_line(path, id_str, sizeof(id_str)))
 	return(0);
 
-    device_id = strtoul(subsys, NULL, 16);
+    vendor_id = strtoul(id_str, NULL, 16);
+
+    ret = snprintf(path, SYSFS_PATH_MAX,
+	    SYSFS_CLASS_NET "/%s/device/%s", mreq->name, device_fn);
+    if (ret == -1 || !read_line(path, id_str, sizeof(id_str)))
+	return(0);
+
+    device_id = strtoul(id_str, NULL, 16);
 #elif defined(__FreeBSD__)
     int name[6], pci_fd;
     char pname[IFNAMSIZ], *dname = NULL;
@@ -532,11 +559,6 @@ ssize_t master_device_id(struct master_req *mreq) {
 #else
     return(0);
 #endif
-
-    if (!pacc) {
-	pacc = pci_alloc();
-	pci_init(pacc);
-    }
 
     pci_lookup_name(pacc, mreq->buf, sizeof(mreq->buf),
 	    PCI_LOOKUP_VENDOR | PCI_LOOKUP_DEVICE, vendor_id, device_id);
