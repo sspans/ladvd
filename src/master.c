@@ -452,6 +452,12 @@ ssize_t master_device_id(struct master_req *mreq) {
 	pci_init(pacc);
     }
 
+    // default to pci.ids
+    vendor_fn = "vendor";
+    device_fn = "device";
+    pci_set_name_list_path(pacc, PCI_PATH_IDS_DIR "/" PCI_IDS, 0);
+
+#ifdef USB_PATH_IDS_DIR
     ret = snprintf(path, SYSFS_PATH_MAX,
 	    SYSFS_CLASS_NET "/%s/device/subsystem", mreq->name);
 
@@ -460,18 +466,12 @@ ssize_t master_device_id(struct master_req *mreq) {
     if ((sub_base = strrchr(sub_path, '/')) == NULL)
 	return(0);
 
-    if (strcmp(sub_base, "/pci") == 0) {
-	vendor_fn = "vendor";
-	device_fn = "device";
-	pci_set_name_list_path(pacc, PCI_PATH_IDS_DIR "/" PCI_IDS, 0);
-#ifdef USB_PATH_IDS_DIR
-    } else if (strcmp(sub_base, "/usb") == 0) {
+    if (strcmp(sub_base, "/usb") == 0) {
 	vendor_fn = "idVendor";
 	device_fn = "idProduct";
 	pci_set_name_list_path(pacc, USB_PATH_IDS_DIR, 0);
+    }
 #endif /* USB_PATH_IDS_DIR */
-    } else
-	return(0);
 
     ret = snprintf(path, SYSFS_PATH_MAX,
 	    SYSFS_CLASS_NET "/%s/device/%s", mreq->name, vendor_fn);
