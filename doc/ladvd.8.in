@@ -34,6 +34,9 @@ Use management addresses specified via -m for all interfaces.
 Run only once, useful for quick troubleshooting.
 .IP -r
 Receive packets, and use them for various features.
+.IP -q
+Use each interface's hwaddr the generate the chassis-id TLV. Not recommended
+because the chassis-id should be the same for all interfaces.
 .IP "-u user"
 Switch to this user (defaults to PACKAGE_USER)
 .IP -v

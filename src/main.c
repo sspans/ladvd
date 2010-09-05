@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
     argv = sargv;
 #endif
 
-    while ((ch = getopt(argc, argv, "adfhm:noru:vwzc:l:CEFN")) != -1) {
+    while ((ch = getopt(argc, argv, "adfhm:noqru:vwzc:l:CEFN")) != -1) {
 	switch(ch) {
 	    case 'a':
 		options |= OPT_AUTO | OPT_RECV;
@@ -93,6 +93,9 @@ int main(int argc, char *argv[]) {
 		break;
 	    case 'o':
 		options |= OPT_ONCE;
+		break;
+	    case 'q':
+		options |= OPT_CHASSIS_IF;
 		break;
 	    case 'r':
 		options |= OPT_RECV;
@@ -234,6 +237,7 @@ static void usage() {
 	    "\t-m <address> = Management address (IPv4 and IPv6 supported)\n"
 	    "\t-n = Use addresses specified via -m for all interfaces\n"
 	    "\t-o = Run Once\n"
+	    "\t-q = Generate per-interface chassis-id values\n"
 	    "\t-r = Receive Packets\n"
 	    "\t-u <user> = Setuid User (defaults to " PACKAGE_USER ")\n"
 	    "\t-v = Increase logging verbosity\n"

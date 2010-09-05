@@ -35,6 +35,7 @@ size_t lldp_packet(void *packet, struct netif *netif,
 
     uint16_t cap = 0, cap_active = 0;
     struct netif *master, *vlanif = NULL;
+    uint8_t *hwaddr;
     char *description;
 
     const uint8_t lldp_dst[] = LLDP_MULTICAST_ADDR;
@@ -57,10 +58,12 @@ size_t lldp_packet(void *packet, struct netif *netif,
 
 
     // chassis id
+    hwaddr = (options & OPT_CHASSIS_IF) ? netif->hwaddr : sysinfo->hwaddr;
+
     if (!(
 	START_LLDP_TLV(LLDP_TYPE_CHASSIS_ID) &&
 	PUSH_UINT8(LLDP_CHASSIS_MAC_ADDR_SUBTYPE) &&
-	PUSH_BYTES(sysinfo->hwaddr, ETHER_ADDR_LEN)
+	PUSH_BYTES(hwaddr, ETHER_ADDR_LEN)
     ))
 	return 0;
     END_LLDP_TLV;
