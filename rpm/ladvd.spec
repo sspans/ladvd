@@ -23,7 +23,7 @@ Requires:	usbutils
 %else
 Requires:	hwdata
 %endif
-Version:	0.9.2.rc1
+Version:	0.9.2
 Release:	1
 License:	ISC
 URL:		http://www.blinkenlights.nl/software/ladvd/
