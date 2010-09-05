@@ -443,8 +443,8 @@ ssize_t master_device_id(struct master_req *mreq) {
 #if defined(HAVE_SYSFS) && defined(HAVE_PCI_PCI_H)
     uint16_t device_id = 0, vendor_id = 0;
     static struct pci_access *pacc = NULL;
-    char path[SYSFS_PATH_MAX], sub_path[SYSFS_PATH_MAX] = {};
-    char *sub_base, *vendor_fn, *device_fn, id_str[16];
+    char path[SYSFS_PATH_MAX];
+    char *vendor_fn, *device_fn, id_str[16];
     ssize_t ret = 0;
 
     if (!pacc) {
@@ -458,6 +458,8 @@ ssize_t master_device_id(struct master_req *mreq) {
     pci_set_name_list_path(pacc, PCI_PATH_IDS_DIR "/" PCI_IDS, 0);
 
 #ifdef USB_PATH_IDS_DIR
+    char sub_path[SYSFS_PATH_MAX], *sub_base;
+
     ret = snprintf(path, SYSFS_PATH_MAX,
 	    SYSFS_CLASS_NET "/%s/device/subsystem", mreq->name);
 
