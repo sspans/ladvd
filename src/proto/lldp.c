@@ -200,6 +200,7 @@ size_t lldp_packet(void *packet, struct netif *netif,
 		PUSH_BYTES(OUI_IEEE_8021_PRIVATE, OUI_LEN) &&
 		PUSH_UINT8(LLDP_PRIVATE_8021_SUBTYPE_VLAN_NAME) &&
 		PUSH_UINT16(vlanif->vlan_id) &&
+		PUSH_UINT8(strlen(vlanif->name)) &&
 		PUSH_BYTES(vlanif->name, strlen(vlanif->name))
 	    ))
 		return 0;
