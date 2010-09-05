@@ -108,7 +108,7 @@ PKG_CHECK_MODULES([CHECK], [check >= 0.9.4],
 # libpci and usbutils
 AS_IF([test -n "$check_ids"],
 [
-    PKG_CHECK_MODULES(LIBPCI, [libpci >= 3.0.0],
+    PKG_CHECK_MODULES(PCI, [libpci >= 3.0.0],
 	AC_DEFINE(HAVE_PCI_PCI_H, 1, [have libpci]),
 	[
 	AC_CHECK_HEADER([pci/pci.h])
