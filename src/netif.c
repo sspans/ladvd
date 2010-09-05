@@ -996,6 +996,7 @@ int netif_media(struct netif *netif) {
     netif->duplex = -1;
     netif->autoneg_supported = -1;
     netif->autoneg_enabled = -1;
+    netif->autoneg_pmd = 0;
     netif->mau = 0;
 
     strlcpy(ifr.ifr_name, netif->name, sizeof(ifr.ifr_name));
@@ -1137,12 +1138,45 @@ int netif_media(struct netif *netif) {
 	return(EXIT_FAILURE);
     }
 
-    // autoneg support
-    for (int i = 0; i < ifmr.ifm_count; i++) {
-	if (IFM_SUBTYPE(ifmr.ifm_ulist[i]) == IFM_AUTO) {
+    // autoneg and advertised media
+    for (int m = 0; m < ifmr.ifm_count; m++) {
+	unsigned int media = IFM_SUBTYPE(ifmr.ifm_ulist[m]);
+	unsigned int duplex = IFM_OPTIONS(ifmr.ifm_ulist[m]) & IFM_FDX;
+
+	if (media == IFM_AUTO) {
 	    my_log(INFO, "autoneg supported on %s", netif->name);
 	    netif->autoneg_supported = 1;
-	    break;
+	    continue;
+	}
+
+	switch (media) {
+	    case IFM_10_T:
+		netif->autoneg_pmd |= (duplex) ?
+		    LLDP_MAU_PMD_10BASE_T_FD : LLDP_MAU_PMD_10BASE_T;
+		break;
+	    case IFM_100_TX:
+		netif->autoneg_pmd |= (duplex) ?
+		    LLDP_MAU_PMD_100BASE_TX_FD : LLDP_MAU_PMD_100BASE_TX;
+		break;
+	    case IFM_100_T2:
+		netif->autoneg_pmd |= (duplex) ?
+		    LLDP_MAU_PMD_100BASE_T2_FD : LLDP_MAU_PMD_100BASE_T2;
+		break;
+	    case IFM_100_T4:
+		netif->autoneg_pmd |= LLDP_MAU_PMD_100BASE_T4;
+		break;
+	    case IFM_1000_T:
+		netif->autoneg_pmd |= (duplex) ?
+		    LLDP_MAU_PMD_1000BASE_T_FD : LLDP_MAU_PMD_1000BASE_T;
+		break;
+	    case IFM_1000_SX:
+	    case IFM_1000_LX:
+	    case IFM_1000_CX:
+		netif->autoneg_pmd |= (duplex) ?
+		    LLDP_MAU_PMD_1000BASE_X_FD : LLDP_MAU_PMD_1000BASE_X;
+		break;
+	    default:
+		netif->autoneg_pmd |= LLDP_MAU_PMD_OTHER;
 	}
     }
 
