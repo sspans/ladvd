@@ -1096,7 +1096,7 @@ int netif_media(struct netif *netif) {
 	case PORT_DA:
 	    if (ecmd.speed == SPEED_10000)
 		netif->mau = LLDP_MAU_TYPE_10GBASE_CX4;
-	    break
+	    break;
 #endif
     }
 #endif /* HAVE_LINUX_ETHTOOL_H */
