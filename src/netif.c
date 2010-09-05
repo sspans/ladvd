@@ -1094,7 +1094,7 @@ int netif_media(struct netif *netif) {
 	    break;
 #ifdef PORT_DA
 	case PORT_DA:
-	    else if (ecmd.speed == SPEED_10000)
+	    if (ecmd.speed == SPEED_10000)
 		netif->mau = LLDP_MAU_TYPE_10GBASE_CX4;
 	    break
 #endif
