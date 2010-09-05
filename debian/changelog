@@ -1,3 +1,9 @@
+ladvd (0.9.2-rc1) unstable; urgency=low
+
+  * update to 0.9.2 release candidate
+
+ -- Sten Spans <sten@blinkenlights.nl>  Sun, 05 Sep 2010 19:01:02 +0200
+
 ladvd (0.9.0-2) unstable; urgency=low
 
   * packaging fixes suggested by Vincent Bernat
