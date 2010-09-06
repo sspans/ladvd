@@ -50,7 +50,6 @@ void sysinfo_fetch(struct sysinfo *sysinfo) {
 
 #ifdef CTL_HW
     int mib[2];
-    mib[0] = CTL_HW;
 #endif
 
     // use lsb_release to fetch the Linux distro description
@@ -173,20 +172,26 @@ void sysinfo_fetch(struct sysinfo *sysinfo) {
 #endif
 
 #ifdef CTL_HW
+    mib[0] = CTL_HW;
+
 #ifdef HW_VERSION
     mib[1] = HW_VERSION;
+    len = LLDP_INVENTORY_SIZE + 1;
     sysctl(mib, 2, sysinfo->hw_revision, &len, NULL, 0);
 #endif
 #ifdef HW_SERIALNO
     mib[1] = HW_SERIALNO;
+    len = LLDP_INVENTORY_SIZE + 1;
     sysctl(mib, 2, sysinfo->serial_number, &len, NULL, 0);
 #endif
 #ifdef HW_VENDOR
     mib[1] = HW_VENDOR;
+    len = LLDP_INVENTORY_SIZE + 1;
     sysctl(mib, 2, sysinfo->manufacturer, &len, NULL, 0);
 #endif
 #ifdef HW_PRODUCT
     mib[1] = HW_PRODUCT;
+    len = LLDP_INVENTORY_SIZE + 1;
     sysctl(mib, 2, sysinfo->model_name, &len, NULL, 0);
 #endif
 #endif
