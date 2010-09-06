@@ -1261,9 +1261,11 @@ int netif_media(struct netif *netif) {
 	case IFM_10G_CX4:
 	    netif->mau = LLDP_MAU_TYPE_10GBASE_CX4;
 	    break;
+#ifdef IFM_10G_T
 	case IFM_10G_T:
 	    netif->mau = LLDP_MAU_TYPE_10GBASE_T;
 	    break;
+#endif
     }
 
     free(media_list);

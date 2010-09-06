@@ -124,10 +124,15 @@ void sysinfo_fetch(struct sysinfo *sysinfo) {
     if (uname(&sysinfo->uts) == -1)
 	my_fatale("can't fetch uname");
 
+#ifndef __FreeBSD__
     ret = snprintf(sysinfo->uts_str, sizeof(sysinfo->uts_str),
 	    "%s%s %s %s %s", (descr)? descr: "",
 	    sysinfo->uts.sysname, sysinfo->uts.release,
 	    sysinfo->uts.version, sysinfo->uts.machine);
+#else
+    ret = snprintf(sysinfo->uts_str, sizeof(sysinfo->uts_str),
+	    "%s %s", sysinfo->uts.version, sysinfo->uts.machine);
+#endif
     if (ret <= 0)
 	my_fatale("can't create uts string");
 
