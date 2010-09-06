@@ -22,8 +22,10 @@
 #include <netdb.h>
 #include <paths.h>
 #include <sysexits.h>
-#include <sys/sysctl.h>
 #include <sys/wait.h>
+#ifdef HAVE_KENV_H
+#include <kenv.h>
+#endif /* HAVE_KENV_H */
 
 #ifdef HAVE_SYSFS
 #define SYSFS_CLASS_DMI		"/sys/class/dmi/id"
@@ -171,6 +173,7 @@ void sysinfo_fetch(struct sysinfo *sysinfo) {
     read_line(SYSFS_MODEL_NAME, sysinfo->model_name, len);
 #endif
 
+    // OpenBSD really
 #ifdef CTL_HW
     mib[0] = CTL_HW;
 
@@ -194,7 +197,17 @@ void sysinfo_fetch(struct sysinfo *sysinfo) {
     len = LLDP_INVENTORY_SIZE + 1;
     sysctl(mib, 2, sysinfo->model_name, &len, NULL, 0);
 #endif
-#endif
+#endif /* CTL_HW */
+
+    // FreeBSD
+#ifdef HAVE_KENV_H
+    len = LLDP_INVENTORY_SIZE + 1;
+    kenv(KENV_GET, "smbios.system.version", sysinfo->hw_revision, len);
+    kenv(KENV_GET, "smbios.bios.version", sysinfo->fw_revision, len);
+    kenv(KENV_GET, "smbios.system.serial", sysinfo->serial_number, len);
+    kenv(KENV_GET, "smbios.system.maker", sysinfo->manufacturer, len);
+    kenv(KENV_GET, "smbios.system.product", sysinfo->model_name, len);
+#endif /* HAVE_KENV_H */
 
     // default to CAP_HOST
     sysinfo->cap = CAP_HOST;

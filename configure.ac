@@ -310,7 +310,8 @@ AC_CHECK_HEADERS([netpacket/packet.h])
 AC_CHECK_HEADERS([net/bpf.h])
 AC_CHECK_HEADERS([net/if_dl.h])
 
-#sysctl
+# kenv and sysctl
+AC_CHECK_HEADERS([kenv.h])
 AC_CHECK_HEADERS([sys/sysctl.h], [], AC_MSG_ERROR([required header missing]),
 [
 #include <sys/param.h>
