@@ -458,7 +458,7 @@ ssize_t master_device_id(struct master_req *mreq) {
     pci_set_name_list_path(pacc, PCI_PATH_IDS_DIR "/" PCI_IDS, 0);
 
 #ifdef USB_PATH_IDS_DIR
-    char sub_path[SYSFS_PATH_MAX], *sub_base;
+    char sub_path[SYSFS_PATH_MAX] = {}, *sub_base;
 
     ret = snprintf(path, SYSFS_PATH_MAX,
 	    SYSFS_CLASS_NET "/%s/device/subsystem", mreq->name);
