@@ -4,7 +4,7 @@
 # http://www.rpm.org/wiki/Problems/Distributions
 
 %global homedir /var/run/ladvd
-%global gecos CDP/LLDP sender for unix
+%global gecos LLDP/CDP sender for unix
 
 Name:		ladvd
 BuildRequires:  libevent-devel
