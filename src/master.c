@@ -24,6 +24,7 @@
 #include "filter.h"
 #include <sys/select.h>
 #include <sys/wait.h>
+#include <ctype.h>
 
 #ifdef HAVE_LIBCAP_NG
 #include <cap-ng.h>
@@ -53,6 +54,10 @@
 
 #ifdef HAVE_SYSFS
 #define SYSFS_CLASS_NET		"/sys/class/net"
+#define SYSFS_PCI_DEVICE	"device/device"
+#define SYSFS_PCI_VENDOR	"device/vendor"
+#define SYSFS_USB_DEVICE	"device/../product"
+#define SYSFS_USB_VENDOR	"device/../manufacturer"
 #define SYSFS_PATH_MAX		256
 #endif /* HAVE_SYSFS */
 
@@ -443,22 +448,15 @@ ssize_t master_device_id(struct master_req *mreq) {
 #if defined(HAVE_SYSFS) && defined(HAVE_PCI_PCI_H)
     uint16_t device_id = 0, vendor_id = 0;
     static struct pci_access *pacc = NULL;
-    char path[SYSFS_PATH_MAX];
-    char *vendor_fn, *device_fn, id_str[16];
+    char path[SYSFS_PATH_MAX], id_str[16];
+    char sub_path[SYSFS_PATH_MAX] = {}, *sub_base = NULL;
+    char vendor_str[32], device_str[32];
     ssize_t ret = 0;
 
     if (!pacc) {
 	pacc = pci_alloc();
 	pci_init(pacc);
     }
-
-    // default to pci.ids
-    vendor_fn = "vendor";
-    device_fn = "device";
-    pci_set_name_list_path(pacc, PCI_PATH_IDS_DIR "/" PCI_IDS, 0);
-
-#ifdef USB_PATH_IDS_DIR
-    char sub_path[SYSFS_PATH_MAX] = {}, *sub_base;
 
     ret = snprintf(path, SYSFS_PATH_MAX,
 	    SYSFS_CLASS_NET "/%s/device/subsystem", mreq->name);
@@ -468,22 +466,37 @@ ssize_t master_device_id(struct master_req *mreq) {
     if ((sub_base = strrchr(sub_path, '/')) == NULL)
 	return(0);
 
+    // For USB devices we use the manufacturer and product strings
     if (strcmp(sub_base, "/usb") == 0) {
-	vendor_fn = "idVendor";
-	device_fn = "idProduct";
-	pci_set_name_list_path(pacc, USB_PATH_IDS_DIR, 0);
+	ret = snprintf(path, SYSFS_PATH_MAX,
+	    SYSFS_CLASS_NET "/%s/" SYSFS_USB_VENDOR, mreq->name);
+	if (ret == -1 || !read_line(path, vendor_str, sizeof(vendor_str)))
+	    return(0);
+
+	ret = snprintf(path, SYSFS_PATH_MAX,
+	    SYSFS_CLASS_NET "/%s/" SYSFS_USB_DEVICE, mreq->name);
+	if (ret == -1 || !read_line(path, device_str, sizeof(device_str)))
+	    return(0);
+
+	// Manufacturer strings seem to have trailing spaces
+	while (isspace(vendor_str[strlen(vendor_str)-1]))
+	   vendor_str[strlen(vendor_str)-1] = '\0';
+
+	if (snprintf(mreq->buf, sizeof(mreq->buf), "%s (%s)",
+		    device_str, vendor_str) < 0)
+	    return(0);
+	return(strlen(mreq->buf));
     }
-#endif /* USB_PATH_IDS_DIR */
 
     ret = snprintf(path, SYSFS_PATH_MAX,
-	    SYSFS_CLASS_NET "/%s/device/%s", mreq->name, vendor_fn);
+	    SYSFS_CLASS_NET "/%s/" SYSFS_PCI_VENDOR, mreq->name);
     if (ret == -1 || !read_line(path, id_str, sizeof(id_str)))
 	return(0);
 
     vendor_id = strtoul(id_str, NULL, 16);
 
     ret = snprintf(path, SYSFS_PATH_MAX,
-	    SYSFS_CLASS_NET "/%s/device/%s", mreq->name, device_fn);
+	    SYSFS_CLASS_NET "/%s/" SYSFS_PCI_DEVICE, mreq->name);
     if (ret == -1 || !read_line(path, id_str, sizeof(id_str)))
 	return(0);
 
