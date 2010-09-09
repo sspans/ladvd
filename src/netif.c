@@ -1057,6 +1057,10 @@ int netif_media(struct netif *netif) {
     netif->mau = LLDP_MAU_TYPE_UNKNOWN;
 
     switch (ecmd.port) {
+	case PORT_MII:
+	    // fallthrough if we're advertising twisted-pair
+	    if (!(ecmd.advertising & ADVERTISED_TP))
+		break;
 	case PORT_TP:
 	    if (ecmd.speed == SPEED_10)
 		netif->mau = (netif->duplex) ?
@@ -1089,8 +1093,6 @@ int netif_media(struct netif *netif) {
 	    break;
 	case PORT_AUI:
 	    netif->mau = LLDP_MAU_TYPE_AUI;
-	    break;
-	case PORT_MII:
 	    break;
 #ifdef PORT_DA
 	case PORT_DA:
