@@ -295,7 +295,7 @@ struct netif *subif_iter(struct netif *subif, struct netif *netif) {
     if (subif == NULL) {
 	if (netif->type > NETIF_REGULAR)
 	    return(netif->subif);
-	else if (netif->type < NETIF_REGULAR)
+	else if (netif->type < NETIF_TAP)
 	    return(NULL);
 	else
 	    return(netif);

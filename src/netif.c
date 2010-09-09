@@ -127,7 +127,7 @@ void netif_addrs(struct ifaddrs *, struct nhead *, struct sysinfo *);
 uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 		    struct nhead *netifs) {
 
-    int sockfd, af = AF_INET;
+    static int sockfd = -1;
     struct ifaddrs *ifaddrs, *ifaddr = NULL;
     struct ifreq ifr;
     int count = 0;
@@ -145,11 +145,11 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
     // netifs
     struct netif *n_netif, *netif = NULL;
 
-    sockfd = my_socket(af, SOCK_DGRAM, 0);
+    if (sockfd == -1)
+	sockfd = my_socket(AF_INET, SOCK_DGRAM, 0);
 
     if (getifaddrs(&ifaddrs) < 0) {
 	my_loge(CRIT, "address detection failed");
-	(void) close(sockfd);
 	return(0);
     }
 
@@ -349,7 +349,6 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 
     // cleanup
     freeifaddrs(ifaddrs);
-    (void) close(sockfd);
 
     return(count);
 };
@@ -464,7 +463,7 @@ int netif_type(int sockfd, uint32_t index,
 	    return(NETIF_VLAN);
 	// handle tun/tap
 	} else if (strcmp(drvinfo.driver, "tun") == 0) {
-	    return(NETIF_REGULAR);
+	    return(NETIF_TAP);
 	}
 
 	// we'll accept interfaces which support ethtool (aka wing it)
@@ -978,7 +977,7 @@ void netif_addrs(struct ifaddrs *ifaddrs, struct nhead *netifs,
 
 // perform media detection on physical interfaces
 int netif_media(struct netif *netif) {
-    int sockfd, af = AF_INET;
+    static int sockfd = -1;
     struct ifreq ifr = {};
 
 #if HAVE_LINUX_ETHTOOL_H
@@ -991,7 +990,8 @@ int netif_media(struct netif *netif) {
     int *media_list;
 #endif /* HAVE_HAVE_NET_IF_MEDIA_H */
 
-    sockfd = my_socket(af, SOCK_DGRAM, 0);
+    if (sockfd == -1)
+	sockfd = my_socket(AF_INET, SOCK_DGRAM, 0);
 
     netif->duplex = -1;
     netif->autoneg_supported = -1;
@@ -1006,6 +1006,10 @@ int netif_media(struct netif *netif) {
 	netif->mtu = ifr.ifr_mtu;
     else
 	my_log(INFO, "mtu detection failed on interface %s", netif->name);
+
+    // the rest only makes sense for real interfaces
+    if (netif->type != NETIF_REGULAR)
+	return(EXIT_SUCCESS);
 
 #if HAVE_LINUX_ETHTOOL_H
     int ecmd_to_lldp_pmd[][2] = {
@@ -1026,12 +1030,8 @@ int netif_media(struct netif *netif) {
     mreq.index = netif->index;
     mreq.len = sizeof(ecmd);
 
-    if (my_mreq(&mreq) != sizeof(ecmd)) {
-	// cleanup
-	close(sockfd);
-
+    if (my_mreq(&mreq) != sizeof(ecmd))
 	return(EXIT_SUCCESS);
-    }
 
     // copy ecmd struct
     memcpy(&ecmd, mreq.buf, sizeof(ecmd));
@@ -1108,25 +1108,21 @@ int netif_media(struct netif *netif) {
 
     if (ioctl(sockfd, SIOCGIFMEDIA, (caddr_t)&ifmr) < 0) {
 	my_log(INFO, "media detection not supported on %s", netif->name);
-	close(sockfd);
 	return(EXIT_SUCCESS);
     }
 
     if (IFM_TYPE(ifmr.ifm_current) != IFM_ETHER) {
 	my_log(INFO, "non-ethernet interface %s found", netif->name);
-	close(sockfd);
 	return(EXIT_FAILURE);
     }
 
     if ((ifmr.ifm_status & IFM_ACTIVE) == 0) { 
 	my_log(INFO, "no link detected on interface %s", netif->name);
-	close(sockfd);
 	return(EXIT_SUCCESS);
     }
 
     if (ifmr.ifm_count == 0) {
 	my_log(CRIT, "missing media types for interface %s", netif->name);
-	close(sockfd);
 	return(EXIT_FAILURE);
     }
 
@@ -1136,7 +1132,6 @@ int netif_media(struct netif *netif) {
     if (ioctl(sockfd, SIOCGIFMEDIA, (caddr_t)&ifmr) < 0) {
 	my_log(CRIT, "media detection failed for interface %s", netif->name);
 	free(media_list);
-	close(sockfd);
 	return(EXIT_FAILURE);
     }
 
@@ -1272,9 +1267,6 @@ int netif_media(struct netif *netif) {
 
     free(media_list);
 #endif /* HAVE_NET_IF_MEDIA_H */
-
-    // cleanup
-    close(sockfd);
 
     return(EXIT_SUCCESS);
 }
