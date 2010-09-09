@@ -105,7 +105,7 @@ PKG_CHECK_MODULES([CHECK], [check >= 0.9.4],
     AM_CONDITIONAL([TESTS_ENABLED], [true]),
     AM_CONDITIONAL([TESTS_ENABLED], [false]))
 
-# libpci and usbutils
+# libpci
 AS_IF([test -n "$check_ids"],
 [
     PKG_CHECK_MODULES(PCI, [libpci >= 3.0.0],
@@ -114,10 +114,6 @@ AS_IF([test -n "$check_ids"],
 	AC_CHECK_HEADER([pci/pci.h])
 	AC_CHECK_LIB(pci, pci_init, AC_SUBST(PCI_LIBS,"-lpci"))
 	])
-    PKG_CHECK_MODULES(USBUTILS, [usbutils],
-	AC_DEFINE_UNQUOTED(USB_PATH_IDS_DIR, 
-	    ["$($PKG_CONFIG --variable=usbids usbutils)"], [usb.ids location]),
-        [false])
 ]
 )
 

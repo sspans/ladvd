@@ -14,13 +14,10 @@ BuildRequires:  libcap-ng-devel
 BuildRequires:  libcap-devel
 %endif
 BuildRequires:  pciutils-devel
-BuildRequires:  usbutils
 BuildRequires:  pkgconfig
 BuildRequires:  check-devel
 Requires:	/usr/bin/lsb_release
-%if 0%{?suse_version}
-Requires:	usbutils
-%else
+%if ! 0%{?suse_version}
 Requires:	hwdata
 %endif
 Version:	0.9.2
