@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
     argv = sargv;
 #endif
 
-    while ((ch = getopt(argc, argv, "adfhm:noqru:vwzc:l:CEFN")) != -1) {
+    while ((ch = getopt(argc, argv, "adfhm:noqrtu:vwzc:l:CEFN")) != -1) {
 	switch(ch) {
 	    case 'a':
 		options |= OPT_AUTO | OPT_RECV;
