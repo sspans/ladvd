@@ -151,6 +151,8 @@ void child_send(int fd, short event, void *evs) {
 	// skip special interfaces
 	if (netif->type < NETIF_TAP)
 	    continue;
+	if (!(options & OPT_TAP) && (netif->type == NETIF_TAP))
+	    continue;
 
 	my_log(INFO, "starting loop with interface %s", netif->name); 
 

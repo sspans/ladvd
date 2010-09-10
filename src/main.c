@@ -100,6 +100,9 @@ int main(int argc, char *argv[]) {
 	    case 'r':
 		options |= OPT_RECV;
 		break;
+	    case 't':
+		options |= OPT_TAP;
+		break;
 	    case 'u':
 		username = optarg;
 		break;
@@ -239,6 +242,7 @@ static void usage() {
 	    "\t-o = Run Once\n"
 	    "\t-q = Generate per-interface chassis-id values\n"
 	    "\t-r = Receive Packets\n"
+	    "\t-t = Use Tun/Tap interfaces\n"
 	    "\t-u <user> = Setuid User (defaults to " PACKAGE_USER ")\n"
 	    "\t-v = Increase logging verbosity\n"
 	    "\t-w = Use wireless interfaces\n"
