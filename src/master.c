@@ -479,8 +479,9 @@ ssize_t master_device_id(struct master_req *mreq) {
 	    return(0);
 
 	// Manufacturer strings seem to have trailing spaces
-	while (isspace(vendor_str[strlen(vendor_str)-1]))
-	   vendor_str[strlen(vendor_str)-1] = '\0';
+	char *s = vendor_str + strlen(vendor_str);
+	while (s != vendor_str && s-- && isspace(*s))
+	    *s = '\0';
 
 	if (snprintf(mreq->buf, sizeof(mreq->buf), "%s (%s)",
 		    device_str, vendor_str) < 0)

@@ -565,8 +565,7 @@ void netif_device_id(struct netif *netif) {
 
     // find the unit number at the end of dname
     dunit = dname + strlen(dname);
-    while (strspn(dunit - 1, "0123456789"))
-	dunit--;
+    while (isdigit(*(dunit-1)) && dunit-- && dunit != dname);
 
     // no unit found, all too hard
     if (!strlen(dunit)) {
