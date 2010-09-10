@@ -450,7 +450,7 @@ ssize_t master_device_id(struct master_req *mreq) {
     static struct pci_access *pacc = NULL;
     char path[SYSFS_PATH_MAX], id_str[16];
     char sub_path[SYSFS_PATH_MAX] = {}, *sub_base = NULL;
-    char vendor_str[32], device_str[32];
+    char vendor_str[32], device_str[32], *s = NULL;
     ssize_t ret = 0;
 
     if (!pacc) {
@@ -478,9 +478,12 @@ ssize_t master_device_id(struct master_req *mreq) {
 	if (ret == -1 || !read_line(path, device_str, sizeof(device_str)))
 	    return(0);
 
-	// Manufacturer strings seem to have trailing spaces
-	char *s = vendor_str + strlen(vendor_str);
+	// these strings seem to have trailing spaces
+	s = vendor_str + strlen(vendor_str);
 	while (s != vendor_str && s-- && isspace(*s))
+	    *s = '\0';
+	s = device_str + strlen(device_str);
+	while (s != device_str && s-- && isspace(*s))
 	    *s = '\0';
 
 	if (snprintf(mreq->buf, sizeof(mreq->buf), "%s (%s)",
