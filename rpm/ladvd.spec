@@ -28,7 +28,7 @@ Source0:	ladvd-%{version}.tar.gz
 Source1:        ladvd.init
 Source2:        ladvd.sysconfig
 Group:          Productivity/Networking/System
-Summary:        CDP/LLDP sender for unix 
+Summary:        LLDP/CDP sender for unix 
 
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 
