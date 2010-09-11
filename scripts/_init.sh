@@ -8,7 +8,7 @@ RELEASE="${BASE}/release"
 
 # prepare
 hg pull -u
-hg log > ${BASE}/doc/ChangeLog
+hg log --style=changelog > ${BASE}/doc/ChangeLog
 
 # create release dir
 [ -d ${RELEASE} ] && rm -rf ${RELEASE}
