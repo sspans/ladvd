@@ -14,7 +14,7 @@ lcov-report:
 		--remove @top_builddir@/lcov.info.tmp
 	rm @top_builddir@/lcov.info.tmp
 	$(mkdir_p) @top_builddir@/lcov
-	revision=`svnversion | cut -f1 -d:`;\
+	revision=`hg heads --template="{rev}" tip`;\
 	genhtml --title "@PACKAGE_STRING@ - Rev $$revision" \
 		--output-directory @top_builddir@/lcov lcov.info
 	@echo
