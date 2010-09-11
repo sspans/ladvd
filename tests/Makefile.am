@@ -5,8 +5,6 @@ check_PROGRAMS = check_compat check_proto check_util \
 		check_master check_child check_cli
 
 EXTRA_DIST = proto testfile
-dist-hook:
-	-rm -rf `find $(distdir)/proto -name .svn`
 
 # auto-generate the list of wrap functions
 check_WRAPFLAGS = `$(EGREP) '^[MV]?WRAP' $(srcdir)/check_wrap.c | \
