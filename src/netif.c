@@ -486,6 +486,9 @@ int netif_type(int sockfd, uint32_t index,
 	    return(NETIF_VLAN);
 #endif /* HAVE_NET_IF_VLAN_VAR_H */
 
+	// XXX: Tun/Tap detection needed here.
+	// Not sure how, ioctl probably won't work :(
+
 	// bonding
 #if defined(HAVE_NET_IF_LAGG_H) || defined(HAVE_NET_IF_TRUNK_H)
 	strlcpy(ra.ra_ifname, ifaddr->ifa_name, sizeof(ra.ra_ifname));
