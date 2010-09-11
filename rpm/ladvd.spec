@@ -23,7 +23,7 @@ Requires:	hwdata
 Version:	0.9.2
 Release:	1
 License:	ISC
-URL:		http://www.blinkenlights.nl/software/ladvd/
+URL:		http://code.google.com/p/ladvd/
 Source0:	ladvd-%{version}.tar.gz
 Source1:        ladvd.init
 Source2:        ladvd.sysconfig

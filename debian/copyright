@@ -1,7 +1,7 @@
 Format-Specification: http://svn.debian.org/wsvn/dep/web/deps/dep5.mdwn?op=file&rev=135
 Name: Ladvd
 Maintainer: Sten Spans <sten@blinkenlights.nl>
-Source: http://blinkenlights.nl/software/ladvd/
+Source: http://code.google.com/p/ladvd/
 
 Files: *
 Copyright: 2008, 2009, 2010 Sten Spans <sten@blinkenlights.nl>
