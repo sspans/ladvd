@@ -42,8 +42,7 @@ test: test-stamp
 
 test-stamp: build
 	dh_testdir
-	# The /dev/mem dependency will be handled in the next upstream release
-	[ -c /dev/mem ] && $(MAKE) check
+	$(MAKE) check
 	touch $@
 
 clean:

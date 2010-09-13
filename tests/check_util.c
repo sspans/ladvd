@@ -567,13 +567,20 @@ START_TEST(test_my_cksum) {
 END_TEST
 
 START_TEST(test_my_priv) {
-    struct passwd *pwd;
+    struct passwd *pwd = NULL;
+    struct stat sb;
     const char *errstr = NULL;
     char path[MAXPATHLEN + 1] = {};
 
     loglevel = INFO;
-    pwd = getpwnam("root");
     errno = EPERM;
+
+    if ((pwd = getpwnam("root")) == NULL)
+	return;
+    if (stat(_PATH_DEVNULL, &sb) != 0)
+	return;
+    if (stat(_PATH_CONSOLE, &sb) != 0)
+	return;
 
     mark_point();
     errstr = "unable to setgroups";
@@ -640,27 +647,24 @@ START_TEST(test_my_priv) {
 
     mark_point();
     errstr = "stat(\"/nonexistent\"): ";
-    strlcpy(path, "/nonexistent", MAXPATHLEN);
     WRAP_FATAL_START();
-    my_chroot(path);
+    my_chroot("/nonexistent");
     WRAP_FATAL_END();
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     mark_point();
     errstr = "bad ownership or modes for chroot";
-    strlcpy(path, _PATH_DEVNULL, MAXPATHLEN);
     WRAP_FATAL_START();
-    my_chroot(path);
+    my_chroot(_PATH_DEVNULL);
     WRAP_FATAL_END();
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     mark_point();
-    errstr = "chroot path \"" _PATH_MEM "\" is not a directory";
-    strlcpy(path, _PATH_MEM, MAXPATHLEN);
+    errstr = "chroot path \"" _PATH_CONSOLE "\" is not a directory";
     WRAP_FATAL_START();
-    my_chroot(path);
+    my_chroot(_PATH_CONSOLE);
     WRAP_FATAL_END();
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
