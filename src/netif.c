@@ -114,8 +114,8 @@
 #define NETIF_AF    AF_LINK
 #endif
 
-int netif_wireless(int, struct ifaddrs *ifaddr, struct ifreq *);
 int netif_type(int, uint32_t index, struct ifaddrs *ifaddr, struct ifreq *);
+int netif_wireless(int, struct ifaddrs *ifaddr, struct ifreq *);
 void netif_bond(int, struct nhead *, struct netif *, struct ifreq *);
 void netif_bridge(int, struct nhead *, struct netif *, struct ifreq *);
 void netif_vlan(int, struct nhead *, struct netif *, struct ifreq *);
@@ -211,24 +211,18 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 	if (ioctl(sockfd, SIOCGIFFLAGS, (caddr_t)&ifr) >= 0)
 	    enabled = (ifr.ifr_flags & IFF_UP);
 
-	// detect wireless interfaces
-	if (netif_wireless(sockfd, ifaddr, &ifr) == 0) {
-	    sysinfo->cap |= CAP_WLAN; 
-	    sysinfo->cap_active |= (enabled == 1) ? CAP_WLAN : 0;
-
-	    if (!(options & OPT_WIRELESS)) {
-		my_log(INFO, "skipping wireless interface %s",
-			ifaddr->ifa_name);
-		continue;
-	    }
-	}
-
 	// detect interface type
 	type = netif_type(sockfd, index, ifaddr, &ifr);
 
 	if (type == NETIF_REGULAR) { 
 	    my_log(INFO, "found ethernet interface %s", ifaddr->ifa_name);
 	    sysinfo->physif_count++;
+	} else if (type == NETIF_WIRELESS) {
+	    my_log(INFO, "found wireless interface %s", ifaddr->ifa_name);
+	    sysinfo->cap |= CAP_WLAN;
+	    sysinfo->cap_active |= (enabled == 1) ? CAP_WLAN : 0;
+	} else if (type == NETIF_TAP) {
+	    my_log(INFO, "found tun/tap interface %s", ifaddr->ifa_name);
 	} else if (type == NETIF_BONDING) {
 	    my_log(INFO, "found bond interface %s", ifaddr->ifa_name);
 	} else if (type == NETIF_BRIDGE) {
@@ -354,57 +348,6 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 };
 
 
-// detect wireless interfaces
-int netif_wireless(int sockfd, struct ifaddrs *ifaddr, struct ifreq *ifr) {
-
-#if HAVE_NET_IF_MEDIA_H
-    struct ifmediareq ifmr = {};
-#endif /* HAVE_HAVE_NET_IF_MEDIA_H */
-
-#ifdef HAVE_LINUX_WIRELESS_H
-    struct iwreq iwreq = {};
-
-    strlcpy(iwreq.ifr_name, ifaddr->ifa_name, sizeof(iwreq.ifr_name));
-
-    return(ioctl(sockfd, SIOCGIWNAME, &iwreq));
-#endif
-
-#ifdef HAVE_NET80211_IEEE80211_IOCTL_H
-#ifdef SIOCG80211
-    struct ieee80211req ireq = {};
-    u_int8_t i_data[32];
-
-    strlcpy(ireq.i_name, ifaddr->ifa_name, sizeof(ireq.i_name));
-    ireq.i_data = &i_data;
-
-    ireq.i_type = IEEE80211_IOC_SSID;
-    ireq.i_val = -1;
-
-    return(ioctl(sockfd, SIOCG80211, &ireq));
-#elif defined(SIOCG80211NWID)
-    struct ieee80211_nwid nwid;
-
-    ifr->ifr_data = (caddr_t)&nwid;
-
-    return(ioctl(sockfd, SIOCG80211NWID, (caddr_t)ifr));
-#endif
-#endif /* HAVE_NET80211_IEEE80211_IOCTL_H */
-
-#if defined(HAVE_NET_IF_MEDIA_H) && defined(IFM_IEEE80211)
-    strlcpy(ifmr.ifm_name, ifaddr->ifa_name, sizeof(ifmr.ifm_name));
-
-    if (ioctl(sockfd, SIOCGIFMEDIA, (caddr_t)&ifmr) < 0)
-	return(-1);
-
-    if (IFM_TYPE(ifmr.ifm_current) == IFM_IEEE80211)
-	return(0);
-#endif /* HAVE_HAVE_NET_IF_MEDIA_H */
-
-    // default
-    return(-1);
-}
-
-
 // detect interface type
 int netif_type(int sockfd, uint32_t index,
 	struct ifaddrs *ifaddr, struct ifreq *ifr) {
@@ -425,6 +368,10 @@ int netif_type(int sockfd, uint32_t index,
 #elif HAVE_NET_IF_TRUNK_H
     struct trunk_reqall ra = {};
 #endif
+
+    // detect wireless interfaces
+    if (netif_wireless(sockfd, ifaddr, ifr) >= 0)
+	return(NETIF_WIRELESS);
 
 #ifdef HAVE_SYSFS
     struct master_req mreq = {};
@@ -522,6 +469,57 @@ int netif_type(int sockfd, uint32_t index,
 
     // default
     return(NETIF_REGULAR);
+}
+
+
+// detect wireless interfaces
+int netif_wireless(int sockfd, struct ifaddrs *ifaddr, struct ifreq *ifr) {
+
+#if HAVE_NET_IF_MEDIA_H
+    struct ifmediareq ifmr = {};
+#endif /* HAVE_HAVE_NET_IF_MEDIA_H */
+
+#ifdef HAVE_LINUX_WIRELESS_H
+    struct iwreq iwreq = {};
+
+    strlcpy(iwreq.ifr_name, ifaddr->ifa_name, sizeof(iwreq.ifr_name));
+
+    return (ioctl(sockfd, SIOCGIWNAME, &iwreq));
+#endif
+
+#ifdef HAVE_NET80211_IEEE80211_IOCTL_H
+#ifdef SIOCG80211
+    struct ieee80211req ireq = {};
+    u_int8_t i_data[32];
+
+    strlcpy(ireq.i_name, ifaddr->ifa_name, sizeof(ireq.i_name));
+    ireq.i_data = &i_data;
+
+    ireq.i_type = IEEE80211_IOC_SSID;
+    ireq.i_val = -1;
+
+    return(ioctl(sockfd, SIOCG80211, &ireq));
+#elif defined(SIOCG80211NWID)
+    struct ieee80211_nwid nwid;
+
+    ifr->ifr_data = (caddr_t)&nwid;
+
+    return(ioctl(sockfd, SIOCG80211NWID, (caddr_t)ifr));
+#endif
+#endif /* HAVE_NET80211_IEEE80211_IOCTL_H */
+
+#if defined(HAVE_NET_IF_MEDIA_H) && defined(IFM_IEEE80211)
+    strlcpy(ifmr.ifm_name, ifaddr->ifa_name, sizeof(ifmr.ifm_name));
+
+    if (ioctl(sockfd, SIOCGIFMEDIA, (caddr_t)&ifmr) < 0)
+	return(-1);
+
+    if (IFM_TYPE(ifmr.ifm_current) == IFM_IEEE80211)
+	return(0);
+#endif /* HAVE_HAVE_NET_IF_MEDIA_H */
+
+    // default
+    return(-1);
 }
 
 
