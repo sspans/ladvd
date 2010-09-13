@@ -1,5 +1,4 @@
 For 0.9.3:
-- implement BSD tun/tap detection
 - implement ladvdc verbose decoding
 - improve edp TLV handling
 - write protocol descriptions
