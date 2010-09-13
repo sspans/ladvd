@@ -441,6 +441,12 @@ int netif_type(int sockfd, uint32_t index,
 	if ((strcmp(dname, "tun") == 0) || (strcmp(dname, "tap") == 0))
 	    return(NETIF_TAP);
 
+#ifdef __FreeBSD__
+	// ipfw log interface has no ioctl and is IFT_ETHER
+	if (strcmp(dname, "ipfw") == 0)
+	    return(NETIF_INVALID);
+#endif
+
 	// bonding
 #if defined(HAVE_NET_IF_LAGG_H) || defined(HAVE_NET_IF_TRUNK_H)
 	strlcpy(ra.ra_ifname, ifaddr->ifa_name, sizeof(ra.ra_ifname));
