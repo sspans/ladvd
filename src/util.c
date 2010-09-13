@@ -276,7 +276,7 @@ struct netif *netif_iter(struct netif *netif, struct nhead *netifs) {
 	    continue;
 
 	// skip masters without slaves
-	if ((netif->type > 0) && (netif->subif == NULL)) {
+	if ((netif->type > NETIF_PARENT) && (netif->subif == NULL)) {
 	    my_log(INFO, "skipping interface %s", netif->name);
 	    continue;
 	}
