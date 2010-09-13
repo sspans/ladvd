@@ -273,6 +273,6 @@ void master_signal(int fd, short event, void *pid);
 
 void sysinfo_fetch(struct sysinfo *);
 uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *, struct nhead *);
-int netif_media(struct netif *session);
+int netif_media(struct netif *);
 
 #endif /* _common_h */

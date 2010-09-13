@@ -23,6 +23,7 @@
 
 #include <ifaddrs.h>
 #include <dirent.h>
+#include <ctype.h>
 
 #if HAVE_ASM_TYPES_H
 #include <asm/types.h>
@@ -116,10 +117,11 @@
 
 int netif_type(int, uint32_t index, struct ifaddrs *ifaddr, struct ifreq *);
 int netif_wireless(int, struct ifaddrs *ifaddr, struct ifreq *);
+void netif_driver(int, uint32_t index, struct ifreq *, char *, size_t);
 void netif_bond(int, struct nhead *, struct netif *, struct ifreq *);
 void netif_bridge(int, struct nhead *, struct netif *, struct ifreq *);
 void netif_vlan(int, struct nhead *, struct netif *, struct ifreq *);
-void netif_device_id(struct netif *);
+void netif_device_id(int, struct netif *, struct ifreq *);
 void netif_addrs(struct ifaddrs *, struct nhead *, struct sysinfo *);
 
 
@@ -306,7 +308,7 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 		netif_vlan(sockfd, netifs, netif, &ifr);
 		break;
 	    case NETIF_REGULAR:
-		netif_device_id(netif);
+		netif_device_id(sockfd, netif, &ifr);
 		break;
 	    default:
 		break;
@@ -352,10 +354,7 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 int netif_type(int sockfd, uint32_t index,
 	struct ifaddrs *ifaddr, struct ifreq *ifr) {
 
-#if HAVE_LINUX_ETHTOOL_H
-    struct ethtool_drvinfo drvinfo = {};
-#endif
-
+    char dname[IFNAMSIZ];
 #if defined(HAVE_LINUX_IF_VLAN_H) && \
     defined(HAVE_DECL_GET_VLAN_REALDEV_NAME_CMD)
     struct vlan_ioctl_args if_request = {};
@@ -368,6 +367,9 @@ int netif_type(int sockfd, uint32_t index,
 #elif HAVE_NET_IF_TRUNK_H
     struct trunk_reqall ra = {};
 #endif
+
+    // detect driver name
+    netif_driver(sockfd, index, ifr, dname, sizeof(dname));
 
     // detect wireless interfaces
     if (netif_wireless(sockfd, ifaddr, ifr) >= 0)
@@ -394,22 +396,18 @@ int netif_type(int sockfd, uint32_t index,
 #endif /* HAVE_LINUX_IF_VLAN_H */
 
 #if HAVE_LINUX_ETHTOOL_H
-    // use ethtool to detect various drivers
-    drvinfo.cmd = ETHTOOL_GDRVINFO;
-    ifr->ifr_data = (caddr_t)&drvinfo;
-
-    if (ioctl(sockfd, SIOCETHTOOL, ifr) >= 0) {
+    if (strlen(dname)) {
 	// handle bonding
-	if (strcmp(drvinfo.driver, "bonding") == 0) {
+	if (strcmp(dname, "bonding") == 0) {
 	    return(NETIF_BONDING);
 	// handle bridge
-	} else if (strcmp(drvinfo.driver, "bridge") == 0) {
+	} else if (strcmp(dname, "bridge") == 0) {
 	    return(NETIF_BRIDGE);
 	// handle vlan
-	} else if (strcmp(drvinfo.driver, "802.1Q VLAN Support") == 0) {
+	} else if (strcmp(dname, "802.1Q VLAN Support") == 0) {
 	    return(NETIF_VLAN);
 	// handle tun/tap
-	} else if (strcmp(drvinfo.driver, "tun") == 0) {
+	} else if (strcmp(dname, "tun") == 0) {
 	    return(NETIF_TAP);
 	}
 
@@ -423,6 +421,7 @@ int netif_type(int sockfd, uint32_t index,
 
 #ifdef AF_LINK
     struct if_data *if_data = ifaddr->ifa_data;
+    char *dunit;
 
     if (if_data->ifi_type == IFT_ETHER) {
 
@@ -433,8 +432,14 @@ int netif_type(int sockfd, uint32_t index,
 	    return(NETIF_VLAN);
 #endif /* HAVE_NET_IF_VLAN_VAR_H */
 
-	// XXX: Tun/Tap detection needed here.
-	// Not sure how, ioctl probably won't work :(
+	// zap dunit
+	dunit = dname + strlen(dname);
+	while (dunit != dname && dunit-- && isdigit(*dunit))
+	    *dunit = '\0';
+
+	// detect tun/tap based on the driver name
+	if ((strcmp(dname, "tun") == 0) || (strcmp(dname, "tap") == 0))
+	    return(NETIF_TAP);
 
 	// bonding
 #if defined(HAVE_NET_IF_LAGG_H) || defined(HAVE_NET_IF_TRUNK_H)
@@ -469,6 +474,34 @@ int netif_type(int sockfd, uint32_t index,
 
     // default
     return(NETIF_REGULAR);
+}
+
+
+// detect driver names via ethtool, sysctl, etc
+void netif_driver(int sockfd, uint32_t index, struct ifreq *ifr,
+		    char *dname, size_t len) {
+#if HAVE_LINUX_ETHTOOL_H
+    struct ethtool_drvinfo drvinfo = {};
+
+    // use ethtool to detect various drivers
+    drvinfo.cmd = ETHTOOL_GDRVINFO;
+    ifr->ifr_data = (caddr_t)&drvinfo;
+    if (ioctl(sockfd, SIOCETHTOOL, ifr) >= 0)
+	strlcpy(dname, drvinfo.driver, len);
+#elif defined IFDATA_DRIVERNAME
+    int name[6];
+
+    name[0] = CTL_NET;
+    name[1] = PF_LINK;
+    name[2] = NETLINK_GENERIC;
+    name[3] = IFMIB_IFDATA;
+    name[4] = index;
+    name[5] = IFDATA_DRIVERNAME;
+
+    sysctl(name, 6, dname, &len, 0, 0);
+#elif defined(__OpenBSD__)
+    strlcpy(dname, ifr->ifr_name, len);
+#endif
 }
 
 
@@ -523,7 +556,7 @@ int netif_wireless(int sockfd, struct ifaddrs *ifaddr, struct ifreq *ifr) {
 }
 
 
-void netif_device_id(struct netif *netif) {
+void netif_device_id(int sockfd, struct netif *netif, struct ifreq *ifr) {
 
     if (netif->device_identified)
 	return;
@@ -541,46 +574,28 @@ void netif_device_id(struct netif *netif) {
     strlcpy(netif->device_name, mreq.buf, sizeof(netif->device_name));
 
 #elif defined(__FreeBSD__)
-    int name[6], ret;
-    char *dname, *dunit, desc_sysctl[64] = {};
+    char dname[IFNAMSIZ+1] = {}, desc_sysctl[64] = {}, *dunit;
+    int ret;
     size_t len = 0;
 
-    // First figure out the name of the driver
-    name[0] = CTL_NET;
-    name[1] = PF_LINK;
-    name[2] = NETLINK_GENERIC;
-    name[3] = IFMIB_IFDATA;
-    name[4] = netif->index;
-    name[5] = IFDATA_DRIVERNAME;
-
-    if (sysctl(name, 6, NULL, &len, 0, 0) < 0) 
+    // leave room for the sysctl dunit dot
+    netif_driver(sockfd, netif->index, ifr, dname, IFNAMSIZ);
+    if (!strlen(dname))
 	return;
-
-    // + 1 for the sysctl dunit dot
-    dname = my_malloc(len + 1);
-
-    if (sysctl(name, 6, dname, &len, 0, 0) < 0) {
-	free(dname);
-	return;
-    }
 
     // find the unit number at the end of dname
     dunit = dname + strlen(dname);
     while (isdigit(*(dunit-1)) && dunit-- && dunit != dname);
 
     // no unit found, all too hard
-    if (!strlen(dunit)) {
-	free(dname);
+    if (!strlen(dunit))
 	return;
-    }
 
     // insert dot
     memmove(dunit + 1, dunit, strlen(dunit));
     *dunit = '.';
 
     ret = snprintf(desc_sysctl, sizeof(desc_sysctl), "dev.%s.%%desc", dname);
-    free(dname);
-
     if (ret == -1)
 	return;
 
