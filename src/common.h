@@ -172,11 +172,13 @@ struct sysinfo {
 #define CAP_STRING	"rBHRSWCTO"
 
 #define NETIF_INVALID	INT8_MIN
-#define NETIF_VLAN	-2
-#define NETIF_TAP	-1
+#define NETIF_VLAN	-1
 #define NETIF_REGULAR	0
-#define NETIF_BONDING	1
-#define NETIF_BRIDGE	2
+#define NETIF_WIRELESS	1
+#define NETIF_TAP	2
+#define NETIF_PARENT	10
+#define NETIF_BONDING	11
+#define NETIF_BRIDGE	12
 #define NETIF_OLD	INT8_MAX
 
 #define OPT_DAEMON	(1 << 0)
