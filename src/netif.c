@@ -472,6 +472,10 @@ int netif_type(int sockfd, uint32_t index,
     } else if (if_data->ifi_type == IFT_IEEE8023ADLAG) {
 	return(NETIF_REGULAR);
 #endif
+#ifdef IFT_L2VLAN
+    } else if (if_data->ifi_type == IFT_L2VLAN) {
+	return(NETIF_VLAN);
+#endif
     }
 
     // we don't want the rest
