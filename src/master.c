@@ -226,11 +226,11 @@ void master_req(int reqfd, short event) {
 	    mreq.len = master_device(&mreq);
 	    break;
 #endif /* HAVE_SYSFS */
-#ifdef HAVE_PCI_PCI_H
+#if defined(HAVE_SYSFS) && defined(HAVE_PCI_PCI_H)
 	case MASTER_DEVICE_ID:
 	    mreq.len = master_device_id(&mreq);
 	    break;
-#endif /* HAVE_PCI_PCI_H */
+#endif /* HAVE_SYSFS && HAVE_PCI_PCI_H */
 	// invalid request
 	default:
 	    my_fatal("invalid request received");
@@ -266,10 +266,10 @@ int master_check(struct master_req *mreq) {
 	case MASTER_DEVICE:
 	    return(EXIT_SUCCESS);
 #endif /* HAVE_SYSFS */
-#ifdef HAVE_PCI_PCI_H
+#if defined(HAVE_SYSFS) && defined(HAVE_PCI_PCI_H)
 	case MASTER_DEVICE_ID:
 	    return(EXIT_SUCCESS);
-#endif /* HAVE_PCI_PCI_H */
+#endif /* HAVE_SYSFS && HAVE_PCI_PCI_H */
 	default:
 	    return(EXIT_FAILURE);
     }
@@ -443,9 +443,8 @@ ssize_t master_device(struct master_req *mreq) {
 }
 #endif /* HAVE_SYSFS */
 
-ssize_t master_device_id(struct master_req *mreq) {
-
 #if defined(HAVE_SYSFS) && defined(HAVE_PCI_PCI_H)
+ssize_t master_device_id(struct master_req *mreq) {
     uint16_t device_id = 0, vendor_id = 0;
     static struct pci_access *pacc = NULL;
     char path[SYSFS_PATH_MAX], id_str[16];
@@ -509,12 +508,10 @@ ssize_t master_device_id(struct master_req *mreq) {
     memset(mreq->buf, 0, sizeof(mreq->buf));
     pci_lookup_name(pacc, mreq->buf, sizeof(mreq->buf),
 	    PCI_LOOKUP_VENDOR | PCI_LOOKUP_DEVICE, vendor_id, device_id);
-#else
-    return(0);
-#endif
 
     return(strlen(mreq->buf));
 }
+#endif /* HAVE_SYSFS && HAVE_PCI_PCI_H */
 
 int master_socket(struct rawfd *rfd) {
 

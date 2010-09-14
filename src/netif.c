@@ -572,7 +572,7 @@ void netif_device_id(int sockfd, struct netif *netif, struct ifreq *ifr) {
 	return;
     netif->device_identified = 1;
 
-#ifdef HAVE_SYSFS
+#if defined(HAVE_SYSFS) && defined(HAVE_PCI_PCI_H)
     struct master_req mreq = {};
 
     mreq.op = MASTER_DEVICE_ID;
