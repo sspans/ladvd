@@ -11,5 +11,5 @@ ver=$(echo ${tgz%.tar.gz}| sed s/${NAME}-//)
 echo for Googlecode uploads run:
 echo googlecode_upload -p ${NAME} -s \"The ${ver} Release\" ${RELEASE}/${tgz}
 echo for OpenSuSE BuildService uploads run:
-echo "cd ${RELEASE}/osc && osc commit"
+echo "cd ${RELEASE}/osc/${NAME}-devel && osc commit"
 
