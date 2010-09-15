@@ -7,7 +7,7 @@
 %global gecos LLDP/CDP sender for unix
 
 %global devel_release		1
-#%global static_libevent	0
+#global static_libevent		0
 
 %if 0%{?devel_release}
 %global name_suffix	-unstable
@@ -36,11 +36,11 @@ Release:	1
 License:	ISC
 URL:		http://code.google.com/p/ladvd/
 Source0:	%{name}-%{version}.tar.gz
-Source1:	%{name}.init
-Source2:	%{name}.sysconfig
-BuildRoot:	%{_tmppath}/%{name}-%{version}-build
-Summary:	Main package
-Group:		None
+Source1:        %{name}.init
+Source2:        %{name}.sysconfig
+BuildRoot:      %{_tmppath}/%{name}-%{version}-build
+Summary:        Main package
+Group:          None
 %description
 None
 
