@@ -128,6 +128,11 @@ AC_ARG_WITH(libevent,
        ]
 )
 
+AC_ARG_ENABLE([static-libevent],
+    AC_HELP_STRING([--enable-static-libevent],
+		    [build binaries a static libevent]),
+    [libevent_static=yes], [libevent_static=no])
+
 dnl ------------------------------------------------------
 dnl libevent detection.  swiped from Tor.  modified a bit.
 
@@ -179,7 +184,7 @@ AC_CACHE_CHECK([for libevent directory], ac_cv_libevent_dir, [
   if test $le_found = no ; then
     AC_MSG_ERROR([libevent is required.  You can get it from $LIBEVENT_URL
 
-      If it's already installed, specify its path using --with-libevent=/dir/
+      If it is already installed, specify its path using --with-libevent=/dir/
 ])
   fi
 ])
@@ -199,8 +204,13 @@ if test $ac_cv_libevent_dir != "(system)"; then
   fi
 fi
 
-AC_CHECK_LIB(event, event_init, AC_SUBST(EVENT_LIB,"-levent"),
-				AC_MSG_ERROR([libevent is required]))
+AC_CHECK_LIB(event, event_init, [true], AC_MSG_ERROR([libevent is required]))
+
+AS_IF([test "$libevent_static" = "no"], 
+    AC_SUBST(EVENT_LIB,"-levent"),
+    AC_SUBST(EVENT_LIB,"-l:libevent.a -lrt")
+    # disable -pie, it breaks on the static libevent
+    AC_SUBST(WARN_LDFLAGS,""))
 
 # evhttp is needed for ladvdc post support
 AC_CHECK_HEADERS([event.h], [], AC_MSG_ERROR([libevent headers missing]))
