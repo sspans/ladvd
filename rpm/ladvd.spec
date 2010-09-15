@@ -17,7 +17,7 @@
 %global	configure_args	--enable-static-libevent
 %endif
 
-Name:		ladvd%{?name_suffix}
+Name:		ladvd
 BuildRequires:  libevent-devel
 %if 0%{?fedora} >= 12
 BuildRequires:  libcap-ng-devel
@@ -35,15 +35,20 @@ Version:	0.9.2
 Release:	1
 License:	ISC
 URL:		http://code.google.com/p/ladvd/
-Source0:	ladvd-%{version}.tar.gz
-Source1:        ladvd.init
-Source2:        ladvd.sysconfig
-Group:          Productivity/Networking/System
-Summary:        LLDP/CDP sender for unix 
-
-BuildRoot:      %{_tmppath}/%{name}-%{version}-build
-
+Source0:	%{name}-%{version}.tar.gz
+Source1:	%{name}.init
+Source2:	%{name}.sysconfig
+BuildRoot:	%{_tmppath}/%{name}-%{version}-build
+Summary:	Main package
+Group:		None
 %description
+None
+
+
+%package -n %{name}%{?name_suffix}
+Summary:        LLDP/CDP sender for unix 
+Group:          Productivity/Networking/System
+%description -n %{name}%{?name_suffix}
 ladvd uses cdp / lldp frames to inform switches about connected hosts,
 which simplifies ethernet switch management. It does this by creating
 a raw socket at startup, and then switching to a non-privileged user
@@ -54,7 +59,7 @@ IPv6) are detected dynamically.
 
 
 %prep
-%setup -q -n ladvd-%{version}
+%setup -q -n %{name}-%{version}
 
 
 %build
@@ -83,13 +88,13 @@ mkdir -p %{buildroot}%{homedir}
 rm -rf %{buildroot}
 
 
-%pre
+%pre -n %{name}%{?name_suffix}
 /usr/sbin/groupadd -r %{name} &>/dev/null || :
 /usr/sbin/useradd  -r -s /sbin/nologin -d %{homedir} -M \
     -c '%{gecos}' -g %{name} %{name} &>/dev/null || :
 
 
-%post
+%post -n %{name}%{?name_suffix}
 %if ! 0%{?suse_version}
 /sbin/chkconfig --add %{name}
 %else
@@ -98,7 +103,7 @@ rm -rf %{buildroot}
 %endif
 
 
-%preun
+%preun -n %{name}%{?name_suffix}
 %if ! 0%{?suse_version}
 if [ "$1" = "0" ]; then
 	/sbin/service %{name} stop >/dev/null 2>&1 || :
@@ -109,7 +114,7 @@ fi
 %endif
 
 
-%postun
+%postun -n %{name}%{?name_suffix}
 %if ! 0%{?suse_version}
 if [ "$1" -ge "1" ]; then
 	/sbin/service %{name} condrestart >/dev/null 2>&1 || :
@@ -121,7 +126,7 @@ fi
 %endif
 
 
-%files
+%files -n %{name}%{?name_suffix}
 %defattr(-,root,root)
 %doc doc/ChangeLog doc/README doc/LICENSE doc/TODO doc/HACKING
 %if 0%{?suse_version}
