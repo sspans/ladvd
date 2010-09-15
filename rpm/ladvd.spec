@@ -54,7 +54,7 @@ IPv6) are detected dynamically.
 
 
 %prep
-%setup -q
+%setup -q -n ladvd-%{version}
 
 
 %build
