@@ -5,8 +5,14 @@
 
 %global homedir /var/run/ladvd
 %global gecos LLDP/CDP sender for unix
+%global static_libevent	0
 
-Name:		ladvd
+if 0%{?static_libevent}
+%global name_suffix	-static
+%global	configure_args	--enable-static-libevent
+%endif
+
+Name:		ladvd%{?name_suffix}
 BuildRequires:  libevent-devel
 %if 0%{?fedora} >= 12
 BuildRequires:  libcap-ng-devel
@@ -47,7 +53,7 @@ IPv6) are detected dynamically.
 
 
 %build
-%configure --docdir=%{_docdir}/%{name}
+%configure --docdir=%{_docdir}/%{name} %{?configure_args}
 make %{?_smp_mflags}
 
 
