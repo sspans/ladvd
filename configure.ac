@@ -111,7 +111,7 @@ AS_IF([test -n "$check_ids"],
     PKG_CHECK_MODULES(PCI, [libpci >= 3.0.0],
 	AC_DEFINE(HAVE_PCI_PCI_H, 1, [have libpci]),
 	[
-	AC_CHECK_HEADER([pci/pci.h])
+	AC_CHECK_HEADERS([pci/pci.h])
 	AC_CHECK_LIB(pci, pci_init, AC_SUBST(PCI_LIBS,"-lpci"))
 	])
 ]
