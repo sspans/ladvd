@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+CLEAN=1
+
 . scripts/_init.sh
 . scripts/_tarball.sh
 . scripts/_debian.sh

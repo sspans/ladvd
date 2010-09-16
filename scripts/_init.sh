@@ -11,6 +11,8 @@ hg pull -u
 hg log --style=changelog > ${BASE}/doc/ChangeLog
 
 # create release dir
-[ -d ${RELEASE} ] && rm -rf ${RELEASE}
-mkdir -p ${RELEASE}
+if [ -n "${CLEAN}" ]; then
+    [ -d ${RELEASE} ] && rm -rf ${RELEASE}
+    mkdir -p ${RELEASE}
+fi
 
