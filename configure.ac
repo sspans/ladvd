@@ -207,10 +207,30 @@ fi
 AC_CHECK_LIB(event, event_init, [true], AC_MSG_ERROR([libevent is required]))
 
 AS_IF([test "$libevent_static" = "no"], 
-    AC_SUBST(EVENT_LIB,"-levent"),
-    AC_SUBST(EVENT_LIB,"-l:libevent.a -lrt")
-    # disable -pie, it breaks on the static libevent
-    AC_SUBST(WARN_LDFLAGS,""))
+    [ AC_SUBST(EVENT_LIB,"-levent") ],
+    [
+	# disable -pie, it breaks on the static libevent
+	AC_SUBST(WARN_LDFLAGS,"")
+	# more recent linkers support explicit library naming
+	# otherwise we try our best to locate the library
+	AX_LD_CHECK_FLAG([-l:libevent.a -lrt], [], [],
+	 [AC_SUBST(EVENT_LIB,"-l:libevent.a -lrt")],
+	 [ if test $ac_cv_libevent_dir != "(system)"; then
+	    AC_SUBST(EVENT_LIB,"$le_libdir/libevent.a -lrt")
+	   elif test -f "$libdir/libevent.a"; then
+	    AC_SUBST(EVENT_LIB,"$libdir/libevent.a -lrt")
+	   elif test -f "/lib/libevent.a"; then
+	    AC_SUBST(EVENT_LIB,"/lib/libevent.a -lrt")
+	   elif test -f "/usr/lib/libevent.a"; then
+	    AC_SUBST(EVENT_LIB,"/usr/lib/libevent.a -lrt")
+	   elif test -f "/usr/local/lib/libevent.a"; then
+	    AC_SUBST(EVENT_LIB,"/usr/local/lib/libevent.a -lrt")
+	   else
+	    AC_MSG_ERROR([could not locate libevent.a])
+	   fi
+	 ])
+    ]
+)
 
 # evhttp is needed for ladvdc post support
 AC_CHECK_HEADERS([event.h], [], AC_MSG_ERROR([libevent headers missing]))
