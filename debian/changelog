@@ -1,19 +1,6 @@
 ladvd (0.9.2) unstable; urgency=low
 
-  * new upstream release
-
- -- Sten Spans <sten@blinkenlights.nl>  Sun, 05 Sep 2010 19:01:02 +0200
-
-ladvd (0.9.0-2) unstable; urgency=low
-
-  * packaging fixes suggested by Vincent Bernat
-
- -- Sten Spans <sten@blinkenlights.nl>  Sat, 22 May 2010 23:14:50 +0200
-
-ladvd (0.9.0-1) unstable; urgency=low
-
-  * Switch to dpkg-source 3.0 (quilt) format
   * Initial release (Closes: #572336)
 
- -- Sten Spans <sten@blinkenlights.nl>  Wed, 19 May 2010 00:13:23 +0200
+ -- Sten Spans <sten@blinkenlights.nl>  Sun, 21 Sep 2010 09:40:02 +0200
 
