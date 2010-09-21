@@ -1,9 +1,9 @@
 #!/bin/bash
 #
-# ladvd        Startup script for the cdp/lldp sender
+# ladvd        Startup script for the lldp/cdp sender
 #
 # chkconfig: - 85 15
-# description: ladvd uses cdp / lldp frames to inform switches \
+# description: ladvd uses lldp / cdp frames to inform switches \
 #              about connected hosts, which simplifies ethernet \
 #              switch management.
 # processname: ladvd
@@ -15,8 +15,8 @@
 # Required-Stop:    $network $remote_fs $syslog
 # Default-Start:    2 3 4 5
 # Default-Stop:	    1
-# Short-Description: start and stop cdp/lldp sender
-# Description:	    start and stop cdp/lldp sender
+# Short-Description: start and stop lldp/cdp sender
+# Description:	    start and stop lldp/cdp sender
 ### END INIT INFO
 
 # Source function library.
