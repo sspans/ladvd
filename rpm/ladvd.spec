@@ -39,23 +39,31 @@ Source0:	%{name}-%{version}.tar.gz
 Source1:        %{name}.init
 Source2:        %{name}.sysconfig
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
-Summary:        Main package
-Group:          None
-%description
-None
-
-
-%package -n %{name}%{?name_suffix}
 Summary:        LLDP/CDP sender for unix 
 Group:          Productivity/Networking/System
-%description -n %{name}%{?name_suffix}
-ladvd uses cdp / lldp frames to inform switches about connected hosts,
+%description
+ladvd uses lldp / cdp frames to inform switches about connected hosts,
 which simplifies ethernet switch management. It does this by creating
 a raw socket at startup, and then switching to a non-privileged user
-for the remaining runtime. Every 30 seconds it will transmit CDP/LLDP packets
+for the remaining runtime. Every 30 seconds it will transmit LLDP/CDP packets
 reflecting the current system state. Interfaces (bridge, bonding,
 wireless), capabilities (bridging, forwarding, wireless) and addresses (IPv4,
 IPv6) are detected dynamically.
+
+
+%if 0%{?name_suffix:1}
+%package -n %{name}%{name_suffix}
+Summary:        LLDP/CDP sender for unix 
+Group:          Productivity/Networking/System
+%description -n %{name}%{name_suffix}
+ladvd uses lldp / cdp frames to inform switches about connected hosts,
+which simplifies ethernet switch management. It does this by creating
+a raw socket at startup, and then switching to a non-privileged user
+for the remaining runtime. Every 30 seconds it will transmit LLDP/CDP packets
+reflecting the current system state. Interfaces (bridge, bonding,
+wireless), capabilities (bridging, forwarding, wireless) and addresses (IPv4,
+IPv6) are detected dynamically.
+%endif
 
 
 %prep
