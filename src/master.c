@@ -610,7 +610,7 @@ int master_socket(struct rawfd *rfd) {
     if (ioctl(fd, BIOCSDIRECTION, (caddr_t)&enable) < 0)
 	my_fatal("unable to configure BPF direction for %s", rfd->name);
 #elif defined BIOCSDIRFILT
-    enable = BPF_DIRECTION_IN;
+    enable = BPF_DIRECTION_OUT;
     if (ioctl(fd, BIOCSDIRFILT, (caddr_t)&enable) < 0)
 	my_fatal("unable to configure BPF direction for %s", rfd->name);
 #endif
