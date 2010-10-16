@@ -356,7 +356,7 @@ int netif_type(int sockfd, uint32_t index,
 
     char dname[IFNAMSIZ];
 #if defined(HAVE_LINUX_IF_VLAN_H) && \
-    defined(HAVE_DECL_GET_VLAN_REALDEV_NAME_CMD)
+    HAVE_DECL_GET_VLAN_REALDEV_NAME_CMD
     struct vlan_ioctl_args if_request = {};
 #endif /* HAVE_LINUX_IF_VLAN_H */
 #ifdef HAVE_NET_IF_VLAN_VAR_H
@@ -386,7 +386,7 @@ int netif_type(int sockfd, uint32_t index,
 #endif /* HAVE_SYSFS */
 
 #if defined(HAVE_LINUX_IF_VLAN_H) && \
-    defined(HAVE_DECL_GET_VLAN_REALDEV_NAME_CMD)
+    HAVE_DECL_GET_VLAN_REALDEV_NAME_CMD
     // vlan
     if_request.cmd = GET_VLAN_REALDEV_NAME_CMD;
     strlcpy(if_request.device1, ifaddr->ifa_name, sizeof(if_request.device1));
@@ -869,11 +869,9 @@ void netif_bridge(int sockfd, struct nhead *netifs, struct netif *master,
 void netif_vlan(int sockfd, struct nhead *netifs, struct netif *vlan,
 		  struct ifreq *ifr) {
 
-    struct netif *netif = NULL;
-
 #ifdef HAVE_LINUX_IF_VLAN_H
-#if defined(HAVE_DECL_GET_VLAN_REALDEV_NAME_CMD) && \
-    defined(HAVE_DECL_GET_VLAN_VID_CMD)
+#if HAVE_DECL_GET_VLAN_REALDEV_NAME_CMD && \
+    HAVE_DECL_GET_VLAN_VID_CMD
     struct vlan_ioctl_args if_request = {};
 
     if_request.cmd = GET_VLAN_REALDEV_NAME_CMD;
@@ -882,7 +880,7 @@ void netif_vlan(int sockfd, struct nhead *netifs, struct netif *vlan,
     if (ioctl(sockfd, SIOCSIFVLAN, &if_request) < 0)
 	return;
 
-    netif = netif_byname(netifs, if_request.u.device2);
+    struct netif *netif = netif_byname(netifs, if_request.u.device2);
     if (netif == NULL)
 	return;
     vlan->vlan_parent = netif->index;
@@ -902,7 +900,7 @@ void netif_vlan(int sockfd, struct nhead *netifs, struct netif *vlan,
     if (ioctl(sockfd, SIOCGETVLAN, ifr) < 0)
 	return;
 
-    netif = netif_byname(netifs, vreq.vlr_parent);
+    struct netif *netif = netif_byname(netifs, vreq.vlr_parent);
     if (netif == NULL)
 	return;
 
@@ -1044,10 +1042,18 @@ int netif_media(struct netif *netif) {
 	{ADVERTISED_100baseT_Full,  LLDP_MAU_PMD_100BASE_TX_FD},
 	{ADVERTISED_1000baseT_Half, LLDP_MAU_PMD_1000BASE_T},
 	{ADVERTISED_1000baseT_Full, LLDP_MAU_PMD_1000BASE_T_FD},
+#ifdef ADVERTISED_10000baseT_Full
 	{ADVERTISED_10000baseT_Full, LLDP_MAU_PMD_OTHER},
+#endif
+#ifdef ADVERTISED_Pause
 	{ADVERTISED_Pause,	    LLDP_MAU_PMD_FDXPAUSE},
+#endif
+#ifdef ADVERTISED_Asym_Pause
 	{ADVERTISED_Asym_Pause,	    LLDP_MAU_PMD_FDXAPAUSE},
+#endif
+#ifdef ADVERTISED_2500baseX_Full
 	{ADVERTISED_2500baseX_Full, LLDP_MAU_PMD_OTHER},
+#endif
 	{0, 0}
     };
 
@@ -1096,8 +1102,10 @@ int netif_media(struct netif *netif) {
 	    else if (ecmd.speed == SPEED_1000)
 		netif->mau = (netif->duplex) ?
 		     LLDP_MAU_TYPE_1000BASE_T_FD: LLDP_MAU_TYPE_1000BASE_T_HD;
+#ifdef SPEED_10000
 	    else if (ecmd.speed == SPEED_10000)
 		netif->mau = LLDP_MAU_TYPE_10GBASE_T;
+#endif
 	    break;
 	case PORT_FIBRE:
 	    if (ecmd.speed == SPEED_10)
@@ -1109,8 +1117,10 @@ int netif_media(struct netif *netif) {
 	    else if (ecmd.speed == SPEED_1000)
 		netif->mau = (netif->duplex) ?
 		     LLDP_MAU_TYPE_1000BASE_X_FD: LLDP_MAU_TYPE_1000BASE_X_HD;
+#ifdef SPEED_10000
 	    else if (ecmd.speed == SPEED_10000)
 		netif->mau = LLDP_MAU_TYPE_10GBASE_X;
+#endif
 	    break;
 	case PORT_BNC:
 	    if (ecmd.speed == SPEED_10)

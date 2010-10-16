@@ -1,5 +1,4 @@
 For 0.9.3:
-- fix rhel4 (again)
 - extend lldp-med support
 - lcov & clang analyzer
 - implement ladvdc verbose decoding
