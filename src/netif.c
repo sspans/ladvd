@@ -331,6 +331,8 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 	    netif = netif_byname(netifs, ifl[j]);
 	    if (netif == NULL) {
 		my_log(CRIT, "interface %s is invalid", ifl[j]);
+	    } else if (netif->type == NETIF_VLAN) {
+		my_log(CRIT, "vlan interface %s is not supported", ifl[j]);
 	    } else {
 		netif->argv = 1;
 		count++;
