@@ -165,8 +165,12 @@ void sysinfo_fetch(struct sysinfo *sysinfo) {
     }
 
     if ((hp = gethostbyname(sysinfo->uts.nodename)) == NULL)
-	my_fatal("cant resolve hostname: %s", hstrerror(h_errno));
-    strlcpy(sysinfo->hostname, hp->h_name, sizeof(sysinfo->hostname));
+	my_fatal("can't resolve hostname: %s", hstrerror(h_errno));
+    if (strcmp(hp->h_name, "localhost") != 0)
+	strlcpy(sysinfo->hostname, hp->h_name, sizeof(sysinfo->hostname));
+    else
+	strlcpy(sysinfo->hostname, sysinfo->uts.nodename, 
+		sizeof(sysinfo->hostname));
 
     strlcpy(sysinfo->sw_revision, sysinfo->uts.release, len);
 
