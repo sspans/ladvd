@@ -261,9 +261,10 @@ struct proto {
     uint8_t dst_addr[ETHER_ADDR_LEN];
     uint8_t llc_org[3];
     uint16_t llc_pid;
-    size_t (*build_msg) (void *, struct netif *, struct nhead *, struct sysinfo *);
-    char * (*check) (void *, size_t);
-    size_t (*decode) (struct master_msg *);
+    size_t (* const build) (void *, struct netif *, struct nhead *,
+			    struct sysinfo *);
+    char * (* const check) (void *, size_t);
+    size_t (* const decode) (struct master_msg *);
 };
 
 void cli_main(int argc, char *argv[]) __noreturn;
