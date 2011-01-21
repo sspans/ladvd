@@ -45,6 +45,10 @@ struct mode modes[] = {
 #define MODE_FULL   3
 #define MODE_HTTP   4
 
+#define TERM_DEFAULT 80
+int host_width = 20;
+int port_width = 10;
+
 #if HAVE_EVHTTP_H
 char *http_host = NULL;
 char *http_path = NULL;
@@ -247,12 +251,31 @@ void batch_write(struct master_msg *msg, const uint16_t holdtime) {
 }
 
 void cli_header() {
+    int twidth = TERM_DEFAULT;
+    struct winsize ws = {};
+
+    // Try to fetch the terminal width
+    if (ioctl(0, TIOCGWINSZ, &ws) == 0)
+	twidth = ws.ws_col;
+
+    twidth -= TERM_DEFAULT;
+    if (twidth > 0) {
+	if (twidth > 20) {
+	    host_width += 10;
+	    port_width = twidth;
+	} else {
+	    twidth /= 2;
+	    host_width += twidth;
+	    port_width += twidth;
+	}
+    }
+
     printf("Capability Codes:\n"
 	"\tr - Repeater, B - Bridge, H - Host, R - Router, S - Switch,\n"
 	"\tW - WLAN Access Point, C - DOCSIS Device, T - Telephone, "
 	"O - Other\n\n");
-    printf("Device ID           Local Intf    Proto   "
-	"Hold-time    Capability    Port ID\n");
+    printf("%-*s Local Intf    Proto   "
+	"Hold-time    Capability    Port ID\n", host_width, "Device ID");
 }
 
 void cli_write(struct master_msg *msg, const uint16_t holdtime) {
@@ -261,14 +284,14 @@ void cli_write(struct master_msg *msg, const uint16_t holdtime) {
     char *cap = msg->peer[PEER_CAP];
 
     // shorten
-    if (peer_host)
+    if (peer_host && (strlen(peer_host) > host_width))
 	peer_host[strcspn(peer_host, ".")] = '\0';
     if (peer_port)
 	portname_abbr(peer_port);
 
-    printf("%-19.19s %-13.13s %-7.7s %-12" PRIu16 " %-13.13s %-10.10s\n",
-	STR(peer_host), STR(msg->name), protos[msg->proto].name,
-	holdtime, STR(cap),  STR(peer_port));
+    printf("%-*.*s %-13.13s %-7.7s %-12" PRIu16 " %-13.13s %-*.*s\n",
+	host_width, host_width, STR(peer_host), STR(msg->name), protos[msg->proto].name,
+	holdtime, STR(cap), port_width, port_width, STR(peer_port));
 }
 
 void debug_header() {
