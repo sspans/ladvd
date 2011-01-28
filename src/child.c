@@ -102,8 +102,10 @@ void child_init(int reqfd, int msgfd, int ifc, char *ifl[],
     event_init();
 
     // create and run the transmit event
-    event_set(&evs, msgfd, 0, (void *)child_send, &evs);
-    child_send(msgfd, EV_TIMEOUT, &evs);
+    if (options & OPT_SEND) {
+	event_set(&evs, msgfd, 0, (void *)child_send, &evs);
+	child_send(msgfd, EV_TIMEOUT, &evs);
+    }
 
     if (options & OPT_ONCE)
 	exit(EXIT_SUCCESS);

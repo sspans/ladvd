@@ -34,6 +34,8 @@ Use management addresses specified via -m for all interfaces.
 Run only once, useful for quick troubleshooting.
 .IP -r
 Receive packets, and use them for various features.
+.IP -s
+Be silent, don't transmit any packets.
 .IP -q
 Use each interface's hwaddr the generate the chassis-id TLV. Not recommended
 because the chassis-id should be the same for all interfaces.
