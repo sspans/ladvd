@@ -47,7 +47,7 @@ void sysinfo_fetch(struct sysinfo *sysinfo) {
 
     int i, ret;
     char *descr = NULL, *release, *endptr;
-    struct hostent *hp;
+    struct hostent *hp = NULL;
     size_t len = LLDP_INVENTORY_SIZE + 1;
 
 #ifdef CTL_HW
@@ -164,9 +164,8 @@ void sysinfo_fetch(struct sysinfo *sysinfo) {
 	    release++;
     }
 
-    if ((hp = gethostbyname(sysinfo->uts.nodename)) == NULL)
-	my_fatal("can't resolve hostname: %s", hstrerror(h_errno));
-    if (strcmp(hp->h_name, "localhost") != 0)
+    if (((hp = gethostbyname(sysinfo->uts.nodename)) != NULL) &&
+	(strcmp(hp->h_name, "localhost") != 0))
 	strlcpy(sysinfo->hostname, hp->h_name, sizeof(sysinfo->hostname));
     else
 	strlcpy(sysinfo->hostname, sysinfo->uts.nodename, 
