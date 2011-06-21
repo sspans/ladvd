@@ -385,7 +385,7 @@ size_t lldp_packet(void *packet, struct netif *netif,
 char * lldp_check(void *packet, size_t length) {
     struct ether_hdr ether;
     uint8_t offset = 0;
-    static uint8_t lldp_dst[] = LLDP_MULTICAST_ADDR;
+    const uint8_t lldp_dst[] = LLDP_MULTICAST_ADDR;
 
     assert(packet);
     assert(length > sizeof(ether));
