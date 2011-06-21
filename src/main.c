@@ -133,6 +133,9 @@ int main(int argc, char *argv[]) {
 			sizeof(sysinfo.location)) == 0)
 		    usage();
 		break;
+	    case 'L':
+		protos[PROTO_LLDP].enabled = 1;
+		break;
 	    case 'C':
 		protos[PROTO_CDP].enabled = 1;
 		break;
@@ -252,6 +255,7 @@ static void usage() {
 #endif /* SIOCSIFDESCR */
 	    "\t-c <CC> = System Country Code\n"
 	    "\t-l <location> = System Location\n"
+	    "\t-L = Enable LLDP\n"
 	    "\t-C = Enable CDP\n"
 	    "\t-E = Enable EDP\n"
 	    "\t-F = Enable FDP\n"

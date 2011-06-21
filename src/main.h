@@ -22,7 +22,7 @@
 
 // supported protocols
 struct proto protos[] = {
-  { 1, "LLDP", LLDP_MULTICAST_ADDR, {0}, 0,
+  { 0, "LLDP", LLDP_MULTICAST_ADDR, {0}, 0,
     &lldp_packet, &lldp_check, &lldp_decode },
   { 0, "CDP",  CDP_MULTICAST_ADDR, LLC_ORG_CISCO, LLC_PID_CDP,
     &cdp_packet, &cdp_check, &cdp_decode },
