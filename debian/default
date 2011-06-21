@@ -3,4 +3,4 @@
 # installed at /etc/default/ladvd by the maintainer scripts
 
 # Additional options that are passed to the Daemon.
-DAEMON_OPTS="-a"
+DAEMON_OPTS="-aL"

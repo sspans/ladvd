@@ -1,11 +1,11 @@
 ## Path:           Network/ladvd
 ## Description:    LLDP/CDP/EDP/FDP/NDP daemon settings  
 ## Type:           string  
-## Default:        "-a"  
+## Default:        "-aL"  
 #  
 # Arguments when starting ladvd. The most important one is:
 # -a	Auto-enable protocols based on received packets.
 # 
 # Optionally a list of interfaces which ladvd should utilize can be supplied.
 #  
-LADVD_OPTIONS="-a" 
+LADVD_OPTIONS="-aL"
