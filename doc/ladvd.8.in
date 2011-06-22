@@ -51,7 +51,7 @@ Save received peer information in interface descriptions (requires SIOCSIFDESCR 
 Specify a two-letter ISO 3166 country code (required for LLDP location support).
 .IP "-l <location>"
 Specify the physical location of the host.
-.IP -C
+.IP -L
 Enable LLDP (Link Layer Discovery Protocol).
 .IP -C
 Enable CDP (Cisco Discovery Protocol).
