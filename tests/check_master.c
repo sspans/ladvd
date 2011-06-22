@@ -110,8 +110,7 @@ START_TEST(test_master_signal) {
 END_TEST
 
 START_TEST(test_master_req) {
-    struct master_req mreq;
-    struct master_msg msg = {};
+    struct master_req mreq = {};
     struct ether_hdr ether = {};
     static uint8_t lldp_dst[] = LLDP_MULTICAST_ADDR;
     struct rawfd *rfd;
@@ -121,7 +120,6 @@ START_TEST(test_master_req) {
 
     loglevel = INFO;
     my_socketpair(spair);
-    memset(&mreq, 0, MASTER_REQ_MAX);
 
     // supply an invalid fd, resulting in a read error
     mark_point();
@@ -183,10 +181,7 @@ START_TEST(test_master_req) {
     	"the queue should be empty");
 
     options |= OPT_DEBUG;
-    msg.index = ifindex;
-    strlcpy(msg.name, ifname, IFNAMSIZ);
-
-    master_open(&msg);
+    master_open(ifindex, ifname);
     fail_unless (rfd_byindex(&rawfds, ifindex) != NULL,
     	"rfd should be added to the queue");
 
@@ -236,7 +231,7 @@ START_TEST(test_master_req) {
 
     // test a failing return message
     mark_point();
-    master_open(&msg);
+    master_open(ifindex, ifname);
     rfd = rfd_byindex(&rawfds, ifindex);
     fail_unless (rfd != NULL, "rfd should be added to the queue");
     mreq.op = MASTER_CLOSE;
@@ -260,9 +255,7 @@ START_TEST(test_master_req) {
 END_TEST
 
 START_TEST(test_master_check) {
-    struct master_req mreq;
-
-    memset(&mreq, 0, MASTER_REQ_MAX);
+    struct master_req mreq = {};
 
     mark_point();
     mreq.op = MASTER_CLOSE;
@@ -315,7 +308,7 @@ START_TEST(test_master_send) {
     strlcpy(msg.name, ifname, IFNAMSIZ);
 
     dfd = spair[1];
-    master_open(&msg);
+    master_open(ifindex, ifname);
     rfd = rfd_byindex(&rawfds, ifindex);
     fail_unless (rfd != NULL, "rfd should be added to the queue");
 
@@ -364,15 +357,12 @@ END_TEST
 
 START_TEST(test_master_open_close) {
     struct rawfd *rfd;
-    struct master_msg mreq = {};
 
     options |= OPT_DEBUG;
     dfd = STDOUT_FILENO;
 
     mark_point();
-    mreq.index = ifindex;
-    strlcpy(mreq.name, ifname, IFNAMSIZ);
-    master_open(&mreq);
+    master_open(ifindex, ifname);
     rfd = rfd_byindex(&rawfds, ifindex);
     fail_unless (rfd != NULL,
     	"rfd should be added to the queue");
@@ -381,14 +371,12 @@ START_TEST(test_master_open_close) {
     	"rfd should be removed from the queue");
 
     mark_point();
-    master_open(&mreq);
+    master_open(ifindex, ifname);
     rfd = rfd_byindex(&rawfds, ifindex);
     fail_unless (rfd != NULL,
     	"rfd should be added to the queue");
 
-    mreq.index = 2;
-    strlcpy(mreq.name, "lo1", IFNAMSIZ);
-    master_open(&mreq);
+    master_open(2, "lo1");
     rfd = rfd_byindex(&rawfds, 2);
     fail_unless (rfd != NULL,
     	"rfd should be added to the queue");
@@ -400,17 +388,14 @@ START_TEST(test_master_open_close) {
 END_TEST
 
 START_TEST(test_master_socket) {
-    struct master_msg mreq = {};
     struct rawfd *rfd;
     const char *errstr;
 
     options |= OPT_DEBUG;
-    mreq.index = ifindex;
-    strlcpy(mreq.name, ifname, IFNAMSIZ);
     dfd = STDOUT_FILENO;
 
     mark_point();
-    master_open(&mreq);
+    master_open(ifindex, ifname);
     rfd = rfd_byindex(&rawfds, ifindex);
     fail_unless (rfd != NULL, "rfd should be added to the queue");
 
@@ -499,6 +484,9 @@ START_TEST(test_master_multi) {
     rfd.index = ifindex;
     strlcpy(rfd.name, ifname, IFNAMSIZ);
 
+    check_wrap_fake = 0;
+    protos[PROTO_LLDP].enabled = 1;
+
     mark_point();
     options |= OPT_DEBUG;
     errstr = "check";
@@ -513,7 +501,6 @@ START_TEST(test_master_multi) {
     WRAP_FATAL_START();
     master_multi(&rfd, protos, 1);
     WRAP_FATAL_END();
-    check_wrap_fake = 0;
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
@@ -534,7 +521,6 @@ START_TEST(test_master_multi) {
 END_TEST
 
 START_TEST(test_master_recv) {
-    struct master_msg mreq;
     struct rawfd *rfd;
     int spair[2];
     short event = 0;
@@ -554,9 +540,7 @@ START_TEST(test_master_recv) {
     dfd = STDOUT_FILENO;
 
     mark_point();
-    mreq.index = ifindex;
-    strlcpy(mreq.name, ifname, IFNAMSIZ);
-    master_open(&mreq);
+    master_open(ifindex, ifname);
     rfd = rfd_byindex(&rawfds, ifindex);
     fail_unless (rfd != NULL, "rfd should be added to the queue");
 

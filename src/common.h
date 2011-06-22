@@ -247,8 +247,8 @@ TAILQ_HEAD(mhead, master_msg);
 #define MASTER_MSG_MAX	    offsetof(struct master_msg, decode)
 #define MASTER_MSG_SIZ	    sizeof(struct master_msg)
 #define MASTER_MSG_LEN(l)   MASTER_MSG_MIN + l
-#define MASTER_CLOSE	0
-#define MASTER_RECV	1
+#define MASTER_OPEN	0
+#define MASTER_CLOSE	1
 #define MASTER_ETHTOOL	2
 #define MASTER_DESCR	3
 #define MASTER_DEVICE	4

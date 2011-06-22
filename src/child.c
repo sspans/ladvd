@@ -134,7 +134,7 @@ void child_init(int reqfd, int msgfd, int ifc, char *ifl[],
 }
 
 void child_send(int fd, short event, void *evs) {
-    struct master_msg mreq;
+    struct master_msg msg;
     struct netif *netif = NULL, *subif = NULL;
     struct timeval tv = { .tv_sec = SLEEPTIME };
     ssize_t len;
@@ -160,9 +160,17 @@ void child_send(int fd, short event, void *evs) {
 
 	while ((subif = subif_iter(subif, netif)) != NULL) {
 
-	    // populate mreq
-	    memset(&mreq, 0, sizeof(mreq));
-	    mreq.index = subif->index;
+	    // populate msg
+	    memset(&msg, 0, sizeof(msg));
+	    msg.index = subif->index;
+
+	    // explicitly listen when recv is enabled
+	    if ((options & OPT_RECV) && (subif->protos == 0)) {
+		struct master_req mreq = {};
+		mreq.op = MASTER_OPEN;
+		mreq.index = subif->index;
+		my_mreq(&mreq);
+	    }
 
 	    // fetch interface media status
 	    my_log(INFO, "fetching %s media details", subif->name);
@@ -177,15 +185,15 @@ void child_send(int fd, short event, void *evs) {
 		    continue;
 
 		// clear packet
-		memset(mreq.msg, 0, ETHER_MAX_LEN);
+		memset(msg.msg, 0, ETHER_MAX_LEN);
 
 		my_log(INFO, "building %s packet for %s", 
 			    protos[p].name, subif->name);
-		mreq.proto = p;
-		mreq.len = protos[p].build_msg(mreq.msg, subif, 
+		msg.proto = p;
+		msg.len = protos[p].build_msg(msg.msg, subif, 
 						&netifs, &sysinfo);
 
-		if (mreq.len == 0) {
+		if (msg.len == 0) {
 		    my_log(CRIT, "can't generate %s packet for %s",
 				  protos[p].name, subif->name);
 		    continue;
@@ -193,9 +201,9 @@ void child_send(int fd, short event, void *evs) {
 
 		// write it to the wire.
 		my_log(INFO, "sending %s packet (%zu bytes) on %s",
-			    protos[p].name, mreq.len, subif->name);
-		len = write(fd, &mreq, MASTER_MSG_LEN(mreq.len));
-		if (len < MASTER_MSG_MIN || len != MASTER_MSG_LEN(mreq.len))
+			    protos[p].name, msg.len, subif->name);
+		len = write(fd, &msg, MASTER_MSG_LEN(msg.len));
+		if (len < MASTER_MSG_MIN || len != MASTER_MSG_LEN(msg.len))
 		    my_fatale("only %zi bytes written", len);
 	    }
 	}

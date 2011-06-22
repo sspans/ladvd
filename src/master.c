@@ -204,6 +204,11 @@ void master_req(int reqfd, short event) {
 	my_fatal("invalid request supplied");
 
     switch (mreq.op) {
+	// open socket
+	case MASTER_OPEN:
+	    if ((rfd = rfd_byindex(&rawfds, mreq.index)) == NULL)
+		master_open(mreq.index, mreq.name);
+	    break;
 	// close socket
 	case MASTER_CLOSE:
 	    if ((rfd = rfd_byindex(&rawfds, mreq.index)) != NULL)
@@ -308,7 +313,7 @@ void master_send(int msgfd, short event) {
 
     // create rfd if needed
     if (rfd_byindex(&rawfds, msend.index) == NULL)
-	master_open(&msend);
+	master_open(msend.index, msend.name);
 
     assert((rfd = rfd_byindex(&rawfds, msend.index)) != NULL);
     len = write(rfd->fd, msend.msg, msend.len);
@@ -329,14 +334,16 @@ void master_send(int msgfd, short event) {
 }
 
 
-void master_open(struct master_msg *msg) {
+void master_open(const uint32_t index, const char *name) {
     struct rawfd *rfd = NULL;
+
+    assert(name != NULL);
 
     rfd = my_malloc(sizeof(struct rawfd));
     TAILQ_INSERT_TAIL(&rawfds, rfd, entries);
 
-    rfd->index = msg->index;
-    strlcpy(rfd->name, msg->name, IFNAMSIZ);
+    rfd->index = index;
+    strlcpy(rfd->name, name, IFNAMSIZ);
 
     rfd->fd = master_socket(rfd);
     if (rfd->fd < 0)

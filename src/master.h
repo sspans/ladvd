@@ -45,7 +45,7 @@ void master_req(int fd, short event);
 void master_send(int fd, short event);
 void master_recv(int fd, short event, struct rawfd *rfd);
 
-void master_open(struct master_msg *mreq);
+void master_open(const uint32_t index, const char *name);
 #if HAVE_LINUX_ETHTOOL_H
 ssize_t master_ethtool(struct master_req *mreq);
 #endif /* HAVE_LINUX_ETHTOOL_H */
