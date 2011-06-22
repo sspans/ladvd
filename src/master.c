@@ -255,6 +255,8 @@ int master_check(struct master_req *mreq) {
     assert(mreq->op < MASTER_MAX);
 
     switch (mreq->op) {
+	case MASTER_OPEN:
+	    return(EXIT_SUCCESS);
 	case MASTER_CLOSE:
 	    return(EXIT_SUCCESS);
 #if HAVE_LINUX_ETHTOOL_H
