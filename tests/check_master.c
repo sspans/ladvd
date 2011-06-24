@@ -258,6 +258,11 @@ START_TEST(test_master_check) {
     struct master_req mreq = {};
 
     mark_point();
+    mreq.op = MASTER_OPEN;
+    fail_unless(master_check(&mreq) == EXIT_SUCCESS,
+	"MASTER_OPEN check failed");
+
+    mark_point();
     mreq.op = MASTER_CLOSE;
     fail_unless(master_check(&mreq) == EXIT_SUCCESS,
 	"MASTER_CLOSE check failed");
