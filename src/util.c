@@ -41,7 +41,7 @@ static void my_vlog(const char *func, int err, const char *fmt, va_list ap) {
 	    fprintf(stderr, "%s: ", func);
 
 	vfprintf(stderr, efmt, ap);
-	fprintf(stderr, "\n");
+	fputc('\n', stderr);
     }
 
     if (efmt != fmt)
