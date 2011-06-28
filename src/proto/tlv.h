@@ -111,7 +111,6 @@ typedef union {
 	)
 #define GRAB_CDP_TLV(t, l) \
 	( \
-	    tlv = pos, \
 	    GRAB_UINT16(t) && GRAB_UINT16(l) && \
 	    ((l -= 2 * sizeof(uint16_t)) || 1) \
 	)
@@ -129,8 +128,7 @@ typedef union {
 	)
 #define GRAB_LLDP_TLV(t, l) \
 	( \
-	    tlv = pos, \
-	    memcpy(&type.uint16, tlv, sizeof(uint16_t)), \
+	    memcpy(&type.uint16, pos, sizeof(uint16_t)), \
 	    t = ntohs(type.uint16) >> 9, \
 	    l = ntohs(type.uint16) & 0x01ff, \
 	    SKIP(2) \
@@ -149,7 +147,6 @@ typedef union {
 	)
 #define GRAB_EDP_TLV(t, l) \
 	( \
-	    tlv = pos, \
 	    SKIP(1) && GRAB_UINT8(t) && GRAB_UINT16(l) &&\
 	    ((l -= 2 * sizeof(uint16_t)) || 1) \
 	)
@@ -166,7 +163,6 @@ typedef union {
 	)
 #define GRAB_FDP_TLV(t, l) \
 	( \
-	    tlv = pos, \
 	    GRAB_UINT16(t) && GRAB_UINT16(l) &&\
 	    ((l -= 2 * sizeof(uint16_t)) || 1) \
 	)

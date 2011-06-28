@@ -261,7 +261,6 @@ size_t cdp_decode(struct master_msg *msg) {
     size_t length;
     struct cdp_header cdp;
 
-    char *tlv;
     char *pos;
     tlv_t type;
 

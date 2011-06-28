@@ -216,7 +216,6 @@ size_t fdp_decode(struct master_msg *msg) {
     size_t length;
     struct fdp_header fdp;
 
-    char *tlv;
     char *pos;
     tlv_t type;
 

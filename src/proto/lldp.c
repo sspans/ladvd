@@ -412,7 +412,7 @@ size_t lldp_decode(struct master_msg *msg) {
 
     char *packet = NULL;
     size_t length;
-    char *tlv;
+
     char *pos;
     tlv_t type;
 

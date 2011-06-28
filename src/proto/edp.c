@@ -190,7 +190,6 @@ size_t edp_decode(struct master_msg *msg) {
     size_t length;
     struct edp_header edp;
 
-    char *tlv;
     char *pos;
     tlv_t type;
 
