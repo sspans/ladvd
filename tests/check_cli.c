@@ -65,7 +65,6 @@ START_TEST(test_cli_main) {
     int ofd[3], spair[6];
     int argc;
     char *argv[7], ifname[IFNAMSIZ];
-    ssize_t len;
     char buf[1024];
     struct master_msg msg = {};
     int sobuf = MASTER_MSG_MAX * 10;
@@ -121,7 +120,8 @@ START_TEST(test_cli_main) {
     cli_main(argc, argv);
     WRAP_FATAL_END();
     fflush(stderr);
-    len = read(spair[5], buf, 1024);
+    fail_if(read(spair[5], buf, 1024) < 0,
+	    "cli_main read failed");
     fail_if(strstr(buf, "Usage:") == NULL,
     	    "invalid usage output: %s", buf);
 
@@ -134,7 +134,8 @@ START_TEST(test_cli_main) {
     cli_main(argc, argv);
     WRAP_FATAL_END();
     fflush(stderr);
-    len = read(spair[5], buf, 1024);
+    fail_if(read(spair[5], buf, 1024) < 0,
+	    "cli_main read failed");
     fail_if(strstr(buf, "Usage:") == NULL,
     	    "invalid usage output: %s", buf);
 
@@ -159,7 +160,8 @@ START_TEST(test_cli_main) {
     cli_main(argc, argv);
     WRAP_FATAL_END();
     fflush(stderr);
-    len = read(spair[5], buf, 1024);
+    fail_if(read(spair[5], buf, 1024) < 0,
+	    "cli_main read failed");
     fail_unless (strncmp(buf, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", buf);
 
@@ -182,7 +184,8 @@ START_TEST(test_cli_main) {
     cli_main(argc, argv);
     WRAP_FATAL_END();
     fflush(stderr);
-    len = read(spair[5], buf, 1024);
+    fail_if(read(spair[5], buf, 1024) < 0,
+	    "cli_main read failed");
     fail_unless (strncmp(buf, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", buf);
 
@@ -201,50 +204,58 @@ START_TEST(test_cli_main) {
     msg.proto = PROTO_LLDP;
     msg.index = 1;
     strlcpy(msg.name, ifname, IFNAMSIZ);
-    len = write(spair[1], &msg, MASTER_MSG_MAX);
+    fail_if(write(spair[1], &msg, MASTER_MSG_MAX) < 0,
+	    "write failed");
 
     // invalid proto
     mark_point();
     read_packet(&msg, "proto/cdp/43.good.big");
     msg.proto = PROTO_MAX;
-    len = write(spair[1], &msg, MASTER_MSG_MAX);
+    fail_if(write(spair[1], &msg, MASTER_MSG_MAX) < 0,
+	    "write failed");
 
     // invalid len
     mark_point();
     msg.proto = PROTO_CDP;
     msg.len += ETHER_MAX_LEN;
-    len = write(spair[1], &msg, MASTER_MSG_MAX);
+    fail_if(write(spair[1], &msg, MASTER_MSG_MAX) < 0,
+	    "write failed");
 
     // invalid ifindex
     mark_point();
     msg.len -= ETHER_MAX_LEN;
     msg.index = 0;
-    len = write(spair[1], &msg, MASTER_MSG_MAX);
+    fail_if(write(spair[1], &msg, MASTER_MSG_MAX) < 0,
+	    "write failed");
 
     // unwanted proto
     mark_point();
     msg.index = 1;
     msg.proto = PROTO_NDP;
-    len = write(spair[1], &msg, MASTER_MSG_MAX);
+    fail_if(write(spair[1], &msg, MASTER_MSG_MAX) < 0,
+	    "write failed");
 
     // invalid packet
     mark_point();
     msg.proto = PROTO_LLDP;
     read_packet(&msg, "proto/lldp/A3.fuzzer.chassis_id.broken");
-    len = write(spair[1], &msg, MASTER_MSG_MAX);
+    fail_if(write(spair[1], &msg, MASTER_MSG_MAX) < 0,
+	    "write failed");
 
     // old message
     mark_point();
     msg.proto = PROTO_LLDP;
     read_packet(&msg, "proto/lldp/45.good.vlan");
     msg.received = 0;
-    len = write(spair[1], &msg, MASTER_MSG_MAX);
+    fail_if(write(spair[1], &msg, MASTER_MSG_MAX) < 0,
+	    "write failed");
 
     // valid
     mark_point();
     msg.received = now;
     strlcpy(msg.name, ifname, IFNAMSIZ);
-    len = write(spair[1], &msg, MASTER_MSG_MAX);
+    fail_if(write(spair[1], &msg, MASTER_MSG_MAX) < 0,
+	    "write failed");
 
     mark_point();
     memset(buf, 0, 1024);
@@ -259,7 +270,8 @@ START_TEST(test_cli_main) {
     cli_main(argc, argv);
     WRAP_FATAL_END();
     fflush(stderr);
-    len = read(spair[5], buf, 1024);
+    fail_if(read(spair[5], buf, 1024) < 0,
+	"cli_main read failed");
     fail_unless (strncmp(buf, errstr, strlen(errstr)) == 0,
     	"incorrect message logged: %s", buf);
 
@@ -296,7 +308,6 @@ END_TEST
 START_TEST(test_batch_write) {
     struct master_msg msg = {};
     int ostdout, spair[2];
-    ssize_t len;
     char buf[1024];
     int sobuf = 1024;
 
@@ -311,7 +322,8 @@ START_TEST(test_batch_write) {
     mark_point();
     batch_write(&msg, 42);
     fflush(stdout);
-    len = read(spair[1], buf, 1024);
+    fail_if(read(spair[1], buf, 1024) < 0,
+	"read failed");
     fail_if(strstr(buf, "INTERFACE0=") != buf,
 	    "invalid batch_write output");
     fail_if(strstr(buf, "HOLDTIME0=") == NULL,
@@ -325,7 +337,8 @@ START_TEST(test_batch_write) {
     msg.peer[PEER_PORTNAME] = strdup("Fas'tEthernet42/64");
     batch_write(&msg, 42);
     fflush(stdout);
-    len = read(spair[1], buf, 1024);
+    fail_if(read(spair[1], buf, 1024) < 0,
+	"read failed");
     fail_if(strstr(buf, "INTERFACE1=") != buf,
 	    "invalid batch_write output");
     fail_if(strstr(buf, "HOLDTIME1=") == NULL,
@@ -342,7 +355,6 @@ END_TEST
 
 START_TEST(test_cli) {
     int ostdout, spair[2];
-    ssize_t len;
     struct master_msg msg = {};
     char buf[1024];
     int sobuf = 1024;
@@ -358,7 +370,8 @@ START_TEST(test_cli) {
     mark_point();
     cli_header();
     fflush(stdout);
-    len = read(spair[1], buf, 1024);
+    fail_if(read(spair[1], buf, 1024) < 0,
+	"read failed");
     fail_if(strstr(buf, "Capability Codes:") != buf,
 	    "invalid cli_header output");
     fail_if(strstr(buf, "Device ID") == NULL,
@@ -371,7 +384,8 @@ START_TEST(test_cli) {
     msg.peer[PEER_PORTNAME] = strdup("TenGigabitEthernet42/64");
     cli_write(&msg, 42);
     fflush(stdout);
-    len = read(spair[1], buf, 1024);
+    fail_if(read(spair[1], buf, 1024) < 0,
+	"read failed");
     fail_if(strstr(buf, "router") != buf,
 	    "invalid cli_write output");
     fail_if(strstr(buf, "Te42/64") == NULL,
