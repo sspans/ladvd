@@ -34,7 +34,6 @@ START_TEST(test_my) {
     int s = -1, spair[2];
     const char *errstr = NULL;
     char buf[1024];
-    ssize_t len;
 
     mark_point();
     loglevel = INFO;
@@ -60,11 +59,11 @@ START_TEST(test_my) {
     memset(buf, 0, 1024);
     my_log(INFO, "debug");
     fflush(stderr);
-    len = read(spair[1], buf, 1024);
+    fail_if(read(spair[1], buf, 1024) < 0, "read failed");
     fail_unless(strcmp(buf, errstr) == 0, "invalid output: %s", buf);
     options |= OPT_DAEMON;
     close(spair[0]);
-    len = dup(s);
+    fail_if(dup(s) != STDERR_FILENO, "dup should re-create stderr");
     close(s);
     close(spair[1]);
 
