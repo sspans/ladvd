@@ -34,11 +34,12 @@
 #define SOCKET_FILTER	    struct sock_filter
 #endif
 
-SOCKET_FILTER reject_filter[] = {
+static SOCKET_FILTER reject_filter[] = {
     // reject
     BPF_STMT(BPF_RET+BPF_K, 0)
 };
-SOCKET_FILTER proto_filter[] = {
+
+static SOCKET_FILTER proto_filter[] = {
     // .1q vlan header
     BPF_STMT(BPF_LD+BPF_H+BPF_ABS, ETHER_ADDR_LEN * 2),
     BPF_JUMP(BPF_JMP+BPF_JEQ+BPF_K, ETHERTYPE_VLAN, 0, 1),
