@@ -41,7 +41,7 @@
 #define PROCFS_FORWARD_IPV6	"/proc/sys/net/ipv6/conf/all/forwarding"
 #endif
 
-void sysinfo_forwarding(struct sysinfo *);
+static void sysinfo_forwarding(struct sysinfo *);
 
 void sysinfo_fetch(struct sysinfo *sysinfo) {
 

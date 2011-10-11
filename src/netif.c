@@ -117,14 +117,14 @@
 
 static int sockfd = -1;
 
-int netif_type(int, uint32_t index, struct ifaddrs *ifaddr, struct ifreq *);
-int netif_wireless(int, struct ifaddrs *ifaddr, struct ifreq *);
-void netif_driver(int, uint32_t index, struct ifreq *, char *, size_t);
-void netif_bond(int, struct nhead *, struct netif *, struct ifreq *);
-void netif_bridge(int, struct nhead *, struct netif *, struct ifreq *);
-void netif_vlan(int, struct nhead *, struct netif *, struct ifreq *);
-void netif_device_id(int, struct netif *, struct ifreq *);
-void netif_addrs(struct ifaddrs *, struct nhead *, struct sysinfo *);
+static int netif_type(int, uint32_t index, struct ifaddrs *ifaddr, struct ifreq *);
+static int netif_wireless(int, struct ifaddrs *ifaddr, struct ifreq *);
+static void netif_driver(int, uint32_t index, struct ifreq *, char *, size_t);
+static void netif_bond(int, struct nhead *, struct netif *, struct ifreq *);
+static void netif_bridge(int, struct nhead *, struct netif *, struct ifreq *);
+static void netif_vlan(int, struct nhead *, struct netif *, struct ifreq *);
+static void netif_device_id(int, struct netif *, struct ifreq *);
+static void netif_addrs(struct ifaddrs *, struct nhead *, struct sysinfo *);
 
 void netif_init() {
     if (sockfd == -1)
@@ -358,7 +358,7 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 
 
 // detect interface type
-int netif_type(int sockfd, uint32_t index,
+static int netif_type(int sockfd, uint32_t index,
 	struct ifaddrs *ifaddr, struct ifreq *ifr) {
 
     char dname[IFNAMSIZ];
@@ -495,7 +495,7 @@ int netif_type(int sockfd, uint32_t index,
 
 
 // detect driver names via ethtool, sysctl, etc
-void netif_driver(int sockfd, uint32_t index, struct ifreq *ifr,
+static void netif_driver(int sockfd, uint32_t index, struct ifreq *ifr,
 		    char *dname, size_t len) {
 #if HAVE_LINUX_ETHTOOL_H
     struct ethtool_drvinfo drvinfo = {};
@@ -523,7 +523,7 @@ void netif_driver(int sockfd, uint32_t index, struct ifreq *ifr,
 
 
 // detect wireless interfaces
-int netif_wireless(int sockfd, struct ifaddrs *ifaddr, struct ifreq *ifr) {
+static int netif_wireless(int sockfd, struct ifaddrs *ifaddr, struct ifreq *ifr) {
 
 #if HAVE_NET_IF_MEDIA_H
     struct ifmediareq ifmr = {};
@@ -573,7 +573,7 @@ int netif_wireless(int sockfd, struct ifaddrs *ifaddr, struct ifreq *ifr) {
 }
 
 
-void netif_device_id(int sockfd, struct netif *netif, struct ifreq *ifr) {
+static void netif_device_id(int sockfd, struct netif *netif, struct ifreq *ifr) {
 
     if (netif->device_identified)
 	return;
@@ -622,7 +622,7 @@ void netif_device_id(int sockfd, struct netif *netif, struct ifreq *ifr) {
 }
 
 // handle aggregated interfaces
-void netif_bond(int sockfd, struct nhead *netifs, struct netif *master,
+static void netif_bond(int sockfd, struct nhead *netifs, struct netif *master,
 		struct ifreq *ifr) {
 
     struct netif *subif = NULL, *csubif = master;
@@ -763,7 +763,7 @@ void netif_bond(int sockfd, struct nhead *netifs, struct netif *master,
 
 
 // handle bridge interfaces
-void netif_bridge(int sockfd, struct nhead *netifs, struct netif *master,
+static void netif_bridge(int sockfd, struct nhead *netifs, struct netif *master,
 		  struct ifreq *ifr) {
 
 #if defined(HAVE_LINUX_IF_BRIDGE_H) || \
@@ -873,7 +873,7 @@ void netif_bridge(int sockfd, struct nhead *netifs, struct netif *master,
 
 
 // handle vlan interfaces
-void netif_vlan(int sockfd, struct nhead *netifs, struct netif *vlan,
+static void netif_vlan(int sockfd, struct nhead *netifs, struct netif *vlan,
 		  struct ifreq *ifr) {
 
 #ifdef HAVE_LINUX_IF_VLAN_H
@@ -918,7 +918,7 @@ void netif_vlan(int sockfd, struct nhead *netifs, struct netif *vlan,
 
 
 // perform address detection for all netifs
-void netif_addrs(struct ifaddrs *ifaddrs, struct nhead *netifs,
+static void netif_addrs(struct ifaddrs *ifaddrs, struct nhead *netifs,
 		struct sysinfo *sysinfo) {
     struct ifaddrs *ifaddr;
     struct netif *netif;

@@ -29,7 +29,7 @@ extern struct proto protos[];
 int status = EXIT_SUCCESS;
 static void usage() __noreturn;
 
-struct mode modes[] = {
+static struct mode modes[] = {
   { NULL, &batch_write, NULL },
   { &cli_header, &cli_write, NULL },
   { &debug_header, &debug_write, NULL },
@@ -46,8 +46,8 @@ struct mode modes[] = {
 #define MODE_HTTP   4
 
 #define TERM_DEFAULT 80
-int host_width = 20;
-int port_width = 10;
+static int host_width = 20;
+static int port_width = 10;
 
 #if HAVE_EVHTTP_H
 char *http_host = NULL;
