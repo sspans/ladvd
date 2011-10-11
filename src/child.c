@@ -86,6 +86,10 @@ void child_init(int reqfd, int msgfd, int ifc, char *ifl[],
 	umask(old_umask);
     }
 
+    // initalize the events and netifs
+    event_init();
+    netif_init();
+
     // drop privileges
     if (!(options & OPT_DEBUG)) {
 	my_chroot(PACKAGE_CHROOT_DIR);
@@ -97,9 +101,6 @@ void child_init(int reqfd, int msgfd, int ifc, char *ifl[],
 
     // startup message
     my_log(CRIT, PACKAGE_STRING " running");
-
-    // initalize the event library
-    event_init();
 
     // create and run the transmit event
     event_set(&evs, msgfd, 0, (void *)child_send, &evs);
@@ -190,7 +191,7 @@ void child_send(int fd, short event, void *evs) {
 		my_log(INFO, "building %s packet for %s", 
 			    protos[p].name, subif->name);
 		msg.proto = p;
-		msg.len = protos[p].build_msg(msg.msg, subif, 
+		msg.len = protos[p].build(msg.msg, subif, 
 						&netifs, &sysinfo);
 
 		if (msg.len == 0) {

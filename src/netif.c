@@ -115,6 +115,8 @@
 #define NETIF_AF    AF_LINK
 #endif
 
+static int sockfd = -1;
+
 int netif_type(int, uint32_t index, struct ifaddrs *ifaddr, struct ifreq *);
 int netif_wireless(int, struct ifaddrs *ifaddr, struct ifreq *);
 void netif_driver(int, uint32_t index, struct ifreq *, char *, size_t);
@@ -124,12 +126,15 @@ void netif_vlan(int, struct nhead *, struct netif *, struct ifreq *);
 void netif_device_id(int, struct netif *, struct ifreq *);
 void netif_addrs(struct ifaddrs *, struct nhead *, struct sysinfo *);
 
+void netif_init() {
+    if (sockfd == -1)
+	sockfd = my_socket(AF_INET, SOCK_DGRAM, 0);
+}
 
 // create netifs for a list of interfaces
 uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 		    struct nhead *netifs) {
 
-    static int sockfd = -1;
     struct ifaddrs *ifaddrs, *ifaddr = NULL;
     struct ifreq ifr;
     int count = 0;
@@ -148,7 +153,7 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
     struct netif *n_netif, *netif = NULL;
 
     if (sockfd == -1)
-	sockfd = my_socket(AF_INET, SOCK_DGRAM, 0);
+	my_fatal("please call netif_init first");
 
     if (getifaddrs(&ifaddrs) < 0) {
 	my_loge(CRIT, "address detection failed");
@@ -1002,7 +1007,6 @@ void netif_addrs(struct ifaddrs *ifaddrs, struct nhead *netifs,
 
 // perform media detection on physical interfaces
 int netif_media(struct netif *netif) {
-    static int sockfd = -1;
     struct ifreq ifr = {};
 
 #if HAVE_LINUX_ETHTOOL_H
@@ -1016,7 +1020,7 @@ int netif_media(struct netif *netif) {
 #endif /* HAVE_HAVE_NET_IF_MEDIA_H */
 
     if (sockfd == -1)
-	sockfd = my_socket(AF_INET, SOCK_DGRAM, 0);
+	my_fatal("please call netif_init first");
 
     netif->duplex = -1;
     netif->autoneg_supported = -1;

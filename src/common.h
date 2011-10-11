@@ -274,6 +274,7 @@ void master_init(int reqfd, int msgfd, pid_t pid);
 void master_signal(int fd, short event, void *pid);
 
 void sysinfo_fetch(struct sysinfo *);
+void netif_init();
 uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *, struct nhead *);
 int netif_media(struct netif *);
 

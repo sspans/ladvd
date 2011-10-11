@@ -89,6 +89,7 @@ START_TEST(test_child_init) {
     msock = spair[0];
 
     // skip the test if there are no ethernet interfaces
+    netif_init();
     if (netif_fetch(0, NULL, &sysinfo, &netifs) == 0)
 	return;
 
@@ -126,7 +127,10 @@ START_TEST(test_child_send) {
     msock = spair[0];
     null = open(_PATH_DEVNULL, O_WRONLY);
 
-    // initalize the event library
+    // init netif sockets
+    netif_init();
+
+    // initialize the event library
     event_init();
     evtimer_set(&evs, (void *)child_send, &evs);
 
@@ -356,7 +360,7 @@ START_TEST(test_child_cli) {
     sock = my_socket(AF_INET, SOCK_STREAM, 0);
     my_socketpair(spair);
 
-    // initalize the event library
+    // initialize the event library
     event_init();
 
     // create netif, queue messages

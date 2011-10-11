@@ -21,6 +21,7 @@
 #include "util.h"
 #include <syslog.h>
 #include <grp.h>
+#include <sys/resource.h>
 
 int8_t loglevel = CRIT;
 int msock = -1;
@@ -192,6 +193,24 @@ void my_drop_privs(struct passwd *pwd) {
 
     if (setresuid(pwd->pw_uid, pwd->pw_uid, pwd->pw_uid) == -1)
    	my_fatale("unable to setresuid");
+}
+
+void
+my_rlimit_child() {
+    struct rlimit rl_zero;
+
+    rl_zero.rlim_cur = rl_zero.rlim_max = 0;
+
+    if (setrlimit(RLIMIT_FSIZE, &rl_zero) == -1)
+	my_fatale("setrlimit(RLIMIT_FSIZE, { 0, 0 })");
+    if (setrlimit(RLIMIT_NPROC, &rl_zero) == -1)
+	my_fatale("setrlimit(RLIMIT_NPROC, { 0, 0 })");
+#if !defined(__linux__)
+    // glibc getifaddrs() creates a netlink socket
+    // which breaks when we use RLIMIT_NOFILE
+    if (setrlimit(RLIMIT_NOFILE, &rl_zero) == -1)
+	my_fatale("setrlimit(RLIMIT_NOFILE, { 0, 0 })");
+#endif
 }
 
 __nonnull()
