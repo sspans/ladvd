@@ -3,7 +3,7 @@ Section: net
 Priority: extra
 Maintainer: Sten Spans <sten@blinkenlights.nl>
 Build-Depends: debhelper (>= 5), autotools-dev, libcap-ng-dev | libcap-dev, libevent-dev, libpci-dev | pciutils-dev, check, pkg-config, lsb-base
-Standards-Version: 3.8.4
+Standards-Version: 3.9.1
 
 Package: ladvd
 Architecture: any

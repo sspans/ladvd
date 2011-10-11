@@ -9,7 +9,7 @@ ladvd \- send link layer advertisements
 .B ladvd
 sends LLDP (Link Layer Discovery Protocol) advertisements on all available interfaces. This makes connected hosts visible on managed switches. By default it will run as a privilege-separated daemon. Additional protocols can be enabled using the -C, -E, -F and -N options. Optionally a list of interfaces which
 .B ladvd
-should utilize can be supplied.
+should utilize can be supplied. Please note that only physical or bond/bridge interfaces can be specified, vlan interfaces can only be auto-detected.
 .SH INTERFACES
 .B ladvd
 detects and uses all configured (UP) physical Ethernet interfaces by default, wireless interfaces can be enabled via the -w option. Additionally
@@ -34,6 +34,8 @@ Use management addresses specified via -m for all interfaces.
 Run only once, useful for quick troubleshooting.
 .IP -r
 Receive packets, and use them for various features.
+.IP -s
+Be silent, don't transmit any packets.
 .IP -q
 Use each interface's hwaddr the generate the chassis-id TLV. Not recommended
 because the chassis-id should be the same for all interfaces.

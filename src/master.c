@@ -225,7 +225,7 @@ void master_req(int reqfd, short event) {
 	case MASTER_DESCR:
 	    mreq.len = master_descr(&mreq);
 	    break;
-#endif /* SIOCGIFDESCR */
+#endif /* SIOCSIFDESCR */
 #ifdef HAVE_SYSFS
 	case MASTER_DEVICE:
 	    mreq.len = master_device(&mreq);
@@ -434,7 +434,7 @@ ssize_t master_descr(struct master_req *mreq) {
 	ret = mreq->len;
     return(ret);
 }
-#endif /* SIOCGIFDESCR */
+#endif /* SIOCSIFDESCR */
 
 #ifdef HAVE_SYSFS
 ssize_t master_device(struct master_req *mreq) {

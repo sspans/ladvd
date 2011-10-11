@@ -182,16 +182,17 @@ struct sysinfo {
 #define NETIF_OLD	INT8_MAX
 
 #define OPT_DAEMON	(1 << 0)
-#define OPT_RECV	(1 << 1)
-#define OPT_AUTO	(1 << 2)
-#define OPT_ONCE	(1 << 3)
-#define OPT_ARGV	(1 << 4)
-#define OPT_DEBUG	(1 << 5)
-#define OPT_MADDR	(1 << 6)
-#define OPT_WIRELESS	(1 << 7)
-#define OPT_TAP		(1 << 8)
-#define OPT_DESCR	(1 << 9)
-#define OPT_CHASSIS_IF	(1 << 10)
+#define OPT_SEND	(1 << 1)
+#define OPT_RECV	(1 << 2)
+#define OPT_AUTO	(1 << 3)
+#define OPT_ONCE	(1 << 4)
+#define OPT_ARGV	(1 << 5)
+#define OPT_DEBUG	(1 << 6)
+#define OPT_MADDR	(1 << 7)
+#define OPT_WIRELESS	(1 << 8)
+#define OPT_TAP		(1 << 9)
+#define OPT_DESCR	(1 << 10)
+#define OPT_CHASSIS_IF	(1 << 11)
 #define OPT_CHECK	(1 << 31)
 
 extern uint32_t options;
@@ -261,9 +262,10 @@ struct proto {
     uint8_t dst_addr[ETHER_ADDR_LEN];
     uint8_t llc_org[3];
     uint16_t llc_pid;
-    size_t (*build_msg) (void *, struct netif *, struct nhead *, struct sysinfo *);
-    char * (*check) (void *, size_t);
-    size_t (*decode) (struct master_msg *);
+    size_t (* const build) (void *, struct netif *, struct nhead *,
+			    struct sysinfo *);
+    char * (* const check) (void *, size_t);
+    size_t (* const decode) (struct master_msg *);
 };
 
 void cli_main(int argc, char *argv[]) __noreturn;

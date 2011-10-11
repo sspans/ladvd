@@ -25,7 +25,7 @@
 #include <ctype.h>
 #include <syslog.h>
 
-uint32_t options = OPT_DAEMON;
+uint32_t options = OPT_DAEMON | OPT_SEND;
 extern struct sysinfo sysinfo;
 extern char *__progname;
 
@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
     argv = sargv;
 #endif
 
-    while ((ch = getopt(argc, argv, "adfhm:noqrtu:vwzc:l:CEFN")) != -1) {
+    while ((ch = getopt(argc, argv, "adfhm:noqrstu:vwzc:l:CEFN")) != -1) {
 	switch(ch) {
 	    case 'a':
 		options |= OPT_AUTO | OPT_RECV;
@@ -99,6 +99,9 @@ int main(int argc, char *argv[]) {
 		break;
 	    case 'r':
 		options |= OPT_RECV;
+		break;
+	    case 's':
+		options &= ~OPT_SEND;
 		break;
 	    case 't':
 		options |= OPT_TAP;
@@ -245,6 +248,7 @@ static void usage() {
 	    "\t-o = Run Once\n"
 	    "\t-q = Generate per-interface chassis-id values\n"
 	    "\t-r = Receive Packets\n"
+	    "\t-s = Silent, don't transmit packets\n"
 	    "\t-t = Use Tun/Tap interfaces\n"
 	    "\t-u <user> = Setuid User (defaults to " PACKAGE_USER ")\n"
 	    "\t-v = Increase logging verbosity\n"

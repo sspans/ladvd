@@ -3,8 +3,9 @@
 # http://en.opensuse.org/Packaging/RPM_Macros
 # http://www.rpm.org/wiki/Problems/Distributions
 
-%global homedir /var/run/ladvd
-%global gecos LLDP/CDP sender for unix
+%global pkgname	ladvd
+%global homedir	/var/run/ladvd
+%global gecos	LLDP/CDP sender for unix
 
 %global devel_release		1
 #global static_libevent		0
@@ -17,7 +18,7 @@
 %global	configure_args	--enable-static-libevent
 %endif
 
-Name:		ladvd
+Name:		%{pkgname}%{?name_suffix}
 BuildRequires:  libevent-devel
 %if 0%{?fedora} >= 12
 BuildRequires:  libcap-ng-devel
@@ -32,15 +33,15 @@ Requires:	/usr/bin/lsb_release
 Requires:	hwdata
 %endif
 Version:	0.9.2
-Release:	1
+Release:	1%{?dist}
 License:	ISC
 URL:		http://code.google.com/p/ladvd/
-Source0:	%{name}-%{version}.tar.gz
-Source1:        %{name}.init
-Source2:        %{name}.sysconfig
-BuildRoot:      %{_tmppath}/%{name}-%{version}-build
-Summary:        LLDP/CDP sender for unix 
-Group:          Productivity/Networking/System
+Source0:	%{pkgname}-%{version}.tar.gz
+Source1:	%{pkgname}.init
+Source2:	%{pkgname}.sysconfig
+BuildRoot:	%{_tmppath}/%{pkgname}-%{version}-build
+Summary:	LLDP/CDP sender for unix 
+Group:		Productivity/Networking/System
 %description
 ladvd uses lldp / cdp frames to inform switches about connected hosts,
 which simplifies ethernet switch management. It does this by creating
@@ -51,27 +52,12 @@ wireless), capabilities (bridging, forwarding, wireless) and addresses (IPv4,
 IPv6) are detected dynamically.
 
 
-%if 0%{?name_suffix:1}
-%package -n %{name}%{name_suffix}
-Summary:        LLDP/CDP sender for unix 
-Group:          Productivity/Networking/System
-%description -n %{name}%{name_suffix}
-ladvd uses lldp / cdp frames to inform switches about connected hosts,
-which simplifies ethernet switch management. It does this by creating
-a raw socket at startup, and then switching to a non-privileged user
-for the remaining runtime. Every 30 seconds it will transmit LLDP/CDP packets
-reflecting the current system state. Interfaces (bridge, bonding,
-wireless), capabilities (bridging, forwarding, wireless) and addresses (IPv4,
-IPv6) are detected dynamically.
-%endif
-
-
 %prep
-%setup -q -n %{name}-%{version}
+%setup -q -n %{pkgname}-%{version}
 
 
 %build
-%configure --docdir=%{_docdir}/%{name} %{?configure_args}
+%configure --docdir=%{_docdir}/%{pkgname} %{?configure_args}
 make %{?_smp_mflags}
 
 
@@ -82,12 +68,12 @@ make check
 %install
 rm -rf %{buildroot}
 make DESTDIR=%{buildroot} install-strip
-rm -rf %{buildroot}%{_docdir}/%{name}
-install -D -m 755 %{SOURCE1} %{buildroot}%{_initrddir}/%{name}
+rm -rf %{buildroot}%{_docdir}/%{pkgname}
+install -D -m 755 %{SOURCE1} %{buildroot}%{_initrddir}/%{pkgname}
 %if 0%{?suse_version}
-    install -D -m 0644 %{SOURCE2} %{buildroot}/var/adm/fillup-templates/sysconfig.%{name}
+    install -D -m 0644 %{SOURCE2} %{buildroot}/var/adm/fillup-templates/sysconfig.%{pkgname}
 %else
-    install -D -m 644 %{SOURCE2} %{buildroot}%{_sysconfdir}/sysconfig/%{name}
+    install -D -m 644 %{SOURCE2} %{buildroot}%{_sysconfdir}/sysconfig/%{pkgname}
 %endif
 mkdir -p %{buildroot}%{homedir}
 
@@ -96,57 +82,57 @@ mkdir -p %{buildroot}%{homedir}
 rm -rf %{buildroot}
 
 
-%pre -n %{name}%{?name_suffix}
-/usr/sbin/groupadd -r %{name} &>/dev/null || :
+%pre
+/usr/sbin/groupadd -r %{pkgname} &>/dev/null || :
 /usr/sbin/useradd  -r -s /sbin/nologin -d %{homedir} -M \
-    -c '%{gecos}' -g %{name} %{name} &>/dev/null || :
+    -c '%{gecos}' -g %{pkgname} %{pkgname} &>/dev/null || :
 
 
-%post -n %{name}%{?name_suffix}
+%post
 %if ! 0%{?suse_version}
-/sbin/chkconfig --add %{name}
+/sbin/chkconfig --add %{pkgname}
 %else
-%fillup_and_insserv %{name}
-%restart_on_update %{name}
+%fillup_and_insserv %{pkgname}
+%restart_on_update %{pkgname}
 %endif
 
 
-%preun -n %{name}%{?name_suffix}
+%preun
 %if ! 0%{?suse_version}
 if [ "$1" = "0" ]; then
-	/sbin/service %{name} stop >/dev/null 2>&1 || :
-	/sbin/chkconfig --del %{name}
+	/sbin/service %{pkgname} stop >/dev/null 2>&1 || :
+	/sbin/chkconfig --del %{pkgname}
 fi
 %else
-%stop_on_removal %{name}
+%stop_on_removal %{pkgname}
 %endif
 
 
-%postun -n %{name}%{?name_suffix}
+%postun
 %if ! 0%{?suse_version}
 if [ "$1" -ge "1" ]; then
-	/sbin/service %{name} condrestart >/dev/null 2>&1 || :
+	/sbin/service %{pkgname} condrestart >/dev/null 2>&1 || :
 fi
-/usr/sbin/userdel %{name} >/dev/null 2>&1 || :
-/usr/sbin/groupdel %{name} >/dev/null 2>&1 || :
+/usr/sbin/userdel %{pkgname} >/dev/null 2>&1 || :
+/usr/sbin/groupdel %{pkgname} >/dev/null 2>&1 || :
 %else
 %{insserv_cleanup}  
 %endif
 
 
-%files -n %{name}%{?name_suffix}
+%files
 %defattr(-,root,root)
 %doc doc/ChangeLog doc/README doc/LICENSE doc/TODO doc/HACKING
 %if 0%{?suse_version}
-/var/adm/fillup-templates/sysconfig.%{name}
+/var/adm/fillup-templates/sysconfig.%{pkgname}
 %else
-%config(noreplace) %{_sysconfdir}/sysconfig/%{name}
+%config(noreplace) %{_sysconfdir}/sysconfig/%{pkgname}
 %endif
-%{_initrddir}/%{name}
-%{_sbindir}/%{name}
-%{_sbindir}/%{name}c
-%{_mandir}/man8/%{name}.8*
-%{_mandir}/man8/%{name}c.8*
+%{_initrddir}/%{pkgname}
+%{_sbindir}/%{pkgname}
+%{_sbindir}/%{pkgname}c
+%{_mandir}/man8/%{pkgname}.8*
+%{_mandir}/man8/%{pkgname}c.8*
 %attr(755,root,root) %dir %{homedir}
 
 

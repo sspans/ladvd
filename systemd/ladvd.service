@@ -1,0 +1,12 @@
+[Unit]
+Description=uses cdp / lldp frames to inform switches about connected hosts
+Requires=network.target
+
+[Service]
+EnvironmentFile=/etc/sysconfig/ladvd
+ExecStart=/usr/sbin/ladvd -f $LADVD_OPTIONS
+PIDFile=/var/run/ladvd.pid
+StandardOutput=syslog
+
+[Install]
+WantedBy=multi-user.target
