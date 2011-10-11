@@ -63,7 +63,7 @@
 
 struct rfdhead rawfds;
 
-int sock = -1;
+static int sock = -1;
 int mfd = -1;
 int dfd = -1;
 
