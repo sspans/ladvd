@@ -94,6 +94,7 @@ void child_init(int reqfd, int msgfd, int ifc, char *ifl[],
     if (!(options & OPT_DEBUG)) {
 	my_chroot(PACKAGE_CHROOT_DIR);
 	my_drop_privs(pwd);
+	my_rlimit_child();
     }
 
     // proctitle
