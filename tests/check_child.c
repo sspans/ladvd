@@ -37,29 +37,6 @@ extern struct mhead mqueue;
 extern struct sysinfo sysinfo;
 extern int msock;
 
-void read_packet(struct master_msg *msg, const char *suffix) {
-    int fd;
-    char *prefix, *path = NULL;
-
-    memset(msg->msg, 0, ETHER_MAX_LEN);
-    msg->len = 0;
-    msg->ttl = 0;
-    peer_free(msg->peer);
-
-    if ((prefix = getenv("srcdir")) == NULL)
-	prefix = ".";
-
-    fail_if(asprintf(&path, "%s/%s", prefix, suffix) == -1,
-	    "asprintf failed");
-
-    mark_point();
-    fail_if((fd = open(path, O_RDONLY)) == -1, "failed to open %s", path);
-    msg->len = read(fd, msg->msg, ETHER_MAX_LEN);
-
-    free(path);
-    close(fd);
-}
-
 START_TEST(test_child_init) {
     struct master_req *mreq;
     struct netif *netif, *nnetif;

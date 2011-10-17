@@ -19,6 +19,7 @@
 
 #include "config.h"
 #include <check.h>
+#include <pcap/pcap.h>
 
 #include "common.h"
 #include "util.h"
@@ -404,29 +405,6 @@ START_TEST(test_ndp_check) {
 	    "valid packets should return a correct ptr");
 }
 END_TEST
-
-void read_packet(struct master_msg *msg, const char *suffix) {
-    int fd;
-    char *prefix, *path = NULL;
-
-    memset(msg->msg, 0, ETHER_MAX_LEN);
-    msg->len = 0;
-    msg->ttl = 0;
-    peer_free(msg->peer);
-
-    if ((prefix = getenv("srcdir")) == NULL)
-	prefix = ".";
-
-    fail_if(asprintf(&path, "%s/%s", prefix, suffix) == -1,
-	    "asprintf failed");
-
-    mark_point();
-    fail_if((fd = open(path, O_RDONLY)) == -1, "failed to open %s", path);
-    msg->len = read(fd, msg->msg, ETHER_MAX_LEN);
-
-    free(path);
-    close(fd);
-}
 
 START_TEST(test_lldp_decode) {
     struct master_msg msg = {};

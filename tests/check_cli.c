@@ -31,31 +31,6 @@
 unsigned int ifindex = 0;
 uint32_t options = OPT_DAEMON | OPT_CHECK;
 
-void read_packet(struct master_msg *msg, const char *suffix) {
-    int fd;
-    char *prefix, *path = NULL;
-
-    memset(msg->msg, 0, ETHER_MAX_LEN);
-    msg->len = 0;
-    msg->ttl = 0;
-    peer_free(msg->peer);
-
-    if ((prefix = getenv("srcdir")) == NULL)
-	prefix = ".";
-
-    fail_if(asprintf(&path, "%s/%s", prefix, suffix) == -1,
-	    "asprintf failed");
-
-    mark_point();
-    fail_if((fd = open(path, O_RDONLY)) == -1, "failed to open %s", path);
-    msg->len = read(fd, msg->msg, ETHER_MAX_LEN);
-    msg->len = MAX(msg->len, ETHER_MIN_LEN);
-
-    free(path);
-    close(fd);
-}
-
-
 void fake_log_cb(int severity, const char *msg) {
 }
 

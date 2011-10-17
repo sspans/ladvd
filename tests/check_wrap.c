@@ -17,6 +17,10 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include "config.h"
+#include <check.h>
+#include <pcap/pcap.h>
+
 #include "common.h"
 #include "check_wrap.h"
 
@@ -120,5 +124,38 @@ MWRAP(vsyslog, void, (int p, const char *fmt, va_list ap)) {
 
 MWRAP(__vsyslog_chk, void, (int p, int __flag, const char *fmt, va_list ap)) {
     vsnprintf(check_wrap_errstr, 1024, fmt, ap);
+}
+
+void read_packet(struct master_msg *msg, const char *suffix) {
+    char *prefix, *path = NULL;
+
+    pcap_t *p = NULL;
+    struct pcap_pkthdr p_hdr = {};
+    char errbuf[PCAP_ERRBUF_SIZE];
+    const u_char *data = NULL;
+
+    memset(msg->msg, 0, ETHER_MAX_LEN);
+    msg->len = 0;
+    msg->ttl = 0;
+    peer_free(msg->peer);
+
+    if ((prefix = getenv("srcdir")) == NULL)
+	prefix = ".";
+
+    fail_if(asprintf(&path, "%s/%s.pcap", prefix, suffix) == -1,
+	    "asprintf failed");
+
+    mark_point();
+    fail_if((p = pcap_open_offline(path, errbuf)) == NULL,
+	"failed to open %s: %s", path, errbuf);
+
+    fail_if((data = pcap_next(p, &p_hdr)) == NULL,
+	"failed to read packet");
+    msg->len = p_hdr.len;
+    fail_if(memcpy(msg->msg, data, msg->len) == NULL,
+	"memcpy failed");
+
+    pcap_close(p);
+    free(path);
 }
 
