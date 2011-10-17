@@ -39,6 +39,7 @@ size_t edp_packet(void *packet, struct netif *netif,
 
     void *edp_start;
     struct netif *master, *vlanif = NULL;
+    uint8_t *hwaddr;
 
     const uint8_t edp_dst[] = EDP_MULTICAST_ADDR;
     const uint8_t llc_org[] = LLC_ORG_EXTREME;
@@ -48,6 +49,9 @@ size_t edp_packet(void *packet, struct netif *netif,
 	master = netif->master;
     else
 	master = netif;
+
+    // chassis id
+    hwaddr = (options & OPT_CHASSIS_IF) ? netif->hwaddr : sysinfo->hwaddr;
 
     // ethernet header
     memcpy(ether.dst, edp_dst, ETHER_ADDR_LEN);
@@ -65,7 +69,7 @@ size_t edp_packet(void *packet, struct netif *netif,
     // edp header
     edp.version = 1;
     edp.sequence = htons(edp_count++);
-    memcpy(&edp.hwaddr, sysinfo->hwaddr, ETHER_ADDR_LEN);
+    memcpy(&edp.hwaddr, hwaddr, ETHER_ADDR_LEN);
     edp_start = pos;
 
     // update tlv counters
