@@ -117,6 +117,11 @@ AS_IF([test -n "$check_ids"],
 ]
 )
 
+# libpcap
+AC_CHECK_HEADER([pcap.h])
+AC_CHECK_LIB(pcap, pcap_create, AC_SUBST(PCAP_LIB,"-lpcap"), 
+    AC_MSG_ERROR([libpcap is required]))
+
 # libevent
 trylibeventdir=""
 AC_ARG_WITH(libevent,
