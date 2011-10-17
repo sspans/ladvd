@@ -107,7 +107,8 @@ size_t edp_packet(void *packet, struct netif *netif,
 	    PUSH_UINT16(0) &&	    // vlan-id
 	    PUSH_UINT32(0) &&	    // reserved
 	    PUSH_BYTES(&master->ipaddr4, sizeof(master->ipaddr4)) &&
-	    PUSH_BYTES(netif->name, strlen(netif->name))
+	    PUSH_BYTES(netif->name, strlen(netif->name)) &&
+	    PUSH_UINT8(0)
 	))
 	    return 0;
 	END_EDP_TLV;
