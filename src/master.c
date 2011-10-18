@@ -654,10 +654,6 @@ void master_multi(struct rawfd *rfd, struct proto *protos, int op) {
 	if ((protos[p].enabled == 0) && !(options & OPT_AUTO))
 	    continue;
 
-	// too bad for EDP
-	if (!ETHER_IS_MULTICAST(protos[p].dst_addr))
-	    continue;
-
 #ifdef AF_PACKET
 	// prepare a packet_mreq struct
 	mreq.mr_ifindex = rfd->index;
@@ -672,6 +668,10 @@ void master_multi(struct rawfd *rfd, struct proto *protos, int op) {
 		     protos[p].name, rfd->name);
 
 #elif defined AF_LINK
+	// too bad for EDP
+	if (!ETHER_IS_MULTICAST(protos[p].dst_addr))
+	    continue;
+
 #ifdef __FreeBSD__
 	saddrdl = (struct sockaddr_dl *)&ifr.ifr_addr;
 	saddrdl->sdl_family = AF_LINK;
