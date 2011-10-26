@@ -1,6 +1,4 @@
 For 0.9.3:
-- fix LLDP-MED support
-- go over the most recent packet dumps
 - try using libpcap
 - implement ladvdc verbose decoding
 - improve edp TLV handling
