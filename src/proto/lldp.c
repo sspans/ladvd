@@ -36,6 +36,7 @@ size_t lldp_packet(void *packet, struct netif *netif,
     uint16_t cap = 0, cap_active = 0;
     struct netif *master, *vlanif = NULL;
     uint8_t *hwaddr;
+    struct hinv *hinv;
     char *description;
 
     const uint8_t lldp_dst[] = LLDP_MULTICAST_ADDR;
@@ -56,9 +57,9 @@ size_t lldp_packet(void *packet, struct netif *netif,
     // update tlv counters
     length -= VOIDP_DIFF(pos, packet);
 
-
-    // chassis id
+    // chassis id and hinv
     hwaddr = (options & OPT_CHASSIS_IF) ? netif->hwaddr : sysinfo->hwaddr;
+    hinv = &(sysinfo->hinv);
 
     if (!(
 	START_LLDP_TLV(LLDP_TYPE_CHASSIS_ID) &&
@@ -253,6 +254,16 @@ size_t lldp_packet(void *packet, struct netif *netif,
     }
 
 
+    // TIA LLDP-MED Capabilities TLV
+    if (!(
+	START_LLDP_TLV(LLDP_TYPE_PRIVATE) &&
+	PUSH_BYTES(OUI_TIA, OUI_LEN) &&
+	PUSH_UINT8(LLDP_PRIVATE_TIA_SUBTYPE_CAPABILITIES) &&
+	PUSH_UINT16(sysinfo->cap_lldpmed) &&
+	PUSH_UINT8(sysinfo->lldpmed_devtype)
+    ))
+	return 0;
+    END_LLDP_TLV;
 
     // TIA Location Identification TLv
 
@@ -279,12 +290,12 @@ size_t lldp_packet(void *packet, struct netif *netif,
     // TIA Inventory Management TLV Set
 
     // hardware revision
-    if (strlen(sysinfo->hw_revision) > 0) {
+    if (strlen(hinv->hw_revision) > 0) {
 	if (!(
 	    START_LLDP_TLV(LLDP_TYPE_PRIVATE) &&
 	    PUSH_BYTES(OUI_TIA, OUI_LEN) &&
 	    PUSH_UINT8(LLDP_PRIVATE_TIA_SUBTYPE_INVENTORY_HARDWARE_REV) &&
-	    PUSH_BYTES(sysinfo->hw_revision, strlen(sysinfo->hw_revision))
+	    PUSH_BYTES(hinv->hw_revision, strlen(hinv->hw_revision))
 	))
 	    return 0;
 	END_LLDP_TLV;
@@ -292,12 +303,12 @@ size_t lldp_packet(void *packet, struct netif *netif,
 
 
     // firmware revision
-    if (strlen(sysinfo->fw_revision) > 0) {
+    if (strlen(hinv->fw_revision) > 0) {
 	if (!(
 	    START_LLDP_TLV(LLDP_TYPE_PRIVATE) &&
 	    PUSH_BYTES(OUI_TIA, OUI_LEN) &&
 	    PUSH_UINT8(LLDP_PRIVATE_TIA_SUBTYPE_INVENTORY_FIRMWARE_REV) &&
-	    PUSH_BYTES(sysinfo->fw_revision, strlen(sysinfo->fw_revision))
+	    PUSH_BYTES(hinv->fw_revision, strlen(hinv->fw_revision))
 	))
 	    return 0;
 	END_LLDP_TLV;
@@ -305,12 +316,12 @@ size_t lldp_packet(void *packet, struct netif *netif,
 
 
     // software revision
-    if (strlen(sysinfo->sw_revision) > 0) {
+    if (strlen(hinv->sw_revision) > 0) {
 	if (!(
 	    START_LLDP_TLV(LLDP_TYPE_PRIVATE) &&
 	    PUSH_BYTES(OUI_TIA, OUI_LEN) &&
 	    PUSH_UINT8(LLDP_PRIVATE_TIA_SUBTYPE_INVENTORY_SOFTWARE_REV) &&
-	    PUSH_BYTES(sysinfo->sw_revision, strlen(sysinfo->sw_revision))
+	    PUSH_BYTES(hinv->sw_revision, strlen(hinv->sw_revision))
 	))
 	    return 0;
 	END_LLDP_TLV;
@@ -318,12 +329,12 @@ size_t lldp_packet(void *packet, struct netif *netif,
 
 
     // serial number
-    if (strlen(sysinfo->serial_number) > 0) {
+    if (strlen(hinv->serial_number) > 0) {
 	if (!(
 	    START_LLDP_TLV(LLDP_TYPE_PRIVATE) &&
 	    PUSH_BYTES(OUI_TIA, OUI_LEN) &&
 	    PUSH_UINT8(LLDP_PRIVATE_TIA_SUBTYPE_INVENTORY_SERIAL_NUMBER) &&
-	    PUSH_BYTES(sysinfo->serial_number, strlen(sysinfo->serial_number))
+	    PUSH_BYTES(hinv->serial_number, strlen(hinv->serial_number))
 	))
 	    return 0;
 	END_LLDP_TLV;
@@ -331,12 +342,12 @@ size_t lldp_packet(void *packet, struct netif *netif,
 
 
     // manufacturer
-    if (strlen(sysinfo->manufacturer) > 0) {
+    if (strlen(hinv->manufacturer) > 0) {
 	if (!(
 	    START_LLDP_TLV(LLDP_TYPE_PRIVATE) &&
 	    PUSH_BYTES(OUI_TIA, OUI_LEN) &&
 	    PUSH_UINT8(LLDP_PRIVATE_TIA_SUBTYPE_INVENTORY_MANUFACTURER_NAME) &&
-	    PUSH_BYTES(sysinfo->manufacturer, strlen(sysinfo->manufacturer))
+	    PUSH_BYTES(hinv->manufacturer, strlen(hinv->manufacturer))
 	))
 	    return 0;
 	END_LLDP_TLV;
@@ -344,12 +355,12 @@ size_t lldp_packet(void *packet, struct netif *netif,
 
 
     // model name
-    if (strlen(sysinfo->model_name) > 0) {
+    if (strlen(hinv->model_name) > 0) {
 	if (!(
 	    START_LLDP_TLV(LLDP_TYPE_PRIVATE) &&
 	    PUSH_BYTES(OUI_TIA, OUI_LEN) &&
 	    PUSH_UINT8(LLDP_PRIVATE_TIA_SUBTYPE_INVENTORY_MODEL_NAME) &&
-	    PUSH_BYTES(sysinfo->model_name, strlen(sysinfo->model_name))
+	    PUSH_BYTES(hinv->model_name, strlen(hinv->model_name))
 	))
 	    return 0;
 	END_LLDP_TLV;
@@ -357,12 +368,12 @@ size_t lldp_packet(void *packet, struct netif *netif,
 
 
     // asset id
-    if (strlen(sysinfo->asset_id) > 0) {
+    if (strlen(hinv->asset_id) > 0) {
 	if (!(
 	    START_LLDP_TLV(LLDP_TYPE_PRIVATE) &&
 	    PUSH_BYTES(OUI_TIA, OUI_LEN) &&
 	    PUSH_UINT8(LLDP_PRIVATE_TIA_SUBTYPE_INVENTORY_ASSET_ID) &&
-	    PUSH_BYTES(sysinfo->asset_id, strlen(sysinfo->asset_id))
+	    PUSH_BYTES(hinv->asset_id, strlen(hinv->asset_id))
 	))
 	    return 0;
 	END_LLDP_TLV;

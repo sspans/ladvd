@@ -49,13 +49,13 @@ START_TEST(test_proto_packet) {
     strlcpy(sysinfo.platform, "Testing VAX", sizeof(sysinfo.platform));
     strlcpy(sysinfo.hostname, "Blanket", sizeof(sysinfo.hostname));
     strlcpy(sysinfo.location, "Towel", sizeof(sysinfo.location));
-    strlcpy(sysinfo.hw_revision, "lala", LLDP_INVENTORY_SIZE);  
-    strlcpy(sysinfo.fw_revision, "lala", LLDP_INVENTORY_SIZE);  
-    strlcpy(sysinfo.sw_revision, "lala", LLDP_INVENTORY_SIZE);  
-    strlcpy(sysinfo.serial_number, "lala", LLDP_INVENTORY_SIZE);  
-    strlcpy(sysinfo.manufacturer, "lala", LLDP_INVENTORY_SIZE);  
-    strlcpy(sysinfo.model_name, "lala", LLDP_INVENTORY_SIZE);  
-    strlcpy(sysinfo.asset_id, "lala", LLDP_INVENTORY_SIZE);  
+    strlcpy(sysinfo.hinv.hw_revision, "lala", LLDP_INVENTORY_SIZE);  
+    strlcpy(sysinfo.hinv.fw_revision, "lala", LLDP_INVENTORY_SIZE);  
+    strlcpy(sysinfo.hinv.sw_revision, "lala", LLDP_INVENTORY_SIZE);  
+    strlcpy(sysinfo.hinv.serial_number, "lala", LLDP_INVENTORY_SIZE);  
+    strlcpy(sysinfo.hinv.manufacturer, "lala", LLDP_INVENTORY_SIZE);  
+    strlcpy(sysinfo.hinv.model_name, "lala", LLDP_INVENTORY_SIZE);  
+    strlcpy(sysinfo.hinv.asset_id, "lala", LLDP_INVENTORY_SIZE);  
 
     memset(&master, 0, sizeof(struct netif));
     master.index = 3;
@@ -110,7 +110,7 @@ START_TEST(test_proto_packet) {
     mark_point();
     memset(msg.msg, 0, ETHER_MAX_LEN);
     msg.len = lldp_packet(msg.msg, &netif, &netifs, &sysinfo);
-    fail_unless(msg.len == 251, "length should not be %d", msg.len);
+    fail_unless(msg.len == 260, "length should not be %d", msg.len);
     msg.len = cdp_packet(msg.msg, &netif, &netifs, &sysinfo);
     fail_unless(msg.len == 158, "length should not be %d", msg.len);
     msg.len = edp_packet(msg.msg, &netif, &netifs, &sysinfo);
@@ -125,7 +125,7 @@ START_TEST(test_proto_packet) {
     sysinfo.cap_active = CAP_HOST;
     netif.master = NULL;
     msg.len = lldp_packet(msg.msg, &netif, &netifs, &sysinfo);
-    fail_unless(msg.len == 200, "length should not be %d", msg.len);
+    fail_unless(msg.len == 209, "length should not be %d", msg.len);
     msg.len = cdp_packet(msg.msg, &netif, &netifs, &sysinfo);
     fail_unless(msg.len == 113, "length should not be %d", msg.len);
     msg.len = edp_packet(msg.msg, &netif, &netifs, &sysinfo);
@@ -138,7 +138,7 @@ START_TEST(test_proto_packet) {
     mark_point();
     sysinfo.cap_active = CAP_BRIDGE;
     msg.len = lldp_packet(msg.msg, &netif, &netifs, &sysinfo);
-    fail_unless(msg.len == 200, "length should not be %d", msg.len);
+    fail_unless(msg.len == 209, "length should not be %d", msg.len);
     msg.len = cdp_packet(msg.msg, &netif, &netifs, &sysinfo);
     fail_unless(msg.len == 113, "length should not be %d", msg.len);
     msg.len = edp_packet(msg.msg, &netif, &netifs, &sysinfo);
@@ -151,7 +151,7 @@ START_TEST(test_proto_packet) {
     mark_point();
     sysinfo.cap_active = CAP_SWITCH;
     msg.len = lldp_packet(msg.msg, &netif, &netifs, &sysinfo);
-    fail_unless(msg.len == 200, "length should not be %d", msg.len);
+    fail_unless(msg.len == 209, "length should not be %d", msg.len);
     msg.len = cdp_packet(msg.msg, &netif, &netifs, &sysinfo);
     fail_unless(msg.len == 113, "length should not be %d", msg.len);
     msg.len = edp_packet(msg.msg, &netif, &netifs, &sysinfo);

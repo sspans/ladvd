@@ -134,6 +134,16 @@ struct netif {
 
 TAILQ_HEAD(nhead, netif);
 
+struct hinv {
+    char hw_revision[LLDP_INVENTORY_SIZE + 1];
+    char fw_revision[LLDP_INVENTORY_SIZE + 1];
+    char sw_revision[LLDP_INVENTORY_SIZE + 1];
+    char serial_number[LLDP_INVENTORY_SIZE + 1];
+    char manufacturer[LLDP_INVENTORY_SIZE + 1];
+    char model_name[LLDP_INVENTORY_SIZE + 1];
+    char asset_id[LLDP_INVENTORY_SIZE + 1];
+};
+
 struct sysinfo {
     struct utsname uts;
     char uts_str[256];
@@ -144,19 +154,15 @@ struct sysinfo {
     char location[256];
     uint16_t cap;
     uint16_t cap_active;
+    uint16_t cap_lldpmed;
+    int8_t lldpmed_devtype;
     uint8_t hwaddr[ETHER_ADDR_LEN];
     uint16_t physif_count;
 
     uint32_t maddr4;
     uint32_t maddr6[4];
 
-    char hw_revision[LLDP_INVENTORY_SIZE + 1];
-    char fw_revision[LLDP_INVENTORY_SIZE + 1];
-    char sw_revision[LLDP_INVENTORY_SIZE + 1];
-    char serial_number[LLDP_INVENTORY_SIZE + 1];
-    char manufacturer[LLDP_INVENTORY_SIZE + 1];
-    char model_name[LLDP_INVENTORY_SIZE + 1];
-    char asset_id[LLDP_INVENTORY_SIZE + 1];
+    struct hinv hinv;
 };
 
 #define CAP_REPEATER	(1 << 0)

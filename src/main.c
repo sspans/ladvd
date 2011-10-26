@@ -51,6 +51,7 @@ int main(int argc, char *argv[]) {
 
     // clear sysinfo
     memset(&sysinfo, 0, sizeof(struct sysinfo));
+    sysinfo.lldpmed_devtype = -1;
 
     // cli
     if (strcmp(__progname, PACKAGE_CLI) == 0)

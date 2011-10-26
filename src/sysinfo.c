@@ -27,6 +27,8 @@
 #include <kenv.h>
 #endif /* HAVE_KENV_H */
 
+#include "proto/lldp.h"
+
 #ifdef HAVE_SYSFS
 #define SYSFS_CLASS_DMI		"/sys/class/dmi/id"
 #define SYSFS_HW_REVISION	SYSFS_CLASS_DMI "/product_version"
@@ -49,10 +51,13 @@ void sysinfo_fetch(struct sysinfo *sysinfo) {
     char *descr = NULL, *release, *endptr;
     struct hostent *hp = NULL;
     size_t len = LLDP_INVENTORY_SIZE + 1;
+    struct hinv *hinv, hinv_empty = {};
 
 #ifdef CTL_HW
     int mib[2];
 #endif
+
+    hinv = &(sysinfo->hinv);
 
     // use lsb_release to fetch the Linux distro description
 #ifdef __linux__
@@ -171,14 +176,14 @@ void sysinfo_fetch(struct sysinfo *sysinfo) {
 	strlcpy(sysinfo->hostname, sysinfo->uts.nodename, 
 		sizeof(sysinfo->hostname));
 
-    strlcpy(sysinfo->sw_revision, sysinfo->uts.release, len);
+    strlcpy(hinv->sw_revision, sysinfo->uts.release, len);
 
 #ifdef HAVE_SYSFS
-    read_line(SYSFS_HW_REVISION, sysinfo->hw_revision, len);
-    read_line(SYSFS_FW_REVISION, sysinfo->fw_revision, len);
-    read_line(SYSFS_SERIAL_NO, sysinfo->serial_number, len);
-    read_line(SYSFS_MANUFACTURER, sysinfo->manufacturer, len);
-    read_line(SYSFS_MODEL_NAME, sysinfo->model_name, len);
+    read_line(SYSFS_HW_REVISION, hinv->hw_revision, len);
+    read_line(SYSFS_FW_REVISION, hinv->fw_revision, len);
+    read_line(SYSFS_SERIAL_NO, hinv->serial_number, len);
+    read_line(SYSFS_MANUFACTURER, hinv->manufacturer, len);
+    read_line(SYSFS_MODEL_NAME, hinv->model_name, len);
 #endif
 
     // OpenBSD really
@@ -188,38 +193,49 @@ void sysinfo_fetch(struct sysinfo *sysinfo) {
 #ifdef HW_VERSION
     mib[1] = HW_VERSION;
     len = LLDP_INVENTORY_SIZE + 1;
-    sysctl(mib, 2, sysinfo->hw_revision, &len, NULL, 0);
+    sysctl(mib, 2, hinv->hw_revision, &len, NULL, 0);
 #endif
 #ifdef HW_SERIALNO
     mib[1] = HW_SERIALNO;
     len = LLDP_INVENTORY_SIZE + 1;
-    sysctl(mib, 2, sysinfo->serial_number, &len, NULL, 0);
+    sysctl(mib, 2, hinv->serial_number, &len, NULL, 0);
 #endif
 #ifdef HW_VENDOR
     mib[1] = HW_VENDOR;
     len = LLDP_INVENTORY_SIZE + 1;
-    sysctl(mib, 2, sysinfo->manufacturer, &len, NULL, 0);
+    sysctl(mib, 2, hinv->manufacturer, &len, NULL, 0);
 #endif
 #ifdef HW_PRODUCT
     mib[1] = HW_PRODUCT;
     len = LLDP_INVENTORY_SIZE + 1;
-    sysctl(mib, 2, sysinfo->model_name, &len, NULL, 0);
+    sysctl(mib, 2, hinv->model_name, &len, NULL, 0);
 #endif
 #endif /* CTL_HW */
 
     // FreeBSD
 #ifdef HAVE_KENV_H
     len = LLDP_INVENTORY_SIZE + 1;
-    kenv(KENV_GET, "smbios.system.version", sysinfo->hw_revision, len);
-    kenv(KENV_GET, "smbios.bios.version", sysinfo->fw_revision, len);
-    kenv(KENV_GET, "smbios.system.serial", sysinfo->serial_number, len);
-    kenv(KENV_GET, "smbios.system.maker", sysinfo->manufacturer, len);
-    kenv(KENV_GET, "smbios.system.product", sysinfo->model_name, len);
+    kenv(KENV_GET, "smbios.system.version", hinv->hw_revision, len);
+    kenv(KENV_GET, "smbios.bios.version", hinv->fw_revision, len);
+    kenv(KENV_GET, "smbios.system.serial", hinv->serial_number, len);
+    kenv(KENV_GET, "smbios.system.maker", hinv->manufacturer, len);
+    kenv(KENV_GET, "smbios.system.product", hinv->model_name, len);
 #endif /* HAVE_KENV_H */
 
     // default to CAP_HOST
     sysinfo->cap = CAP_HOST;
     sysinfo->cap_active = CAP_HOST;
+
+    // configure LLDP-MED capabilities
+    if (sysinfo->lldpmed_devtype == -1)
+	sysinfo->lldpmed_devtype = LLDP_TIA_DEVICE_TYPE_ENDPOINT_CLASS_1;
+    sysinfo->cap_lldpmed = LLDP_TIA_CAPABILITY_MED;
+    sysinfo->cap_lldpmed |= 
+	(strlen(sysinfo->country) && strlen(sysinfo->location))?
+	    LLDP_TIA_CAPABILITY_LOCATION_IDENTIFICATION : 0;
+    sysinfo->cap_lldpmed |=
+	(memcmp(hinv, &hinv_empty, sizeof(hinv_empty)))?
+	    LLDP_TIA_CAPABILITY_INVENTORY : 0;
 
     // check for forwarding
     sysinfo_forwarding(sysinfo);
