@@ -227,7 +227,7 @@ size_t cdp_packet(void *packet, struct netif *netif,
     return(VOIDP_DIFF(pos, packet));
 }
 
-char * cdp_check(void *packet, size_t length) {
+unsigned char * cdp_check(void *packet, size_t length) {
     struct ether_hdr ether;
     uint8_t offset = 0;
     struct ether_llc llc;
@@ -257,11 +257,11 @@ char * cdp_check(void *packet, size_t length) {
 
 size_t cdp_decode(struct master_msg *msg) {
 
-    char *packet = NULL;
+    unsigned char *packet = NULL;
     size_t length;
     struct cdp_header cdp;
 
-    char *pos;
+    unsigned char *pos;
     tlv_t type;
 
     uint16_t tlv_type;

@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2008, 2009, 2010
+ * Copyright (c) 2008, 2009, 2010, 2011
  *      Sten Spans <sten@blinkenlights.nl>
  *
  * Permission to use, copy, modify, and distribute this software for any
@@ -92,10 +92,8 @@ void master_init(int reqfd, int msgfd, pid_t child) {
 
     // debug
     if (options & OPT_DEBUG) {
-	if (isatty(STDOUT_FILENO))
-	    my_fatal("please redirect stdout to tcpdump or a file");
 	dfd = STDOUT_FILENO;
-	write_pcap_hdr(dfd);
+	my_pcap_init(dfd);
 #if HAVE_LIBCAP_NG
     } else {
 	capng_clear(CAPNG_SELECT_BOTH);
@@ -168,6 +166,8 @@ void master_signal(int sig, short event, void *pid) {
 	    } else {
 		kill(*(pid_t *)pid, sig);
 	    }
+	    if (options & OPT_DEBUG);
+		my_pcap_close();
 	    rfd_closeall(&rawfds);
 	    unlink(PACKAGE_SOCKET);
 	    my_log(CRIT, "quitting");
@@ -309,7 +309,7 @@ void master_send(int msgfd, short event) {
 
     // debug
     if (options & OPT_DEBUG) {
-	write_pcap_rec(dfd, &msend);
+	my_pcap_write(&msend);
 	return;
     }
 
@@ -527,7 +527,7 @@ int master_socket(struct rawfd *rfd) {
     int fd = -1;
 
     if (options & OPT_DEBUG)
-	return(dup(dfd));
+	return(dup(STDIN_FILENO));
 
 #ifdef HAVE_NETPACKET_PACKET_H
     struct sockaddr_ll sa = {};

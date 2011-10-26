@@ -97,26 +97,11 @@ struct netif *netif_byaddr(struct nhead *netifs, uint8_t *hwaddr) {
     return(netif);
 }
 
-#define PCAP_MAGIC	0xA1B2C3D4
+#define PCAP_MAGIC       0xa1b2c3d4
+#define PCAP_PKTHDR_SIZ  16
 
-typedef struct pcap_hdr_s {
-    uint32_t magic_number;   /* magic number */
-    uint16_t version_major;  /* major version number */
-    uint16_t version_minor;  /* minor version number */
-    int32_t  thiszone;       /* GMT to local correction */
-    uint32_t sigfigs;        /* accuracy of timestamps */
-    uint32_t snaplen;        /* max length of captured packets, in octets */
-    uint32_t network;        /* data link type */
-} __packed pcap_hdr_t;
-
-typedef struct pcaprec_hdr_s {
-    uint32_t ts_sec;         /* timestamp seconds */
-    uint32_t ts_usec;        /* timestamp microseconds */
-    uint32_t incl_len;       /* number of octets of packet saved in file */
-    uint32_t orig_len;       /* actual length of packet */
-} __packed pcaprec_hdr_t;
-
-void write_pcap_hdr(int);
-void write_pcap_rec(int, struct master_msg *);
+void my_pcap_init(int fd);
+void my_pcap_write(struct master_msg *);
+void my_pcap_close();
 
 #endif /* _util_h */

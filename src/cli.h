@@ -31,6 +31,7 @@ void cli_header();
 void cli_write(struct master_msg *msg, const uint16_t);
 void debug_header();
 void debug_write(struct master_msg *msg, const uint16_t);
+void debug_close();
 
 #if HAVE_EVHTTP_H
 void http_connect();

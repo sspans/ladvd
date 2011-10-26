@@ -230,7 +230,7 @@ struct master_msg {
     uint8_t proto;
     time_t received;
     ssize_t len;
-    char msg[ETHER_MAX_LEN];
+    unsigned char msg[ETHER_MAX_LEN];
 
     uint16_t decode;
     uint16_t ttl;
@@ -264,7 +264,7 @@ struct proto {
     uint16_t llc_pid;
     size_t (* const build) (void *, struct netif *, struct nhead *,
 			    struct sysinfo *);
-    char * (* const check) (void *, size_t);
+    unsigned char * (* const check) (void *, size_t);
     size_t (* const decode) (struct master_msg *);
 };
 

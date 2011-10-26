@@ -20,6 +20,7 @@
 #include "config.h"
 #include <check.h>
 #include <paths.h>
+#include <pcap/pcap.h>
 
 #include "common.h"
 #include "util.h"
@@ -378,7 +379,7 @@ START_TEST(test_debug) {
     const char *errstr = NULL;
     int ostdout, spair[2];
     ssize_t len;
-    pcap_hdr_t pcap_hdr = {};
+    struct pcap_file_header pcap_fhdr = {};
     struct master_msg msg = {};
     char buf[1024];
 
@@ -405,14 +406,14 @@ START_TEST(test_debug) {
     fflush(stdout);
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
         "incorrect message logged: %s", check_wrap_errstr);
-    len = read(spair[1], &pcap_hdr, sizeof(pcap_hdr));
-    fail_unless(len == sizeof(pcap_hdr),
+    len = read(spair[1], &pcap_fhdr, sizeof(pcap_fhdr));
+    fail_unless(len == sizeof(pcap_fhdr),
                 "failed to read pcap header");
-    fail_unless(pcap_hdr.magic_number == PCAP_MAGIC,
+    fail_unless(pcap_fhdr.magic == PCAP_MAGIC,
                 "invalid pcap header returned");
-    fail_unless(pcap_hdr.snaplen == ETHER_MAX_LEN,
+    fail_unless(pcap_fhdr.snaplen == ETHER_MAX_LEN,
                 "invalid pcap header returned");
-    fail_unless(pcap_hdr.network == 1,
+    fail_unless(pcap_fhdr.linktype == DLT_EN10MB,
                 "invalid pcap header returned");
 
     mark_point();
@@ -422,7 +423,7 @@ START_TEST(test_debug) {
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
         "incorrect message logged: %s", check_wrap_errstr);
     len = read(spair[1], buf, 1024);
-    fail_unless(len == (sizeof(pcaprec_hdr_t) + msg.len),
+    fail_unless(len == (PCAP_PKTHDR_SIZ + msg.len),
                 "failed to read pcap record"); 
 
     close(spair[0]);

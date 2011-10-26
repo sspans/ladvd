@@ -22,6 +22,7 @@
 #include <syslog.h>
 #include <grp.h>
 #include <sys/resource.h>
+#include <pcap/pcap.h>
 
 int8_t loglevel = CRIT;
 int msock = -1;
@@ -420,44 +421,52 @@ void portname_abbr(char *portname) {
     }
 }
 
-void write_pcap_hdr(int fd) {
-    pcap_hdr_t pcap_hdr = {};
+static FILE *p_fd = NULL;
+static pcap_t *p_handle = NULL;
+static pcap_dumper_t *p_dump = NULL;
 
-    // create pcap global header
-    pcap_hdr.magic_number = PCAP_MAGIC;
-    pcap_hdr.version_major = 2;
-    pcap_hdr.version_minor = 4;
-    pcap_hdr.snaplen = ETHER_MAX_LEN;
-    pcap_hdr.network = 1;
+void my_pcap_init(int fd) {
+    struct stat buf = {};
 
-    // send pcap global header
-    if (write(fd, &pcap_hdr, sizeof(pcap_hdr)) != sizeof(pcap_hdr))
-	my_fatal("failed to write pcap global header");
+    if (fstat(fd, &buf))
+	my_fatal("stdin fd not available");
+    if (isatty(fd))
+	my_fatal("please redirect stdout to tcpdump or a file");
+
+    if ((p_fd = fdopen(fd, "w")) == NULL)
+	my_fatale("failed to create stdio stream"); 
+
+    p_handle = pcap_open_dead(DLT_EN10MB, ETHER_MAX_LEN);
+    p_dump = pcap_dump_fopen(p_handle, p_fd);
+    fflush(p_fd);
 }
 
-void write_pcap_rec(int fd, struct master_msg *msg) {
-    struct iovec iov[2];
-    pcaprec_hdr_t pcap_rec_hdr = {};
-    struct timeval tv;
-    ssize_t len = 0;
+void my_pcap_write(struct master_msg *msg) {
+    struct pcap_pkthdr pcap_rec_hdr = {};
+    struct timeval tv = {};
+
+    if (!p_dump)
+	return;
 
     // create a pcap record header
     if (gettimeofday(&tv, NULL) == 0) {
-	pcap_rec_hdr.ts_sec = tv.tv_sec;
-	pcap_rec_hdr.ts_usec = tv.tv_usec;
+	pcap_rec_hdr.ts.tv_sec = tv.tv_sec;
+	pcap_rec_hdr.ts.tv_usec = tv.tv_usec;
     }
-    pcap_rec_hdr.incl_len = msg->len;
-    pcap_rec_hdr.orig_len = msg->len;
-
-    iov[0].iov_base = &pcap_rec_hdr;
-    iov[0].iov_len = sizeof(pcap_rec_hdr);
-
-    iov[1].iov_base = msg->msg;
-    iov[1].iov_len = msg->len;
-
-    len = writev(fd, iov, 2);
-    if (len != (sizeof(pcap_rec_hdr) + msg->len))
-	my_loge(WARN, "only %zi bytes written", len);
-
-    return;
+    pcap_rec_hdr.caplen = msg->len;
+    pcap_rec_hdr.len = msg->len;
+    pcap_dump((void *)p_dump, &pcap_rec_hdr, msg->msg);
+    fflush(p_fd);
 }
+
+void my_pcap_close() {
+    if (p_dump) {
+	pcap_dump_close(p_dump);
+	p_dump = NULL;
+    }
+    if (p_handle) {
+	pcap_close(p_handle);
+	p_handle = NULL;
+    }
+}
+

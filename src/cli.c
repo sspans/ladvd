@@ -32,7 +32,7 @@ static void usage() __noreturn;
 static struct mode modes[] = {
   { NULL, &batch_write, NULL },
   { &cli_header, &cli_write, NULL },
-  { &debug_header, &debug_write, NULL },
+  { &debug_header, &debug_write, &debug_close },
   { NULL, NULL, NULL },
 #if HAVE_EVHTTP_H
   { &http_connect, &http_request, &http_dispatch },
@@ -295,13 +295,15 @@ void cli_write(struct master_msg *msg, const uint16_t holdtime) {
 }
 
 void debug_header() {
-    if (isatty(STDOUT_FILENO))
-	my_fatal("please redirect stdout to tcpdump or a file");
-    write_pcap_hdr(STDOUT_FILENO);
+    my_pcap_init(STDOUT_FILENO);
 }
 
 void debug_write(struct master_msg *msg, const uint16_t holdtime) {
-    write_pcap_rec(STDOUT_FILENO, msg);
+    my_pcap_write(msg);
+}
+
+void debug_close() {
+    my_pcap_close();
 }
 
 #if HAVE_EVHTTP_H

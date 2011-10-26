@@ -183,7 +183,7 @@ size_t fdp_packet(void *packet, struct netif *netif,
     return(VOIDP_DIFF(pos, packet));
 }
 
-char * fdp_check(void *packet, size_t length) {
+unsigned char * fdp_check(void *packet, size_t length) {
     struct ether_hdr ether;
     uint8_t offset = 0;
     struct ether_llc llc;
@@ -212,11 +212,12 @@ char * fdp_check(void *packet, size_t length) {
 }
 
 size_t fdp_decode(struct master_msg *msg) {
-    char *packet = NULL;
+
+    unsigned char *packet = NULL;
     size_t length;
     struct fdp_header fdp;
 
-    char *pos;
+    unsigned char *pos;
     tlv_t type;
 
     uint16_t tlv_type;

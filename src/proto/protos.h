@@ -40,11 +40,11 @@ size_t edp_packet(void *, struct netif *, struct nhead *, struct sysinfo *);
 size_t fdp_packet(void *, struct netif *, struct nhead *, struct sysinfo *);
 size_t ndp_packet(void *, struct netif *, struct nhead *, struct sysinfo *);
 
-char * lldp_check(void *, size_t);
-char * cdp_check(void *, size_t);
-char * edp_check(void *, size_t);
-char * fdp_check(void *, size_t);
-char * ndp_check(void *, size_t);
+unsigned char * lldp_check(void *, size_t);
+unsigned char * cdp_check(void *, size_t);
+unsigned char * edp_check(void *, size_t);
+unsigned char * fdp_check(void *, size_t);
+unsigned char * ndp_check(void *, size_t);
 
 size_t lldp_decode(struct master_msg *msg);
 size_t cdp_decode(struct master_msg *msg);

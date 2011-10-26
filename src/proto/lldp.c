@@ -382,7 +382,7 @@ size_t lldp_packet(void *packet, struct netif *netif,
     return(VOIDP_DIFF(pos, packet));
 }
 
-char * lldp_check(void *packet, size_t length) {
+unsigned char * lldp_check(void *packet, size_t length) {
     struct ether_hdr ether;
     uint8_t offset = 0;
     const uint8_t lldp_dst[] = LLDP_MULTICAST_ADDR;
@@ -410,10 +410,10 @@ char * lldp_check(void *packet, size_t length) {
 
 size_t lldp_decode(struct master_msg *msg) {
 
-    char *packet = NULL;
+    unsigned char *packet = NULL;
     size_t length;
 
-    char *pos;
+    unsigned char *pos;
     tlv_t type;
 
     uint16_t tlv_type;

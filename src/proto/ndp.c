@@ -75,7 +75,7 @@ size_t ndp_packet(void *packet, struct netif *netif,
     return(VOIDP_DIFF(pos, packet));
 }
 
-char * ndp_check(void *packet, size_t length) {
+unsigned char * ndp_check(void *packet, size_t length) {
     struct ether_hdr ether;
     uint8_t offset = 0;
     struct ether_llc llc;
@@ -104,11 +104,12 @@ char * ndp_check(void *packet, size_t length) {
 }
 
 size_t ndp_decode(struct master_msg *msg) {
-    char *packet = NULL;
+
+    unsigned char *packet = NULL;
     size_t length;
     struct ndp_header ndp;
 
-    char *pos;
+    unsigned char *pos;
 
     assert(msg);
 

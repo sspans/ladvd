@@ -20,6 +20,7 @@
 #include "config.h"
 #include <check.h>
 #include <paths.h>
+#include <pcap/pcap.h>
 
 #include "common.h"
 #include "util.h"
@@ -745,51 +746,51 @@ START_TEST(test_pcap) {
     ssize_t len;
     const char *errstr = NULL;
     char buf[1024];
-    pcap_hdr_t pcap_hdr = {};
+    struct pcap_file_header pcap_fhdr = {};
     struct master_msg msg = {};
 
     loglevel = INFO;
     my_socketpair(spair);
 
     mark_point();
-    errstr = "failed to write pcap global header";
+    errstr = "stdin fd not available";
     my_log(CRIT, "check");
     WRAP_FATAL_START();
-    write_pcap_hdr(-1);
+    my_pcap_init(-1);
     WRAP_FATAL_END();
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     mark_point();
-    write_pcap_hdr(spair[0]);
-    len = read(spair[1], &pcap_hdr, sizeof(pcap_hdr));
-    fail_unless(len == sizeof(pcap_hdr),
+    my_pcap_init(spair[0]);
+    len = read(spair[1], &pcap_fhdr, sizeof(pcap_fhdr));
+    fail_unless(len == sizeof(pcap_fhdr),
 		"failed to read pcap header");
-    fail_unless(pcap_hdr.magic_number == PCAP_MAGIC,
+    fail_unless(pcap_fhdr.magic == PCAP_MAGIC,
 		"invalid pcap header returned");
-    fail_unless(pcap_hdr.snaplen == ETHER_MAX_LEN,
+    fail_unless(pcap_fhdr.snaplen == ETHER_MAX_LEN,
 		"invalid pcap header returned");
-    fail_unless(pcap_hdr.network == 1,
+    fail_unless(pcap_fhdr.linktype == DLT_EN10MB,
 		"invalid pcap header returned");
 
     mark_point();
     errstr = "check";
     my_log(CRIT, errstr);
     msg.len = 1;
-    write_pcap_rec(spair[0], &msg);
+    my_pcap_write(&msg);
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     len = read(spair[1], buf, 1024);
-    fail_unless(len == (sizeof(pcaprec_hdr_t) + msg.len),
+    fail_unless(len == (PCAP_PKTHDR_SIZ + msg.len),
 		"failed to read pcap record");
 
     mark_point();
     msg.len = ETHER_MIN_LEN;
-    write_pcap_rec(spair[0], &msg);
+    my_pcap_write(&msg);
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     len = read(spair[1], buf, 1024);
-    fail_unless(len == (sizeof(pcaprec_hdr_t) + msg.len),
+    fail_unless(len == (PCAP_PKTHDR_SIZ + msg.len),
 		"failed to read pcap record");
 
     close(spair[0]);
