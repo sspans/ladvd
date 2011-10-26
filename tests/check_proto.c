@@ -602,6 +602,18 @@ START_TEST(test_lldp_decode) {
     fail_unless (msg.ttl == 120, "ttl should be 120");
 
     mark_point();
+    loglevel = DEBUG;
+    read_packet(&msg, "proto/lldp/47.good.nexus");
+    fail_unless (lldp_decode(&msg) == 268, "packet length incorrect");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+    fail_unless (msg.ttl == 120, "ttl should be 120");
+    fail_unless (strcmp(msg.peer[PEER_HOSTNAME], "XdasdXZ") == 0,
+		"system name should be 'XdasdXZ'");
+    fail_unless (strcmp(msg.peer[PEER_PORTNAME], "Eth110/1/13") == 0,
+	"port id should be 'Eth110/1/13' not '%s'", msg.peer[PEER_PORTNAME]);
+
+    mark_point();
     my_log(CRIT, "check");
     errstr = "Invalid LLDP packet: invalid Chassis ID TLV";
     read_packet(&msg, "proto/lldp/A1.fuzzer.chassis_id.long");
@@ -630,10 +642,10 @@ START_TEST(test_lldp_decode) {
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
-    my_log(CRIT, "check");
-    errstr = "Corrupt LLDP packet: invalid END TLV";
+    errstr = "check";
+    my_log(CRIT, errstr);
     read_packet(&msg, "proto/lldp/A6.fuzzer.end.short");
-    fail_unless (lldp_decode(&msg) == 0, "invalid packets should return 0");
+    fail_unless (lldp_decode(&msg) != 0, "we should allow trailing bytes");
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
