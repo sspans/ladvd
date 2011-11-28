@@ -20,26 +20,12 @@
 #ifndef _filter_h
 #define _filter_h
 
-#ifdef HAVE_NET_BPF_H
-#include <net/bpf.h>
-#endif /* HAVE_NET_BPF_H */
-#ifdef HAVE_LINUX_FILTER_H
-#include <linux/types.h>
-#include <linux/filter.h>
-#endif /* HAVE_LINUX_FILTER_H */
-
-#ifdef HAVE_NET_BPF_H
-#define SOCKET_FILTER	    struct bpf_insn
-#elif defined HAVE_LINUX_FILTER_H
-#define SOCKET_FILTER	    struct sock_filter
-#endif
-
-static SOCKET_FILTER reject_filter[] = {
+static struct bpf_insn reject_filter[] = {
     // reject
     BPF_STMT(BPF_RET+BPF_K, 0)
 };
 
-static SOCKET_FILTER proto_filter[] = {
+static struct bpf_insn proto_filter[] = {
     // .1q vlan header
     BPF_STMT(BPF_LD+BPF_H+BPF_ABS, ETHER_ADDR_LEN * 2),
     BPF_JUMP(BPF_JMP+BPF_JEQ+BPF_K, ETHERTYPE_VLAN, 0, 1),

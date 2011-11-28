@@ -21,6 +21,8 @@
 #define _master_h
 
 #include <sys/ioctl.h>
+#include <pcap/pcap.h>
+#include <pcap/bpf.h>
 
 struct rawfd {
     uint32_t index;
@@ -28,12 +30,7 @@ struct rawfd {
     int fd;
     struct event event;
 
-#ifdef HAVE_NET_BPF_H
-    struct {
-	unsigned int len;
-	char *data;
-    } bpf_buf;
-#endif /* HAVE_NET_BPF_H */
+    pcap_t *p_handle;
 
     // should be last
     TAILQ_ENTRY(rawfd) entries;

@@ -21,10 +21,13 @@
 #include "util.h"
 #include "proto/protos.h"
 #include "master.h"
-#include "filter.h"
 #include <sys/select.h>
 #include <sys/wait.h>
 #include <ctype.h>
+
+#include <pcap/pcap.h>
+#include <pcap/bpf.h>
+#include "filter.h"
 
 #ifdef HAVE_LIBCAP_NG
 #include <cap-ng.h>
@@ -286,7 +289,6 @@ int master_check(struct master_req *mreq) {
 
 
 void master_send(int msgfd, short event) {
-
     struct master_msg msend = {};
     struct rawfd *rfd = NULL;
     ssize_t len;
@@ -322,12 +324,8 @@ void master_send(int msgfd, short event) {
 
     // close the socket if the device vanished
     // if needed a new socket will be created on the next run
-#ifdef HAVE_NETPACKET_PACKET_H
-    if ((len == -1) && (errno == ENODEV))
-#elif defined HAVE_NET_BPF_H
-    if ((len == -1) && (errno == EIO))
-#endif /* HAVE_NET_BPF_H */
-	    master_close(rfd);
+    if ((len == -1) && ((errno == ENODEV) || (errno == EIO)))
+	master_close(rfd);
 
     if (len != msend.len)
 	my_loge(WARN, "only %zi bytes written", len);
@@ -366,7 +364,6 @@ void master_open(const uint32_t index, const char *name) {
 }
 
 void master_close(struct rawfd *rfd) {
-
     assert(rfd != NULL);
 
     if ((options & OPT_RECV) && !(options & OPT_DEBUG)) {
@@ -378,11 +375,8 @@ void master_close(struct rawfd *rfd) {
 
     // cleanup
     TAILQ_REMOVE(&rawfds, rfd, entries);
-    close(rfd->fd);
-#ifdef HAVE_NET_BPF_H
-    if (rfd->bpf_buf.data)
-	free(rfd->bpf_buf.data);
-#endif /* HAVE_NET_BPF_H */
+    if (rfd->p_handle)
+	pcap_close(rfd->p_handle);
     free(rfd);
 
     return;
@@ -390,7 +384,6 @@ void master_close(struct rawfd *rfd) {
 
 #if HAVE_LINUX_ETHTOOL_H
 ssize_t master_ethtool(struct master_req *mreq) {
-
     struct ifreq ifr = {};
     struct ethtool_cmd ecmd = {};
 
@@ -414,7 +407,6 @@ ssize_t master_ethtool(struct master_req *mreq) {
 
 #ifdef SIOCSIFDESCR
 ssize_t master_descr(struct master_req *mreq) {
-
     struct ifreq ifr = {};
     ssize_t ret = 0;
 
@@ -523,72 +515,16 @@ ssize_t master_device_id(struct master_req *mreq) {
 #endif /* HAVE_SYSFS && HAVE_PCI_PCI_H */
 
 int master_socket(struct rawfd *rfd) {
-
-    int fd = -1;
+    pcap_t *p_handle = NULL;
+    char p_errbuf[PCAP_ERRBUF_SIZE] = {};
+    struct bpf_program fprog = {};
 
     if (options & OPT_DEBUG)
 	return(dup(STDIN_FILENO));
 
-#ifdef HAVE_NETPACKET_PACKET_H
-    struct sockaddr_ll sa = {};
-
-    assert(rfd);
-    fd = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
-
-    // socket open failed
-    if (fd < 0)
-	return(fd);
-
-    // bind the socket to rfd
-    sa.sll_family = AF_PACKET;
-    sa.sll_ifindex = rfd->index;
-    sa.sll_protocol = htons(ETH_P_ALL);
-
-    if (bind(fd, (struct sockaddr *)&sa, sizeof (sa)) != 0)
-	my_fatal("failed to bind socket to %s", rfd->name);
-
-#ifdef HAVE_LINUX_FILTER_H
-    // install socket filter
-    struct sock_fprog fprog = {};
-
-    if (options & OPT_RECV) {
-	fprog.filter = proto_filter; 
-	fprog.len = sizeof(proto_filter) / sizeof(struct sock_filter);
-    } else {
-	fprog.filter = reject_filter; 
-	fprog.len = sizeof(reject_filter) / sizeof(struct sock_filter);
-    }
-
-    if (setsockopt(fd, SOL_SOCKET, SO_ATTACH_FILTER,
-		   &fprog, sizeof(fprog)) < 0)
-	my_fatal("unable to configure socket filter for %s", rfd->name);
-#endif
-
-#elif defined HAVE_NET_BPF_H
-    int n = 0;
-    char dev[50];
-
-    struct ifreq ifr = {};
-    struct bpf_program fprog = {};
-    int enable = 1;
-
-    assert(rfd);
-
-    do {
-	snprintf(dev, sizeof(dev), "/dev/bpf%d", n++);
-	fd = open(dev, O_RDWR);
-    } while (fd < 0 && errno == EBUSY);
-
-    // no free bpf available
-    if (fd < 0)
-	return(fd);
-
-    // prepare ifr struct
-    strlcpy(ifr.ifr_name, rfd->name, IFNAMSIZ);
-
-    // bind the socket to rfd
-    if (ioctl(fd, BIOCSETIF, (caddr_t)&ifr) < 0)
-	my_fatal("failed to bind socket to %s", rfd->name);
+    p_handle = pcap_open_live(rfd->name, ETHER_MAX_LEN, 0, 0, p_errbuf);
+    if (!p_handle)
+	my_fatal("pcap_open for %s failed: %s", rfd->name, p_errbuf);
 
     // setup bpf receive
     if (options & OPT_RECV) {
@@ -599,37 +535,19 @@ int master_socket(struct rawfd *rfd) {
 	fprog.bf_len = sizeof(reject_filter) / sizeof(struct bpf_insn);
     }
 
-    // configure a reasonable receive buffer
-    rfd->bpf_buf.len = roundup(ETHER_MAX_LEN, getpagesize());
-    ioctl(fd, BIOCGBLEN, &rfd->bpf_buf.len);
-    if (!rfd->bpf_buf.len)
-	my_fatal("unable to fetch bpf bufer length for %s", rfd->name);
-    rfd->bpf_buf.data = my_malloc(rfd->bpf_buf.len);
-
-    // disable buffering
-    if (ioctl(fd, BIOCIMMEDIATE, (caddr_t)&enable) < 0)
-	my_fatal("unable to configure BPF immediate mode for %s", rfd->name);
-    // set header complete
-    if (ioctl(fd, BIOCSHDRCMPLT, (caddr_t)&enable) < 0)
-	my_fatal("unable to configure BPF header completion for %s", rfd->name);
-
-    // set direction
-#ifdef BIOCSDIRECTION
-    enable = BPF_D_IN;
-    if (ioctl(fd, BIOCSDIRECTION, (caddr_t)&enable) < 0)
-	my_fatal("unable to configure BPF direction for %s", rfd->name);
-#elif defined BIOCSDIRFILT
-    enable = BPF_DIRECTION_OUT;
-    if (ioctl(fd, BIOCSDIRFILT, (caddr_t)&enable) < 0)
-	my_fatal("unable to configure BPF direction for %s", rfd->name);
-#endif
-
     // install bpf filter
-    if (ioctl(fd, BIOCSETF, (caddr_t)&fprog) < 0)
-	my_fatal("unable to configure BPF filter for %s", rfd->name);
-#endif
+    if (pcap_setfilter(p_handle, &fprog) < 0)
+	my_fatal("unable to configure socket filter for %s", rfd->name);
 
-    return(fd);
+    if (pcap_setnonblock(p_handle, 1, p_errbuf) < 0)
+    	my_fatal("pcap_setnonblock for %s failed: %s", rfd->name, p_errbuf);
+
+    if (pcap_setdirection(p_handle, PCAP_D_IN) < 0)
+	my_fatal("pcap_setdirection for %s failed", rfd->name);
+
+    rfd->p_handle = p_handle;
+
+    return(pcap_get_selectable_fd(p_handle));
 }
 
 
@@ -694,91 +612,58 @@ void master_multi(struct rawfd *rfd, struct proto *protos, int op) {
 }
 
 
-/* You are not expected to understand this routine */
 void master_recv(int fd, short event, struct rawfd *rfd) {
     // packet
     struct master_msg mrecv = {};
+    struct pcap_pkthdr p_pkthdr = {};
+    const unsigned char *data = NULL;
     struct ether_hdr *ether;
     static unsigned int rcount = 0;
     int p;
     ssize_t len = 0;
-#ifdef HAVE_NETPACKET_PACKET_H
-    struct sockaddr_ll sa = {};
-    socklen_t sa_len = sizeof(sa);
-#endif /* HAVE_NETPACKET_PACKET_H */
-#ifdef HAVE_NET_BPF_H
-    void *bp, *endp;
-#define bhp ((struct bpf_hdr *)bp)
-#endif /* HAVE_NET_BPF_H */
 
     assert(rfd);
+    assert(rfd->p_handle);
 
-#ifdef HAVE_NET_BPF_H
-    assert(rfd->bpf_buf.len);
-
-    if ((len = read(rfd->fd, rfd->bpf_buf.data, rfd->bpf_buf.len)) == -1) {
-	my_loge(CRIT,"receiving message failed");
-	return;
-    }
-
-    bp = rfd->bpf_buf.data;
-    endp = rfd->bpf_buf.data + len;
-
-    while (bp < endp) {
+    while ((data = pcap_next(rfd->p_handle, &p_pkthdr)) != NULL) {
 
 	// with valid sizes
-	if (bhp->bh_caplen < ETHER_MAX_LEN)
-	    mrecv.len = bhp->bh_caplen;
+	if (p_pkthdr.caplen < ETHER_MAX_LEN)
+	    mrecv.len = p_pkthdr.caplen;
 	else
 	    mrecv.len = ETHER_MAX_LEN;
 
-	memcpy(mrecv.msg, bp + bhp->bh_hdrlen, mrecv.len);
+	memcpy(mrecv.msg, data, mrecv.len);
 
-#elif defined HAVE_NETPACKET_PACKET_H
-    if ((len = recvfrom(rfd->fd, mrecv.msg, ETHER_MAX_LEN, 0,
-			(struct sockaddr *)&sa, &sa_len)) == -1) {
-	my_loge(CRIT,"receiving message failed");
-	return;
-    }
-    mrecv.len = len;
-
-    // skip locally generated packets
-    if (sa.sll_pkttype == PACKET_OUTGOING)
-	return;
-#endif /* HAVE_NETPACKET_PACKET_H */
-
-    // skip small packets
-    if (mrecv.len < (ETHER_MIN_LEN - ETHER_VLAN_ENCAP_LEN))
-	return;
-
-    // note the ifindex
-    mrecv.index = rfd->index;
-
-    ether = (struct ether_hdr *)mrecv.msg;
-    // detect the protocol
-    for (p = 0; protos[p].name != NULL; p++) {
-	if (memcmp(protos[p].dst_addr, ether->dst, ETHER_ADDR_LEN) != 0)
+	// skip small packets
+        if (mrecv.len < (ETHER_MIN_LEN - ETHER_VLAN_ENCAP_LEN))
 	    continue;
 
-	mrecv.proto = p;
-	break;
-    }
+	// note the ifindex
+	mrecv.index = rfd->index;
 
-    if (protos[p].name == NULL) {
-	my_log(INFO, "unknown message type received");
-	return;
-    }
-    my_log(INFO, "received %s message (%zu bytes)", protos[p].name, mrecv.len);
+	ether = (struct ether_hdr *)mrecv.msg;
+	// detect the protocol
+	for (p = 0; protos[p].name != NULL; p++) {
+	    if (memcmp(protos[p].dst_addr, ether->dst, ETHER_ADDR_LEN) != 0)
+		continue;
 
-    len = write(mfd, &mrecv, MASTER_MSG_LEN(mrecv.len));
-    if (len != MASTER_MSG_LEN(mrecv.len))
+	    mrecv.proto = p;
+	    break;
+	}
+
+	if (protos[p].name == NULL) {
+	    my_log(INFO, "unknown message type received");
+	    return;
+	}
+	my_log(INFO, "received %s message (%zu bytes)",
+		protos[p].name, mrecv.len);
+
+	len = write(mfd, &mrecv, MASTER_MSG_LEN(mrecv.len));
+	if (len != MASTER_MSG_LEN(mrecv.len))
 	    my_fatal("failed to send message to child");
-    rcount++;
-
-#ifdef HAVE_NET_BPF_H
-	bp += BPF_WORDALIGN(bhp->bh_hdrlen + bhp->bh_caplen);
+	rcount++;
     }
-#endif /* HAVE_NET_BPF_H */
 }
 
 
