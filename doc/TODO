@@ -1,10 +1,8 @@
-For 0.9.3:
-- try using libpcap
+
+For 1.1.0:
 - implement ladvdc verbose decoding
 - improve edp TLV handling
 - write protocol descriptions
-
-For 1.0.0:
 - openbsd netif to pci?
 - static functions?
 - restrict pointers?
