@@ -522,7 +522,7 @@ int master_socket(struct rawfd *rfd) {
     if (options & OPT_DEBUG)
 	return(dup(STDIN_FILENO));
 
-    p_handle = pcap_open_live(rfd->name, ETHER_MAX_LEN, 0, 0, p_errbuf);
+    p_handle = pcap_open_live(rfd->name, ETHER_MAX_LEN, 0, 10, p_errbuf);
     if (!p_handle)
 	my_fatal("pcap_open for %s failed: %s", rfd->name, p_errbuf);
 
