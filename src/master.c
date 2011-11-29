@@ -25,8 +25,7 @@
 #include <sys/wait.h>
 #include <ctype.h>
 
-#include <pcap/pcap.h>
-#include <pcap/bpf.h>
+#include <pcap.h>
 #include "filter.h"
 
 #ifdef HAVE_LIBCAP_NG

@@ -21,8 +21,7 @@
 #define _master_h
 
 #include <sys/ioctl.h>
-#include <pcap/pcap.h>
-#include <pcap/bpf.h>
+#include <pcap.h>
 
 struct rawfd {
     uint32_t index;

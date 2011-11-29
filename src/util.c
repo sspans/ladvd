@@ -22,7 +22,7 @@
 #include <syslog.h>
 #include <grp.h>
 #include <sys/resource.h>
-#include <pcap/pcap.h>
+#include <pcap.h>
 
 int8_t loglevel = CRIT;
 int msock = -1;
