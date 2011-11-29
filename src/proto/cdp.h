@@ -65,6 +65,7 @@ struct cdp_header {
 #define CDP_CAP_HOST               0x10
 #define CDP_CAP_IGMP               0x20
 #define CDP_CAP_REPEATER           0x40
+#define CDP_CAP_PHONE              0x80   /* not documented, seen in wild */
 
 // CDP Addr types.
 #define CDP_ADDR_PROTO_CLNP      0

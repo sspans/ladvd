@@ -325,6 +325,7 @@ size_t cdp_decode(struct master_msg *msg) {
 		cap |= (cdp_cap & CDP_CAP_SWITCH) ? CAP_SWITCH : 0;
 		cap |= (cdp_cap & CDP_CAP_HOST) ? CAP_HOST : 0;
 		cap |= (cdp_cap & CDP_CAP_REPEATER) ? CAP_REPEATER : 0;
+		cap |= (cdp_cap & CDP_CAP_PHONE) ? CAP_PHONE : 0;
 		tlv_value_str(msg, PEER_CAP, sizeof(cap), &cap);
 		break;
 	case CDP_TYPE_IOS_VERSION:
