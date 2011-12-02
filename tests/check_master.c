@@ -394,71 +394,16 @@ START_TEST(test_master_socket) {
     rfd = rfd_byindex(&rawfds, ifindex);
     fail_unless (rfd != NULL, "rfd should be added to the queue");
 
-#ifdef HAVE_NET_BPF_H
-    // create a sensible bpf buffer
-    rfd->bpf_buf.len = roundup(ETHER_MAX_LEN, getpagesize());
-    rfd->bpf_buf.data = my_malloc(rfd->bpf_buf.len);
-#endif
-
     mark_point();
     options &= ~OPT_DEBUG;
-    errstr = "failed to bind socket to";
-    check_wrap_fake |= FAKE_SOCKET|FAKE_OPEN;
-    check_wrap_fail |= FAIL_BIND|FAIL_IOCTL;
+    errstr = "pcap_open for lo failed";
+    check_wrap_fake |= FAIL_OPEN;
     WRAP_FATAL_START();
     master_socket(rfd);
     WRAP_FATAL_END();
-    check_wrap_fail &= ~(FAIL_BIND|FAIL_IOCTL);
+    check_wrap_fail &= ~FAIL_OPEN;
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
-
-    mark_point();
-    errstr = "check";
-    my_log(CRIT, errstr);
-    check_wrap_fake |= FAKE_BIND|FAKE_IOCTL;
-
-#ifdef HAVE_LINUX_FILTER_H
-    errstr = "unable to configure socket filter for";
-    check_wrap_fail |= FAIL_SETSOCKOPT;
-    WRAP_FATAL_START();
-    master_socket(rfd);
-    WRAP_FATAL_END();
-    check_wrap_fail &= ~FAIL_SETSOCKOPT;
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
-	"incorrect message logged: %s", check_wrap_errstr);
-#elif HAVE_NET_BPF_H
-    errstr = "check";
-    my_log(CRIT, errstr);
-    WRAP_FATAL_START();
-    master_socket(rfd);
-    WRAP_FATAL_END();
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
-	"incorrect message logged: %s", check_wrap_errstr);
-#endif
-
-#ifdef AF_PACKET
-    mark_point();
-    errstr = "check";
-    my_log(CRIT, errstr);
-    check_wrap_fake |= FAKE_SETSOCKOPT;
-    master_socket(rfd);
-    check_wrap_fake &= ~FAKE_SETSOCKOPT;
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
-	"incorrect message logged: %s", check_wrap_errstr);
-#elif defined AF_LINK
-    mark_point();
-    errstr = "check";
-    my_log(CRIT, errstr);
-    check_wrap_fake |= FAKE_IOCTL;
-    master_socket(rfd);
-    check_wrap_fake &= ~FAKE_IOCTL;
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
-	"incorrect message logged: %s", check_wrap_errstr);
-#endif
-
-    // reset
-    check_wrap_fake = 0;
-    check_wrap_fail = 0;
 
     rfd = rfd_byindex(&rawfds, ifindex);
     fail_unless (rfd != NULL,
