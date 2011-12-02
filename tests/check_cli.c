@@ -445,6 +445,8 @@ START_TEST(test_http) {
     extern int status;
     extern short http_port;
 
+    // this assumes libevent can connect to localhost
+    // sounds silly, but I've seen it fail...
     http_host = "localhost";
     http_path = "/cgi-bin/test.cgi";
     event_set_log_callback(&fake_log_cb);
@@ -458,6 +460,7 @@ START_TEST(test_http) {
     }
     fail_unless (http_port < 8090, "failed to start httpd on %s", http_host);
 
+    // If either of these two fail then we're screwed anyway
     mark_point();
     http_connect();
 
