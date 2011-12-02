@@ -396,7 +396,7 @@ START_TEST(test_master_socket) {
 
     mark_point();
     options &= ~OPT_DEBUG;
-    errstr = "pcap_open for lo failed";
+    errstr = "pcap_open";
     check_wrap_fake |= FAIL_OPEN;
     WRAP_FATAL_START();
     master_socket(rfd);
