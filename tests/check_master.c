@@ -496,6 +496,9 @@ START_TEST(test_master_recv) {
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
+    pcap_close(rfd->p_handle);
+    rfd->p_handle = NULL;
+    free(path);
     rfd_closeall(&rawfds);
 }
 END_TEST
