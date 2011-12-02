@@ -462,18 +462,10 @@ END_TEST
 
 START_TEST(test_master_recv) {
     struct rawfd *rfd;
-    int spair[2];
     short event = 0;
     const char *errstr = NULL;
-    char buf[ETHER_MAX_LEN * 2] = {};
-    char *msg;
-    int hlen = 0;
-#ifdef HAVE_NET_BPF_H
-    struct bpf_hdr *bhp, *ebhp;
-#endif /* HAVE_NET_BPF_H */
-    struct ether_hdr ether = {};
-    static uint8_t lldp_dst[] = CDP_MULTICAST_ADDR;
-
+    char *prefix, *suffix, *path = NULL;
+    char errbuf[PCAP_ERRBUF_SIZE];
 
     options |= OPT_DEBUG;
     loglevel = INFO;
@@ -484,86 +476,20 @@ START_TEST(test_master_recv) {
     rfd = rfd_byindex(&rawfds, ifindex);
     fail_unless (rfd != NULL, "rfd should be added to the queue");
 
-#ifdef HAVE_NET_BPF_H
-    // create a sensible bpf buffer
-    rfd->bpf_buf.len = roundup(ETHER_MAX_LEN, getpagesize());
-    rfd->bpf_buf.data = my_malloc(rfd->bpf_buf.len);
-#endif /* HAVE_NET_BPF_H */
+    suffix = "proto/cdp/43.good.big";
+    if ((prefix = getenv("srcdir")) == NULL)
+        prefix = ".";
+    fail_if(asprintf(&path, "%s/%s.pcap", prefix, suffix) == -1,
+            "asprintf failed");
 
-    // test a failing receive
     mark_point();
-    errstr = "receiving message failed";
-    close(rfd->fd);
-    rfd->fd = -1;
-    WRAP_FATAL_START();
-    master_recv(rfd->fd, event, rfd);
-    WRAP_FATAL_END();
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
-	"incorrect message logged: %s", check_wrap_errstr);
-
-    memset(&buf, 0, sizeof(buf));
-#ifdef HAVE_NET_BPF_H
-    bhp = (struct bpf_hdr *)buf;
-    hlen = BPF_WORDALIGN(sizeof(struct bpf_hdr));
-    bhp->bh_hdrlen = hlen;
-    bhp->bh_caplen = ETHER_MIN_LEN - ETHER_VLAN_ENCAP_LEN - 1;
-    msg = buf + hlen;
-
-    // create an end bhp covering the rest of buf
-    ebhp = (struct bpf_hdr *)buf;
-    ebhp += BPF_WORDALIGN(bhp->bh_hdrlen + bhp->bh_caplen);
-    ebhp->bh_hdrlen = hlen;
-    ebhp->bh_caplen = sizeof(buf);
-    ebhp->bh_caplen -= BPF_WORDALIGN(bhp->bh_hdrlen + bhp->bh_caplen);
-    ebhp->bh_caplen -= hlen;
-#elif defined HAVE_NETPACKET_PACKET_H
-    msg = buf;
-#endif
-    my_socketpair(spair);
-    mfd = spair[1];
-    rfd->fd = spair[1];
-
-    // too short
-    mark_point();
-    errstr = "check";
-    my_log(CRIT, errstr);
-    WRAP_WRITE(spair[0], &buf, 1 + hlen);
-    master_recv(rfd->fd, event, rfd);
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
-	"incorrect message logged: %s", check_wrap_errstr);
-#ifdef HAVE_NET_BPF_H
-    bhp->bh_caplen = ETHER_MIN_LEN;
-#endif /* HAVE_NET_BPF_H */
-
-    // empty message
-    mark_point();
-    errstr = "unknown message type received";
-    WRAP_WRITE(spair[0], &buf, ETHER_MIN_LEN + hlen);
-    master_recv(rfd->fd, event, rfd);
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
-	"incorrect message logged: %s", check_wrap_errstr);
-
-    // valid message
-    mark_point();
-    errstr = "received CDP message (64 bytes)";
-    memcpy(ether.dst, lldp_dst, ETHER_ADDR_LEN);
-    memcpy(msg, &ether, sizeof(struct ether_hdr));
-    mark_point();
-    WRAP_WRITE(spair[0], &buf, ETHER_MIN_LEN + hlen);
-    master_recv(rfd->fd, event, rfd);
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
-	"incorrect message logged: %s", check_wrap_errstr);
-
-    // too long (or multiple messages with bpf)
-    mark_point();
-    WRAP_WRITE(spair[0], &buf, sizeof(buf));
-    master_recv(rfd->fd, event, rfd);
+    fail_if((rfd->p_handle = pcap_open_offline(path, errbuf)) == NULL,
+        "failed to open %s: %s", path, errbuf);
 
     // closed child socket
     mark_point();
     errstr = "failed to send message to child";
-    WRAP_WRITE(spair[0], &buf, ETHER_MIN_LEN + hlen);
-    close(spair[0]);
+    my_log(CRIT, errstr);
     WRAP_FATAL_START();
     master_recv(rfd->fd, event, rfd);
     WRAP_FATAL_END();
