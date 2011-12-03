@@ -20,7 +20,7 @@
 #include "config.h"
 #include <check.h>
 #include <paths.h>
-#include <pcap/pcap.h>
+#include <pcap.h>
 
 #include "common.h"
 #include "util.h"

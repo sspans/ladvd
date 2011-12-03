@@ -19,7 +19,7 @@
 
 #include "config.h"
 #include <check.h>
-#include <pcap/pcap.h>
+#include <pcap.h>
 
 #include "common.h"
 #include "check_wrap.h"
