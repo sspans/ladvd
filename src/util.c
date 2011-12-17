@@ -282,7 +282,7 @@ struct netif *netif_iter(struct netif *netif, struct nhead *netifs) {
 
     for (; netif != NULL; netif = TAILQ_NEXT(netif, entries)) {
 	// skip autodetected slaves
-	if (!(options & OPT_ARGV) && (netif->slave == 1))
+	if (!(options & OPT_ARGV) && netif->slave)
 	    continue;
 
 	// skip unlisted interfaces
