@@ -166,6 +166,8 @@ struct sysinfo {
 
     uint32_t maddr4;
     uint32_t maddr6[4];
+    const char *mifname;
+    struct netif *mnetif;
 
     struct hinv hinv;
 };

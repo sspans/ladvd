@@ -83,11 +83,19 @@ int main(int argc, char *argv[]) {
 		options &= ~OPT_DAEMON;
 		break;
 	    case 'm':
+		// excellent we got an ifindex
+		if (if_nametoindex(optarg)) {
+		    sysinfo.mifname = my_strdup(optarg);
+		    break;
+		} 
+		// obsolete
 		if ( (inet_pton(AF_INET, optarg, &sysinfo.maddr4) != 1) &&
 		     (inet_pton(AF_INET6, optarg, &sysinfo.maddr6) != 1) ) {
 		    my_log(CRIT, "invalid management address %s", optarg);
 		    usage();
 		}
+		my_log(WARN, "please specify a management interface, "
+			     "not an addr");
 		break;
 	    case 'n':
 		options |= OPT_MADDR;
