@@ -645,11 +645,13 @@ static void netif_bond(int sockfd, struct nhead *netifs, struct netif *master,
 
     if (ioctl(sockfd, SIOCBONDINFOQUERY, ifr) >= 0) {
 	if (ifbond.bond_mode == BOND_MODE_8023AD)
-	    master->lacp = 1;
+	    master->bonding_mode = NETIF_BONDING_LACP;
+	else if (ifbond.bond_mode == BOND_MODE_ACTIVEBACKUP)
+	    master->bonding_mode = NETIF_BONDING_FAILOVER;
     }
 #endif /* HAVE_LINUX_IF_BONDING_H && BOND_MODE_8023AD */
 
-    if (master->lacp == 1)
+    if (master->bonding_mode == NETIF_BONDING_LACP)
 	my_log(INFO, "lacp enabled on %s", master->name);
 
 
@@ -668,11 +670,13 @@ static void netif_bond(int sockfd, struct nhead *netifs, struct netif *master,
 	    subif = netif_byname(netifs, ifslave.slave_name);
 
 	    // XXX: multi-level bonds not supported
-	    if ((subif != NULL) && (subif->type == NETIF_REGULAR)) {
+	    if ((subif != NULL) && (subif->type < NETIF_PARENT)) {
 		my_log(INFO, "found slave %s", subif->name);
-		subif->slave = 1;
-		subif->master = master;
+		subif->slave = NETIF_SLAVE_ACTIVE;
+		if (ifslave.state == BOND_STATE_BACKUP)
+		    subif->slave = NETIF_SLAVE_BACKUP;
 		subif->lacp_index = i;
+		subif->master = master;
 		csubif->subif = subif;
 		csubif = subif;
 	    }
@@ -688,25 +692,37 @@ static void netif_bond(int sockfd, struct nhead *netifs, struct netif *master,
     ra.ra_port = rpbuf;
 
 #ifdef HAVE_NET_IF_LAGG_H
-    if (ioctl(sockfd, SIOCGLAGG, &ra) >= 0)
+    if (ioctl(sockfd, SIOCGLAGG, &ra) >= 0) {
 	if (ra.ra_proto == LAGG_PROTO_LACP)
-	    master->lacp = 1;
+	    master->bonding_mode = NETIF_BONDING_LACP;
+	else if (ra.ra_proto = LAGG_PROTO_FAILOVER)
+	    master->bonding_mode = NETIF_BONDING_FAILOVER;
+    }
 #elif HAVE_NET_IF_TRUNK_H
-    if (ioctl(sockfd, SIOCGTRUNK, &ra) >= 0)
-	if ((ra.ra_proto == TRUNK_PROTO_ROUNDROBIN) ||
-	    (ra.ra_proto == TRUNK_PROTO_LOADBALANCE))
-	    master->lacp = 1;
+    if (ioctl(sockfd, SIOCGTRUNK, &ra) >= 0) {
+	if (ra.ra_proto == TRUNK_PROTO_LACP)
+	    master->bonding_mode = NETIF_BONDING_LACP;
+	else if (ra.ra_proto = TRUNK_PROTO_FAILOVER)
+	    master->bonding_mode = NETIF_BONDING_FAILOVER;
+    }
 #endif
     
     for (int i = 0; i < ra.ra_ports; i++) {
 	subif = netif_byname(netifs, rpbuf[i].rp_portname);
 
 	// XXX: multi-level bonds not supported
-	if ((subif != NULL) && (subif->type == NETIF_REGULAR)) {
+	if ((subif != NULL) && (subif->type < NETIF_PARENT)) {
 	    my_log(INFO, "found slave %s", subif->name);
-	    subif->slave = 1;
-	    subif->master = master;
+	    subif->slave = NETIF_SLAVE_ACTIVE;
+#ifdef HAVE_NET_IF_LAGG_H
+	    if (!(rpbuf[i].rp_flags & LAGG_PORT_ACTIVE))
+#elif HAVE_NET_IF_TRUNK_H
+	    if (!(rpbuf[i].rp_flags & TRUNK_PORT_ACTIVE))
+#endif
+		subif->slave = NETIF_SLAVE_BACKUP;
+		
 	    subif->lacp_index = i;
+	    subif->master = master;
 	    csubif->subif = subif;
 	    csubif = subif;
 	}
@@ -729,7 +745,7 @@ static void netif_bond(int sockfd, struct nhead *netifs, struct netif *master,
 
     if (ioctl(sockfd, SIOCGIFBOND, ifr) >= 0)
 	if (ibsr->ibsr_mode == IF_BOND_MODE_LACP)
-	    master->lacp = 1;
+	    master->bonding_mode = NETIF_BONDING_LACP;
 
     if (ibsr->ibsr_total <= 0) 
 	return;
@@ -745,9 +761,9 @@ static void netif_bond(int sockfd, struct nhead *netifs, struct netif *master,
 	    subif = netif_byname(netifs, ibs->ibs_if_name);
 
 	    // XXX: multi-level bonds not supported
-	    if ((subif != NULL) && (subif->type == NETIF_REGULAR)) {
+	    if ((subif != NULL) && (subif->type < NETIF_PARENT)) {
 		my_log(INFO, "found slave %s", subif->name);
-		subif->slave = 1;
+		subif->slave = NETIF_SLAVE_ACTIVE;
 		subif->master = master;
 		subif->lacp_index = i++;
 		csubif->subif = subif;
@@ -792,9 +808,9 @@ static void netif_bridge(int sockfd, struct nhead *netifs, struct netif *master,
 	subif = netif_byindex(netifs, ifindex[i]);
 
 	// XXX: multi-level bridges not supported
-	if ((subif != NULL) && (subif->type == NETIF_REGULAR)) {
+	if ((subif != NULL) && (subif->type < NETIF_PARENT)) {
 	    my_log(INFO, "found slave %s", subif->name);
-	    subif->slave = 1;
+	    subif->slave = NETIF_SLAVE_ACTIVE;
 	    subif->master = master;
 	    csubif->subif = subif;
 	    csubif = subif;
@@ -854,9 +870,9 @@ static void netif_bridge(int sockfd, struct nhead *netifs, struct netif *master,
 	subif = netif_byname(netifs, req->ifbr_ifsname);
 
 	// XXX: multi-level bridges not supported
-	if ((subif != NULL) && (subif->type == NETIF_REGULAR)) {
+	if ((subif != NULL) && (subif->type < NETIF_PARENT)) {
 	    my_log(INFO, "found slave %s", subif->name);
-	    subif->slave = 1;
+	    subif->slave = NETIF_SLAVE_ACTIVE;
 	    subif->master = master;
 	    csubif->subif = subif;
 	    csubif = subif;
