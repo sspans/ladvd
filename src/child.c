@@ -201,6 +201,11 @@ void child_send(int fd, short event, void *evs) {
 		    continue;
 		}
 
+		// zero the src when sending on a failover slave
+		if (subif->slave && 
+		    (netif->bonding_mode == NETIF_BONDING_FAILOVER))
+		    memset(msg.msg + ETHER_ADDR_LEN, 0, ETHER_ADDR_LEN);
+
 		// write it to the wire.
 		my_log(INFO, "sending %s packet (%zu bytes) on %s",
 			    protos[p].name, msg.len, subif->name);
