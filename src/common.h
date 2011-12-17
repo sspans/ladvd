@@ -95,6 +95,11 @@
 
 #define LLDP_INVENTORY_SIZE 32
 
+#define NETIF_BONDING_LACP  	1
+#define NETIF_BONDING_FAILOVER	2
+#define NETIF_SLAVE_ACTIVE	1
+#define NETIF_SLAVE_BACKUP	2
+
 struct netif {
     uint32_t index;
     char name[IFNAMSIZ];
@@ -113,7 +118,7 @@ struct netif {
     uint8_t argv;
     int8_t type;
     uint8_t slave;
-    uint8_t lacp;
+    uint8_t bonding_mode;
     uint8_t lacp_index;
 
     uint16_t vlan_id; 
