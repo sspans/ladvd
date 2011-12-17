@@ -695,14 +695,14 @@ static void netif_bond(int sockfd, struct nhead *netifs, struct netif *master,
     if (ioctl(sockfd, SIOCGLAGG, &ra) >= 0) {
 	if (ra.ra_proto == LAGG_PROTO_LACP)
 	    master->bonding_mode = NETIF_BONDING_LACP;
-	else if (ra.ra_proto = LAGG_PROTO_FAILOVER)
+	else if (ra.ra_proto == LAGG_PROTO_FAILOVER)
 	    master->bonding_mode = NETIF_BONDING_FAILOVER;
     }
 #elif HAVE_NET_IF_TRUNK_H
     if (ioctl(sockfd, SIOCGTRUNK, &ra) >= 0) {
 	if (ra.ra_proto == TRUNK_PROTO_LACP)
 	    master->bonding_mode = NETIF_BONDING_LACP;
-	else if (ra.ra_proto = TRUNK_PROTO_FAILOVER)
+	else if (ra.ra_proto == TRUNK_PROTO_FAILOVER)
 	    master->bonding_mode = NETIF_BONDING_FAILOVER;
     }
 #endif
