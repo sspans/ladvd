@@ -61,7 +61,7 @@ START_TEST(test_proto_packet) {
     master.index = 3;
     master.argv = 1;
     master.slave = 0;
-    master.lacp = 1;
+    master.bonding_mode = NETIF_BONDING_LACP;
     master.type = NETIF_BONDING;
     netif.mtu = 1500;
     master.subif = &netif;

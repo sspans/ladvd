@@ -228,7 +228,7 @@ size_t lldp_packet(void *packet, struct netif *netif,
 
 
     // lacp
-    if (master->lacp != 0) {
+    if (master->bonding_mode == NETIF_BONDING_LACP) {
 	if (!(
 	    START_LLDP_TLV(LLDP_TYPE_PRIVATE) &&
 	    PUSH_BYTES(OUI_IEEE_8023_PRIVATE, OUI_LEN) &&
