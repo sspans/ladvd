@@ -37,7 +37,7 @@ size_t fdp_packet(void *packet, struct netif *netif,
 
     void *fdp_start, *cap_str;
     uint8_t addr_count = 0;
-    struct netif *master;
+    struct netif *master, *mgmt;
 
     const uint8_t fdp_dst[] = FDP_MULTICAST_ADDR;
     const uint8_t llc_org[] = LLC_ORG_FOUNDRY;
@@ -50,6 +50,12 @@ size_t fdp_packet(void *packet, struct netif *netif,
 	master = netif->master;
     else
 	master = netif;
+
+    // configure managment interface
+    mgmt = sysinfo->mnetif;
+    if (!mgmt)
+	mgmt = master;
+
 
     // ethernet header
     memcpy(ether.dst, fdp_dst, ETHER_ADDR_LEN);
@@ -131,9 +137,9 @@ size_t fdp_packet(void *packet, struct netif *netif,
 
 
     // management addrs
-    if (master->ipaddr4 != 0)
+    if (mgmt->ipaddr4 != 0)
 	addr_count++;
-    if (!IN6_IS_ADDR_UNSPECIFIED((struct in6_addr *)master->ipaddr6)) 
+    if (!IN6_IS_ADDR_UNSPECIFIED((struct in6_addr *)mgmt->ipaddr6)) 
 	addr_count++;
 
     if (addr_count > 0) {
@@ -143,26 +149,26 @@ size_t fdp_packet(void *packet, struct netif *netif,
 	))
 	    return 0;
 
-	if (master->ipaddr4 != 0) {
+	if (mgmt->ipaddr4 != 0) {
 	    if (!(
 		PUSH_UINT8(fdp_protos[CDP_ADDR_PROTO_IPV4].protocol_type) &&
 		PUSH_UINT8(fdp_protos[CDP_ADDR_PROTO_IPV4].protocol_length) &&
 		PUSH_BYTES(fdp_protos[CDP_ADDR_PROTO_IPV4].protocol,
 			   fdp_protos[CDP_ADDR_PROTO_IPV4].protocol_length) &&
-		PUSH_UINT16(sizeof(master->ipaddr4)) &&
-		PUSH_BYTES(&master->ipaddr4, sizeof(master->ipaddr4))
+		PUSH_UINT16(sizeof(mgmt->ipaddr4)) &&
+		PUSH_BYTES(&mgmt->ipaddr4, sizeof(mgmt->ipaddr4))
 	    ))
 		return 0;
 	}
 
-	if (!IN6_IS_ADDR_UNSPECIFIED((struct in6_addr *)master->ipaddr6)) {
+	if (!IN6_IS_ADDR_UNSPECIFIED((struct in6_addr *)mgmt->ipaddr6)) {
 	    if (!(
 		PUSH_UINT8(fdp_protos[CDP_ADDR_PROTO_IPV6].protocol_type) &&
 		PUSH_UINT8(fdp_protos[CDP_ADDR_PROTO_IPV6].protocol_length) &&
 		PUSH_BYTES(fdp_protos[CDP_ADDR_PROTO_IPV6].protocol,
 			   fdp_protos[CDP_ADDR_PROTO_IPV6].protocol_length) &&
-		PUSH_UINT16(sizeof(master->ipaddr6)) &&
-		PUSH_BYTES(master->ipaddr6, sizeof(master->ipaddr6))
+		PUSH_UINT16(sizeof(mgmt->ipaddr6)) &&
+		PUSH_BYTES(mgmt->ipaddr6, sizeof(mgmt->ipaddr6))
 	    ))
 		return 0;
 	}
