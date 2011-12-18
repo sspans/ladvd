@@ -279,6 +279,9 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 	ioctl(sockfd, SIOCGIFDESCR, &ifr);
 #endif
 
+	if (sysinfo->mifname && (strcmp(netif->name, sysinfo->mifname) == 0))
+	    sysinfo->mnetif = netif;
+
 	// update counters
 	count++;
     }
@@ -295,6 +298,8 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 	my_mreq(&mreq);
 
 	TAILQ_REMOVE(netifs, netif, entries);
+	if (sysinfo->mnetif == netif)
+	    sysinfo->mnetif = NULL;
 	free(netif);
     }
 
@@ -349,6 +354,9 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
     } else if (count == 0) {
 	my_log(CRIT, "no valid interface found");
     }
+
+    if ((options & OPT_MNETIF) && !sysinfo->mnetif)
+	my_log(CRIT, "could not detect the specified management interface");
 
     // cleanup
     freeifaddrs(ifaddrs);
@@ -937,7 +945,7 @@ static void netif_vlan(int sockfd, struct nhead *netifs, struct netif *vlan,
 static void netif_addrs(struct ifaddrs *ifaddrs, struct nhead *netifs,
 		struct sysinfo *sysinfo) {
     struct ifaddrs *ifaddr;
-    struct netif *netif;
+    struct netif *netif, *mnetif;
 
     struct sockaddr_in saddr4;
     struct sockaddr_in6 saddr6;
@@ -969,6 +977,13 @@ static void netif_addrs(struct ifaddrs *ifaddrs, struct nhead *netifs,
 	    memcpy(&netif->ipaddr4, &saddr4.sin_addr,
 		  sizeof(saddr4.sin_addr));
 
+	    // detect mnetif
+	    if (sysinfo->mnetif || (sysinfo->maddr4 == 0))
+		continue;
+
+	    if (sysinfo->maddr4 == netif->ipaddr4)
+		sysinfo->mnetif = netif;
+
 	} else if (ifaddr->ifa_addr->sa_family == AF_INET6) {
 	    if (!IN6_IS_ADDR_UNSPECIFIED((struct in6_addr *)netif->ipaddr6))
 		continue;
@@ -982,6 +997,15 @@ static void netif_addrs(struct ifaddrs *ifaddrs, struct nhead *netifs,
 
 	    memcpy(&netif->ipaddr6, &saddr6.sin6_addr,
 		  sizeof(saddr6.sin6_addr));
+
+	    // detect mnetif
+	    if (sysinfo->mnetif ||
+		(IN6_IS_ADDR_UNSPECIFIED((struct in6_addr *)sysinfo->maddr6)))
+		continue;
+
+	    if (memcmp(&sysinfo->maddr6, &netif->ipaddr6,
+			sizeof(sysinfo->maddr6)) == 0)
+		sysinfo->mnetif = netif;
 #ifdef AF_PACKET
 	} else if (ifaddr->ifa_addr->sa_family == AF_PACKET) {
 
@@ -1001,23 +1025,16 @@ static void netif_addrs(struct ifaddrs *ifaddrs, struct nhead *netifs,
 	}
     }
 
-    // return when no management addresses are defined
-    if ((sysinfo->maddr4 == 0) &&
-	(IN6_IS_ADDR_UNSPECIFIED((struct in6_addr *)sysinfo->maddr6)) )
+    // return when no management netif is available
+    if (!(options & OPT_MADDR) || !sysinfo->mnetif)
 	return;
+    mnetif = sysinfo->mnetif;
 
-    // use management address when unnumbered
+    // use management address when requested
     TAILQ_FOREACH(netif, netifs, entries) {
-
-	if ((netif->ipaddr4 == 0) || (options & OPT_MADDR))
-	    netif->ipaddr4 = sysinfo->maddr4;
-
-	if (IN6_IS_ADDR_UNSPECIFIED((struct in6_addr *)netif->ipaddr6) ||
-	    (options & OPT_MADDR))
-	    memcpy(&netif->ipaddr6, &sysinfo->maddr6, sizeof(sysinfo->maddr6));
+	netif->ipaddr4 = mnetif->ipaddr4;
+	memcpy(&netif->ipaddr6, &mnetif->ipaddr6, sizeof(mnetif->ipaddr6));
     }
-
-    return;
 }
 
 
