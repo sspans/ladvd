@@ -26,10 +26,10 @@ Dump pcap-compatible packets to stdout which can be piped to tcpdump (via "| tcp
 Run in the foreground and send logging to stderr.
 .IP -h
 Print usage instructions.
-.IP "-m address"
-Management address for unnumbered interfaces, can be specified for IPv4 and IPv6.
+.IP "-m interface"
+The management interface for this host. Addresses on this interface are auto-detected (IPv4 and IPv6).
 .IP -n
-Use management addresses specified via -m for all interfaces.
+Use addresses of the management interface specified via -m for all interfaces.
 .IP -o
 Run only once, useful for quick troubleshooting.
 .IP -r
