@@ -201,11 +201,12 @@ struct sysinfo {
 #define OPT_ONCE	(1 << 4)
 #define OPT_ARGV	(1 << 5)
 #define OPT_DEBUG	(1 << 6)
-#define OPT_MADDR	(1 << 7)
-#define OPT_WIRELESS	(1 << 8)
-#define OPT_TAP		(1 << 9)
-#define OPT_DESCR	(1 << 10)
-#define OPT_CHASSIS_IF	(1 << 11)
+#define OPT_MNETIF	(1 << 7)
+#define OPT_MADDR	(1 << 8)
+#define OPT_WIRELESS	(1 << 9)
+#define OPT_TAP		(1 << 10)
+#define OPT_DESCR	(1 << 11)
+#define OPT_CHASSIS_IF	(1 << 12)
 #define OPT_CHECK	(1 << 31)
 
 extern uint32_t options;

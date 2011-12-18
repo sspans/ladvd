@@ -83,6 +83,7 @@ int main(int argc, char *argv[]) {
 		options &= ~OPT_DAEMON;
 		break;
 	    case 'm':
+		options |= OPT_MNETIF;
 		// excellent we got an ifindex
 		if (if_nametoindex(optarg)) {
 		    sysinfo.mifname = my_strdup(optarg);
