@@ -34,7 +34,7 @@ size_t lldp_packet(void *packet, struct netif *netif,
     tlv_t type;
 
     uint16_t cap = 0, cap_active = 0;
-    struct netif *master, *vlanif = NULL;
+    struct netif *master, *mgmt, *vlanif = NULL;
     uint8_t *hwaddr;
     struct hinv *hinv;
     char *description;
@@ -46,6 +46,11 @@ size_t lldp_packet(void *packet, struct netif *netif,
 	master = netif->master;
     else
 	master = netif;
+
+    // configure managment interface
+    mgmt = sysinfo->mnetif;
+    if (!mgmt)
+	mgmt = master;
 
     // ethernet header
     memcpy(ether.dst, lldp_dst, ETHER_ADDR_LEN);
@@ -153,14 +158,14 @@ size_t lldp_packet(void *packet, struct netif *netif,
 
 
     // ipv4 management addr
-    if (master->ipaddr4 != 0) {
+    if (mgmt->ipaddr4 != 0) {
 	if (!(
 	    START_LLDP_TLV(LLDP_TYPE_MGMT_ADDR) &&
-	    PUSH_UINT8(1 + sizeof(master->ipaddr4)) &&
+	    PUSH_UINT8(1 + sizeof(mgmt->ipaddr4)) &&
 	    PUSH_UINT8(LLDP_AFNUM_INET) &&
-	    PUSH_BYTES(&master->ipaddr4, sizeof(master->ipaddr4)) &&
+	    PUSH_BYTES(&mgmt->ipaddr4, sizeof(mgmt->ipaddr4)) &&
 	    PUSH_UINT8(LLDP_INTF_NUMB_IFX_SUBTYPE) &&
-	    PUSH_UINT32(netif->index) &&
+	    PUSH_UINT32(mgmt->index) &&
 	    PUSH_UINT8(0)
 	))
 	    return 0;
@@ -169,19 +174,33 @@ size_t lldp_packet(void *packet, struct netif *netif,
 
 
     // ipv6 management addr
-    if (!IN6_IS_ADDR_UNSPECIFIED((struct in6_addr *)master->ipaddr6)) {
+    if (!IN6_IS_ADDR_UNSPECIFIED((struct in6_addr *)mgmt->ipaddr6)) {
 	if (!(
 	    START_LLDP_TLV(LLDP_TYPE_MGMT_ADDR) &&
-	    PUSH_UINT8(1 + sizeof(master->ipaddr6)) &&
+	    PUSH_UINT8(1 + sizeof(mgmt->ipaddr6)) &&
 	    PUSH_UINT8(LLDP_AFNUM_INET6) &&
-	    PUSH_BYTES(master->ipaddr6, sizeof(master->ipaddr6)) &&
+	    PUSH_BYTES(mgmt->ipaddr6, sizeof(mgmt->ipaddr6)) &&
 	    PUSH_UINT8(LLDP_INTF_NUMB_IFX_SUBTYPE) &&
-	    PUSH_UINT32(netif->index) &&
+	    PUSH_UINT32(mgmt->index) &&
 	    PUSH_UINT8(0)
 	))
 	    return 0;
 	END_LLDP_TLV;
     }
+
+
+    // hw management addr
+    if (!(
+	START_LLDP_TLV(LLDP_TYPE_MGMT_ADDR) &&
+	PUSH_UINT8(1 + sizeof(mgmt->hwaddr)) &&
+	PUSH_UINT8(LLDP_AFNUM_802) &&
+	PUSH_BYTES(mgmt->hwaddr, sizeof(mgmt->hwaddr)) &&
+	PUSH_UINT8(LLDP_INTF_NUMB_IFX_SUBTYPE) &&
+	PUSH_UINT32(mgmt->index) &&
+	PUSH_UINT8(0)
+    ))
+	return 0;
+    END_LLDP_TLV;
 
 
     // IEEE 802.1 Organizationally Specific TLV set

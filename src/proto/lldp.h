@@ -67,6 +67,7 @@
 // Managment Addr Families
 #define LLDP_AFNUM_INET			   1
 #define LLDP_AFNUM_INET6		   2
+#define LLDP_AFNUM_802			   6
 
 // Organizationally Unique Identifiers
 #define OUI_LEN		      3
