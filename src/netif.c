@@ -269,7 +269,13 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 	strlcpy(netif->name, ifaddr->ifa_name, sizeof(netif->name));
 	netif->type = type;
 
-#ifdef SIOCGIFDESCR
+#ifdef HAVE_SYSFS
+	mreq.op = MASTER_ALIAS;
+	mreq.index = netif->index;
+
+	if (my_mreq(&mreq))
+	    strlcpy(netif->description, mreq.buf, IFDESCRSIZE);
+#elif defined(SIOCGIFDESCR)
 #ifndef __FreeBSD__
 	ifr.ifr_data = (caddr_t)&netif->description;
 #else

@@ -222,12 +222,11 @@ void master_req(int reqfd, short event) {
 	    mreq.len = master_ethtool(&mreq);
 	    break;
 #endif /* HAVE_LINUX_ETHTOOL_H */
-#ifdef SIOCSIFDESCR
-	// update interface description
+	// manage interface description
 	case MASTER_DESCR:
+	case MASTER_ALIAS:
 	    mreq.len = master_descr(&mreq);
 	    break;
-#endif /* SIOCSIFDESCR */
 #ifdef HAVE_SYSFS
 	case MASTER_DEVICE:
 	    mreq.len = master_device(&mreq);
@@ -266,12 +265,13 @@ int master_check(struct master_req *mreq) {
 	    assert(mreq->len == sizeof(struct ethtool_cmd));
 	    return(EXIT_SUCCESS);
 #endif /* HAVE_LINUX_ETHTOOL_H */
-#ifdef SIOCSIFDESCR
+#if defined(SIOCSIFDESCR) || defined(HAVE_SYSFS)
 	case MASTER_DESCR:
 	    assert(mreq->len <= IFDESCRSIZE);
 	    return(EXIT_SUCCESS);
 #endif /* SIOCSIFDESCR */
 #ifdef HAVE_SYSFS
+	case MASTER_ALIAS:
 	case MASTER_DEVICE:
 	    return(EXIT_SUCCESS);
 #endif /* HAVE_SYSFS */
@@ -404,8 +404,27 @@ ssize_t master_ethtool(struct master_req *mreq) {
 }
 #endif /* HAVE_LINUX_ETHTOOL_H */
 
-#ifdef SIOCSIFDESCR
 ssize_t master_descr(struct master_req *mreq) {
+#ifdef HAVE_SYSFS
+    char path[SYSFS_PATH_MAX];
+    struct stat sb;
+    ssize_t ret = 0;
+
+    mreq->buf[IFDESCRSIZE] = 0;
+
+    ret = snprintf(path, SYSFS_PATH_MAX,
+	    SYSFS_CLASS_NET "/%s/ifalias", mreq->name);
+
+    if (!(ret > 0) || (stat(path, &sb) != 0))
+	return(0);
+
+    if (mreq->op == MASTER_DESCR)
+	return write_line(path, mreq->buf, strlen(mreq->buf));
+    else if (mreq->op == MASTER_ALIAS)
+	return read_line(path, mreq->buf, IFDESCRSIZE);
+
+    return(0);
+#elif SIOCSIFDESCR
     struct ifreq ifr = {};
     ssize_t ret = 0;
 
@@ -424,8 +443,8 @@ ssize_t master_descr(struct master_req *mreq) {
     if (ioctl(sock, SIOCSIFDESCR, &ifr) >= 0)
 	ret = mreq->len;
     return(ret);
-}
 #endif /* SIOCSIFDESCR */
+}
 
 #ifdef HAVE_SYSFS
 ssize_t master_device(struct master_req *mreq) {

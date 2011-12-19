@@ -48,6 +48,7 @@ void my_drop_privs(struct passwd *pwd) __nonnull();
 void my_rlimit_child();
 
 int read_line(const char *path, char *line, uint16_t len) __nonnull();
+int write_line(const char *path, char *line, uint16_t len) __nonnull();
 uint16_t my_chksum(const void *data, size_t length, int cisco) __nonnull();
 
 ssize_t my_mreq(struct master_req *mreq);

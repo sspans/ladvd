@@ -285,14 +285,12 @@ START_TEST(test_master_check) {
 	"MASTER_DESCR check failed");
 #endif
 
-    mark_point();
 #ifndef HAVE_LINUX_ETHTOOL_H
+    mark_point();
     mreq.op = MASTER_ETHTOOL;
-#elif !defined SIOCSIFDESCR
-    mreq.op = MASTER_DESCR;
-#endif
     fail_unless(master_check(&mreq) == EXIT_FAILURE,
 	"master_check should fail");
+#endif
 }
 END_TEST
 

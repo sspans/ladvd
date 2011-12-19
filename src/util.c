@@ -228,6 +228,23 @@ int read_line(const char *path, char *line, uint16_t len) {
     return(ret);
 }
 
+__nonnull()
+int write_line(const char *path, char *line, uint16_t len) {
+    int fd, ret;
+
+    if (path == NULL || line == NULL)
+	return(0);
+
+    if ((fd = open(path, O_TRUNC)) == -1)
+	return(0);
+
+    ret = write(fd, line, len);
+    close(fd);
+    if (ret > 0)
+	return(ret);
+    return(0);
+}
+
 /*
  * Actually, this is the standard IP checksum algorithm.
  */
@@ -384,7 +401,6 @@ void netif_descr(struct netif *netif, struct mhead *mqueue) {
     mreq = my_malloc(MASTER_REQ_MAX);
     mreq->op = MASTER_DESCR;
     mreq->index = netif->index;
-    mreq->len = IFDESCRSIZE;
     mreq->len = strlen(descr) + 1;
     memcpy(mreq->buf, descr, mreq->len);
 

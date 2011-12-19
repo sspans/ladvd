@@ -126,7 +126,7 @@ int main(int argc, char *argv[]) {
 		options |= OPT_WIRELESS;
 		break;
 	    case 'z':
-#ifdef SIOCSIFDESCR
+#if defined(SIOCSIFDESCR) || defined(HAVE_SYSFS)
 		options |= OPT_RECV | OPT_DESCR;
 		break;
 #else
@@ -263,9 +263,9 @@ static void usage() {
 	    "\t-u <user> = Setuid User (defaults to " PACKAGE_USER ")\n"
 	    "\t-v = Increase logging verbosity\n"
 	    "\t-w = Use wireless interfaces\n"
-#ifdef SIOCSIFDESCR
+#if defined(SIOCSIFDESCR) || defined(HAVE_SYSFS)
 	    /* everything is cooler with a z */
-	    "\t-z = Save received info in interface description\n"
+	    "\t-z = Save received info in interface description / alias\n"
 #endif /* SIOCSIFDESCR */
 	    "\t-c <CC> = System Country Code\n"
 	    "\t-l <location> = System Location\n"

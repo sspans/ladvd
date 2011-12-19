@@ -48,7 +48,7 @@ Increase logging verbosity.
 .IP -w
 Use wireless interfaces.
 .IP -z
-Save received peer information in interface descriptions (requires SIOCSIFDESCR support). This also enables receive mode.
+Save received peer information in interface descriptions (requires SIOCSIFDESCR support) or Linux ifAliases. This also enables receive mode.
 .IP "-c <CC>"
 Specify a two-letter ISO 3166 country code (required for LLDP location support).
 .IP "-l <location>"

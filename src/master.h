@@ -45,9 +45,7 @@ void master_open(const uint32_t index, const char *name);
 #if HAVE_LINUX_ETHTOOL_H
 ssize_t master_ethtool(struct master_req *mreq);
 #endif /* HAVE_LINUX_ETHTOOL_H */
-#ifdef SIOCSIFDESCR
 ssize_t master_descr(struct master_req *mreq);
-#endif /* SIOCSIFDESCR */
 #ifdef HAVE_SYSFS
 ssize_t master_device(struct master_req *mreq);
 #endif /* HAVE_SYSFS */
