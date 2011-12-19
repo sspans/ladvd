@@ -393,13 +393,15 @@ START_TEST(test_master_socket) {
     fail_unless (rfd != NULL, "rfd should be added to the queue");
 
     mark_point();
+    // only run this as a regular user
+    if (!geteuid())
+	return;
+
     options &= ~OPT_DEBUG;
     errstr = "pcap_open";
-    check_wrap_fake |= FAIL_OPEN;
     WRAP_FATAL_START();
     master_socket(rfd);
     WRAP_FATAL_END();
-    check_wrap_fail &= ~FAIL_OPEN;
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
