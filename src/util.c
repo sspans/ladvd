@@ -235,7 +235,7 @@ int write_line(const char *path, char *line, uint16_t len) {
     if (path == NULL || line == NULL)
 	return(0);
 
-    if ((fd = open(path, O_TRUNC)) == -1)
+    if ((fd = open(path, O_WRONLY|O_TRUNC)) == -1)
 	return(0);
 
     ret = write(fd, line, len);
