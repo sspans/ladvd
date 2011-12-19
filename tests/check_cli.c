@@ -285,7 +285,7 @@ START_TEST(test_batch_write) {
     struct master_msg msg = {};
     int ostdout, spair[2];
     char buf[1024];
-    int sobuf = 1024;
+    int sobuf = 2048;
 
     ostdout = dup(STDOUT_FILENO);
     fail_if(ostdout == -1, "dup failed: %s", strerror(errno));

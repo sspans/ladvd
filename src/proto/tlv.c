@@ -51,6 +51,30 @@ void tlv_value_str(struct master_msg *msg,
 		    str[j++] = cap_str[i];
 	    }
 	    break;
+	case PEER_ADDR_INET4:
+	    if (length != 4)
+		return;
+	    str = my_malloc(INET_ADDRSTRLEN);
+	    if (!inet_ntop(AF_INET, value, str, INET_ADDRSTRLEN)) {
+		free(str);
+		str = NULL;
+	    }
+	    break;
+	case PEER_ADDR_INET6:
+	    if (length != 16)
+		return;
+	    str = my_malloc(INET6_ADDRSTRLEN);
+	    if (!inet_ntop(AF_INET6, value, str, INET6_ADDRSTRLEN)) {
+		free(str);
+		str = NULL;
+	    }
+	    break;
+	case PEER_ADDR_802:
+	    if (length != ETHER_ADDR_LEN)
+		return;
+	    if ((str = ether_ntoa(value)) != NULL)
+		str = my_strdup(str);
+	    break;
 	default:
 	    my_fatal("unhandled type %d", type);
     }

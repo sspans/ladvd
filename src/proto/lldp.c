@@ -451,6 +451,7 @@ size_t lldp_decode(struct master_msg *msg) {
     uint8_t tlv_subtype;
 
     uint16_t lldp_cap_avail = 0, lldp_cap = 0, cap = 0;
+    uint8_t lldp_aflen, lldp_afnum, peer_addr;
 
     assert(msg);
 
@@ -576,6 +577,53 @@ size_t lldp_decode(struct master_msg *msg) {
 	    tlv_value_str(msg, PEER_CAP, sizeof(cap), &cap);
 	    break;
 	case LLDP_TYPE_MGMT_ADDR:
+
+	    if (!GRAB_UINT8(lldp_aflen) || !GRAB_UINT8(lldp_afnum)) {
+		my_log(INFO, "Invalid LLDP packet: invalid mgmt addr TLV");
+		return 0;
+	    }
+	    lldp_aflen -= 1;
+	    tlv_length -= 2;
+
+	    switch (lldp_afnum) {
+		case LLDP_AFNUM_INET:
+		    peer_addr = PEER_ADDR_INET4;
+		    break;
+		case LLDP_AFNUM_INET6:
+		    peer_addr = PEER_ADDR_INET6;
+		    break;
+		case LLDP_AFNUM_802:
+		    peer_addr = PEER_ADDR_802;
+		    break;
+		default:
+		    peer_addr = 0;
+	    }
+
+	    // unhandled
+	    if (!peer_addr) {
+		if (!SKIP(tlv_length)) {
+		    my_log(INFO, "Corrupt LLDP packet: invalid TLV Length");
+		    return 0;
+		}
+		break;
+	    }
+
+	    // invalid
+	    if (!(lldp_aflen < tlv_length)) {
+		my_log(INFO, "Invalid LLDP packet: invalid mgmt addr");
+		return 0;
+	    }
+
+	    if (!DECODE_STRING(msg, peer_addr, lldp_aflen)) {
+		my_log(INFO, "Corrupt LLDP packet: invalid mgmt addr TLV");
+		return 0;
+	    }
+
+	    if (!SKIP(tlv_length - lldp_aflen)) {
+		my_log(INFO, "Corrupt LLDP packet: invalid TLV Length");
+		return 0;
+	    }
+	    break;
 	case LLDP_TYPE_PRIVATE:
 	default:
 	    if (8 < tlv_type && tlv_type < 127) {

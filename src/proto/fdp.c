@@ -151,10 +151,10 @@ size_t fdp_packet(void *packet, struct netif *netif,
 
 	if (mgmt->ipaddr4 != 0) {
 	    if (!(
-		PUSH_UINT8(fdp_protos[CDP_ADDR_PROTO_IPV4].protocol_type) &&
-		PUSH_UINT8(fdp_protos[CDP_ADDR_PROTO_IPV4].protocol_length) &&
-		PUSH_BYTES(fdp_protos[CDP_ADDR_PROTO_IPV4].protocol,
-			   fdp_protos[CDP_ADDR_PROTO_IPV4].protocol_length) &&
+		PUSH_UINT8(fdp_protos[CDP_ADDR_IPV4].protocol_type) &&
+		PUSH_UINT8(fdp_protos[CDP_ADDR_IPV4].protocol_length) &&
+		PUSH_BYTES(fdp_protos[CDP_ADDR_IPV4].protocol,
+			   fdp_protos[CDP_ADDR_IPV4].protocol_length) &&
 		PUSH_UINT16(sizeof(mgmt->ipaddr4)) &&
 		PUSH_BYTES(&mgmt->ipaddr4, sizeof(mgmt->ipaddr4))
 	    ))
@@ -163,10 +163,10 @@ size_t fdp_packet(void *packet, struct netif *netif,
 
 	if (!IN6_IS_ADDR_UNSPECIFIED((struct in6_addr *)mgmt->ipaddr6)) {
 	    if (!(
-		PUSH_UINT8(fdp_protos[CDP_ADDR_PROTO_IPV6].protocol_type) &&
-		PUSH_UINT8(fdp_protos[CDP_ADDR_PROTO_IPV6].protocol_length) &&
-		PUSH_BYTES(fdp_protos[CDP_ADDR_PROTO_IPV6].protocol,
-			   fdp_protos[CDP_ADDR_PROTO_IPV6].protocol_length) &&
+		PUSH_UINT8(fdp_protos[CDP_ADDR_IPV6].protocol_type) &&
+		PUSH_UINT8(fdp_protos[CDP_ADDR_IPV6].protocol_length) &&
+		PUSH_BYTES(fdp_protos[CDP_ADDR_IPV6].protocol,
+			   fdp_protos[CDP_ADDR_IPV6].protocol_length) &&
 		PUSH_UINT16(sizeof(mgmt->ipaddr6)) &&
 		PUSH_BYTES(mgmt->ipaddr6, sizeof(mgmt->ipaddr6))
 	    ))

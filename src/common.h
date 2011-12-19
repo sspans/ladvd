@@ -226,7 +226,10 @@ struct master_req {
 #define PEER_HOSTNAME	0
 #define PEER_PORTNAME	1
 #define PEER_CAP	2
-#define PEER_MAX	3
+#define PEER_ADDR_INET4	3
+#define PEER_ADDR_INET6	4
+#define PEER_ADDR_802	5
+#define PEER_MAX	6
 static inline
 void peer_free(char *p[]) {
     int s;

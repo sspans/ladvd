@@ -68,15 +68,15 @@ struct cdp_header {
 #define CDP_CAP_PHONE              0x80   /* not documented, seen in wild */
 
 // CDP Addr types.
-#define CDP_ADDR_PROTO_CLNP      0
-#define CDP_ADDR_PROTO_IPV4      1
-#define CDP_ADDR_PROTO_IPV6      2
-#define CDP_ADDR_PROTO_DECNET    3
-#define CDP_ADDR_PROTO_APPLETALK 4
-#define CDP_ADDR_PROTO_IPX       5
-#define CDP_ADDR_PROTO_VINES     6
-#define CDP_ADDR_PROTO_XNS       7
-#define CDP_ADDR_PROTO_APOLLO    8
+#define CDP_ADDR_CLNP      0
+#define CDP_ADDR_IPV4      1
+#define CDP_ADDR_IPV6      2
+#define CDP_ADDR_DECNET    3
+#define CDP_ADDR_APPLETALK 4
+#define CDP_ADDR_IPX       5
+#define CDP_ADDR_VINES     6
+#define CDP_ADDR_XNS       7
+#define CDP_ADDR_APOLLO    8
 
 struct cdp_proto {
 	uint8_t protocol_type;
