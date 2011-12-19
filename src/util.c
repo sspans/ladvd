@@ -196,7 +196,7 @@ void my_drop_privs(struct passwd *pwd) {
    	my_fatale("unable to setresuid");
 }
 
-/* Minimal sandbox that sets zero nfiles, nprocs and filesize rlimits */
+/* Minimal sandbox that sets zero nprocs and filesize rlimits */
 void my_rlimit_child() {
     struct rlimit rl_zero;
 
