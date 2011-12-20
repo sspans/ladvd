@@ -330,9 +330,9 @@ void http_connect() {
     hostname = my_malloc(_POSIX_HOST_NAME_MAX);
     if (gethostname(hostname, _POSIX_HOST_NAME_MAX) == -1)
 	my_fatale("gethostname failed");
-    if ((hp = gethostbyname(hostname)) == NULL)
-	my_fatal("cant resolve hostname: %s", hstrerror(h_errno));
-    strlcpy(hostname, hp->h_name, _POSIX_HOST_NAME_MAX);
+    if (((hp = gethostbyname(hostname)) != NULL) &&
+	(strcmp(hp->h_name, "localhost") != 0))
+	strlcpy(hostname, hp->h_name, _POSIX_HOST_NAME_MAX);
 }
 
 void http_request(struct master_msg *msg, const uint16_t holdtime) {
