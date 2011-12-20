@@ -46,6 +46,10 @@
 #include <linux/sockios.h>
 #endif /* HAVE_LINUX_SOCKIOS_H */
 
+#if HAVE_ASM_TYPES_H
+#include <asm/types.h>
+#endif /* HAVE_ASM_TYPES_H */
+
 #if HAVE_LINUX_ETHTOOL_H
 #include <linux/ethtool.h>
 #endif /* HAVE_LINUX_ETHTOOL_H */
