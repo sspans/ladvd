@@ -300,9 +300,9 @@ START_TEST(test_batch_write) {
     fflush(stdout);
     fail_if(read(spair[1], buf, 1024) < 0,
 	"read failed");
-    fail_if(strstr(buf, "INTERFACE0=") != buf,
+    fail_if(strstr(buf, "INTERFACE_0=") != buf,
 	    "invalid batch_write output");
-    fail_if(strstr(buf, "HOLDTIME0=") == NULL,
+    fail_if(strstr(buf, "HOLDTIME_0=") == NULL,
     	    "invalid batch_write output");
 	
     
@@ -315,9 +315,9 @@ START_TEST(test_batch_write) {
     fflush(stdout);
     fail_if(read(spair[1], buf, 1024) < 0,
 	"read failed");
-    fail_if(strstr(buf, "INTERFACE1=") != buf,
+    fail_if(strstr(buf, "INTERFACE_1=") != buf,
 	    "invalid batch_write output");
-    fail_if(strstr(buf, "HOLDTIME1=") == NULL,
+    fail_if(strstr(buf, "HOLDTIME_1=") == NULL,
 	    "invalid batch_write output");
 	
     
