@@ -447,7 +447,7 @@ START_TEST(test_http) {
 
     // this assumes libevent can connect to localhost
     // sounds silly, but I've seen it fail...
-    http_host = "127.0.0.1";
+    http_host = "0.0.0.0";
     http_path = "/cgi-bin/test.cgi";
     event_set_log_callback(&fake_log_cb);
 
