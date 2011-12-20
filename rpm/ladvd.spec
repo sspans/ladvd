@@ -8,12 +8,12 @@
 %global gecos	LLDP/CDP sender for unix
 
 %global devel_release		1
-#global static_libevent		0
+#global static_libs		0
 
 %if 0%{?devel_release}
 %global name_suffix	-unstable
 %endif
-%if 0%{?static_libevent}
+%if 0%{?static_libs}
 %global name_suffix	-static
 %global	configure_args	--enable-static-libevent --enable-static-libpcap
 %endif
