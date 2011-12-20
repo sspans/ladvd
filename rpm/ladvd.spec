@@ -19,6 +19,7 @@
 %endif
 
 Name:		%{pkgname}%{?name_suffix}
+BuildRequires:  libpcap-devel
 BuildRequires:  libevent-devel
 %if 0%{?fedora} >= 12
 BuildRequires:  libcap-ng-devel
