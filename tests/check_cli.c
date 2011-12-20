@@ -444,10 +444,18 @@ START_TEST(test_http) {
     extern struct evhttp_connection *evcon;
     extern int status;
     extern short http_port;
+    int sock = -1;
+
+    // check for ipv4 before running the test
+    mark_point();
+    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+	return;
+    else
+	close(sock);
 
     // this assumes libevent can connect to localhost
     // sounds silly, but I've seen it fail...
-    http_host = "0.0.0.0";
+    http_host = "127.0.0.1";
     http_path = "/cgi-bin/test.cgi";
     event_set_log_callback(&fake_log_cb);
 
