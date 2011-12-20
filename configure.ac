@@ -118,9 +118,40 @@ AS_IF([test -n "$check_ids"],
 )
 
 # libpcap
+AC_ARG_ENABLE([static-libpcap],
+    AC_HELP_STRING([--enable-static-libpcap],
+		    [build binaries a static libpcap]),
+    [libpcap_static=yes], [libpcap_static=no])
+
 AC_CHECK_HEADER([pcap.h])
 AC_CHECK_LIB(pcap, pcap_compile, AC_SUBST(PCAP_LIB,"-lpcap"), 
     AC_MSG_ERROR([libpcap is required]))
+
+AS_IF([test "$libpcap_static" = "no"], 
+    [ AC_SUBST(PCAP_LIB,"-lpcap") ],
+    [
+	# disable -pie, it breaks on the static libpcap
+	AC_SUBST(WARN_LDFLAGS,"")
+	# more recent linkers support explicit library naming
+	# otherwise we try our best to locate the library
+	AX_LD_CHECK_FLAG([-l:libpcap.a -lrt], [], [],
+	 [AC_SUBST(PCAP_LIB,"-l:libpcap.a -lrt")],
+	 [ if test $ac_cv_libpcap_dir != "(system)"; then
+	    AC_SUBST(PCAP_LIB,"$le_libdir/libpcap.a")
+	   elif test -f "$libdir/libpcap.a"; then
+	    AC_SUBST(PCAP_LIB,"$libdir/libpcap.a")
+	   elif test -f "/lib/libpcap.a"; then
+	    AC_SUBST(PCAP_LIB,"/lib/libpcap.a")
+	   elif test -f "/usr/lib/libpcap.a"; then
+	    AC_SUBST(PCAP_LIB,"/usr/lib/libpcap.a")
+	   elif test -f "/usr/local/lib/libpcap.a"; then
+	    AC_SUBST(PCAP_LIB,"/usr/local/lib/libpcap.a")
+	   else
+	    AC_MSG_ERROR([could not locate libpcap.a])
+	   fi
+	 ])
+    ]
+)
 
 # libevent
 trylibeventdir=""

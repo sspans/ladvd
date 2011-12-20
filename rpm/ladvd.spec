@@ -15,7 +15,7 @@
 %endif
 %if 0%{?static_libevent}
 %global name_suffix	-static
-%global	configure_args	--enable-static-libevent
+%global	configure_args	--enable-static-libevent --enable-static-libpcap
 %endif
 
 Name:		%{pkgname}%{?name_suffix}
