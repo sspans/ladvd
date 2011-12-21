@@ -239,16 +239,16 @@ void batch_write(struct master_msg *msg, const uint16_t holdtime) {
     swapchr(peer_host, '\'', '\"');
     swapchr(peer_port, '\'', '\"');
 
-    printf("INTERFACE_%u=%s\n", count, STR(msg->name));
-    printf("HOSTNAME_%u=%s\n", count, STR(peer_host));
-    printf("PORTNAME_%u=%s\n", count, STR(peer_port));
-    printf("PROTOCOL_%u=%s\n", count, protos[msg->proto].name);
-    printf("ADDR_INET4_%u=%s\n", count, STR(msg->peer[PEER_ADDR_INET4]));
-    printf("ADDR_INET6_%u=%s\n", count, STR(msg->peer[PEER_ADDR_INET6]));
-    printf("ADDR_802_%u=%s\n", count, STR(msg->peer[PEER_ADDR_802]));
-    printf("CAPABILITIES_%u=%s\n", count, STR(cap));
-    printf("TTL_%u=%" PRIu16 "\n", count, msg->ttl);
-    printf("HOLDTIME_%u=%" PRIu16 "\n", count, holdtime);
+    printf("INTERFACE_%u='%s'\n", count, STR(msg->name));
+    printf("HOSTNAME_%u='%s'\n", count, STR(peer_host));
+    printf("PORTNAME_%u='%s'\n", count, STR(peer_port));
+    printf("PROTOCOL_%u='%s'\n", count, protos[msg->proto].name);
+    printf("ADDR_INET4_%u='%s'\n", count, STR(msg->peer[PEER_ADDR_INET4]));
+    printf("ADDR_INET6_%u='%s'\n", count, STR(msg->peer[PEER_ADDR_INET6]));
+    printf("ADDR_802_%u='%s'\n", count, STR(msg->peer[PEER_ADDR_802]));
+    printf("CAPABILITIES_%u='%s'\n", count, STR(cap));
+    printf("TTL_%u='%" PRIu16 "'\n", count, msg->ttl);
+    printf("HOLDTIME_%u='%" PRIu16 "'\n", count, holdtime);
 
     count++;
 }
