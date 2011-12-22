@@ -387,7 +387,7 @@ size_t cdp_decode(struct master_msg *msg) {
 
 	    tlv_length -= al;
 	    addr_count--;
-	    if (tlv_length && addr_count >= 0)
+	    if (tlv_length && addr_count > 0)
 		goto next_addr;
 	    break;
 	case CDP_TYPE_IOS_VERSION:

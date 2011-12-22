@@ -172,7 +172,7 @@ void master_signal(int sig, short event, void *pid) {
 	    } else {
 		kill(*(pid_t *)pid, sig);
 	    }
-	    if (options & OPT_DEBUG);
+	    if (options & OPT_DEBUG)
 		my_pcap_close();
 	    rfd_closeall(&rawfds);
 	    unlink(PACKAGE_SOCKET);
