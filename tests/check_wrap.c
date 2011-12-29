@@ -151,7 +151,7 @@ void read_packet(struct master_msg *msg, const char *suffix) {
 
     fail_if((data = pcap_next(p, &p_hdr)) == NULL,
 	"failed to read packet");
-    msg->len = p_hdr.len;
+    msg->len = MIN(ETHER_MAX_LEN, p_hdr.len);
     fail_if(memcpy(msg->msg, data, msg->len) == NULL,
 	"memcpy failed");
 
