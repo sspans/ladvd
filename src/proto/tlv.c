@@ -138,7 +138,8 @@ char * tlv_str_addr(uint8_t type, void *pos, size_t length) {
 		str = my_strdup(str);
 	    break;
 	default:
-	    my_fatal("unhandled type %u", type);
+	    // unhandled type
+	    return NULL;
     }
 
     return str;
