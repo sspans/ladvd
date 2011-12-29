@@ -30,8 +30,8 @@ void tlv_value_str(struct master_msg *msg,
     const char *cap_str = CAP_STRING;
 
     // skip if not wanted or already decoded
-    if (!(msg->decode & (1 << type)) || msg->peer[type])
-	return;
+    if (msg->peer[type])
+    	return;
 
     switch (type) {
 	case PEER_HOSTNAME:
@@ -81,5 +81,66 @@ void tlv_value_str(struct master_msg *msg,
 
     if (str)
 	msg->peer[type] = str;
+}
+
+char * tlv_str_copy(void *pos, size_t length) {
+    char str[TLV_LEN], *safe = NULL;
+    size_t srclen, len;
+
+    srclen = MIN(length, TLV_LEN - 1);
+    memcpy(str, pos, srclen);
+    *(str + srclen) = '\0';
+    len = srclen * 4 + 1;
+    safe = my_malloc(len);
+    strnvis(safe, str, len, VIS_SAFE|VIS_OCTAL);
+    return safe;
+}
+
+char * tlv_str_cap(uint16_t cap) {
+    char *str = NULL;
+    uint16_t i, j = 0;
+    const char *cap_str = CAP_STRING;
+
+    str = my_malloc(CAP_MAX + 1);
+    for (i = 0; i < CAP_MAX; i++) {
+	if (cap & (1 << i))
+	    str[j++] = cap_str[i];
+    }
+    return str;
+}
+
+char * tlv_str_addr(uint8_t type, void *pos, size_t length) {
+    char *str = NULL;
+
+    switch(type) {
+	case PEER_ADDR_INET4:
+	    if (length != 4)
+		return NULL;
+	    str = my_malloc(INET_ADDRSTRLEN);
+	    if (!inet_ntop(AF_INET, pos, str, INET_ADDRSTRLEN)) {
+		free(str);
+		return NULL;
+	    }
+	    break;
+	case PEER_ADDR_INET6:
+	    if (length != 16)
+		return NULL;
+	    str = my_malloc(INET6_ADDRSTRLEN);
+	    if (!inet_ntop(AF_INET6, pos, str, INET6_ADDRSTRLEN)) {
+		free(str);
+		return NULL;
+	    }
+	    break;
+	case PEER_ADDR_802:
+	    if (length != ETHER_ADDR_LEN)
+		return NULL;
+	    if ((str = ether_ntoa(pos)) != NULL)
+		str = my_strdup(str);
+	    break;
+	default:
+	    my_fatal("unhandled type %u", type);
+    }
+
+    return str;
 }
 
