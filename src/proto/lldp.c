@@ -22,6 +22,33 @@
 #include "proto/lldp.h"
 #include "proto/tlv.h"
 
+struct type_str {
+    int t;                  /* type */
+    const char *s;          /* string */
+};
+
+static const struct type_str lldp_tlv_types[] = {
+    { LLDP_TYPE_END, "End" },
+    { LLDP_TYPE_CHASSIS_ID, "Chassis ID" },
+    { LLDP_TYPE_PORT_ID, "Port ID" },
+    { LLDP_TYPE_TTL, "Time to Live" },
+    { LLDP_TYPE_PORT_DESCR, "Port Description" },
+    { LLDP_TYPE_SYSTEM_NAME, "System Name" },
+    { LLDP_TYPE_SYSTEM_DESCR, "System Description" },
+    { LLDP_TYPE_SYSTEM_CAP, "System Capabilities" },
+    { LLDP_TYPE_MGMT_ADDR, "Management Address" },
+    { LLDP_TYPE_PRIVATE, "Organization specific" },
+    { 0, NULL}
+};
+
+static tlv_t type;
+static int lldp_port_id(struct master_msg *, unsigned char *, size_t);
+static int lldp_chassis_id(struct master_msg *, unsigned char *, size_t);
+static int lldp_system_name(struct master_msg *, unsigned char *, size_t);
+static int lldp_descr_print(uint16_t, unsigned char *, size_t);
+static int lldp_ttl_print(struct master_msg *msg);
+static int lldp_system_cap(struct master_msg *, unsigned char *, size_t);
+static int lldp_mgmt_addr(struct master_msg *msg, unsigned char *, size_t);
 
 size_t lldp_packet(void *packet, struct netif *netif,
 		struct nhead *netifs, struct sysinfo *sysinfo) {
@@ -31,7 +58,6 @@ size_t lldp_packet(void *packet, struct netif *netif,
     char *tlv;
     char *pos = packet;
     size_t length = ETHER_MAX_LEN;
-    tlv_t type;
 
     uint16_t cap = 0, cap_active = 0;
     struct netif *master, *mgmt, *vlanif = NULL;
@@ -444,14 +470,9 @@ size_t lldp_decode(struct master_msg *msg) {
     size_t length;
 
     unsigned char *pos;
-    tlv_t type;
 
     uint16_t tlv_type;
     uint16_t tlv_length;
-    uint8_t tlv_subtype;
-
-    uint16_t lldp_cap_avail = 0, lldp_cap = 0, cap = 0;
-    uint8_t lldp_aflen, lldp_afnum, peer_addr;
 
     assert(msg);
 
@@ -467,11 +488,11 @@ size_t lldp_decode(struct master_msg *msg) {
 	my_log(INFO, "Invalid LLDP packet: missing Chassis ID TLV");
 	return 0;
     }
-    if ((tlv_length <= 1) || (tlv_length > 256)) {
+    if (length < tlv_length) {
 	my_log(INFO, "Invalid LLDP packet: invalid Chassis ID TLV");
 	return 0;
     }
-    if (!SKIP(tlv_length))
+    if (!lldp_chassis_id(msg, pos, tlv_length) || !SKIP(tlv_length))
 	return 0;
 
     if (!GRAB_LLDP_TLV(tlv_type, tlv_length) ||
@@ -479,34 +500,12 @@ size_t lldp_decode(struct master_msg *msg) {
 	my_log(INFO, "Invalid LLDP packet: missing Port ID TLV");
 	return 0;
     }
-    if ((tlv_length <= 1) || (tlv_length > 256)) {
+    if (length < tlv_length) {
 	my_log(INFO, "Corrupt LLDP packet: invalid Port ID TLV");
 	return 0;
     }
-    // grab the subtype
-    if (!GRAB_UINT8(tlv_subtype)) {
-	my_log(INFO, "Corrupt LLDP packet: invalid Port ID TLV");
+    if (!lldp_port_id(msg, pos, tlv_length) || !SKIP(tlv_length))
 	return 0;
-    }
-    tlv_length--;
-
-    switch (tlv_subtype) {
-	case LLDP_PORT_INTF_ALIAS_SUBTYPE:
-	case LLDP_PORT_PORT_COMP_SUBTYPE:
-	case LLDP_PORT_INTF_NAME_SUBTYPE:
-	case LLDP_PORT_AGENT_CIRC_ID_SUBTYPE:
-	case LLDP_PORT_LOCAL_SUBTYPE:
-	    if (!DECODE_STRING(msg, PEER_PORTNAME, tlv_length)) {
-		my_log(INFO, "Corrupt LLDP packet: invalid Port ID TLV");
-		return 0;
-	    }
-	    break;
-	default:
-	    if (!SKIP(tlv_length)) {
-		my_log(INFO, "Corrupt LLDP packet: invalid Port ID TLV");
-		return 0;
-	    }
-    }
 
     if (!GRAB_LLDP_TLV(tlv_type, tlv_length) ||
 	tlv_type != LLDP_TYPE_TTL) {
@@ -517,6 +516,10 @@ size_t lldp_decode(struct master_msg *msg) {
 	my_log(INFO, "Invalid LLDP packet: invalid TTL TLV");
 	return 0;
     }
+    if (msg->decode == DECODE_PRINT)
+	lldp_ttl_print(msg);
+
+    tlv_length = 0;
 
     while (length) {
 	if (!GRAB_LLDP_TLV(tlv_type, tlv_length)) {
@@ -524,118 +527,50 @@ size_t lldp_decode(struct master_msg *msg) {
 	    return 0;
 	}
 
+	if (length < tlv_length) {
+	    my_log(INFO, "Corrupt LLDP packet: invalid TLV length");
+	    return 0;
+	}
+
 	switch(tlv_type) {
-	case LLDP_TYPE_END:
-	    if (tlv_length != 0) {
-		my_log(INFO, "Corrupt LLDP packet: invalid END TLV");
-		return 0;
-	    }
-	    goto out;
-	case LLDP_TYPE_SYSTEM_NAME:
-	    if (tlv_length > 255) {
-		my_log(INFO, "Corrupt LLDP packet: invalid System Name TLV");
-		return 0;
-	    }
-	    if (msg->peer[PEER_HOSTNAME] != NULL) {
-		my_log(INFO, "Corrupt LLDP packet: duplicate System Name TLV");
-		return 0;
-	    }
-	    if (!DECODE_STRING(msg, PEER_HOSTNAME, tlv_length)) {
-		my_log(INFO, "Corrupt LLDP packet: invalid System Name TLV");
-		return 0;
-	    }
-	    break;
-	case LLDP_TYPE_SYSTEM_CAP:
-	    if ((tlv_length != 4) || !GRAB_UINT16(lldp_cap_avail) ||
-		!GRAB_UINT16(lldp_cap)) {
-		my_log(INFO, "Invalid LLDP packet: invalid Capabilities TLV");
-		return 0;
-	    }
-
-	    if (lldp_cap_avail != (lldp_cap|lldp_cap_avail)) {
-		my_log(INFO, "Invalid LLDP packet: unavailable cap enabled");
-		return 0;
-	    }
-
-	    if ((lldp_cap_avail & LLDP_CAP_STATION_ONLY) &&
-		(lldp_cap_avail &~ LLDP_CAP_STATION_ONLY)) {
-		my_log(INFO, "Invalid LLDP packet: host-only cap combined");
-		return 0;
-	    }
-
-	    if (lldp_cap == LLDP_CAP_STATION_ONLY) {
-		cap = CAP_HOST;
-	    } else {
-		cap |= (lldp_cap & LLDP_CAP_OTHER) ? CAP_OTHER : 0;
-		cap |= (lldp_cap & LLDP_CAP_REPEATER) ? CAP_REPEATER : 0;
-		cap |= (lldp_cap & LLDP_CAP_BRIDGE) ? CAP_BRIDGE : 0;
-		cap |= (lldp_cap & LLDP_CAP_WLAN_AP) ? CAP_WLAN : 0;
-		cap |= (lldp_cap & LLDP_CAP_ROUTER) ? CAP_ROUTER : 0;
-		cap |= (lldp_cap & LLDP_CAP_PHONE) ? CAP_PHONE : 0;
-		cap |= (lldp_cap & LLDP_CAP_DOCSIS) ? CAP_DOCSIS : 0;
-	    }
-	    tlv_value_str(msg, PEER_CAP, sizeof(cap), &cap);
-	    break;
-	case LLDP_TYPE_MGMT_ADDR:
-
-	    if (!GRAB_UINT8(lldp_aflen) || !GRAB_UINT8(lldp_afnum)) {
-		my_log(INFO, "Invalid LLDP packet: invalid mgmt addr TLV");
-		return 0;
-	    }
-	    lldp_aflen -= 1;
-	    tlv_length -= 2;
-
-	    switch (lldp_afnum) {
-		case LLDP_AFNUM_INET:
-		    peer_addr = PEER_ADDR_INET4;
-		    break;
-		case LLDP_AFNUM_INET6:
-		    peer_addr = PEER_ADDR_INET6;
-		    break;
-		case LLDP_AFNUM_802:
-		    peer_addr = PEER_ADDR_802;
-		    break;
-		default:
-		    peer_addr = 0;
-	    }
-
-	    // unhandled
-	    if (!peer_addr) {
-		if (!SKIP(tlv_length)) {
-		    my_log(INFO, "Corrupt LLDP packet: invalid TLV Length");
+	    case LLDP_TYPE_END:
+		if (tlv_length != 0) {
+		    my_log(INFO, "Corrupt LLDP packet: invalid END TLV");
+		    return 0;
+		}
+		goto out;
+	    case LLDP_TYPE_SYSTEM_NAME:
+		if (!lldp_system_name(msg, pos, tlv_length))
+		    return 0;
+		break;
+	    case LLDP_TYPE_SYSTEM_DESCR:
+	    case LLDP_TYPE_PORT_DESCR:
+		if ((msg->decode == DECODE_PRINT) && 
+		    !lldp_descr_print(tlv_type, pos, tlv_length))
+		    return 0;
+		break;
+	    case LLDP_TYPE_SYSTEM_CAP:
+		if (!lldp_system_cap(msg, pos, tlv_length))
+		    return 0;
+		break;
+	    case LLDP_TYPE_MGMT_ADDR:
+		if (!lldp_mgmt_addr(msg, pos, tlv_length))
+		    return 0;
+		break;
+	    case LLDP_TYPE_PRIVATE:
+	    default:
+		if (8 < tlv_type && tlv_type < 127) {
+		    my_log(INFO, "Corrupt LLDP packet: invalid TLV Type");
 		    return 0;
 		}
 		break;
-	    }
-
-	    // invalid
-	    if (!(lldp_aflen < tlv_length)) {
-		my_log(INFO, "Invalid LLDP packet: invalid mgmt addr");
-		return 0;
-	    }
-
-	    if (!DECODE_STRING(msg, peer_addr, lldp_aflen)) {
-		my_log(INFO, "Corrupt LLDP packet: invalid mgmt addr TLV");
-		return 0;
-	    }
-
-	    if (!SKIP(tlv_length - lldp_aflen)) {
-		my_log(INFO, "Corrupt LLDP packet: invalid TLV Length");
-		return 0;
-	    }
-	    break;
-	case LLDP_TYPE_PRIVATE:
-	default:
-	    if (8 < tlv_type && tlv_type < 127) {
-		my_log(INFO, "Corrupt LLDP packet: invalid TLV Type");
-		return 0;
-	    }
-	    if (!SKIP(tlv_length)) {
-		my_log(INFO, "Corrupt LLDP packet: invalid TLV Length");
-		return 0;
-	    }
-	    break;
 	}
+
+	if (!SKIP(tlv_length)) {
+	    my_log(INFO, "Corrupt LLDP packet: invalid TLV Length");
+	    return 0;
+	}
+	tlv_length = 0;
     }
 
 out:
@@ -646,5 +581,277 @@ out:
 
     // return the packet length
     return(VOIDP_DIFF(pos, packet));
+}
+
+
+static int lldp_chassis_id(struct master_msg *msg,
+    unsigned char *pos, size_t length) {
+
+    char *str = NULL;
+    uint8_t tlv_subtype, lldp_afnum;
+
+    if ((length <= 1) || (length > 256)) {
+	my_log(INFO, "Invalid LLDP packet: invalid Chassis ID TLV");
+	return 0;
+    }
+
+    if (msg->decode != DECODE_PRINT)
+	return 1;
+
+    // grab the subtype
+    if (!GRAB_UINT8(tlv_subtype)) {
+	my_log(INFO, "Corrupt LLDP packet: invalid Chassis ID TLV");
+	return 0;
+    }
+
+    switch (tlv_subtype) {
+	case LLDP_CHASSIS_CHASSIS_COMP_SUBTYPE:
+	case LLDP_CHASSIS_INTF_ALIAS_SUBTYPE:
+	case LLDP_CHASSIS_PORT_COMP_SUBTYPE:
+	case LLDP_CHASSIS_INTF_NAME_SUBTYPE:
+	case LLDP_CHASSIS_LOCAL_SUBTYPE:
+	    str = tlv_str_copy(pos, length);
+	    break;
+	case LLDP_CHASSIS_MAC_ADDR_SUBTYPE:
+	    str = tlv_str_addr(PEER_ADDR_802, pos, length);
+	    break;
+	case LLDP_CHASSIS_NETWORK_ADDR_SUBTYPE:
+	    if (!GRAB_UINT8(lldp_afnum)) {
+		my_log(INFO, "Invalid LLDP packet: invalid Chassis ID TLV");
+		return 0;
+	    }
+	    str = tlv_str_addr(lldp_afnum, pos, length);
+	    break;
+	default:
+	    break;
+    }
+    if (str) {
+	printf("Chassis id: %s\n", str);
+	free(str);
+    }
+    return 1;
+}
+
+static int lldp_port_id(struct master_msg *msg,
+    unsigned char *pos, size_t length) {
+
+    char *str = NULL;
+    uint8_t tlv_subtype;
+
+    if ((length <= 1) || (length > 256)) {
+	my_log(INFO, "Corrupt LLDP packet: invalid Port ID TLV");
+	return 0;
+    }
+
+    // grab the subtype
+    if (!GRAB_UINT8(tlv_subtype)) {
+	my_log(INFO, "Corrupt LLDP packet: invalid Port ID TLV");
+	return 0;
+    }
+
+    switch (tlv_subtype) {
+	case LLDP_PORT_INTF_ALIAS_SUBTYPE:
+	case LLDP_PORT_PORT_COMP_SUBTYPE:
+	case LLDP_PORT_INTF_NAME_SUBTYPE:
+	case LLDP_PORT_AGENT_CIRC_ID_SUBTYPE:
+	case LLDP_PORT_LOCAL_SUBTYPE:
+
+	    str = tlv_str_copy(pos, length);
+	    if (msg->decode == DECODE_PRINT) {
+	    	printf("Port id: %s\n", str);
+		free(str);
+	    } else {
+		msg->peer[PEER_PORTNAME] = str;
+	    }
+	default:
+	    break;
+    }
+    return 1;
+}
+
+static int lldp_system_name(struct master_msg *msg, 
+    unsigned char *pos, size_t length) {
+
+    char *str = NULL;
+
+    if (length > 255) {
+	my_log(INFO, "Corrupt LLDP packet: invalid System Name TLV");
+	return 0;
+    }
+
+    if (msg->peer[PEER_HOSTNAME] != NULL) {
+	my_log(INFO, "Corrupt LLDP packet: duplicate System Name TLV");
+	return 0;
+    }
+
+    if ((msg->decode != DECODE_PRINT) && msg->peer[PEER_HOSTNAME]) 
+	return 1;
+
+    str = tlv_str_copy(pos, length);
+
+    if (msg->decode == DECODE_PRINT)
+    	printf("System Name: %s\n", str);
+
+    // we save str even for DECODE_PRINT to enable duplicate detection
+    msg->peer[PEER_HOSTNAME] = str;
+
+    return 1;
+}
+
+static int lldp_descr_print(uint16_t tlv_type,
+    unsigned char *pos, size_t length) {
+
+    const struct type_str *token;
+    const char *type_str = NULL;
+    char *str = NULL;
+
+    token = lldp_tlv_types;
+
+    while (token->s != NULL) {
+        if (token->t == tlv_type) {
+            type_str = token->s;
+	    break;
+	}
+        ++token;
+    }
+    if (!type_str)
+	type_str = "Unknown";
+
+    str = tlv_str_copy(pos, length);
+    printf("%s:\n%s\n\n", type_str, str);
+    free(str);
+
+    return 1;
+}
+
+static int lldp_ttl_print(struct master_msg *msg) {
+
+    time_t now;
+    uint16_t holdtime;
+
+    if ((now = time(NULL)) == (time_t)-1)
+        my_fatale("failed to fetch time");
+
+    holdtime = msg->ttl - (now - msg->received);
+
+    printf("Time remaining: %" PRIu16 " seconds\n", holdtime);
+    return 1;
+}
+
+static int lldp_system_cap(struct master_msg *msg, 
+    unsigned char *pos, size_t length) {
+
+    uint16_t lldp_cap_avail = 0, lldp_cap = 0, cap_avail = 0, cap = 0;
+    char *str = NULL;
+
+    if ((length != 4) || !GRAB_UINT16(lldp_cap_avail) ||
+	!GRAB_UINT16(lldp_cap)) {
+	my_log(INFO, "Invalid LLDP packet: invalid Capabilities TLV");
+	return 0;
+    }
+
+    if (lldp_cap_avail != (lldp_cap|lldp_cap_avail)) {
+	my_log(INFO, "Invalid LLDP packet: unavailable cap enabled");
+	return 0;
+    }
+
+    if ((lldp_cap_avail & LLDP_CAP_STATION_ONLY) &&
+	(lldp_cap_avail &~ LLDP_CAP_STATION_ONLY)) {
+	my_log(INFO, "Invalid LLDP packet: host-only cap combined");
+	return 0;
+    }
+
+    if (lldp_cap_avail == LLDP_CAP_STATION_ONLY) {
+	cap_avail = CAP_HOST;
+    } else {
+	cap_avail |= (lldp_cap_avail & LLDP_CAP_OTHER) ? CAP_OTHER : 0;
+	cap_avail |= (lldp_cap_avail & LLDP_CAP_REPEATER) ? CAP_REPEATER : 0;
+	cap_avail |= (lldp_cap_avail & LLDP_CAP_BRIDGE) ? CAP_BRIDGE : 0;
+	cap_avail |= (lldp_cap_avail & LLDP_CAP_WLAN_AP) ? CAP_WLAN : 0;
+	cap_avail |= (lldp_cap_avail & LLDP_CAP_ROUTER) ? CAP_ROUTER : 0;
+	cap_avail |= (lldp_cap_avail & LLDP_CAP_PHONE) ? CAP_PHONE : 0;
+	cap_avail |= (lldp_cap_avail & LLDP_CAP_DOCSIS) ? CAP_DOCSIS : 0;
+    }
+
+    if (msg->decode == DECODE_PRINT) {
+	str = tlv_str_cap(cap_avail);
+	printf("System Capabilities: %s\n", str);
+	free(str);
+    }
+
+    if (lldp_cap == LLDP_CAP_STATION_ONLY) {
+	cap = CAP_HOST;
+    } else {
+	cap |= (lldp_cap & LLDP_CAP_OTHER) ? CAP_OTHER : 0;
+	cap |= (lldp_cap & LLDP_CAP_REPEATER) ? CAP_REPEATER : 0;
+	cap |= (lldp_cap & LLDP_CAP_BRIDGE) ? CAP_BRIDGE : 0;
+	cap |= (lldp_cap & LLDP_CAP_WLAN_AP) ? CAP_WLAN : 0;
+	cap |= (lldp_cap & LLDP_CAP_ROUTER) ? CAP_ROUTER : 0;
+	cap |= (lldp_cap & LLDP_CAP_PHONE) ? CAP_PHONE : 0;
+	cap |= (lldp_cap & LLDP_CAP_DOCSIS) ? CAP_DOCSIS : 0;
+    }
+
+    str = tlv_str_cap(cap);
+    if (msg->decode == DECODE_PRINT) {
+	printf("Enabled Capabilities: %s\n", str);
+	free(str);
+    } else {
+	msg->peer[PEER_CAP] = str;
+    }
+
+    return 1;
+}
+
+static int lldp_mgmt_addr(struct master_msg *msg,
+    unsigned char *pos, size_t length) {
+
+    uint8_t lldp_aflen, lldp_afnum, af;
+    char *str = NULL;
+
+    assert(pos);
+
+    if (!GRAB_UINT8(lldp_aflen) || !GRAB_UINT8(lldp_afnum)) {
+	my_log(INFO, "Invalid LLDP packet: invalid mgmt addr TLV");
+	return 0;
+    }
+    lldp_aflen -= 1;
+
+    switch (lldp_afnum) {
+	case LLDP_AFNUM_INET:
+	    af = PEER_ADDR_INET4;
+	    break;
+	case LLDP_AFNUM_INET6:
+	    af = PEER_ADDR_INET6;
+	    break;
+	case LLDP_AFNUM_802:
+	    af = PEER_ADDR_802;
+	    break;
+	default:
+	    af = 0;
+	}
+
+    // unhandled
+    if (!af)
+	return 0;
+
+    // invalid
+    if (!(lldp_aflen < length)) {
+	my_log(INFO, "Invalid LLDP packet: invalid mgmt addr");
+	return 0;
+    }
+
+    if ((msg->decode == DECODE_STR) && msg->peer[af]) 
+	return 1;
+
+    str = tlv_str_addr(af, pos, lldp_aflen);
+
+    if (msg->decode == DECODE_PRINT) {
+	printf("Management Addresses:\n");
+	free(str);
+    } else {
+	msg->peer[af] = str;
+    }
+
+    return 1;
 }
 

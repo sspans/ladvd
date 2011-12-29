@@ -283,6 +283,7 @@ START_TEST(test_child_expire) {
     fail_unless(count == 2, "invalid message count: %d != 2", count);
 
     // expire a locked message
+    mark_point();
     options |= OPT_AUTO;
     dmsg = TAILQ_FIRST(&mqueue);
     dmsg->received  -= dmsg->ttl * 2;
@@ -297,6 +298,7 @@ START_TEST(test_child_expire) {
     fail_unless(count == 2, "invalid message count: %d != 2", count);
 
     // expire a message
+    mark_point();
     dmsg = TAILQ_FIRST(&mqueue);
     dmsg->lock = 0;
     child_expire();
@@ -309,8 +311,9 @@ START_TEST(test_child_expire) {
     fail_unless(count == 1, "invalid message count: %d != 1", count);
 
     // expire a message
+    mark_point();
     dmsg = TAILQ_FIRST(&mqueue);
-    dmsg->received  -= dmsg->ttl * 2;
+    dmsg->received -= dmsg->ttl * 2;
     child_expire();
 
     // check the message count

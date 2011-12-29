@@ -255,9 +255,8 @@ void child_queue(int fd, short event) {
 	return;
 
     // decode message
-    my_log(INFO, "decoding peer name and ttl");
-    rmsg.decode |= (1 << PEER_HOSTNAME);
-    rmsg.decode |= (1 << PEER_PORTNAME);
+    my_log(INFO, "decoding advertisement");
+    rmsg.decode = DECODE_STR;
     if (protos[rmsg.proto].decode(&rmsg) == 0) {
 	peer_free(rmsg.peer);
     	return;

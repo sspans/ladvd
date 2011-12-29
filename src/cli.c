@@ -42,7 +42,7 @@ static struct mode modes[] = {
 #define MODE_BATCH  0
 #define MODE_CLI    1
 #define MODE_DEBUG  2
-#define MODE_FULL   3
+#define MODE_PRINT  3
 #define MODE_HTTP   4
 
 #define TERM_DEFAULT 80
@@ -96,7 +96,7 @@ void cli_main(int argc, char *argv[]) {
 		mode = MODE_DEBUG;
 		break;
 	    case 'f':
-		mode = MODE_FULL;
+		mode = MODE_PRINT;
 		break;
 #if HAVE_EVHTTP_H
 	    case 'p':
@@ -189,7 +189,10 @@ void cli_main(int argc, char *argv[]) {
 	    continue;
 
 	// decode packet
-	msg->decode = UINT16_MAX;
+	msg->decode = DECODE_STR;
+	if (mode == MODE_PRINT)
+	    msg->decode = DECODE_PRINT;
+
 	if (protos[msg->proto].decode(msg) == 0) {
 	    peer_free(msg->peer);
 	    continue;

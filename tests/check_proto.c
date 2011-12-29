@@ -410,8 +410,8 @@ START_TEST(test_lldp_decode) {
     struct master_msg msg = {};
     const char *errstr = NULL;
 
-    loglevel = INFO;
-    msg.decode = UINT16_MAX;
+    loglevel = DEBUG;
+    msg.decode = DECODE_STR;
 
     errstr = "Invalid LLDP packet: missing Chassis ID TLV";
     read_packet(&msg, "proto/lldp/00.empty");
@@ -419,8 +419,8 @@ START_TEST(test_lldp_decode) {
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
-    errstr = "check";
-    my_log(CRIT, errstr);
+    my_log(CRIT, "check");
+    errstr = "Invalid LLDP packet: invalid Chassis ID TLV";
     read_packet(&msg, "proto/lldp/01.chassis_id.broken");
     fail_unless (lldp_decode(&msg) == 0, "broken packets should return 0");
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
@@ -494,12 +494,12 @@ START_TEST(test_lldp_decode) {
     fail_unless (lldp_decode(&msg) == 0, "broken packets should return 0");
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
-    errstr = "Corrupt LLDP packet: invalid System Name TLV";
+    errstr = "Corrupt LLDP packet: invalid TLV length";
     read_packet(&msg, "proto/lldp/32.system_name.broken");
     fail_unless (lldp_decode(&msg) == 0, "broken packets should return 0");
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
-    errstr = "Corrupt LLDP packet: invalid System Name TLV";
+    errstr = "Corrupt LLDP packet: invalid TLV length";
     read_packet(&msg, "proto/lldp/33.system_name.broken");
     fail_unless (lldp_decode(&msg) == 0, "broken packets should return 0");
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
@@ -515,7 +515,7 @@ START_TEST(test_lldp_decode) {
     fail_unless (lldp_decode(&msg) == 0, "broken packets should return 0");
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
-    errstr = "Corrupt LLDP packet: invalid TLV Length";
+    errstr = "Corrupt LLDP packet: invalid TLV length";
     read_packet(&msg, "proto/lldp/93.tlv.long");
     fail_unless (lldp_decode(&msg) == 0, "broken packets should return 0");
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
@@ -671,7 +671,7 @@ START_TEST(test_lldp_decode) {
 	"incorrect message logged: %s", check_wrap_errstr);
 
     my_log(CRIT, "check");
-    errstr = "Invalid LLDP packet: invalid Capabilities TLV";
+    errstr = "Corrupt LLDP packet: invalid TLV length";
     read_packet(&msg, "proto/lldp/A8.fuzzer.cap.short");
     fail_unless (lldp_decode(&msg) == 0, "invalid packets should return 0");
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
@@ -700,7 +700,7 @@ START_TEST(test_cdp_decode) {
     const char *errstr = NULL;
 
     loglevel = INFO;
-    msg.decode = UINT16_MAX;
+    msg.decode = DECODE_STR;
 
     errstr = "missing CDP header";
     read_packet(&msg, "proto/cdp/00.empty");
@@ -845,7 +845,7 @@ START_TEST(test_edp_decode) {
     const char *errstr = NULL;
 
     loglevel = INFO;
-    msg.decode = UINT16_MAX;
+    msg.decode = DECODE_STR;
 
     errstr = "missing EDP header";
     read_packet(&msg, "proto/edp/00.empty");
@@ -923,7 +923,7 @@ START_TEST(test_fdp_decode) {
     const char *errstr = NULL;
 
     loglevel = INFO;
-    msg.decode = UINT16_MAX;
+    msg.decode = DECODE_STR;
 
     errstr = "missing FDP header";
     read_packet(&msg, "proto/fdp/00.empty");

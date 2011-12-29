@@ -74,7 +74,7 @@ START_TEST(test_cli_main) {
     ofd[0] = dup(STDIN_FILENO);
     dup2(spair[0], STDIN_FILENO);
 
-    sobuf = 1024;
+    sobuf = 4096;
     fail_if(socketpair(AF_UNIX, SOCK_STREAM, 0, &spair[2]) == -1,
 	    "socketpair creation failed");
     setsockopt(spair[2], SOL_SOCKET, SO_SNDBUF, &sobuf, sizeof(sobuf));

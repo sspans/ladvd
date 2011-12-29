@@ -223,6 +223,9 @@ struct master_req {
 #define MASTER_REQ_MAX	    sizeof(struct master_req)
 #define MASTER_REQ_LEN(l)   MASTER_REQ_MIN + l
 
+#define DECODE_STR	1
+#define DECODE_PRINT	2
+
 #define PEER_HOSTNAME	0
 #define PEER_PORTNAME	1
 #define PEER_CAP	2
@@ -249,7 +252,7 @@ struct master_msg {
     ssize_t len;
     unsigned char msg[ETHER_MAX_LEN];
 
-    uint16_t decode;
+    uint8_t decode;
     uint16_t ttl;
     char *peer[PEER_MAX];
 
