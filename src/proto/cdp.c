@@ -471,8 +471,7 @@ static int cdp_descr_print(uint16_t tlv_type,
 
     const struct type_str *token;
     const char *type_str = NULL;
-    char *str = NULL, *nstr;
-    size_t nl;
+    char *str = NULL, *nstr, *nl;
 
     token = cdp_tlv_types;
 
@@ -492,10 +491,12 @@ static int cdp_descr_print(uint16_t tlv_type,
 
 	nstr = str;
 	while (strlen(nstr)) {
-	    nl = strcspn(nstr, "\n");
-	    nstr[nl] = '\0';
+	    if ((nl = strchr(nstr, '\n')) != NULL)
+		*nl = '\0';
 	    printf("  %s\n", nstr);
-	    nstr += nl + 1;
+	    if (!nl)
+		break;
+	    nstr = nl + 1;
 	}
     } else {
 	printf("%s: %s\n", type_str, str);
