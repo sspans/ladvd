@@ -700,7 +700,7 @@ static int lldp_descr_print(uint16_t tlv_type,
 
     const struct type_str *token;
     const char *type_str = NULL;
-    char *str = NULL;
+    char *str = NULL, *nstr, *nl;
 
     token = lldp_tlv_types;
 
@@ -715,7 +715,21 @@ static int lldp_descr_print(uint16_t tlv_type,
 	type_str = "Unknown";
 
     str = tlv_str_copy(pos, length);
-    printf("%s:\n%s\n\n", type_str, str);
+    if (strchr(str, '\n')) {
+	printf("%s:\n", type_str);
+
+	nstr = str;
+	while (strlen(nstr)) {
+	    if ((nl = strchr(nstr, '\n')) != NULL)
+		*nl = '\0';
+	    printf("  %s\n", nstr);
+	    if (!nl)
+		break;
+	    nstr = nl + 1;
+	}
+    } else {
+	printf("%s: %s\n", type_str, str);
+    }
     free(str);
 
     return 1;
@@ -803,7 +817,7 @@ static int lldp_mgmt_addr(struct master_msg *msg,
     unsigned char *pos, size_t length) {
 
     uint8_t lldp_aflen, lldp_afnum, af;
-    char *str = NULL;
+    char *str = NULL, *astr = "";
 
     assert(pos);
 
@@ -816,12 +830,15 @@ static int lldp_mgmt_addr(struct master_msg *msg,
     switch (lldp_afnum) {
 	case LLDP_AFNUM_INET:
 	    af = PEER_ADDR_INET4;
+	    astr = "IPv4";
 	    break;
 	case LLDP_AFNUM_INET6:
 	    af = PEER_ADDR_INET6;
+	    astr = "IPv6";
 	    break;
 	case LLDP_AFNUM_802:
 	    af = PEER_ADDR_802;
+	    astr = "Ethernet";
 	    break;
 	default:
 	    af = 0;
@@ -846,7 +863,7 @@ static int lldp_mgmt_addr(struct master_msg *msg,
     }
 
     if (msg->decode == DECODE_PRINT) {
-	printf("Management Addresses:\n");
+	printf("Management Address %s: %s\n", astr, str);
 	free(str);
     } else {
 	PEER_STR(msg->peer[af], str);
