@@ -72,7 +72,7 @@ void cli_main(int argc, char *argv[]) {
 
     options = 0;
 
-    while ((ch = getopt(argc, argv, "LCEFNbdfp:oh")) != -1) {
+    while ((ch = getopt(argc, argv, "LCEFNbdfp:ovh")) != -1) {
 	switch(ch) {
 	    case 'L':
 		proto |= (1 << PROTO_LLDP);
@@ -119,6 +119,9 @@ void cli_main(int argc, char *argv[]) {
 #endif /* HAVE_EVHTTP_H */
 	    case 'o':
 		options |= OPT_ONCE;
+		break;
+	    case 'v':
+		loglevel++;
 		break;
 	    default:
 		usage();
@@ -417,6 +420,7 @@ static void usage() {
 #if HAVE_EVHTTP_H
 	    "\t-p <url> = Post decode to url\n"
 #endif /* HAVE_EVHTTP_H */
+	    "\t-v = Increase logging verbosity\n"
 	    "\t-h = Print this message\n",
 	    __progname);
 

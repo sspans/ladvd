@@ -24,6 +24,8 @@ Print usage instructions.
 Only print the first advertisement.
 HTTP_POST .IP "-p http://domain.tld/script"
 HTTP_POST Post decoded packets to the supplied url.
+.IP -v
+Increase logging verbosity.
 .IP -L
 Parse LLDP (Link Layer Discovery Protocol).
 .IP -C
