@@ -722,7 +722,7 @@ START_TEST(test_cdp_decode) {
     read_packet(&msg, "proto/cdp/03.header.only");
     fail_unless (cdp_decode(&msg) == msg.len, "packet length incorrect");
 
-    errstr = "Corrupt CDP packet: invalid System Name TLV";
+    errstr = "Corrupt CDP packet: invalid TLV length";
     read_packet(&msg, "proto/cdp/21.device_id.broken");
     fail_unless (cdp_decode(&msg) == 0, "broken packets should return 0");
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
