@@ -233,6 +233,8 @@ struct master_req {
 #define PEER_ADDR_INET6	4
 #define PEER_ADDR_802	5
 #define PEER_MAX	6
+#define PEER_STR(x,y)  ((x)?(free(y)):(x = y))
+
 static inline
 void peer_free(char *p[]) {
     int s;

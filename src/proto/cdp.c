@@ -26,6 +26,49 @@ const struct cdp_proto cdp_protos[] = {
     ADDR_PROTO_CLNP, ADDR_PROTO_IPV4, ADDR_PROTO_IPV6,
 };
 
+struct type_str {
+    int t;                  /* type */
+    const char *s;          /* string */
+};
+
+static const struct type_str cdp_tlv_types[] = {
+    { CDP_TYPE_DEVICE_ID, "Device-ID"},
+    { CDP_TYPE_ADDRESS, "Address"},
+    { CDP_TYPE_PORT_ID, "Port-ID"},
+    { CDP_TYPE_CAPABILITIES, "Capability"},
+    { CDP_TYPE_IOS_VERSION, "Version"},
+    { CDP_TYPE_PLATFORM, "Platform"},
+    { CDP_TYPE_IP_PREFIX, "Prefixes"},
+    { CDP_TYPE_PROTOCOL_HELLO, "Protocol-Hello option"},
+    { CDP_TYPE_VTP_MGMT_DOMAIN, "VTP Management Domain"},
+    { CDP_TYPE_NATIVE_VLAN, "Native VLAN ID"},
+    { CDP_TYPE_DUPLEX, "Duplex"},
+    { CDP_TYPE_APPLIANCE_REPLY, "ATA-186 VoIP VLAN request"},
+    { CDP_TYPE_APPLIANCE_QUERY, "ATA-186 VoIP VLAN assignment"},
+    { CDP_TYPE_POWER_CONSUMPTION, "power consumption"},
+    { CDP_TYPE_MTU, "MTU"},
+    { CDP_TYPE_EXTENDED_TRUST, "AVVID trust bitmap"},
+    { CDP_TYPE_UNTRUSTED_COS, "AVVID untrusted ports CoS"},
+    { CDP_TYPE_SYSTEM_NAME, "System Name"},
+    { CDP_TYPE_SYSTEM_OID, "System Object ID"},
+    { CDP_TYPE_MGMT_ADDRESS, "Management Addresses"},
+    { CDP_TYPE_LOCATION, "Physical Location"},
+    { 0, NULL}
+};
+
+static tlv_t type;
+static int cdp_header_check(struct master_msg *, unsigned char *, size_t);
+static int cdp_system_name(struct master_msg *, unsigned char *, size_t,
+			    uint16_t);
+static int cdp_port_id(struct master_msg *, unsigned char *, size_t);
+static int cdp_system_cap(struct master_msg *, unsigned char *, size_t);
+static int cdp_addr(struct master_msg *, unsigned char *, size_t, uint16_t);
+static int cdp_descr_print(uint16_t, unsigned char *, size_t);
+static int cdp_vtp_print(struct master_msg *, unsigned char *, size_t);
+static int cdp_vlan_print(struct master_msg *, unsigned char *, size_t);
+static int cdp_duplex_print(struct master_msg *, unsigned char *, size_t);
+
+
 size_t cdp_packet(void *packet, struct netif *netif,
 		struct nhead *netifs, struct sysinfo *sysinfo) {
 
@@ -36,7 +79,6 @@ size_t cdp_packet(void *packet, struct netif *netif,
     char *tlv;
     char *pos = packet;
     size_t length = ETHER_MAX_LEN;
-    tlv_t type;
 
     void *cdp_start;
     uint8_t cap = 0;
@@ -265,19 +307,11 @@ size_t cdp_decode(struct master_msg *msg) {
 
     unsigned char *packet = NULL;
     size_t length;
-    struct cdp_header cdp;
 
     unsigned char *pos;
-    tlv_t type;
 
     uint16_t tlv_type;
     uint16_t tlv_length;
-
-    uint32_t cdp_cap = 0;
-    uint16_t cap = 0;
-
-    uint32_t addr_count = 0;
-    int pt, pl, al, peer_addr;
 
     assert(msg);
 
@@ -287,6 +321,91 @@ size_t cdp_decode(struct master_msg *msg) {
     assert(packet);
     assert((pos = cdp_check(packet, length)) != NULL);
     length -= VOIDP_DIFF(pos, packet);
+
+    if (!cdp_header_check(msg, pos, length))
+	return 0;
+
+    // update tlv counters
+    pos += sizeof(struct cdp_header);
+    length -= sizeof(struct cdp_header);
+
+    while (length) {
+	if (!GRAB_CDP_TLV(tlv_type, tlv_length)) {
+	    my_log(INFO, "Corrupt CDP packet: invalid TLV");
+	    return 0;
+	}
+
+        if (length < tlv_length) {
+	    my_log(INFO, "Corrupt CDP packet: invalid TLV length");
+	    return 0;
+	}
+
+	switch(tlv_type) {
+	    case CDP_TYPE_DEVICE_ID:
+	    case CDP_TYPE_SYSTEM_NAME:
+		if (!cdp_system_name(msg, pos, tlv_length, tlv_type))
+		    return 0;
+		break;
+	    case CDP_TYPE_PORT_ID:
+		if (!cdp_port_id(msg, pos, tlv_length))
+		    return 0;
+		break;
+	    case CDP_TYPE_CAPABILITIES:
+		if (!cdp_system_cap(msg, pos, tlv_length))
+		    return 0;
+		break;
+	    break;
+	    case CDP_TYPE_ADDRESS:
+	    case CDP_TYPE_MGMT_ADDRESS:
+		if (!cdp_addr(msg, pos, tlv_length, tlv_type))
+		    return 0;
+		break;
+	    case CDP_TYPE_IOS_VERSION:
+	    case CDP_TYPE_PLATFORM:
+		if ((msg->decode == DECODE_PRINT) && 
+		    !cdp_descr_print(tlv_type, pos, tlv_length))
+		    return 0;
+		break;
+	    case CDP_TYPE_VTP_MGMT_DOMAIN:
+		if ((msg->decode == DECODE_PRINT) && 
+		    !cdp_vtp_print(msg, pos, tlv_length))
+		    return 0;
+		break;
+	    case CDP_TYPE_NATIVE_VLAN:
+		if ((msg->decode == DECODE_PRINT) && 
+		    !cdp_vlan_print(msg, pos, tlv_length))
+		    return 0;
+		break;
+	    case CDP_TYPE_DUPLEX:
+		if ((msg->decode == DECODE_PRINT) && 
+		    !cdp_duplex_print(msg, pos, tlv_length))
+		    return 0;
+		break;
+	    case CDP_TYPE_MTU:
+		// XXX: todo
+	    default:
+		my_log(DEBUG, "unknown TLV: type %d, length %d, leaves %zu",
+			    tlv_type, tlv_length, length);
+		break;
+	}
+
+	if (!SKIP(tlv_length)) {
+	    my_log(INFO, "Corrupt CDP packet: invalid TLV length");
+	    return 0;
+	}
+    }
+
+    // return the packet length
+    return(VOIDP_DIFF(pos, packet));
+}
+
+static int cdp_header_check(struct master_msg *msg, 
+    unsigned char *pos, size_t length) {
+
+    struct cdp_header cdp;
+    time_t now;
+    uint16_t holdtime;
+
     if (length < sizeof(cdp)) {
 	my_log(INFO, "missing CDP header");
 	return 0;
@@ -299,114 +418,238 @@ size_t cdp_decode(struct master_msg *msg) {
     }
     msg->ttl = cdp.ttl;
 
-    // update tlv counters
-    pos += sizeof(cdp);
-    length -= sizeof(cdp);
+    if ((now = time(NULL)) == (time_t)-1)
+	my_fatale("failed to fetch time");
 
-    while (length) {
-	if (!GRAB_CDP_TLV(tlv_type, tlv_length)) {
-	    my_log(INFO, "Corrupt CDP packet: invalid TLV");
+    holdtime = msg->ttl - (now - msg->received);
+
+    if (msg->decode == DECODE_PRINT)
+    	printf("CDP Version: %u\nHoldtime: %" PRIu16 "\n",
+	    cdp.version, holdtime);
+
+    return 1;
+}
+
+static int cdp_system_name(struct master_msg *msg, 
+    unsigned char *pos, size_t length, uint16_t tlv_type) {
+
+    char *str = NULL;
+
+    str = tlv_str_copy(pos, length);
+
+    if (msg->decode == DECODE_PRINT) {
+    	printf("%s: %s\n", 
+	    (tlv_type == CDP_TYPE_DEVICE_ID)? "Device ID":"System Name", str);
+	free(str);
+    } else {
+	PEER_STR(msg->peer[PEER_HOSTNAME], str);
+    }
+
+    return 1;
+}
+
+static int cdp_port_id(struct master_msg *msg, 
+    unsigned char *pos, size_t length) {
+
+    char *str = NULL;
+
+    str = tlv_str_copy(pos, length);
+
+    if (msg->decode == DECODE_PRINT) {
+	printf("Interface: %s, Port ID (outgoing port): %s\n",
+	    msg->name, str);
+	free(str);
+    } else {
+	PEER_STR(msg->peer[PEER_PORTNAME], str);
+    }
+
+    return 1;
+}
+
+static int cdp_descr_print(uint16_t tlv_type,
+    unsigned char *pos, size_t length) {
+
+    const struct type_str *token;
+    const char *type_str = NULL;
+    char *str = NULL, *nstr;
+    size_t nl;
+
+    token = cdp_tlv_types;
+
+    while (token->s != NULL) {
+        if (token->t == tlv_type) {
+            type_str = token->s;
+	    break;
+	}
+        ++token;
+    }
+    if (!type_str)
+	type_str = "Unknown";
+
+    str = tlv_str_copy(pos, length);
+    if (strchr(str, '\n')) {
+	printf("%s:\n", type_str);
+
+	nstr = str;
+	while (strlen(nstr)) {
+	    nl = strcspn(nstr, "\n");
+	    nstr[nl] = '\0';
+	    printf("  %s\n", nstr);
+	    nstr += nl + 1;
+	}
+    } else {
+	printf("%s: %s\n", type_str, str);
+    }
+    free(str);
+
+    return 1;
+}
+
+static int cdp_system_cap(struct master_msg *msg,
+    unsigned char *pos, size_t length) {
+
+    uint32_t cdp_cap = 0;
+    uint16_t cap = 0;
+    char *str = NULL;
+
+    if ((length != 4) || !GRAB_UINT32(cdp_cap)) {
+	my_log(INFO, "Corrupt CDP packet: invalid Cap TLV");
+	return 0;
+    }
+    cap |= (cdp_cap & CDP_CAP_ROUTER) ? CAP_ROUTER : 0;
+    cap |= (cdp_cap & CDP_CAP_TRANSPARENT_BRIDGE) ? CAP_BRIDGE : 0;
+    cap |= (cdp_cap & CDP_CAP_SOURCE_BRIDGE) ? CAP_BRIDGE : 0;
+    cap |= (cdp_cap & CDP_CAP_SWITCH) ? CAP_SWITCH : 0;
+    cap |= (cdp_cap & CDP_CAP_HOST) ? CAP_HOST : 0;
+    cap |= (cdp_cap & CDP_CAP_REPEATER) ? CAP_REPEATER : 0;
+    cap |= (cdp_cap & CDP_CAP_PHONE) ? CAP_PHONE : 0;
+
+    str = tlv_str_cap(cap);
+    if (msg->decode == DECODE_PRINT) {
+        printf("Capabilities: %s\n", str);
+        free(str);
+    } else {
+        PEER_STR(msg->peer[PEER_CAP], str);
+    }
+
+    return 1;
+}
+
+static int cdp_addr(struct master_msg *msg,
+    unsigned char *pos, size_t length, uint16_t tlv_type) {
+
+    char *str = NULL;
+    uint32_t addr_count = 0;
+    int pt, pl, al, af;
+
+    if (!GRAB_UINT32(addr_count)) {
+	my_log(INFO, "Corrupt CDP packet: invalid address TLV");
+	return 0;
+    }
+
+    if (msg->decode == DECODE_PRINT)
+	printf("%s address(es):\n", 
+	    (tlv_type == CDP_TYPE_MGMT_ADDRESS) ? "Management":"Entry");
+
+next_addr:
+    if (!GRAB_UINT8(pt) || !GRAB_UINT8(pl)) {
+	my_log(INFO, "Corrupt CDP packet: invalid address TLV");
+	return 0;
+    }
+
+    if (length < (pl + sizeof(uint16_t))) {
+	my_log(INFO, "Corrupt CDP packet: invalid address TLV");
+	return 0;
+    }
+
+    af = 0;
+    // v4
+    if ((pt == cdp_protos[CDP_ADDR_IPV4].protocol_type) &&
+	(pl == cdp_protos[CDP_ADDR_IPV4].protocol_length)) {
+	if (memcmp(pos, cdp_protos[CDP_ADDR_IPV4].protocol, pl) == 0)
+	    af = PEER_ADDR_INET4;
+    // v6
+    } else if ((pt == cdp_protos[CDP_ADDR_IPV6].protocol_type) &&
+	(pl == cdp_protos[CDP_ADDR_IPV6].protocol_length)) {
+	if (memcmp(pos, cdp_protos[CDP_ADDR_IPV6].protocol, pl) == 0)
+	    af = PEER_ADDR_INET6;
+    } 
+
+    if (!SKIP(pl) || !GRAB_UINT16(al)) {
+	my_log(INFO, "Corrupt CDP packet: invalid TLV length");
+	return 0;
+    }
+
+    if (length < al) {
+	my_log(INFO, "Corrupt CDP packet: invalid address TLV");
+	return 0;
+    }
+
+    if (af) {
+	if ((str = tlv_str_addr(af, pos, al)) == NULL) {
+	    my_log(INFO, "Corrupt CDP packet: invalid address TLV");
 	    return 0;
 	}
 
-	switch(tlv_type) {
-	case CDP_TYPE_DEVICE_ID:
-	case CDP_TYPE_SYSTEM_NAME:
-	    if (!DECODE_STRING(msg, PEER_HOSTNAME, tlv_length)) {
-		my_log(INFO, "Corrupt CDP packet: invalid System Name TLV");
-		return 0;
-	    }
-	    break;
-	case CDP_TYPE_PORT_ID:
-	    if (!DECODE_STRING(msg, PEER_PORTNAME, tlv_length)) {
-		my_log(INFO, "Corrupt CDP packet: invalid Port ID TLV");
-		return 0;
-	    }
-	    break;
-	case CDP_TYPE_CAPABILITIES:
-	    if ((tlv_length != 4) || !GRAB_UINT32(cdp_cap)) {
-		my_log(INFO, "Corrupt CDP packet: invalid Cap TLV");
-		return 0;
-	    }
-	    cap |= (cdp_cap & CDP_CAP_ROUTER) ? CAP_ROUTER : 0;
-	    cap |= (cdp_cap & CDP_CAP_TRANSPARENT_BRIDGE) ? CAP_BRIDGE : 0;
-	    cap |= (cdp_cap & CDP_CAP_SOURCE_BRIDGE) ? CAP_BRIDGE : 0;
-	    cap |= (cdp_cap & CDP_CAP_SWITCH) ? CAP_SWITCH : 0;
-	    cap |= (cdp_cap & CDP_CAP_HOST) ? CAP_HOST : 0;
-	    cap |= (cdp_cap & CDP_CAP_REPEATER) ? CAP_REPEATER : 0;
-	    cap |= (cdp_cap & CDP_CAP_PHONE) ? CAP_PHONE : 0;
-	    tlv_value_str(msg, PEER_CAP, sizeof(cap), &cap);
-	    break;
-	case CDP_TYPE_ADDRESS:
-	    if (!GRAB_UINT32(addr_count)) {
-		my_log(INFO, "Corrupt CDP packet: invalid address TLV");
-		return 0;
-	    }
-	    tlv_length -= 4;
-
-	    next_addr:
-	    if (!GRAB_UINT8(pt) || !GRAB_UINT8(pl)) {
-		my_log(INFO, "Corrupt CDP packet: invalid address TLV");
-		return 0;
-	    }
-	    tlv_length -= 2;
-
-	    if (tlv_length < (pl + sizeof(uint16_t))) {
-		my_log(INFO, "Corrupt CDP packet: invalid address TLV");
-		return 0;
-	    }
-
-	    peer_addr = 0;
-	    // v4
-	    if ((pt == cdp_protos[CDP_ADDR_IPV4].protocol_type) &&
-		(pl == cdp_protos[CDP_ADDR_IPV4].protocol_length)) {
-		if (memcmp(pos, cdp_protos[CDP_ADDR_IPV4].protocol, pl) == 0)
-		    peer_addr = PEER_ADDR_INET4;
-	    // v6
-	    } else if ((pt == cdp_protos[CDP_ADDR_IPV6].protocol_type) &&
-		(pl == cdp_protos[CDP_ADDR_IPV6].protocol_length)) {
-		if (memcmp(pos, cdp_protos[CDP_ADDR_IPV6].protocol, pl) == 0)
-		    peer_addr = PEER_ADDR_INET6;
-	    } 
-
-	    if (!SKIP(pl) || !GRAB_UINT16(al)) {
-		my_log(INFO, "Corrupt CDP packet: invalid TLV length 1");
-		return 0;
-	    }
-	    tlv_length -= pl + sizeof(uint16_t);
-
-	    if (peer_addr) {
-		if (!DECODE_STRING(msg, peer_addr, al)) {
-		    my_log(INFO, "Corrupt CDP packet: invalid address TLV");
-		    return 0;
-		}
-	    } else if (!SKIP(al)) {
-		my_log(INFO, "Corrupt CDP packet: invalid TLV length");
-		return 0;
-	    }
-
-	    tlv_length -= al;
-	    addr_count--;
-	    if (tlv_length && addr_count > 0)
-		goto next_addr;
-	    break;
-	case CDP_TYPE_IOS_VERSION:
-	case CDP_TYPE_PLATFORM:
-	case CDP_TYPE_MTU:
-	case CDP_TYPE_DUPLEX:
-	    // XXX: todo
-	default:
-	    my_log(DEBUG, "unknown TLV: type %d, length %d, leaves %zu",
-			    tlv_type, tlv_length, length);
-	    if (!SKIP(tlv_length)) {
-		my_log(INFO, "Corrupt CDP packet: invalid TLV length");
-		return 0;
-	    }
-	    break;
+	if (msg->decode == DECODE_PRINT) {
+	    printf("  IP%s address: %s\n", 
+		(af == PEER_ADDR_INET6)? "v6":"", str);
+	    free(str);
+	} else {
+	    PEER_STR(msg->peer[af], str);
 	}
+    } 
+    if (!SKIP(al)) {
+	my_log(INFO, "Corrupt CDP packet: invalid TLV length");
+	return 0;
     }
 
-    // return the packet length
-    return(VOIDP_DIFF(pos, packet));
+    addr_count--;
+    if (length && addr_count > 0)
+	goto next_addr;
+
+    return 1;
+}
+
+static int cdp_vtp_print(struct master_msg *msg, 
+    unsigned char *pos, size_t length) {
+
+    char *str = NULL;
+
+    str = tlv_str_copy(pos, length);
+    printf("VTP Management Domain: '%s'\n", str);
+    free(str);
+
+    return 1;
+}
+
+static int cdp_vlan_print(struct master_msg *msg, 
+    unsigned char *pos, size_t length) {
+
+    uint16_t vlan = 0;
+
+    if ((length != 2) || !GRAB_UINT16(vlan)) {
+	my_log(INFO, "Corrupt CDP packet: invalid Native VLAN TLV");
+	return 0;
+    }
+
+    printf("Native VLAN: %" PRIu16 "\n", vlan);
+
+    return 1;
+}
+
+static int cdp_duplex_print(struct master_msg *msg, 
+    unsigned char *pos, size_t length) {
+
+    uint8_t duplex = 0;
+
+    if ((length != 1) || !GRAB_UINT8(duplex)) {
+	my_log(INFO, "Corrupt CDP packet: invalid Duplex TLV");
+	return 0;
+    }
+
+    printf("Duplex: %s\n", (duplex)? "full":"half");
+
+    return 1;
 }
 

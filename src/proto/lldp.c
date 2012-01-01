@@ -661,7 +661,7 @@ static int lldp_port_id(struct master_msg *msg,
 	    	printf("Port id: %s\n", str);
 		free(str);
 	    } else {
-		msg->peer[PEER_PORTNAME] = str;
+		PEER_STR(msg->peer[PEER_PORTNAME], str);
 	    }
 	default:
 	    break;
@@ -684,16 +684,13 @@ static int lldp_system_name(struct master_msg *msg,
 	return 0;
     }
 
-    if ((msg->decode != DECODE_PRINT) && msg->peer[PEER_HOSTNAME]) 
-	return 1;
-
     str = tlv_str_copy(pos, length);
 
     if (msg->decode == DECODE_PRINT)
     	printf("System Name: %s\n", str);
 
     // we save str even for DECODE_PRINT to enable duplicate detection
-    msg->peer[PEER_HOSTNAME] = str;
+    PEER_STR(msg->peer[PEER_HOSTNAME], str);
 
     return 1;
 }
@@ -796,7 +793,7 @@ static int lldp_system_cap(struct master_msg *msg,
 	printf("Enabled Capabilities: %s\n", str);
 	free(str);
     } else {
-	msg->peer[PEER_CAP] = str;
+	PEER_STR(msg->peer[PEER_CAP], str);
     }
 
     return 1;
@@ -843,13 +840,16 @@ static int lldp_mgmt_addr(struct master_msg *msg,
     if ((msg->decode == DECODE_STR) && msg->peer[af]) 
 	return 1;
 
-    str = tlv_str_addr(af, pos, lldp_aflen);
+    if ((str = tlv_str_addr(af, pos, lldp_aflen)) == NULL) {
+	my_log(INFO, "Invalid LLDP packet: invalid mgmt addr");
+	return 0;
+    }
 
     if (msg->decode == DECODE_PRINT) {
 	printf("Management Addresses:\n");
 	free(str);
     } else {
-	msg->peer[af] = str;
+	PEER_STR(msg->peer[af], str);
     }
 
     return 1;
