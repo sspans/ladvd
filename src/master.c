@@ -428,7 +428,7 @@ ssize_t master_descr(struct master_req *mreq) {
 	return read_line(path, mreq->buf, IFDESCRSIZE);
 
     return(0);
-#elif SIOCSIFDESCR
+#elif defined(SIOCGIFDESCR)
     struct ifreq ifr = {};
     ssize_t ret = 0;
 
