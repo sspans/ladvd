@@ -30,19 +30,19 @@ int status = EXIT_SUCCESS;
 static void usage() __noreturn;
 
 static struct mode modes[] = {
-  { NULL, &batch_write, NULL },
   { &cli_header, &cli_write, NULL },
-  { &debug_header, &debug_write, &debug_close },
   { NULL, NULL, NULL },
+  { NULL, &batch_write, NULL },
+  { &debug_header, &debug_write, &debug_close },
 #if HAVE_EVHTTP_H
   { &http_connect, &http_request, &http_dispatch },
 #endif /* HAVE_EVHTTP_H */
 };
 
-#define MODE_BATCH  0
-#define MODE_CLI    1
-#define MODE_DEBUG  2
-#define MODE_PRINT  3
+#define MODE_CLI    0
+#define MODE_PRINT  1
+#define MODE_BATCH  2
+#define MODE_DEBUG  3
 #define MODE_HTTP   4
 
 #define TERM_DEFAULT 80
@@ -214,6 +214,9 @@ void cli_main(int argc, char *argv[]) {
 
 	if (options & OPT_ONCE)
 	    goto out;
+
+	if (mode == MODE_PRINT)
+	    printf("\n");
     }
 
 out:
