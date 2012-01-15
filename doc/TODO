@@ -1,13 +1,12 @@
 
 For 1.1.0:
-- implement ladvdc verbose decoding
+- extend ladvdc verbose decoding
 - improve edp TLV handling
 - write protocol descriptions
 - openbsd netif to pci?
 - static functions?
 - restrict pointers?
 - test multilevel interfaces
-- linux ifalias support
 - support macosx (package)
 - support solaris
 - support fdp unknown fields

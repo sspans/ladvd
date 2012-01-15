@@ -1,0 +1,11 @@
+This is a short list of things to test before a release:
+
+- test linux builds via OBS
+- check code-coverage via lcov
+- compile with clang
+- look for errors with Clang Static Analyzer
+- do a couple of runs with valgrind
+
+- do some real-world tests with switches
+- ???
+

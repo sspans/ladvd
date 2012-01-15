@@ -20,8 +20,7 @@ Besides some signal handling the master has three main entry points:
   operating system.
 - master_recv()
   Receives packets from the network and transmits them on to the child.
-  The code is somewhat complicated because it supports both Linux-style
-  packet sockets and bsd-style bpf.
+  The code now uses libpcap which makes it much easier than it used to be.
 
 The main function left is master_open(), which is called via master_send()
 and which hooks up master_recv() to the newly generated socket.
@@ -51,9 +50,10 @@ The child has three main routines as well:
 
 Debugging:
 
-Newer tcpdump versions contain pretty descent LLDP and CDP dissectors which
+Newer tcpdump versions contain pretty decent LLDP and CDP dissectors which
 can be used to inspect frames directly via the network interface or via
-the ladvdc cli.
+the ladvdc cli. The ladvd tests now read pcap dumps, which makes it a lot
+easer to add or re-use captures for various purposes.
 
 To capture LLDP frames use:
 tcpdump -vvv -s 1500 ether proto 0x88cc 
