@@ -519,8 +519,6 @@ size_t lldp_decode(struct master_msg *msg) {
     if (msg->decode == DECODE_PRINT)
 	lldp_ttl_print(msg);
 
-    tlv_length = 0;
-
     while (length) {
 	if (!GRAB_LLDP_TLV(tlv_type, tlv_length)) {
 	    my_log(INFO, "Corrupt LLDP packet: invalid TLV");
@@ -570,7 +568,6 @@ size_t lldp_decode(struct master_msg *msg) {
 	    my_log(INFO, "Corrupt LLDP packet: invalid TLV Length");
 	    return 0;
 	}
-	tlv_length = 0;
     }
 
 out:
