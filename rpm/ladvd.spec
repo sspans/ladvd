@@ -33,7 +33,7 @@ Requires:	/usr/bin/lsb_release
 %if ! 0%{?suse_version}
 Requires:	hwdata
 %endif
-Version:	0.9.2
+Version:	1.0.0
 Release:	1%{?dist}
 License:	ISC
 URL:		http://code.google.com/p/ladvd/
