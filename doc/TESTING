@@ -1,11 +1,12 @@
 This is a short list of things to test before a release:
 
-- test linux builds via OBS
-- check code-coverage via lcov
-- compile with clang
-- look for errors with Clang Static Analyzer
-- do a couple of runs with valgrind
-
-- do some real-world tests with switches
+- Test linux builds via OBS
+- Test FreeBSD / OpenBSD builds
+- Check code-coverage via lcov
+- Compile with clang
+- Look for errors with Clang Static Analyzer
+- Do a couple of runs with valgrind
+- Run checksec - http://www.trapkit.de/tools/checksec.html
+- Do some real-world tests with switches
 - ???
 
