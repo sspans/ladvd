@@ -136,9 +136,7 @@ AS_IF([test "$libpcap_static" = "no"],
 	# otherwise we try our best to locate the library
 	AX_LD_CHECK_FLAG([-l:libpcap.a -lrt], [], [],
 	 [AC_SUBST(PCAP_LIB,"-l:libpcap.a -lrt")],
-	 [ if test $ac_cv_libpcap_dir != "(system)"; then
-	    AC_SUBST(PCAP_LIB,"$le_libdir/libpcap.a")
-	   elif test -f "$libdir/libpcap.a"; then
+	 [ if test -f "$libdir/libpcap.a"; then
 	    AC_SUBST(PCAP_LIB,"$libdir/libpcap.a")
 	   elif test -f "/lib/libpcap.a"; then
 	    AC_SUBST(PCAP_LIB,"/lib/libpcap.a")
