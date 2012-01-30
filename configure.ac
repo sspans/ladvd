@@ -120,7 +120,7 @@ AS_IF([test -n "$check_ids"],
 # libpcap
 AC_ARG_ENABLE([static-libpcap],
     AC_HELP_STRING([--enable-static-libpcap],
-		    [build binaries a static libpcap]),
+		    [build binaries with a static libpcap]),
     [libpcap_static=yes], [libpcap_static=no])
 
 AC_CHECK_HEADER([pcap.h])
@@ -164,7 +164,7 @@ AC_ARG_WITH(libevent,
 
 AC_ARG_ENABLE([static-libevent],
     AC_HELP_STRING([--enable-static-libevent],
-		    [build binaries a static libevent]),
+		    [build binaries with a static libevent]),
     [libevent_static=yes], [libevent_static=no])
 
 dnl ------------------------------------------------------
