@@ -1,8 +1,8 @@
-ladvd (1.0.0) unstable; urgency=low
+ladvd (1.0.1) unstable; urgency=low
 
   * New upstream release
 
- -- Sten Spans <sten@blinkenlights.nl>  Sun, 22 Jan 2012 19:55:10 +0100
+ -- Sten Spans <sten@blinkenlights.nl>  Mon, 30 Jan 2012 15:22:28 +0100
 
 ladvd (0.9.2-2) unstable; urgency=low
 
