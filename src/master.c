@@ -567,6 +567,13 @@ int master_socket(struct rawfd *rfd) {
     if (pcap_setdirection(p_handle, PCAP_D_IN) < 0)
 	my_fatal("pcap_setdirection for %s failed", rfd->name);
 
+#if defined(__OpenBSD__)
+    // OpenBSD has no support for bpf-timeouts when using kqueue
+    // so we enable immediate mode to receive packets timely
+    int v = 1;
+    ioctl(pcap_get_selectable_fd(p_handle), BIOCIMMEDIATE, &v);
+#endif
+
     rfd->p_handle = p_handle;
 
     return(pcap_get_selectable_fd(p_handle));
