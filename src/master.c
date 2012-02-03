@@ -448,6 +448,8 @@ ssize_t master_descr(struct master_req *mreq) {
 	ret = mreq->len;
     return(ret);
 #endif /* SIOCSIFDESCR */
+
+    return(0);
 }
 
 #ifdef HAVE_SYSFS
