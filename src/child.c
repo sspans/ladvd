@@ -143,10 +143,10 @@ void child_send(int fd, short event, void *evs) {
 
     // update netifs
     my_log(INFO, "fetching all interfaces"); 
-    if (netif_fetch(sargc, sargv, &sysinfo, &netifs) == 0) {
-	my_log(CRIT, "no configured ethernet interfaces found");
-	return;
-    }
+
+    // no configured ethernet interfaces found
+    if (netif_fetch(sargc, sargv, &sysinfo, &netifs) == 0)
+	goto out;
 
     while ((netif = netif_iter(netif, &netifs)) != NULL) {
 
@@ -220,6 +220,7 @@ void child_send(int fd, short event, void *evs) {
     if (options & OPT_RECV)
 	child_expire();
 
+out:
     // schedule the next run
     event_add(evs, &tv);
 }
