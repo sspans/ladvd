@@ -653,17 +653,19 @@ static void netif_bond(int sockfd, struct nhead *netifs, struct netif *master,
 #endif
 
     // check for lacp
-#if defined(HAVE_LINUX_IF_BONDING_H) && defined(BOND_MODE_8023AD)
+#if defined(HAVE_LINUX_IF_BONDING_H)
     strlcpy(ifr->ifr_name, master->name, IFNAMSIZ);
     ifr->ifr_data = (char *)&ifbond;
 
     if (ioctl(sockfd, SIOCBONDINFOQUERY, ifr) >= 0) {
+#if defined(BOND_MODE_8023AD)
 	if (ifbond.bond_mode == BOND_MODE_8023AD)
 	    master->bonding_mode = NETIF_BONDING_LACP;
-	else if (ifbond.bond_mode == BOND_MODE_ACTIVEBACKUP)
+#endif
+	if (ifbond.bond_mode == BOND_MODE_ACTIVEBACKUP)
 	    master->bonding_mode = NETIF_BONDING_FAILOVER;
     }
-#endif /* HAVE_LINUX_IF_BONDING_H && BOND_MODE_8023AD */
+#endif /* HAVE_LINUX_IF_BONDING_H */
 
     if (master->bonding_mode == NETIF_BONDING_LACP)
 	my_log(INFO, "lacp enabled on %s", master->name);
