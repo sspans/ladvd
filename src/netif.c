@@ -375,7 +375,7 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 static int netif_type(int sockfd, uint32_t index,
 	struct ifaddrs *ifaddr, struct ifreq *ifr) {
 
-    char dname[IFNAMSIZ];
+    char dname[IFNAMSIZ+1] = {};
 #if defined(HAVE_LINUX_IF_VLAN_H) && \
     HAVE_DECL_GET_VLAN_REALDEV_NAME_CMD
     struct vlan_ioctl_args if_request = {};
@@ -390,7 +390,7 @@ static int netif_type(int sockfd, uint32_t index,
 #endif
 
     // detect driver name
-    netif_driver(sockfd, index, ifr, dname, sizeof(dname));
+    netif_driver(sockfd, index, ifr, dname, IFNAMSIZ);
 
     // detect wireless interfaces
     if (netif_wireless(sockfd, ifaddr, ifr) >= 0)
@@ -514,6 +514,8 @@ static void netif_driver(int sockfd, uint32_t index, struct ifreq *ifr,
 #if HAVE_LINUX_ETHTOOL_H
     struct ethtool_drvinfo drvinfo = {};
 
+    memset(dname, 0, len);
+
     // use ethtool to detect various drivers
     drvinfo.cmd = ETHTOOL_GDRVINFO;
     ifr->ifr_data = (caddr_t)&drvinfo;
@@ -521,6 +523,8 @@ static void netif_driver(int sockfd, uint32_t index, struct ifreq *ifr,
 	strlcpy(dname, drvinfo.driver, len);
 #elif defined IFDATA_DRIVERNAME
     int name[6];
+
+    memset(dname, 0, len);
 
     name[0] = CTL_NET;
     name[1] = PF_LINK;
