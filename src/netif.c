@@ -512,15 +512,22 @@ static int netif_type(int sockfd, uint32_t index,
 static void netif_driver(int sockfd, uint32_t index, struct ifreq *ifr,
 		    char *dname, size_t len) {
 #if HAVE_LINUX_ETHTOOL_H
+    struct master_req mreq = {};
     struct ethtool_drvinfo drvinfo = {};
 
     memset(dname, 0, len);
 
-    // use ethtool to detect various drivers
-    drvinfo.cmd = ETHTOOL_GDRVINFO;
-    ifr->ifr_data = (caddr_t)&drvinfo;
-    if (ioctl(sockfd, SIOCETHTOOL, ifr) >= 0)
-	strlcpy(dname, drvinfo.driver, len);
+    mreq.op = MASTER_ETHTOOL_GDRV;
+    mreq.index = index;
+    mreq.len = sizeof(drvinfo);
+
+    if (my_mreq(&mreq) != sizeof(drvinfo))
+	return;
+
+    // copy drvinfo struct
+    memcpy(&drvinfo, mreq.buf, sizeof(drvinfo));
+
+    strlcpy(dname, drvinfo.driver, len);
 #elif defined IFDATA_DRIVERNAME
     int name[6];
 
@@ -1108,7 +1115,7 @@ int netif_media(struct netif *netif) {
 	{0, 0}
     };
 
-    mreq.op = MASTER_ETHTOOL;
+    mreq.op = MASTER_ETHTOOL_GSET;
     mreq.index = netif->index;
     mreq.len = sizeof(ecmd);
 

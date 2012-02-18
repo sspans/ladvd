@@ -272,12 +272,13 @@ TAILQ_HEAD(mhead, master_msg);
 #define MASTER_MSG_LEN(l)   MASTER_MSG_MIN + l
 #define MASTER_OPEN	    0
 #define MASTER_CLOSE	    1
-#define MASTER_ETHTOOL	    2
-#define MASTER_DESCR	    3
-#define MASTER_ALIAS	    4
-#define MASTER_DEVICE	    5
-#define MASTER_DEVICE_ID    6
-#define MASTER_MAX	    7
+#define MASTER_DESCR	    2
+#define MASTER_ALIAS	    3
+#define MASTER_DEVICE	    4
+#define MASTER_DEVICE_ID    5
+#define MASTER_ETHTOOL_GSET 6
+#define MASTER_ETHTOOL_GDRV 7
+#define MASTER_MAX	    8
 
 struct proto {
     uint8_t enabled;
