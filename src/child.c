@@ -162,6 +162,14 @@ void child_send(int fd, short event, void *evs) {
 
 	while ((subif = subif_iter(subif, netif)) != NULL) {
 
+	    // skip special interfaces
+	    if (subif->type < NETIF_REGULAR)
+		continue;
+	    if ((subif->type == NETIF_WIRELESS) && !(options & OPT_WIRELESS))
+		continue;
+	    if ((subif->type == NETIF_TAP) && !(options & OPT_TAP))
+		continue;
+
 	    // populate msg
 	    memset(&msg, 0, sizeof(msg));
 	    msg.index = subif->index;
