@@ -36,6 +36,8 @@ case "$target_os" in
 	;;
     openbsd*)
 	;;
+    darwin*)
+	;;
     *)
 	AC_MSG_ERROR([Unsupported operating system])
 	;;
@@ -402,6 +404,8 @@ AC_FUNC_VPRINTF
 AC_CHECK_FUNCS([asprintf memcpy memset snprintf strdup strerror uname \
 		socketpair vsyslog],
 		[], AC_MSG_ERROR([required function missing]))
+
+AC_CHECK_FUNCS([setresuid setreuid setresgid setregid])
 
 AC_CHECK_FUNCS([setproctitle strlcpy strlcat strnvis __strdup])
 

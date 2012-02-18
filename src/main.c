@@ -35,8 +35,10 @@ int main(int argc, char *argv[]) {
 
     int ch, i;
     char *username = PACKAGE_USER;
+#ifndef __APPLE__
     char pidstr[16];
     int fd = -1;
+#endif /* __APPLE__ */
     struct passwd *pwd = NULL;
 
     // save argc/argv
@@ -181,6 +183,7 @@ int main(int argc, char *argv[]) {
     sysinfo_fetch(&sysinfo);
 
     if (options & OPT_DAEMON) {
+#ifndef __APPLE__
 	// run in the background
 	if (daemon(0,0) == -1)
 	    my_fatale("backgrounding failed");
@@ -196,6 +199,7 @@ int main(int argc, char *argv[]) {
 	if ((snprintf(pidstr, sizeof(pidstr), "%d\n", (int)getpid()) <= 0) ||
 	    (write(fd, pidstr, strlen(pidstr)) <= 0))
 	    my_fatale("failed to write pidfile " PACKAGE_PID_FILE);
+#endif /* __APPLE__ */
     
 	// init syslog before chrooting (including tz)
 	tzset();

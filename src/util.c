@@ -189,11 +189,25 @@ void my_drop_privs(struct passwd *pwd) {
     if (setgroups(0, NULL) == -1)
 	my_fatale("unable to setgroups");
 
+#ifdef HAVE_SETRESGID
     if (setresgid(pwd->pw_gid, pwd->pw_gid, pwd->pw_gid) == -1)
 	my_fatale("unable to setresgid");
+#elif defined(HAVE_SETREGID)
+    if (setregid(pwd->pw_gid, pwd->pw_gid) == -1)
+	my_fatale("unable to setregid");
+#else
+#error "no setresgid or setregid available"
+#endif
 
+#ifdef HAVE_SETRESUID
     if (setresuid(pwd->pw_uid, pwd->pw_uid, pwd->pw_uid) == -1)
    	my_fatale("unable to setresuid");
+#elif defined(HAVE_SETREUID)
+    if (setreuid(pwd->pw_uid, pwd->pw_uid) == -1)
+   	my_fatale("unable to setreuid");
+#else
+#error "no setresuid or setreuid available"
+#endif
 }
 
 /* Minimal sandbox that sets zero nprocs and filesize rlimits */

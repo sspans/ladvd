@@ -661,10 +661,14 @@ static void netif_bond(int sockfd, struct nhead *netifs, struct netif *master,
 #elif HAVE_NET_IF_TRUNK_H
     struct trunk_reqport rpbuf[TRUNK_MAX_PORTS];
     struct trunk_reqall ra = {};
+#elif HAVE_NET_IF_BOND_VAR_H
+    struct if_bond_req ibr = {};
+    struct if_bond_status *ibs;
+    struct if_bond_status_req *ibsr;
 #endif
 
-    // check for lacp
 #if defined(HAVE_LINUX_IF_BONDING_H)
+    // check for lacp
     strlcpy(ifr->ifr_name, master->name, IFNAMSIZ);
     ifr->ifr_data = (char *)&ifbond;
 
@@ -759,10 +763,6 @@ static void netif_bond(int sockfd, struct nhead *netifs, struct netif *master,
 #endif /* HAVE_NET_IF_LAGG_H || HAVE_NET_IF_TRUNK_H */
 
 #ifdef HAVE_NET_IF_BOND_VAR_H
-    struct if_bond_req ibr = {};
-    struct if_bond_status *ibs;
-    struct if_bond_status_req *ibsr;
-
     ibr.ibr_op = IF_BOND_OP_GET_STATUS;
     ibsr = &ibr.ibr_ibru.ibru_status;
     ibsr->ibsr_version = IF_BOND_STATUS_REQ_VERSION;
