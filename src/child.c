@@ -143,10 +143,10 @@ void child_send(int fd, short event, void *evs) {
 
     // update netifs
     my_log(INFO, "fetching all interfaces"); 
-    if (netif_fetch(sargc, sargv, &sysinfo, &netifs) == 0) {
-	my_log(CRIT, "no configured ethernet interfaces found");
-	return;
-    }
+
+    // no configured ethernet interfaces found
+    if (netif_fetch(sargc, sargv, &sysinfo, &netifs) == 0)
+	goto out;
 
     while ((netif = netif_iter(netif, &netifs)) != NULL) {
 
@@ -161,6 +161,14 @@ void child_send(int fd, short event, void *evs) {
 	my_log(INFO, "starting loop with interface %s", netif->name); 
 
 	while ((subif = subif_iter(subif, netif)) != NULL) {
+
+	    // skip special interfaces
+	    if (subif->type < NETIF_REGULAR)
+		continue;
+	    if ((subif->type == NETIF_WIRELESS) && !(options & OPT_WIRELESS))
+		continue;
+	    if ((subif->type == NETIF_TAP) && !(options & OPT_TAP))
+		continue;
 
 	    // populate msg
 	    memset(&msg, 0, sizeof(msg));
@@ -220,6 +228,7 @@ void child_send(int fd, short event, void *evs) {
     if (options & OPT_RECV)
 	child_expire();
 
+out:
     // schedule the next run
     event_add(evs, &tv);
 }

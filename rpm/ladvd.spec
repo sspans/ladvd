@@ -33,7 +33,7 @@ Requires:	/usr/bin/lsb_release
 %if ! 0%{?suse_version}
 Requires:	hwdata
 %endif
-Version:	0.9.2
+Version:	1.0.4
 Release:	1%{?dist}
 License:	ISC
 URL:		http://code.google.com/p/ladvd/
@@ -138,6 +138,8 @@ fi
 
 
 %changelog
+* Mon Jan 30 2012 sten@blinkenlights.nl
+- new upstream release
 * Sat Feb 20 2010 sten@blinkenlights.nl
 - added ladvdc, check-devel and libcap-devel
 * Tue Jan 26 2010 sten@blinkenlights.nl

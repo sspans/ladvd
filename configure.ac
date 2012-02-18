@@ -1,7 +1,7 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_INIT([ladvd], [0.9.2], [sten@blinkenlights.nl])
+AC_INIT([ladvd], [1.0.4], [sten@blinkenlights.nl])
 AC_CANONICAL_TARGET
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([src/config.h.in])
@@ -119,7 +119,7 @@ AS_IF([test -n "$check_ids"],
 # libpcap
 AC_ARG_ENABLE([static-libpcap],
     AC_HELP_STRING([--enable-static-libpcap],
-		    [build binaries a static libpcap]),
+		    [build binaries with a static libpcap]),
     [libpcap_static=yes], [libpcap_static=no])
 
 AC_CHECK_HEADER([pcap.h])
@@ -135,9 +135,7 @@ AS_IF([test "$libpcap_static" = "no"],
 	# otherwise we try our best to locate the library
 	AX_LD_CHECK_FLAG([-l:libpcap.a -lrt], [], [],
 	 [AC_SUBST(PCAP_LIB,"-l:libpcap.a -lrt")],
-	 [ if test $ac_cv_libpcap_dir != "(system)"; then
-	    AC_SUBST(PCAP_LIB,"$le_libdir/libpcap.a")
-	   elif test -f "$libdir/libpcap.a"; then
+	 [ if test -f "$libdir/libpcap.a"; then
 	    AC_SUBST(PCAP_LIB,"$libdir/libpcap.a")
 	   elif test -f "/lib/libpcap.a"; then
 	    AC_SUBST(PCAP_LIB,"/lib/libpcap.a")
@@ -165,7 +163,7 @@ AC_ARG_WITH(libevent,
 
 AC_ARG_ENABLE([static-libevent],
     AC_HELP_STRING([--enable-static-libevent],
-		    [build binaries a static libevent]),
+		    [build binaries with a static libevent]),
     [libevent_static=yes], [libevent_static=no])
 
 dnl ------------------------------------------------------

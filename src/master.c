@@ -222,7 +222,8 @@ void master_req(int reqfd, short event) {
 	    break;
 #if HAVE_LINUX_ETHTOOL_H
 	// fetch ethtool details
-	case MASTER_ETHTOOL:
+	case MASTER_ETHTOOL_GSET:
+	case MASTER_ETHTOOL_GDRV:
 	    mreq.len = master_ethtool(&mreq);
 	    break;
 #endif /* HAVE_LINUX_ETHTOOL_H */
@@ -265,8 +266,11 @@ int master_check(struct master_req *mreq) {
 	case MASTER_CLOSE:
 	    return(EXIT_SUCCESS);
 #if HAVE_LINUX_ETHTOOL_H
-	case MASTER_ETHTOOL:
+	case MASTER_ETHTOOL_GSET:
 	    assert(mreq->len == sizeof(struct ethtool_cmd));
+	    return(EXIT_SUCCESS);
+	case MASTER_ETHTOOL_GDRV:
+	    assert(mreq->len == sizeof(struct ethtool_drvinfo));
 	    return(EXIT_SUCCESS);
 #endif /* HAVE_LINUX_ETHTOOL_H */
 #if defined(SIOCSIFDESCR) || defined(HAVE_SYSFS)
@@ -389,22 +393,32 @@ void master_close(struct rawfd *rfd) {
 ssize_t master_ethtool(struct master_req *mreq) {
     struct ifreq ifr = {};
     struct ethtool_cmd ecmd = {};
+    struct ethtool_drvinfo edrvinfo = {};
 
     assert(mreq != NULL);
 
     // prepare ifr struct
     strlcpy(ifr.ifr_name, mreq->name, IFNAMSIZ);
 
-    // prepare ecmd struct
-    ecmd.cmd = ETHTOOL_GSET;
-    ifr.ifr_data = (caddr_t)&ecmd;
+    if (mreq->op == MASTER_ETHTOOL_GSET) { 
+	ecmd.cmd = ETHTOOL_GSET;
+	ifr.ifr_data = (caddr_t)&ecmd;
 
-    if (ioctl(sock, SIOCETHTOOL, &ifr) != -1) {
+	if (ioctl(sock, SIOCETHTOOL, &ifr) == -1)
+	    return(0);
 	memcpy(mreq->buf, &ecmd, sizeof(ecmd));
 	return(sizeof(ecmd));
-    } else {
-	return(0);
+    } else if (mreq->op == MASTER_ETHTOOL_GDRV) { 
+	edrvinfo.cmd = ETHTOOL_GDRVINFO;
+	ifr.ifr_data = (caddr_t)&edrvinfo;
+
+	if (ioctl(sock, SIOCETHTOOL, &ifr) == -1)
+	    return(0);
+	memcpy(mreq->buf, &edrvinfo, sizeof(edrvinfo));
+	return(sizeof(edrvinfo));
     }
+
+    return(0);
 }
 #endif /* HAVE_LINUX_ETHTOOL_H */
 
@@ -448,6 +462,8 @@ ssize_t master_descr(struct master_req *mreq) {
 	ret = mreq->len;
     return(ret);
 #endif /* SIOCSIFDESCR */
+
+    return(0);
 }
 
 #ifdef HAVE_SYSFS
@@ -566,6 +582,13 @@ int master_socket(struct rawfd *rfd) {
 
     if (pcap_setdirection(p_handle, PCAP_D_IN) < 0)
 	my_fatal("pcap_setdirection for %s failed", rfd->name);
+
+#if defined(__OpenBSD__)
+    // OpenBSD has no support for bpf-timeouts when using kqueue
+    // so we enable immediate mode to receive packets timely
+    int v = 1;
+    ioctl(pcap_get_selectable_fd(p_handle), BIOCIMMEDIATE, &v);
+#endif
 
     rfd->p_handle = p_handle;
 

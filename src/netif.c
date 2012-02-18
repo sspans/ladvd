@@ -375,7 +375,7 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 static int netif_type(int sockfd, uint32_t index,
 	struct ifaddrs *ifaddr, struct ifreq *ifr) {
 
-    char dname[IFNAMSIZ];
+    char dname[IFNAMSIZ+1] = {};
 #if defined(HAVE_LINUX_IF_VLAN_H) && \
     HAVE_DECL_GET_VLAN_REALDEV_NAME_CMD
     struct vlan_ioctl_args if_request = {};
@@ -390,7 +390,7 @@ static int netif_type(int sockfd, uint32_t index,
 #endif
 
     // detect driver name
-    netif_driver(sockfd, index, ifr, dname, sizeof(dname));
+    netif_driver(sockfd, index, ifr, dname, IFNAMSIZ);
 
     // detect wireless interfaces
     if (netif_wireless(sockfd, ifaddr, ifr) >= 0)
@@ -512,15 +512,26 @@ static int netif_type(int sockfd, uint32_t index,
 static void netif_driver(int sockfd, uint32_t index, struct ifreq *ifr,
 		    char *dname, size_t len) {
 #if HAVE_LINUX_ETHTOOL_H
+    struct master_req mreq = {};
     struct ethtool_drvinfo drvinfo = {};
 
-    // use ethtool to detect various drivers
-    drvinfo.cmd = ETHTOOL_GDRVINFO;
-    ifr->ifr_data = (caddr_t)&drvinfo;
-    if (ioctl(sockfd, SIOCETHTOOL, ifr) >= 0)
-	strlcpy(dname, drvinfo.driver, len);
+    memset(dname, 0, len);
+
+    mreq.op = MASTER_ETHTOOL_GDRV;
+    mreq.index = index;
+    mreq.len = sizeof(drvinfo);
+
+    if (my_mreq(&mreq) != sizeof(drvinfo))
+	return;
+
+    // copy drvinfo struct
+    memcpy(&drvinfo, mreq.buf, sizeof(drvinfo));
+
+    strlcpy(dname, drvinfo.driver, len);
 #elif defined IFDATA_DRIVERNAME
     int name[6];
+
+    memset(dname, 0, len);
 
     name[0] = CTL_NET;
     name[1] = PF_LINK;
@@ -653,17 +664,19 @@ static void netif_bond(int sockfd, struct nhead *netifs, struct netif *master,
 #endif
 
     // check for lacp
-#if defined(HAVE_LINUX_IF_BONDING_H) && defined(BOND_MODE_8023AD)
+#if defined(HAVE_LINUX_IF_BONDING_H)
     strlcpy(ifr->ifr_name, master->name, IFNAMSIZ);
     ifr->ifr_data = (char *)&ifbond;
 
     if (ioctl(sockfd, SIOCBONDINFOQUERY, ifr) >= 0) {
+#if defined(BOND_MODE_8023AD)
 	if (ifbond.bond_mode == BOND_MODE_8023AD)
 	    master->bonding_mode = NETIF_BONDING_LACP;
-	else if (ifbond.bond_mode == BOND_MODE_ACTIVEBACKUP)
+#endif
+	if (ifbond.bond_mode == BOND_MODE_ACTIVEBACKUP)
 	    master->bonding_mode = NETIF_BONDING_FAILOVER;
     }
-#endif /* HAVE_LINUX_IF_BONDING_H && BOND_MODE_8023AD */
+#endif /* HAVE_LINUX_IF_BONDING_H */
 
     if (master->bonding_mode == NETIF_BONDING_LACP)
 	my_log(INFO, "lacp enabled on %s", master->name);
@@ -1102,7 +1115,7 @@ int netif_media(struct netif *netif) {
 	{0, 0}
     };
 
-    mreq.op = MASTER_ETHTOOL;
+    mreq.op = MASTER_ETHTOOL_GSET;
     mreq.index = netif->index;
     mreq.len = sizeof(ecmd);
 
