@@ -602,7 +602,6 @@ START_TEST(test_lldp_decode) {
     fail_unless (msg.ttl == 120, "ttl should be 120");
 
     mark_point();
-    loglevel = DEBUG;
     read_packet(&msg, "proto/lldp/47.good.nexus");
     fail_unless (lldp_decode(&msg) == 268, "packet length incorrect");
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
@@ -612,6 +611,17 @@ START_TEST(test_lldp_decode) {
 		"system name should be 'XdasdXZ'");
     fail_unless (strcmp(msg.peer[PEER_PORTNAME], "Eth110/1/13") == 0,
 	"port id should be 'Eth110/1/13' not '%s'", msg.peer[PEER_PORTNAME]);
+
+    mark_point();
+    read_packet(&msg, "proto/lldp/48.good.4500G");
+    fail_unless (lldp_decode(&msg) == 359, "packet length incorrect");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+    fail_unless (msg.ttl == 120, "ttl should be 120");
+    fail_unless (strcmp(msg.peer[PEER_HOSTNAME], "sw2.blat") == 0,
+		"system name should be 'sw2.blat'");
+    fail_unless (strcmp(msg.peer[PEER_PORTNAME], "0:1e:c1:42:42:42") == 0,
+	"port id should be '0:1e:c1:42:42:42' not '%s'", msg.peer[PEER_PORTNAME]);
 
     mark_point();
     my_log(CRIT, "check");
