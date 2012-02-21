@@ -661,12 +661,10 @@ static int lldp_port_id(struct master_msg *msg,
 		PEER_STR(msg->peer[PEER_PORTNAME], str);
 	    }
 	case LLDP_PORT_MAC_ADDR_SUBTYPE:
-	    str = tlv_str_addr(PEER_ADDR_802, pos, length);
 	    if (msg->decode == DECODE_PRINT) {
+		str = tlv_str_addr(PEER_ADDR_802, pos, length);
 	    	printf("Port id: %s\n", str);
 		free(str);
-	    } else {
-		PEER_STR(msg->peer[PEER_PORTNAME], str);
 	    }
 	    break;
 	default:
