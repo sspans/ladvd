@@ -560,6 +560,10 @@ START_TEST(test_lldp_decode) {
 		"system name should be 'Summit300-48'");
     fail_unless (strcmp(msg.peer[PEER_PORTNAME], "1/1") == 0,
 	"port id should be '1/1' not '%s'", msg.peer[PEER_PORTNAME]);
+    fail_unless (
+	strcmp(msg.peer[PEER_PORTDESCR], "Summit300-48-Port 1001") == 0,
+	"port descr should be 'Summit300-48-Port 1001' not '%s'",
+		    msg.peer[PEER_PORTDESCR]);
 
     mark_point();
     read_packet(&msg, "proto/lldp/43.good.lldpmed");
@@ -571,6 +575,8 @@ START_TEST(test_lldp_decode) {
 		"system name should be 'ProCurve Switch 2600-8-PWR'");
     fail_unless (strcmp(msg.peer[PEER_PORTNAME], "1") == 0,
 	"port id should be '1' not '%s'", msg.peer[PEER_PORTNAME]);
+    fail_unless (strcmp(msg.peer[PEER_PORTDESCR], "1") == 0,
+	"port descr should be '1' not '%s'", msg.peer[PEER_PORTDESCR]);
 
     mark_point();
     read_packet(&msg, "proto/lldp/44.good.spaces");
@@ -582,6 +588,8 @@ START_TEST(test_lldp_decode) {
 		"system name should be 'HP ProCurve Switch 2626'");
     fail_unless (strcmp(msg.peer[PEER_PORTNAME], "25") == 0,
 	"port id should be '25' not '%s'", msg.peer[PEER_PORTNAME]);
+    fail_unless (strcmp(msg.peer[PEER_PORTDESCR], "25") == 0,
+	"port descr should be '25' not '%s'", msg.peer[PEER_PORTDESCR]);
 
     mark_point();
     read_packet(&msg, "proto/lldp/45.good.vlan");
@@ -593,6 +601,10 @@ START_TEST(test_lldp_decode) {
 		"system name should be 'trillian.blinkenlights.nl'");
     fail_unless (strcmp(msg.peer[PEER_PORTNAME], "Gi0/1") == 0,
 	"port id should be 'Gi0/1' not '%s'", msg.peer[PEER_PORTNAME]);
+    fail_unless (
+	strcmp(msg.peer[PEER_PORTDESCR], "GigabitEthernet0/1") == 0,
+	"port descr should be 'GigabitEthernet0/1' not '%s'",
+		    msg.peer[PEER_PORTDESCR]);
 
     mark_point();
     read_packet(&msg, "proto/lldp/46.good.d-link");
@@ -600,6 +612,10 @@ START_TEST(test_lldp_decode) {
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (msg.ttl == 120, "ttl should be 120");
+    fail_unless (strcmp(msg.peer[PEER_PORTNAME], "23") == 0,
+	"port id should be '23' not '%s'", msg.peer[PEER_PORTNAME]);
+    fail_unless (msg.peer[PEER_PORTDESCR] == NULL,
+	"port descr should be NULL not '%s'", msg.peer[PEER_PORTDESCR]);
 
     mark_point();
     read_packet(&msg, "proto/lldp/47.good.nexus");
@@ -611,6 +627,10 @@ START_TEST(test_lldp_decode) {
 		"system name should be 'XdasdXZ'");
     fail_unless (strcmp(msg.peer[PEER_PORTNAME], "Eth110/1/13") == 0,
 	"port id should be 'Eth110/1/13' not '%s'", msg.peer[PEER_PORTNAME]);
+    fail_unless (
+	strcmp(msg.peer[PEER_PORTDESCR], "Ethernet110/1/13") == 0,
+	"port descr should be 'Ethernet110/1/13' not '%s'",
+		    msg.peer[PEER_PORTDESCR]);
 
     mark_point();
     read_packet(&msg, "proto/lldp/48.good.4500G");
@@ -622,6 +642,9 @@ START_TEST(test_lldp_decode) {
 		"system name should be 'sw2.blat'");
     fail_unless (msg.peer[PEER_PORTNAME] == NULL,
 	"port id should be NULL not '%s'", msg.peer[PEER_PORTNAME]);
+    fail_unless (strcmp(msg.peer[PEER_PORTDESCR],
+			"GigabitEthernet1/0/9 Interface") == 0,
+	"port descr should not be '%s'", msg.peer[PEER_PORTDESCR]);
 
     mark_point();
     my_log(CRIT, "check");

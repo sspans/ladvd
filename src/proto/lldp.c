@@ -541,8 +541,12 @@ size_t lldp_decode(struct master_msg *msg) {
 		if (!lldp_system_name(msg, pos, tlv_length))
 		    return 0;
 		break;
-	    case LLDP_TYPE_SYSTEM_DESCR:
 	    case LLDP_TYPE_PORT_DESCR:
+		if (msg->decode == DECODE_STR)
+		    PEER_STR(msg->peer[PEER_PORTDESCR], 
+			     tlv_str_copy(pos, tlv_length));
+		/* FALLTHROUGH */
+	    case LLDP_TYPE_SYSTEM_DESCR:
 		if ((msg->decode == DECODE_PRINT) && 
 		    !lldp_descr_print(tlv_type, pos, tlv_length))
 		    return 0;
