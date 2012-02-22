@@ -620,8 +620,8 @@ START_TEST(test_lldp_decode) {
     fail_unless (msg.ttl == 120, "ttl should be 120");
     fail_unless (strcmp(msg.peer[PEER_HOSTNAME], "sw2.blat") == 0,
 		"system name should be 'sw2.blat'");
-    fail_unless (strcmp(msg.peer[PEER_PORTNAME], "0:1e:c1:42:42:42") == 0,
-	"port id should be '0:1e:c1:42:42:42' not '%s'", msg.peer[PEER_PORTNAME]);
+    fail_unless (msg.peer[PEER_PORTNAME] == NULL,
+	"port id should be NULL not '%s'", msg.peer[PEER_PORTNAME]);
 
     mark_point();
     my_log(CRIT, "check");
