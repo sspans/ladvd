@@ -296,7 +296,7 @@ void cli_header() {
 void cli_write(struct master_msg *msg, const uint16_t holdtime) {
     char *peer_host = msg->peer[PEER_HOSTNAME];
     char *peer_portname = msg->peer[PEER_PORTNAME];
-    char *peer_portdescr = msg->peer[PEER_PORTNAME];
+    char *peer_portdescr = msg->peer[PEER_PORTDESCR];
     char *peer_suffix = NULL;
     char *cap = msg->peer[PEER_CAP];
 
