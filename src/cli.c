@@ -241,16 +241,19 @@ static inline void swapchr(char *str, const int c, const int d) {
 
 void batch_write(struct master_msg *msg, const uint16_t holdtime) {
     char *peer_host = msg->peer[PEER_HOSTNAME];
-    char *peer_port = msg->peer[PEER_PORTNAME];
+    char *peer_portname = msg->peer[PEER_PORTNAME];
+    char *peer_portdescr = msg->peer[PEER_PORTDESCR];
     char *cap = msg->peer[PEER_CAP];
     static unsigned int count = 0;
 
     swapchr(peer_host, '\'', '\"');
-    swapchr(peer_port, '\'', '\"');
+    swapchr(peer_portname, '\'', '\"');
+    swapchr(peer_portdescr, '\'', '\"');
 
     printf("INTERFACE_%u='%s'\n", count, STR(msg->name));
     printf("HOSTNAME_%u='%s'\n", count, STR(peer_host));
-    printf("PORTNAME_%u='%s'\n", count, STR(peer_port));
+    printf("PORTNAME_%u='%s'\n", count, STR(peer_portname));
+    printf("PORTDESCR_%u='%s'\n", count, STR(peer_portdescr));
     printf("PROTOCOL_%u='%s'\n", count, protos[msg->proto].name);
     printf("ADDR_INET4_%u='%s'\n", count, STR(msg->peer[PEER_ADDR_INET4]));
     printf("ADDR_INET6_%u='%s'\n", count, STR(msg->peer[PEER_ADDR_INET6]));
