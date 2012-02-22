@@ -1,8 +1,8 @@
-.TH ladvd 8 "July 19 2009" ladvd
+.TH LADVD 8 "July 19 2009" ladvd
 .SH NAME
 ladvd \- send link layer advertisements
 .SH SYNOPSIS
-.BI "ladvd [ -a ]" 
+.BI "ladvd [ -a ]"
 .BI "[ " INTERFACE " ] [ " INTERFACE " ]"
 .B ...
 .SH DESCRIPTION

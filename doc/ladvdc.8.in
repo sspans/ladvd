@@ -1,8 +1,8 @@
-.TH ladvdc 8 "April 19 2010" ladvdc
+.TH LADVDC 8 "April 19 2010" ladvdc
 .SH NAME
 ladvdc \- display link layer advertisements
 .SH SYNOPSIS
-.BI "ladvdc " 
+.BI "ladvdc "
 .BI "[ " INTERFACE " ] [ " INTERFACE " ]"
 .B ...
 .SH DESCRIPTION
@@ -10,7 +10,7 @@ ladvdc \- display link layer advertisements
 displays link layer advertisements received by
 .BR ladvd (8)
 running in receive mode (via -a or -z).
-Optionally a list of protocols and/or interfaces can be supplied to limit the amount of information displayed. Only users in the PACKAGE_USER group are allowed to connect to the daemon. 
+Optionally a list of protocols and/or interfaces can be supplied to limit the amount of information displayed. Only users in the PACKAGE_USER group are allowed to connect to the daemon.
 .SH OPTIONS
 .IP -b
 Print output in a format suitable for inclusion in shell scripts.
