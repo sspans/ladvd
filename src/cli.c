@@ -295,18 +295,24 @@ void cli_header() {
 
 void cli_write(struct master_msg *msg, const uint16_t holdtime) {
     char *peer_host = msg->peer[PEER_HOSTNAME];
-    char *peer_port = msg->peer[PEER_PORTNAME];
+    char *peer_portname = msg->peer[PEER_PORTNAME];
+    char *peer_portdescr = msg->peer[PEER_PORTNAME];
+    char *peer_suffix = NULL;
     char *cap = msg->peer[PEER_CAP];
 
     // shorten
     if (peer_host && (strlen(peer_host) > host_width))
 	peer_host[strcspn(peer_host, ".")] = '\0';
-    if (peer_port)
-	portname_abbr(peer_port);
+
+    peer_suffix = peer_portname;
+    if (!peer_suffix)
+	peer_suffix = peer_portdescr;
+    if (peer_suffix)
+	portname_abbr(peer_suffix);
 
     printf("%-*.*s %-13.13s %-7.7s %-12" PRIu16 " %-13.13s %-*.*s\n",
 	host_width, host_width, STR(peer_host), STR(msg->name), protos[msg->proto].name,
-	holdtime, STR(cap), port_width, port_width, STR(peer_port));
+	holdtime, STR(cap), port_width, port_width, STR(peer_suffix));
 }
 
 void debug_header() {
