@@ -322,7 +322,7 @@ void child_queue(int fd, short event) {
     }
 
     // update ifdescr
-    if (options & OPT_DESCR)
+    if (options & OPT_IFDESCR)
 	netif_descr(subif, &mqueue);
 
     // return unless we need to enable the received protocol
@@ -386,7 +386,7 @@ void child_expire() {
 	    netif_protos(netif, &mqueue);
 
 	// update ifdescr
-	if (options & OPT_DESCR)
+	if (options & OPT_IFDESCR)
 	    netif_descr(subif, &mqueue);
 
 	subif->update = 0;

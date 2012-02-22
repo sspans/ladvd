@@ -121,7 +121,7 @@ size_t lldp_packet(void *packet, struct netif *netif,
 
 
     // port description
-    if (options & OPT_DESCR)
+    if (options & OPT_IFDESCR)
 	description = netif->device_name;
     else if (strlen(netif->description))
 	description = netif->description;

@@ -368,10 +368,14 @@ void netif_protos(struct netif *netif, struct mhead *mqueue) {
 void netif_descr(struct netif *netif, struct mhead *mqueue) {
     struct master_msg *qmsg = NULL;
     struct master_req *mreq = NULL;
-    char *peer = NULL, *port = NULL;
+    char *peer = NULL, *suffix = NULL;
     char descr[IFDESCRSIZE] = {};
     char paddr[ETHER_ADDR_LEN] = {};
-    uint16_t peers = 0;
+    uint16_t peers = 0, peer_suffix;
+    
+    peer_suffix = PEER_PORTNAME;
+    if (options & OPT_USEDESCR)
+	peer_suffix = PEER_PORTDESCR;
 
     TAILQ_FOREACH(qmsg, mqueue, entries) {
 	if (netif->index != qmsg->index)
@@ -379,8 +383,8 @@ void netif_descr(struct netif *netif, struct mhead *mqueue) {
 
 	if (!peer && qmsg->peer[PEER_HOSTNAME])
 	    peer = qmsg->peer[PEER_HOSTNAME];
-	if (!port && qmsg->peer[PEER_PORTNAME])
-	    port = my_strdup(qmsg->peer[PEER_PORTNAME]);
+	if (!suffix && qmsg->peer[peer_suffix])
+	    suffix = my_strdup(qmsg->peer[peer_suffix]);
 
 	// this assumes a sorted queue
 	if (memcmp(paddr, qmsg->msg + ETHER_ADDR_LEN, ETHER_ADDR_LEN) == 0)
@@ -393,10 +397,10 @@ void netif_descr(struct netif *netif, struct mhead *mqueue) {
     if (peers == 0) {
 	memset(descr, 0, IFDESCRSIZE);
     } else if (peers == 1) {
-	if (port)
-	    portname_abbr(port);
-	if (peer && port)
-	    snprintf(descr, IFDESCRSIZE, "connected to %s (%s)", peer, port);
+	if (suffix)
+	    portname_abbr(suffix);
+	if (peer && suffix)
+	    snprintf(descr, IFDESCRSIZE, "connected to %s (%s)", peer, suffix);
 	else if (peer)
 	    snprintf(descr, IFDESCRSIZE, "connected to %s", peer);
 	else
@@ -405,8 +409,8 @@ void netif_descr(struct netif *netif, struct mhead *mqueue) {
 	snprintf(descr, IFDESCRSIZE, "connected to %" PRIu16 " peers", peers);
     }
 
-    if (port)
-	free(port);
+    if (suffix)
+	free(suffix);
 
     // only update if changed
     if (strncmp(descr, netif->description, IFDESCRSIZE) == 0)

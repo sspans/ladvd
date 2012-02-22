@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
     argv = sargv;
 #endif
 
-    while ((ch = getopt(argc, argv, "adfhm:noqrstu:vwzc:l:LCEFN")) != -1) {
+    while ((ch = getopt(argc, argv, "adfhm:noqrstu:vwyzc:l:LCEFN")) != -1) {
 	switch(ch) {
 	    case 'a':
 		options |= OPT_AUTO | OPT_RECV;
@@ -127,9 +127,11 @@ int main(int argc, char *argv[]) {
 	    case 'w':
 		options |= OPT_WIRELESS;
 		break;
-	    case 'z':
 #if defined(SIOCSIFDESCR) || defined(HAVE_SYSFS)
-		options |= OPT_RECV | OPT_DESCR;
+	    case 'y':
+		options |= OPT_USEDESCR;
+	    case 'z':
+		options |= OPT_RECV | OPT_IFDESCR;
 		break;
 #else
 		my_log(CRIT, "ifdescr support not available");
