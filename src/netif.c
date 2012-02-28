@@ -649,8 +649,10 @@ static void netif_device_id(int sockfd, struct netif *netif, struct ifreq *ifr) 
 // handle aggregated interfaces
 static void netif_bond(int sockfd, struct nhead *netifs, struct netif *master,
 		struct ifreq *ifr) {
-
+#if HAVE_LINUX_IF_BONDING_H || HAVE_NET_IF_LAGG_H || \
+    HAVE_NET_IF_TRUNK_H || HAVE_NET_IF_BOND_VAR_H
     struct netif *subif = NULL, *csubif = master;
+#endif
 
 #ifdef HAVE_LINUX_IF_BONDING_H
     struct ifbond ifbond = {};
