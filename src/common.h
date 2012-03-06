@@ -234,7 +234,8 @@ struct master_req {
 #define PEER_ADDR_INET4	4
 #define PEER_ADDR_INET6	5
 #define PEER_ADDR_802	6
-#define PEER_MAX	7
+#define PEER_VLAN_ID	7
+#define PEER_MAX	8
 #define PEER_STR(x,y)  ((x)?(free(y)):(x = y))
 
 static inline

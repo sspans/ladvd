@@ -63,9 +63,9 @@ static int cdp_system_name(struct master_msg *, unsigned char *, size_t,
 static int cdp_port_id(struct master_msg *, unsigned char *, size_t);
 static int cdp_system_cap(struct master_msg *, unsigned char *, size_t);
 static int cdp_addr(struct master_msg *, unsigned char *, size_t, uint16_t);
+static int cdp_vlan(struct master_msg *, unsigned char *, size_t);
 static int cdp_descr_print(uint16_t, unsigned char *, size_t);
 static int cdp_vtp_print(struct master_msg *, unsigned char *, size_t);
-static int cdp_vlan_print(struct master_msg *, unsigned char *, size_t);
 static int cdp_duplex_print(struct master_msg *, unsigned char *, size_t);
 
 
@@ -372,8 +372,7 @@ size_t cdp_decode(struct master_msg *msg) {
 		    return 0;
 		break;
 	    case CDP_TYPE_NATIVE_VLAN:
-		if ((msg->decode == DECODE_PRINT) && 
-		    !cdp_vlan_print(msg, pos, tlv_length))
+		if (!cdp_vlan(msg, pos, tlv_length))
 		    return 0;
 		break;
 	    case CDP_TYPE_DUPLEX:
@@ -612,6 +611,26 @@ next_addr:
     return 1;
 }
 
+static int cdp_vlan(struct master_msg *msg, 
+    unsigned char *pos, size_t length) {
+
+    char *str = NULL;
+    uint16_t vlan = 0;
+
+    if ((length != 2) || !GRAB_UINT16(vlan)) {
+	my_log(INFO, "Corrupt CDP packet: invalid Native VLAN TLV");
+	return 0;
+    }
+
+    if (msg->decode == DECODE_PRINT)
+	printf("Native VLAN: %" PRIu16 "\n", vlan);
+    else
+	if (asprintf(&str, "%" PRIu16, vlan) > 0)
+	    PEER_STR(msg->peer[PEER_VLAN_ID], str);
+
+    return 1;
+}
+
 static int cdp_vtp_print(struct master_msg *msg, 
     unsigned char *pos, size_t length) {
 
@@ -620,21 +639,6 @@ static int cdp_vtp_print(struct master_msg *msg,
     str = tlv_str_copy(pos, length);
     printf("VTP Management Domain: '%s'\n", str);
     free(str);
-
-    return 1;
-}
-
-static int cdp_vlan_print(struct master_msg *msg, 
-    unsigned char *pos, size_t length) {
-
-    uint16_t vlan = 0;
-
-    if ((length != 2) || !GRAB_UINT16(vlan)) {
-	my_log(INFO, "Corrupt CDP packet: invalid Native VLAN TLV");
-	return 0;
-    }
-
-    printf("Native VLAN: %" PRIu16 "\n", vlan);
 
     return 1;
 }

@@ -258,6 +258,7 @@ void batch_write(struct master_msg *msg, const uint16_t holdtime) {
     printf("ADDR_INET4_%u='%s'\n", count, STR(msg->peer[PEER_ADDR_INET4]));
     printf("ADDR_INET6_%u='%s'\n", count, STR(msg->peer[PEER_ADDR_INET6]));
     printf("ADDR_802_%u='%s'\n", count, STR(msg->peer[PEER_ADDR_802]));
+    printf("VLAN_ID_%u='%s'\n", count, STR(msg->peer[PEER_VLAN_ID]));
     printf("CAPABILITIES_%u='%s'\n", count, STR(cap));
     printf("TTL_%u='%" PRIu16 "'\n", count, msg->ttl);
     printf("HOLDTIME_%u='%" PRIu16 "'\n", count, holdtime);
