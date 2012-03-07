@@ -272,6 +272,10 @@ AC_CHECK_HEADERS([event.h], [], AC_MSG_ERROR([libevent headers missing]))
 AC_CHECK_HEADERS([evhttp.h], [ AM_CONDITIONAL([HTTP_ENABLED], [true]) ],
 	[ AM_CONDITIONAL([HTTP_ENABLED], [false]) ], [ #include <sys/types.h> ])
 
+# check for libnetlink 3
+PKG_CHECK_MODULES(LIBNL3, libnl-3.0 >= 3.1,
+    AC_DEFINE(HAVE_NETLINK_H, 1, [have libnl3]), :)
+
 # Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS([fcntl.h grp.h pwd.h stdarg.h stdint.h stdio.h syslog.h \

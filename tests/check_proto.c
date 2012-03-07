@@ -549,6 +549,8 @@ START_TEST(test_lldp_decode) {
 	"system name should be 'test'");
     fail_unless (strcmp(msg.peer[PEER_PORTNAME], "1/3") == 0,
 	"port id should be '1/3' not '%s'", msg.peer[PEER_PORTNAME]);
+    fail_unless (msg.peer[PEER_VLAN_ID] == NULL,
+	"vlan id should be empty, not '%s'", msg.peer[PEER_VLAN_ID]);
 
     mark_point();
     read_packet(&msg, "proto/lldp/42.good.big");
@@ -564,6 +566,8 @@ START_TEST(test_lldp_decode) {
 	strcmp(msg.peer[PEER_PORTDESCR], "Summit300-48-Port 1001") == 0,
 	"port descr should be 'Summit300-48-Port 1001' not '%s'",
 		    msg.peer[PEER_PORTDESCR]);
+    fail_unless (strcmp(msg.peer[PEER_VLAN_ID], "488") == 0,
+	"vlan id should be '488' not '%s'", msg.peer[PEER_VLAN_ID]);
 
     mark_point();
     read_packet(&msg, "proto/lldp/43.good.lldpmed");
@@ -577,6 +581,8 @@ START_TEST(test_lldp_decode) {
 	"port id should be '1' not '%s'", msg.peer[PEER_PORTNAME]);
     fail_unless (strcmp(msg.peer[PEER_PORTDESCR], "1") == 0,
 	"port descr should be '1' not '%s'", msg.peer[PEER_PORTDESCR]);
+    fail_unless (msg.peer[PEER_VLAN_ID] == NULL,
+	"vlan id should be empty, not '%s'", msg.peer[PEER_VLAN_ID]);
 
     mark_point();
     read_packet(&msg, "proto/lldp/44.good.spaces");
@@ -590,6 +596,8 @@ START_TEST(test_lldp_decode) {
 	"port id should be '25' not '%s'", msg.peer[PEER_PORTNAME]);
     fail_unless (strcmp(msg.peer[PEER_PORTDESCR], "25") == 0,
 	"port descr should be '25' not '%s'", msg.peer[PEER_PORTDESCR]);
+    fail_unless (msg.peer[PEER_VLAN_ID] == NULL,
+	"vlan id should be empty, not '%s'", msg.peer[PEER_VLAN_ID]);
 
     mark_point();
     read_packet(&msg, "proto/lldp/45.good.vlan");
@@ -616,6 +624,8 @@ START_TEST(test_lldp_decode) {
 	"port id should be '23' not '%s'", msg.peer[PEER_PORTNAME]);
     fail_unless (msg.peer[PEER_PORTDESCR] == NULL,
 	"port descr should be NULL not '%s'", msg.peer[PEER_PORTDESCR]);
+    fail_unless (msg.peer[PEER_VLAN_ID] == NULL,
+	"vlan id should be empty, not '%s'", msg.peer[PEER_VLAN_ID]);
 
     mark_point();
     read_packet(&msg, "proto/lldp/47.good.nexus");
@@ -631,6 +641,8 @@ START_TEST(test_lldp_decode) {
 	strcmp(msg.peer[PEER_PORTDESCR], "Ethernet110/1/13") == 0,
 	"port descr should be 'Ethernet110/1/13' not '%s'",
 		    msg.peer[PEER_PORTDESCR]);
+    fail_unless (msg.peer[PEER_VLAN_ID] == NULL,
+	"vlan id should be empty, not '%s'", msg.peer[PEER_VLAN_ID]);
 
     mark_point();
     read_packet(&msg, "proto/lldp/48.good.4500G");
@@ -645,6 +657,8 @@ START_TEST(test_lldp_decode) {
     fail_unless (strcmp(msg.peer[PEER_PORTDESCR],
 			"GigabitEthernet1/0/9 Interface") == 0,
 	"port descr should not be '%s'", msg.peer[PEER_PORTDESCR]);
+    fail_unless (strcmp(msg.peer[PEER_VLAN_ID], "1") == 0,
+	"vlan id should be '1' not '%s'", msg.peer[PEER_VLAN_ID]);
 
     mark_point();
     read_packet(&msg, "proto/lldp/49.good.ipmi");
@@ -658,6 +672,8 @@ START_TEST(test_lldp_decode) {
 	"port id should not be '%s'", msg.peer[PEER_PORTNAME]);
     fail_unless (strcmp(msg.peer[PEER_PORTDESCR], "bond0") == 0,
 	"port descr should not be '%s'", msg.peer[PEER_PORTDESCR]);
+    fail_unless (msg.peer[PEER_VLAN_ID] == NULL,
+	"vlan id should be empty, not '%s'", msg.peer[PEER_VLAN_ID]);
 
     mark_point();
     my_log(CRIT, "check");
