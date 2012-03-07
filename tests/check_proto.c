@@ -799,6 +799,8 @@ START_TEST(test_cdp_decode) {
 	"system name should be 'R1'");
     fail_unless (msg.peer[PEER_PORTNAME] == NULL,
 	"port id should be empty, not '%s'", msg.peer[PEER_PORTNAME]);
+    fail_unless (msg.peer[PEER_VLAN_ID] == NULL,
+	"vlan id should be empty, not '%s'", msg.peer[PEER_VLAN_ID]);
 
     mark_point();
     read_packet(&msg, "proto/cdp/42.good.medium");
@@ -810,6 +812,8 @@ START_TEST(test_cdp_decode) {
 		"system name should be 'R2D2'");
     fail_unless (strcmp(msg.peer[PEER_PORTNAME], "Ethernet0") == 0,
 	"port id should be 'Ethernet0' not '%s'", msg.peer[PEER_PORTNAME]);
+    fail_unless (msg.peer[PEER_VLAN_ID] == NULL,
+	"vlan id should be empty, not '%s'", msg.peer[PEER_VLAN_ID]);
 
     mark_point();
     read_packet(&msg, "proto/cdp/43.good.big");
@@ -822,6 +826,8 @@ START_TEST(test_cdp_decode) {
     fail_unless (strcmp(msg.peer[PEER_PORTNAME], "FastEthernet6/20") == 0,
 	"port id should be 'FastEthernet6/20' not '%s'",
 	msg.peer[PEER_PORTNAME]);
+    fail_unless (strcmp(msg.peer[PEER_VLAN_ID], "389") == 0,
+	"vlan id should be '389' not '%s'", msg.peer[PEER_VLAN_ID]);
 
     mark_point();
     read_packet(&msg, "proto/cdp/44.good.bcm");
@@ -833,6 +839,8 @@ START_TEST(test_cdp_decode) {
 		"system name should be '0060B9C14027'");
     fail_unless (msg.peer[PEER_PORTNAME] == NULL,
 	"port id should be empty, not '%s'", msg.peer[PEER_PORTNAME]);
+    fail_unless (msg.peer[PEER_VLAN_ID] == NULL,
+	"vlan id should be empty, not '%s'", msg.peer[PEER_VLAN_ID]);
 
     mark_point();
     read_packet(&msg, "proto/cdp/45.good.6504");
@@ -845,6 +853,8 @@ START_TEST(test_cdp_decode) {
     fail_unless (strcmp(msg.peer[PEER_PORTNAME], "FastEthernet4/11") == 0,
 	"port id should be 'FastEthernet4/11' not '%s'",
 	msg.peer[PEER_PORTNAME]);
+    fail_unless (strcmp(msg.peer[PEER_VLAN_ID], "971") == 0,
+	"vlan id should be '971' not '%s'", msg.peer[PEER_VLAN_ID]);
 
     mark_point();
     read_packet(&msg, "proto/cdp/46.good.2811");
@@ -857,6 +867,8 @@ START_TEST(test_cdp_decode) {
     fail_unless (strcmp(msg.peer[PEER_PORTNAME], "FastEthernet0/0") == 0,
 	"port id should be 'FastEthernet0/0' not '%s'",
 	msg.peer[PEER_PORTNAME]);
+    fail_unless (msg.peer[PEER_VLAN_ID] == NULL,
+	"vlan id should be empty, not '%s'", msg.peer[PEER_VLAN_ID]);
 
     mark_point();
     read_packet(&msg, "proto/cdp/47.good.vlan");
@@ -869,6 +881,8 @@ START_TEST(test_cdp_decode) {
     fail_unless (strcmp(msg.peer[PEER_PORTNAME], "GigabitEthernet0/2") == 0,
 	"port id should be 'GigabitEthernet0/2' not '%s'",
 	msg.peer[PEER_PORTNAME]);
+    fail_unless (strcmp(msg.peer[PEER_VLAN_ID], "30") == 0,
+	"vlan id should be '30' not '%s'", msg.peer[PEER_VLAN_ID]);
 
     mark_point();
     read_packet(&msg, "proto/cdp/48.good.vlan");
@@ -881,6 +895,22 @@ START_TEST(test_cdp_decode) {
     fail_unless (strcmp(msg.peer[PEER_PORTNAME], "GigabitEthernet0/1") == 0,
 	"port id should be 'GigabitEthernet0/1' not '%s'",
 	msg.peer[PEER_PORTNAME]);
+    fail_unless (strcmp(msg.peer[PEER_VLAN_ID], "2") == 0,
+	"vlan id should be '2' not '%s'", msg.peer[PEER_VLAN_ID]);
+
+    mark_point();
+    read_packet(&msg, "proto/cdp/49.good.phone");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+    fail_unless (cdp_decode(&msg) == msg.len, "packet length incorrect");
+    fail_unless (msg.ttl == 180, "ttl should be 180");
+    fail_unless (strcmp(msg.peer[PEER_HOSTNAME], "SEP001B53489EE0") == 0,
+		"system name should be 'SEP001B53489EE0'");
+    fail_unless (strcmp(msg.peer[PEER_PORTNAME], "Port 1") == 0,
+	"port id should be 'GigabitEthernet0/1' not '%s'",
+	msg.peer[PEER_PORTNAME]);
+    fail_unless (msg.peer[PEER_VLAN_ID] == NULL,
+	"vlan id should be empty, not '%s'", msg.peer[PEER_VLAN_ID]);
 
     peer_free(msg.peer);
 }
