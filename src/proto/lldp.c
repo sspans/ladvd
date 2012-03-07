@@ -49,6 +49,8 @@ static int lldp_descr_print(uint16_t, unsigned char *, size_t);
 static int lldp_ttl_print(struct master_msg *msg);
 static int lldp_system_cap(struct master_msg *, unsigned char *, size_t);
 static int lldp_mgmt_addr(struct master_msg *msg, unsigned char *, size_t);
+static int lldp_private(struct master_msg *msg, unsigned char *, size_t);
+static int lldp_private_8021(struct master_msg *msg, unsigned char *, size_t);
 
 size_t lldp_packet(void *packet, struct netif *netif,
 		struct nhead *netifs, struct sysinfo *sysinfo) {
@@ -560,6 +562,9 @@ size_t lldp_decode(struct master_msg *msg) {
 		    return 0;
 		break;
 	    case LLDP_TYPE_PRIVATE:
+		if (!lldp_private(msg, pos, tlv_length))
+		    return 0;
+		break;
 	    default:
 		if (8 < tlv_type && tlv_type < 127) {
 		    my_log(INFO, "Corrupt LLDP packet: invalid TLV Type");
@@ -875,6 +880,55 @@ static int lldp_mgmt_addr(struct master_msg *msg,
 	free(str);
     } else {
 	PEER_STR(msg->peer[af], str);
+    }
+
+    return 1;
+}
+
+static int lldp_private(struct master_msg *msg,
+    unsigned char *pos, size_t length) {
+    char *oui = NULL;
+    int ret = 1;
+
+    if (!GRAB_BYTES(oui, OUI_LEN)) {
+	my_log(INFO, "Invalid LLDP packet: invalid private TLV");
+	return 0;
+    }
+
+    if (memcmp(oui, OUI_IEEE_8021_PRIVATE, OUI_LEN) == 0)
+	ret = lldp_private_8021(msg, pos, length);
+
+    free(oui);
+    return ret;
+}
+
+static int lldp_private_8021(struct master_msg *msg,
+    unsigned char *pos, size_t length) {
+    uint8_t tlv_subtype;
+
+    char *str = NULL;
+    uint16_t vlan_id = 0;
+
+    if (!GRAB_UINT8(tlv_subtype)) {
+	my_log(INFO, "Invalid LLDP packet: invalid private TLV");
+	return 0;
+    }
+
+    switch (tlv_subtype) {
+	case LLDP_PRIVATE_8021_SUBTYPE_PORT_VLAN_ID:
+    	    if ((length != 2) || !GRAB_UINT16(vlan_id)) {
+		my_log(INFO, "Corrupt LLDP packet: invalid PVID TLV: %zi", length);
+		return 0;
+    	    }   
+
+	    if (msg->decode == DECODE_PRINT)
+		printf("Port VLAN ID: %" PRIu16 "\n", vlan_id);
+	    else
+		if (asprintf(&str, "%" PRIu16, vlan_id) > 0)
+		    PEER_STR(msg->peer[PEER_VLAN_ID], str);
+	    break;
+	default:
+	    break;
     }
 
     return 1;

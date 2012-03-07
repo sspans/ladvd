@@ -75,6 +75,15 @@ typedef union {
 #define GRAB_UINT8(d) GRAB(d, type.uint8, )
 #define GRAB_UINT16(d) GRAB(d, type.uint16, ntohs)
 #define GRAB_UINT32(d) GRAB(d, type.uint32, ntohl)
+#define GRAB_BYTES(d, b) \
+	((length >= (b)) && \
+	    ( \
+		d = my_malloc((b)), \
+		memcpy((d), pos, (b)), \
+		length -= (b), \
+		pos += (b), \
+		1 \
+	    ))
 #define GRAB_STRING(d, b) \
 	((length >= (b)) && \
 	    ( \
