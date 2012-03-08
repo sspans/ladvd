@@ -405,7 +405,7 @@ AC_TYPE_UINT32_T
 
 # Checks for library functions.
 AC_FUNC_VPRINTF
-AC_CHECK_FUNCS([asprintf memcpy memset snprintf strdup strerror uname \
+AC_CHECK_FUNCS([asprintf memcpy memset snprintf strdup strerror strsep uname \
 		socketpair vsyslog],
 		[], AC_MSG_ERROR([required function missing]))
 
