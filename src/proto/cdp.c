@@ -96,8 +96,6 @@ size_t cdp_packet(void *packet, struct netif *netif,
 
     // configure managment interface
     mgmt = sysinfo->mnetif;
-    if (!mgmt)
-	mgmt = master;
 
 
     // ethernet header
@@ -178,15 +176,58 @@ size_t cdp_packet(void *packet, struct netif *netif,
     END_CDP_TLV;
 
 
-    // management addrs
-    if (mgmt->ipaddr4 != 0)
+    // interface addrs
+    addr_count = 0;
+    if (master->ipaddr4 != 0)
 	addr_count++;
-    if (!IN6_IS_ADDR_UNSPECIFIED((struct in6_addr *)mgmt->ipaddr6)) 
+    if (!IN6_IS_ADDR_UNSPECIFIED((struct in6_addr *)master->ipaddr6)) 
 	addr_count++;
 
     if (addr_count > 0) {
 	if (!(
 	    START_CDP_TLV(CDP_TYPE_ADDRESS) &&
+	    PUSH_UINT32(addr_count)
+	))
+	    return 0;
+
+	if (master->ipaddr4 != 0) {
+	    if (!(
+		PUSH_UINT8(cdp_protos[CDP_ADDR_IPV4].protocol_type) &&
+		PUSH_UINT8(cdp_protos[CDP_ADDR_IPV4].protocol_length) &&
+		PUSH_BYTES(cdp_protos[CDP_ADDR_IPV4].protocol,
+			   cdp_protos[CDP_ADDR_IPV4].protocol_length) &&
+		PUSH_UINT16(sizeof(master->ipaddr4)) &&
+		PUSH_BYTES(&master->ipaddr4, sizeof(master->ipaddr4))
+	    ))
+		return 0;
+	}
+
+	if (!IN6_IS_ADDR_UNSPECIFIED((struct in6_addr *)master->ipaddr6)) {
+	    if (!(
+		PUSH_UINT8(cdp_protos[CDP_ADDR_IPV6].protocol_type) &&
+		PUSH_UINT8(cdp_protos[CDP_ADDR_IPV6].protocol_length) &&
+		PUSH_BYTES(cdp_protos[CDP_ADDR_IPV6].protocol,
+			   cdp_protos[CDP_ADDR_IPV6].protocol_length) &&
+		PUSH_UINT16(sizeof(master->ipaddr6)) &&
+		PUSH_BYTES(master->ipaddr6, sizeof(master->ipaddr6))
+	    ))
+		return 0;
+	}
+
+	END_CDP_TLV;
+    }
+
+
+    // management addrs
+    addr_count = 0;
+    if (mgmt && (mgmt->ipaddr4 != 0))
+	addr_count++;
+    if (mgmt && !IN6_IS_ADDR_UNSPECIFIED((struct in6_addr *)mgmt->ipaddr6)) 
+	addr_count++;
+
+    if (addr_count > 0) {
+	if (!(
+	    START_CDP_TLV(CDP_TYPE_MGMT_ADDRESS) &&
 	    PUSH_UINT32(addr_count)
 	))
 	    return 0;
