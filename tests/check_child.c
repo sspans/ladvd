@@ -96,7 +96,7 @@ START_TEST(test_child_send) {
     struct master_req *mreq;
     struct netif *netif, *nnetif;
     int spair[2], null;
-    struct event evs;
+    struct child_send_args args = { .index = -1 };
     pid_t pid;
 
     loglevel = INFO;
@@ -109,7 +109,7 @@ START_TEST(test_child_send) {
 
     // initialize the event library
     event_init();
-    evtimer_set(&evs, (void *)child_send, &evs);
+    evtimer_set(&args.event, (void *)child_send, &args);
 
     // start a dummy replier
     pid = fork();
@@ -129,17 +129,17 @@ START_TEST(test_child_send) {
     // no protocols enabled
     mark_point();
     protos[PROTO_LLDP].enabled = 0;
-    child_send(null, EV_TIMEOUT, &evs);
+    child_send(null, EV_TIMEOUT, &args);
 
     // LLDP enabled
     mark_point();
     protos[PROTO_LLDP].enabled = 1;
-    child_send(null, EV_TIMEOUT, &evs);
+    child_send(null, EV_TIMEOUT, &args);
 
     // CDP enabled
     mark_point();
     protos[PROTO_CDP].enabled = 1;
-    child_send(null, EV_TIMEOUT, &evs);
+    child_send(null, EV_TIMEOUT, &args);
 
     // reset
     kill(pid, SIGTERM);

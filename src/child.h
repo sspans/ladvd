@@ -20,12 +20,17 @@
 #ifndef _child_h
 #define _child_h
 
+struct child_send_args {
+    struct event event;
+    uint32_t index;
+};
+
 struct child_session {
     struct event event;
     struct master_msg *msg;
 };
 
-void child_send(int fd, short event, void *);
+void child_send(int fd, short event, struct child_send_args *);
 void child_queue(int fd, short event);
 void child_expire();
 void child_free(int sig, short event, void *);

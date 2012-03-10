@@ -36,7 +36,8 @@ void child_init(int reqfd, int msgfd, int ifc, char *ifl[],
 		struct passwd *pwd) {
 
     // events
-    struct event evs, evq, eva;
+    struct child_send_args args = { .index = -1 };
+    struct event evq, eva;
     struct event ev_sigterm, ev_sigint;
 
     // master socket
@@ -104,8 +105,8 @@ void child_init(int reqfd, int msgfd, int ifc, char *ifl[],
     my_log(CRIT, PACKAGE_STRING " running");
 
     // create and run the transmit event
-    event_set(&evs, msgfd, 0, (void *)child_send, &evs);
-    child_send(msgfd, EV_TIMEOUT, &evs);
+    event_set(&args.event, msgfd, 0, (void *)child_send, &args);
+    child_send(msgfd, EV_TIMEOUT, &args);
 
     if (options & OPT_ONCE)
 	exit(EXIT_SUCCESS);
@@ -135,7 +136,7 @@ void child_init(int reqfd, int msgfd, int ifc, char *ifl[],
     my_fatal("child event-loop failed");
 }
 
-void child_send(int fd, short event, void *evs) {
+void child_send(int fd, short event, struct child_send_args *args) {
     struct master_msg msg;
     struct netif *netif = NULL, *subif = NULL;
     struct timeval tv = { .tv_sec = SLEEPTIME };
@@ -161,6 +162,10 @@ void child_send(int fd, short event, void *evs) {
 	my_log(INFO, "starting loop with interface %s", netif->name); 
 
 	while ((subif = subif_iter(subif, netif)) != NULL) {
+
+	    // handle a given ifindex
+	    if ((args->index != -1) && (args->index != subif->index))
+		continue;
 
 	    // skip special interfaces
 	    if (subif->type < NETIF_REGULAR)
@@ -224,13 +229,16 @@ void child_send(int fd, short event, void *evs) {
 	}
     }
 
+out:
+    if (event != EV_TIMEOUT)
+	return;
+
     // delete old messages
     if (options & OPT_RECV)
 	child_expire();
 
-out:
     // schedule the next run
-    event_add(evs, &tv);
+    event_add(&args->event, &tv);
 }
 
 void child_queue(int fd, short event) {
