@@ -24,6 +24,13 @@
 #include <sys/un.h>
 #include <time.h>
 
+#ifdef HAVE_LIBMNL
+#include <libmnl/libmnl.h>
+#include <linux/rtnetlink.h>
+#elif defined(HAVE_NET_ROUTE_H)
+#include <net/route.h>
+#endif
+
 int sargc = 0;
 char **sargv = NULL;
 
@@ -37,12 +44,12 @@ void child_init(int reqfd, int msgfd, int ifc, char *ifl[],
 
     // events
     struct child_send_args args = { .index = -1 };
-    struct event evq, eva;
+    struct event evq, eva, evl;
     struct event ev_sigterm, ev_sigint;
 
     // master socket
     extern int msock;
-    int csock = -1;
+    int lsock, csock = -1;
     struct sockaddr_un sun;
     mode_t old_umask;
 
@@ -129,6 +136,13 @@ void child_init(int reqfd, int msgfd, int ifc, char *ifl[],
 	event_add(&eva, NULL);
     }
 
+    // create link fd
+    if ((lsock = child_link_fd()) != -1) {
+	event_set(&evl, lsock, EV_READ|EV_PERSIST,
+		child_link, (void *)&msgfd);
+	event_add(&evl, NULL);
+    }
+
     // wait for events
     event_dispatch();
 
@@ -139,7 +153,6 @@ void child_init(int reqfd, int msgfd, int ifc, char *ifl[],
 void child_send(int fd, short event, struct child_send_args *args) {
     struct master_msg msg;
     struct netif *netif = NULL, *subif = NULL;
-    struct timeval tv = { .tv_sec = SLEEPTIME };
     ssize_t len;
 
     // update netifs
@@ -167,6 +180,7 @@ void child_send(int fd, short event, struct child_send_args *args) {
 	    if ((args->index != -1) && (args->index != subif->index))
 		continue;
 
+	    my_log(WARN, "using interface %s", subif->name); 
 	    // skip special interfaces
 	    if (subif->type < NETIF_REGULAR)
 		continue;
@@ -238,6 +252,7 @@ out:
 	child_expire();
 
     // schedule the next run
+    struct timeval tv = { .tv_sec = SLEEPTIME };
     event_add(&args->event, &tv);
 }
 
@@ -469,3 +484,97 @@ cleanup:
     close(fd);
 }
 
+#ifdef HAVE_LIBMNL
+struct mnl_socket *nl;
+#endif
+
+int child_link_fd() {
+
+#ifdef HAVE_LIBMNL
+    nl = mnl_socket_open(NETLINK_ROUTE);
+    if (nl == NULL)
+	return -1;
+
+    if (mnl_socket_bind(nl, RTMGRP_LINK, MNL_SOCKET_AUTOPID) < 0) {
+	mnl_socket_close(nl);
+	return -1;
+    }
+    return mnl_socket_get_fd(nl);
+#endif
+
+#if defined(HAVE_NET_ROUTE_H) && defined(RTM_IFINFO)
+    int fd;
+
+    if ((fd = socket(PF_ROUTE, SOCK_RAW, 0)) == -1)
+	return fd;
+
+#if defined(ROUTE_MSGFILTER)
+    unsigned int rtfilter = ROUTE_FILTER(RTM_IFINFO);
+    if (setsockopt(fd, PF_ROUTE, ROUTE_MSGFILTER,
+		   &rtfilter, sizeof(rtfilter)) != -1) {
+	close(fd);
+	fd = -1;
+    }
+#endif
+
+    return fd;
+#endif
+
+    return -1;
+}
+
+void child_link(int fd, short event, void *msgfd) {
+
+#ifdef HAVE_LIBMNL
+    char buf[MNL_SOCKET_BUFFER_SIZE];
+    int ret;
+
+    while ((ret = mnl_socket_recvfrom(nl, buf, sizeof(buf))) > 0) {
+        ret = mnl_cb_run(buf, ret, 0, 0, child_link_cb, msgfd);
+        if (ret <= 0)
+            break;
+    }
+
+    return;
+#endif
+
+#ifdef __OpenBSD__
+    char msg[2048] = {};
+    struct if_msghdr ifm;
+    struct rt_msghdr *rtm = (struct rt_msghdr *)&msg;
+    int len;
+
+    len = read(fd, msg, sizeof(msg));
+
+    if (len < sizeof(struct rt_msghdr) ||
+	(rtm->rtm_version != RTM_VERSION) ||
+	(rtm->rtm_type != RTM_IFINFO))
+	return;
+
+    memcpy(&ifm, rtm, sizeof(ifm));
+    if (!LINK_STATE_IS_UP(ifm.ifm_data.ifi_link_state))
+	return;
+
+    struct child_send_args args = { .index = ifm.ifm_index };
+    child_send(*(int*)msgfd, 0, &args);
+#endif
+}
+
+#ifdef HAVE_LIBMNL
+static int child_link_cb(const struct nlmsghdr *nlh, void *msgfd) {
+    struct ifinfomsg *ifm = mnl_nlmsg_get_payload(nlh);
+    int ifi_flags = IFF_RUNNING|IFF_LOWER_UP;
+    struct child_send_args args = {};
+
+    if (ifm->ifi_type != ARPHRD_ETHER)
+        goto out;
+    if ((ifm->ifi_flags & ifi_flags) != ifi_flags)
+        goto out;
+
+    args.index = ifm->ifi_index;
+    child_send(*(int*)msgfd, 0, &args);
+
+out:
+    return MNL_CB_OK;
+}
+#endif
