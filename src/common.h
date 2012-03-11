@@ -61,6 +61,7 @@
 #if HAVE_NET_IF_H
 #include <net/if.h>
 #define _LINUX_IF_H
+#define IFF_LOWER_UP 0x10000
 #endif
 #if HAVE_NETINET_IF_ETHER_H
 #include <netinet/if_ether.h>
