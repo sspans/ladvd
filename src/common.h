@@ -134,6 +134,7 @@ struct netif {
     // should be last
     TAILQ_ENTRY(netif) entries;
 
+    uint8_t link_event;
     uint8_t device_identified;
     char device_name[IFDESCRSIZE];
 };

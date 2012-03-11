@@ -159,8 +159,15 @@ void child_init(int reqfd, int msgfd, int ifc, char *ifl[],
 
 void child_send(int fd, short event, struct child_send_args *args) {
     struct master_msg msg;
-    struct netif *netif = NULL, *subif = NULL;
+    struct netif *netif = NULL, *subif = NULL, *linkif = NULL;
     ssize_t len;
+
+    // bail early on known flapping interfaces
+    if (args->index != -1) {
+	linkif = netif_byindex(&netifs, args->index);
+	if (linkif && (linkif->link_event > 3))
+	    goto out;
+    }
 
     // update netifs
     my_log(INFO, "fetching all interfaces"); 
@@ -168,6 +175,12 @@ void child_send(int fd, short event, struct child_send_args *args) {
     // no configured ethernet interfaces found
     if (netif_fetch(sargc, sargv, &sysinfo, &netifs) == 0)
 	goto out;
+
+    // no interface matching the given ifindex found
+    if (args->index != -1) {
+	if ((linkif = netif_byindex(&netifs, args->index)) == NULL)
+	    goto out;
+    }
 
     while ((netif = netif_iter(netif, &netifs)) != NULL) {
 
@@ -184,8 +197,13 @@ void child_send(int fd, short event, struct child_send_args *args) {
 	while ((subif = subif_iter(subif, netif)) != NULL) {
 
 	    // handle a given ifindex
-	    if ((args->index != -1) && (args->index != subif->index))
-		continue;
+	    if (args->index != -1) {
+		if (args->index != subif->index)
+		    continue;
+		subif->link_event++;
+	    } else {
+		subif->link_event = 0;
+	    }
 
 	    // skip special interfaces
 	    if (subif->type < NETIF_REGULAR)
