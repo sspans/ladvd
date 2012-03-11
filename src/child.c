@@ -517,7 +517,7 @@ int child_link_fd() {
 #if defined(ROUTE_MSGFILTER)
     unsigned int rtfilter = ROUTE_FILTER(RTM_IFINFO);
     if (setsockopt(fd, PF_ROUTE, ROUTE_MSGFILTER,
-		   &rtfilter, sizeof(rtfilter)) != -1) {
+		   &rtfilter, sizeof(rtfilter)) == -1) {
 	close(fd);
 	fd = -1;
     }
