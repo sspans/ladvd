@@ -29,6 +29,10 @@
 #include <linux/rtnetlink.h>
 #elif defined(HAVE_NET_ROUTE_H)
 #include <net/route.h>
+#ifndef LINK_STATE_IS_UP
+#define LINK_STATE_IS_UP(_s)    \
+	((_s) >= LINK_STATE_UP || (_s) == LINK_STATE_UNKNOWN)
+#endif
 #endif
 
 int sargc = 0;
@@ -180,7 +184,6 @@ void child_send(int fd, short event, struct child_send_args *args) {
 	    if ((args->index != -1) && (args->index != subif->index))
 		continue;
 
-	    my_log(WARN, "using interface %s", subif->name); 
 	    // skip special interfaces
 	    if (subif->type < NETIF_REGULAR)
 		continue;
@@ -538,12 +541,14 @@ void child_link(int fd, short event, void *msgfd) {
     return;
 #endif
 
-#ifdef __OpenBSD__
+#if defined(HAVE_NET_ROUTE_H) && defined(RTM_IFINFO)
+
     char msg[2048] = {};
     struct if_msghdr ifm;
     struct rt_msghdr *rtm = (struct rt_msghdr *)&msg;
     int len;
 
+    my_log(INFO, "reading link event");
     len = read(fd, msg, sizeof(msg));
 
     if (len < sizeof(struct rt_msghdr) ||
@@ -555,6 +560,7 @@ void child_link(int fd, short event, void *msgfd) {
     if (!LINK_STATE_IS_UP(ifm.ifm_data.ifi_link_state))
 	return;
 
+    my_log(INFO, "invoking child_send");
     struct child_send_args args = { .index = ifm.ifm_index };
     child_send(*(int*)msgfd, 0, &args);
 #endif
@@ -571,6 +577,7 @@ static int child_link_cb(const struct nlmsghdr *nlh, void *msgfd) {
     if ((ifm->ifi_flags & ifi_flags) != ifi_flags)
         goto out;
 
+    my_log(INFO, "invoking child_send");
     args.index = ifm->ifi_index;
     child_send(*(int*)msgfd, 0, &args);
 
