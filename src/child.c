@@ -34,6 +34,9 @@
 	((_s) >= LINK_STATE_UP || (_s) == LINK_STATE_UNKNOWN)
 #endif
 #endif
+#ifdef HAVE_NET_IF_TYPES_H
+#include <net/if_types.h>
+#endif /* HAVE_NET_IF_TYPES_H */
 
 int sargc = 0;
 char **sargv = NULL;
@@ -546,7 +549,7 @@ void child_link(int fd, short event, void *msgfd) {
     char msg[2048] = {};
     struct if_msghdr ifm;
     struct rt_msghdr *rtm = (struct rt_msghdr *)&msg;
-    int len;
+    int len, ifm_flags = IFF_RUNNING|IFF_UP;
 
     my_log(INFO, "reading link event");
     len = read(fd, msg, sizeof(msg));
@@ -557,6 +560,10 @@ void child_link(int fd, short event, void *msgfd) {
 	return;
 
     memcpy(&ifm, rtm, sizeof(ifm));
+    if (ifm.ifm_data.ifi_type != IFT_ETHER)
+	return;
+    if ((ifm.ifm_flags & ifm_flags) != ifm_flags)
+	return;
     if (!LINK_STATE_IS_UP(ifm.ifm_data.ifi_link_state))
 	return;
 
