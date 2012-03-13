@@ -297,7 +297,6 @@ void child_queue(int fd, short event) {
 	return;
 
     assert(rmsg.proto < PROTO_MAX);
-    assert(rmsg.len >= (ETHER_MIN_LEN - ETHER_VLAN_ENCAP_LEN));
     assert(rmsg.len <= ETHER_MAX_LEN);
 
     // skip unknown interfaces
@@ -318,8 +317,9 @@ void child_queue(int fd, short event) {
     	return;
     }
 
-    // add current timestamp
-    rmsg.received = now;
+    // add current timestamp unless it's a shutdown msg
+    if (rmsg.ttl)
+	rmsg.received = now;
 
     // fetch the parent netif
     if (subif->master)
@@ -366,6 +366,12 @@ void child_queue(int fd, short event) {
 	if (hostname)
 	    my_log(CRIT, "new peer %s (%s) on interface %s",
 		    hostname, protos[msg->proto].name, netif->name);
+    }
+
+    // handle shutdowns via child_expire
+    if (!msg->ttl) {
+	child_expire();
+	return;
     }
 
     // update ifdescr

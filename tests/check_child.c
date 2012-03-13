@@ -196,6 +196,12 @@ START_TEST(test_child_queue) {
     fail_unless(strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
+    // valid shutdown message contents
+    mark_point();
+    read_packet(&msg, "proto/lldp/50.good.shutdown");
+    WRAP_WRITE(spair[0], &msg, MASTER_MSG_LEN(msg.len));
+    child_queue(spair[1], event);
+
     // valid message contents
     mark_point();
     read_packet(&msg, "proto/lldp/42.good.big");
