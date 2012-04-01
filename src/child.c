@@ -553,6 +553,25 @@ int child_link_fd() {
     return -1;
 }
 
+#ifdef HAVE_LIBMNL
+static int child_link_cb(const struct nlmsghdr *nlh, void *msgfd) {
+    struct ifinfomsg *ifm = mnl_nlmsg_get_payload(nlh);
+    int ifi_flags = IFF_RUNNING|IFF_LOWER_UP;
+    struct child_send_args args = {};
+
+    if (ifm->ifi_type != ARPHRD_ETHER)
+        goto out;
+    if ((ifm->ifi_flags & ifi_flags) != ifi_flags)
+        goto out;
+
+    my_log(INFO, "invoking child_send");
+    args.index = ifm->ifi_index;
+    child_send(*(int*)msgfd, 0, &args);
+
+out:
+    return MNL_CB_OK;
+}
+#endif
 void child_link(int fd, short event, void *msgfd) {
 
 #ifdef HAVE_LIBMNL
@@ -597,22 +616,3 @@ void child_link(int fd, short event, void *msgfd) {
 #endif
 }
 
-#ifdef HAVE_LIBMNL
-static int child_link_cb(const struct nlmsghdr *nlh, void *msgfd) {
-    struct ifinfomsg *ifm = mnl_nlmsg_get_payload(nlh);
-    int ifi_flags = IFF_RUNNING|IFF_LOWER_UP;
-    struct child_send_args args = {};
-
-    if (ifm->ifi_type != ARPHRD_ETHER)
-        goto out;
-    if ((ifm->ifi_flags & ifi_flags) != ifi_flags)
-        goto out;
-
-    my_log(INFO, "invoking child_send");
-    args.index = ifm->ifi_index;
-    child_send(*(int*)msgfd, 0, &args);
-
-out:
-    return MNL_CB_OK;
-}
-#endif

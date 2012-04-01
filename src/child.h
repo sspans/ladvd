@@ -43,8 +43,5 @@ void child_cli_write(int fd, short event, struct child_session *);
 
 int child_link_fd();
 void child_link(int fd, short event, void *);
-#ifdef HAVE_LIBMNL
-static int child_link_cb(const struct nlmsghdr *, void *);
-#endif
 
 #endif /* _child_h */
