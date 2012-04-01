@@ -41,7 +41,7 @@ START_TEST(test_cli_main) {
     int ofd[3], spair[6];
     int argc;
     char *argv[7], ifname[IFNAMSIZ];
-    char buf[1024];
+    char buf[8192];
     struct master_msg msg = {};
     int sobuf = MASTER_MSG_MAX * 10;
     time_t now;
@@ -74,7 +74,7 @@ START_TEST(test_cli_main) {
     ofd[0] = dup(STDIN_FILENO);
     dup2(spair[0], STDIN_FILENO);
 
-    sobuf = 4096;
+    sobuf = 8192;
     fail_if(socketpair(AF_UNIX, SOCK_STREAM, 0, &spair[2]) == -1,
 	    "socketpair creation failed");
     setsockopt(spair[2], SOL_SOCKET, SO_SNDBUF, &sobuf, sizeof(sobuf));
@@ -90,27 +90,27 @@ START_TEST(test_cli_main) {
     dup2(spair[4], STDERR_FILENO);
 
     mark_point();
-    memset(buf, 0, 1024);
+    memset(buf, 0, sizeof(buf));
     argv[5] = "-Noq";
     WRAP_FATAL_START();
     cli_main(argc, argv);
     WRAP_FATAL_END();
     fflush(stderr);
-    fail_if(read(spair[5], buf, 1024) < 0,
+    fail_if(read(spair[5], buf, sizeof(buf)) < 0,
 	    "cli_main read failed");
     fail_if(strstr(buf, "Usage:") == NULL,
     	    "invalid usage output: %s", buf);
 
     mark_point();
     options = OPT_DAEMON | OPT_CHECK;
-    memset(buf, 0, 1024);
+    memset(buf, 0, sizeof(buf));
     argv[5] = "invalid";
     optind = 1;
     WRAP_FATAL_START();
     cli_main(argc, argv);
     WRAP_FATAL_END();
     fflush(stderr);
-    fail_if(read(spair[5], buf, 1024) < 0,
+    fail_if(read(spair[5], buf, sizeof(buf)) < 0,
 	    "cli_main read failed");
     fail_if(strstr(buf, "Usage:") == NULL,
     	    "invalid usage output: %s", buf);
@@ -127,7 +127,7 @@ START_TEST(test_cli_main) {
     fail_unless(ifindex, "missing loopback interface");
 
     mark_point();
-    memset(buf, 0, 1024);
+    memset(buf, 0, sizeof(buf));
     argv[5] = if_indextoname(ifindex, ifname);
     optind = 1;
     errstr = "failed to create socket:";
@@ -136,7 +136,7 @@ START_TEST(test_cli_main) {
     cli_main(argc, argv);
     WRAP_FATAL_END();
     fflush(stderr);
-    fail_if(read(spair[5], buf, 1024) < 0,
+    fail_if(read(spair[5], buf, sizeof(buf)) < 0,
 	    "cli_main read failed");
     fail_unless (strncmp(buf, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", buf);
@@ -150,7 +150,7 @@ START_TEST(test_cli_main) {
 #endif /* HAVE_EVHTTP_H */
 
     mark_point();
-    memset(buf, 0, 1024);
+    memset(buf, 0, sizeof(buf));
     optind = 1;
     errstr = "failed to open " PACKAGE_SOCKET ":";
     check_wrap_fail &= ~FAIL_SOCKET;
@@ -160,7 +160,7 @@ START_TEST(test_cli_main) {
     cli_main(argc, argv);
     WRAP_FATAL_END();
     fflush(stderr);
-    fail_if(read(spair[5], buf, 1024) < 0,
+    fail_if(read(spair[5], buf, sizeof(buf)) < 0,
 	    "cli_main read failed");
     fail_unless (strncmp(buf, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", buf);
@@ -234,7 +234,7 @@ START_TEST(test_cli_main) {
 	    "write failed");
 
     mark_point();
-    memset(buf, 0, 1024);
+    memset(buf, 0, sizeof(buf));
     optind = 1;
     shutdown(spair[1], SHUT_WR);
     signal(SIGPIPE, SIG_IGN);
@@ -246,7 +246,7 @@ START_TEST(test_cli_main) {
     cli_main(argc, argv);
     WRAP_FATAL_END();
     fflush(stderr);
-    fail_if(read(spair[5], buf, 1024) < 0,
+    fail_if(read(spair[5], buf, sizeof(buf)) < 0,
 	"cli_main read failed");
     fail_unless (strncmp(buf, errstr, strlen(errstr)) == 0,
     	"incorrect message logged: %s", buf);
@@ -284,8 +284,8 @@ END_TEST
 START_TEST(test_batch_write) {
     struct master_msg msg = {};
     int ostdout, spair[2];
-    char buf[1024];
-    int sobuf = 2048;
+    char buf[8192];
+    int sobuf = 8192;
 
     ostdout = dup(STDOUT_FILENO);
     fail_if(ostdout == -1, "dup failed: %s", strerror(errno));
@@ -298,7 +298,7 @@ START_TEST(test_batch_write) {
     mark_point();
     batch_write(&msg, 42);
     fflush(stdout);
-    fail_if(read(spair[1], buf, 1024) < 0,
+    fail_if(read(spair[1], buf, sizeof(buf)) < 0,
 	"read failed");
     fail_if(strstr(buf, "INTERFACE_0=") != buf,
 	    "invalid batch_write output");
@@ -313,7 +313,7 @@ START_TEST(test_batch_write) {
     msg.peer[PEER_PORTNAME] = strdup("Fas'tEthernet42/64");
     batch_write(&msg, 42);
     fflush(stdout);
-    fail_if(read(spair[1], buf, 1024) < 0,
+    fail_if(read(spair[1], buf, sizeof(buf)) < 0,
 	"read failed");
     fail_if(strstr(buf, "INTERFACE_1=") != buf,
 	    "invalid batch_write output");
@@ -332,8 +332,8 @@ END_TEST
 START_TEST(test_cli) {
     int ostdout, spair[2];
     struct master_msg msg = {};
-    char buf[1024];
-    int sobuf = 1024;
+    char buf[2048];
+    int sobuf = 2048;
 
     ostdout = dup(STDOUT_FILENO);
     fail_if(ostdout == -1, "dup failed: %s", strerror(errno));
@@ -346,7 +346,7 @@ START_TEST(test_cli) {
     mark_point();
     cli_header();
     fflush(stdout);
-    fail_if(read(spair[1], buf, 1024) < 0,
+    fail_if(read(spair[1], buf, sizeof(buf)) < 0,
 	"read failed");
     fail_if(strstr(buf, "Capability Codes:") != buf,
 	    "invalid cli_header output");
@@ -360,7 +360,7 @@ START_TEST(test_cli) {
     msg.peer[PEER_PORTNAME] = strdup("TenGigabitEthernet42/64");
     cli_write(&msg, 42);
     fflush(stdout);
-    fail_if(read(spair[1], buf, 1024) < 0,
+    fail_if(read(spair[1], buf, sizeof(buf)) < 0,
 	"read failed");
     fail_if(strstr(buf, "router") != buf,
 	    "invalid cli_write output");
@@ -381,7 +381,7 @@ START_TEST(test_debug) {
     ssize_t len;
     struct pcap_file_header pcap_fhdr = {};
     struct master_msg msg = {};
-    char buf[1024];
+    char buf[2048];
 
     mark_point();
     if (isatty(STDOUT_FILENO)) { 
@@ -422,7 +422,7 @@ START_TEST(test_debug) {
     fflush(stdout);
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
         "incorrect message logged: %s", check_wrap_errstr);
-    len = read(spair[1], buf, 1024);
+    len = read(spair[1], buf, sizeof(buf));
     fail_unless(len == (PCAP_PKTHDR_SIZ + msg.len),
                 "failed to read pcap record"); 
 
