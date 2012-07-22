@@ -21,6 +21,7 @@ AC_PROG_LIBTOOL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
 AC_PROG_SED
+PKG_PROG_PKG_CONFIG
 
 # enable PIE by default
 use_pie=yes
@@ -272,6 +273,15 @@ AC_CHECK_HEADERS([event.h], [], AC_MSG_ERROR([libevent headers missing]))
 AC_CHECK_HEADERS([evhttp.h], [ AM_CONDITIONAL([HTTP_ENABLED], [true]) ],
 	[ AM_CONDITIONAL([HTTP_ENABLED], [false]) ], [ #include <sys/types.h> ])
 
+# systemd check
+AC_ARG_WITH([systemdsystemunitdir],
+	AS_HELP_STRING([--with-systemdsystemunitdir=DIR], [Directory for systemd service files]),
+	[], [with_systemdsystemunitdir=$($PKG_CONFIG --variable=systemdsystemunitdir systemd)])
+if test "x$with_systemdsystemunitdir" != xno; then
+	AC_SUBST([systemdsystemunitdir], [$with_systemdsystemunitdir])
+fi
+AM_CONDITIONAL(HAVE_SYSTEMD, [test -n "$with_systemdsystemunitdir" -a "x$with_systemdsystemunitdir" != xno ])
+
 # check for libmnl
 PKG_CHECK_MODULES(LIBMNL, [ libmnl ],
     AC_DEFINE(HAVE_LIBMNL, 1, [have libmnl]), :)
@@ -416,6 +426,7 @@ AC_CHECK_FUNCS([setproctitle strlcpy strlcat strnvis __strdup])
 AC_CONFIG_FILES([Makefile
                  src/Makefile
                  tests/Makefile
-                 doc/Makefile])
+                 doc/Makefile
+                 systemd/Makefile])
 AC_OUTPUT
 

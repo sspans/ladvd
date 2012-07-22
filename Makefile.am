@@ -1,5 +1,5 @@
 ACLOCAL_AMFLAGS = -I m4
-SUBDIRS = src . doc @TESTS_SUBDIR@
+SUBDIRS = src . doc systemd @TESTS_SUBDIR@
 
 if TESTS_ENABLED
 if GCOV_ENABLED
