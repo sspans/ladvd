@@ -27,7 +27,7 @@ PKG_PROG_PKG_CONFIG
 use_pie=yes
 
 case "$target_os" in
-    linux-gnu*)
+    linux-gnu*|linux-uclibc*)
 	AC_DEFINE(HAVE_PROC_SYS_NET,1, [define for /proc/sys/net])
 	AC_DEFINE(HAVE_SYSFS,1, [define for /sys])
 	check_ids=yes
