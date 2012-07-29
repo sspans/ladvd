@@ -32,6 +32,9 @@
 
 #if !defined(HAVE_STRNVIS)
 
+// needed for isascii
+#define _BSD_SOURCE 1;
+
 #include <ctype.h>
 #include <string.h>
 #include "vis.h"
