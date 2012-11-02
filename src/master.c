@@ -493,7 +493,6 @@ ssize_t master_device_id(struct master_req *mreq) {
 
     if (!pacc) {
 	pacc = pci_alloc();
-	pci_init(pacc);
     }
 
     ret = snprintf(path, SYSFS_PATH_MAX,
