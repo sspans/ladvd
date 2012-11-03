@@ -31,13 +31,17 @@ case "$target_os" in
 	AC_DEFINE(HAVE_PROC_SYS_NET,1, [define for /proc/sys/net])
 	AC_DEFINE(HAVE_SYSFS,1, [define for /sys])
 	check_ids=yes
+	AC_DEFINE(NETIF_LINUX,1, [define for netifs])
 	;;
     freebsd*)
 	use_pie=no
+	AC_DEFINE(NETIF_BSD,1, [define for netifs])
 	;;
     openbsd*)
+	AC_DEFINE(NETIF_BSD,1, [define for netifs])
 	;;
     darwin*)
+	AC_DEFINE(NETIF_BSD,1, [define for netifs])
 	;;
     *)
 	AC_MSG_ERROR([Unsupported operating system])

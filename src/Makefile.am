@@ -2,6 +2,8 @@
 AM_CFLAGS = $(WARN_CFLAGS)
 AM_LDFLAGS = $(WARN_LDFLAGS)
 
+EXTRA_DIST = netif_bsd.c netif_linux.c
+
 common_headers = common.h ether.h filter.h util.h \
 	compat/compat.h compat/sys-queue.h proto/protos.h
 
