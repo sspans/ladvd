@@ -21,6 +21,9 @@
 #include "util.h"
 #include "proto/tlv.h"
 
+#ifndef MIN
+#define MIN(a,b) ( a < b ? a : b)
+#endif
 
 void tlv_value_str(struct master_msg *msg,
 	    uint16_t type, uint16_t length, void *value) {
