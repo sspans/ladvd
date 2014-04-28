@@ -64,7 +64,7 @@ void cli_main(int argc, char *argv[]) {
     int ch, i;
     uint8_t proto = 0, mode = MODE_CLI;
     uint32_t *indexes = NULL;
-    struct sockaddr_un sun = {};
+    struct sockaddr_un usock = {};
     int fd = -1;
     time_t now;
     struct master_msg *msg;
@@ -152,10 +152,10 @@ void cli_main(int argc, char *argv[]) {
     if (fd == -1)
 	my_fatale("failed to create socket");
 
-    sun.sun_family = AF_UNIX;
-    strlcpy(sun.sun_path, PACKAGE_SOCKET, sizeof(sun.sun_path));
+    usock.sun_family = AF_UNIX;
+    strlcpy(usock.sun_path, PACKAGE_SOCKET, sizeof(usock.sun_path));
 
-    if (connect(fd, (struct sockaddr *)&sun, sizeof(sun)) == -1) {
+    if (connect(fd, (struct sockaddr *)&usock, sizeof(usock)) == -1) {
 	if (errno == EACCES)
 	    my_fatal("please add yourself to the " PACKAGE_USER " group");
 	else

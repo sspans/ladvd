@@ -57,7 +57,7 @@ void child_init(int reqfd, int msgfd, int ifc, char *ifl[],
     // master socket
     extern int msock;
     int lsock, csock = -1;
-    struct sockaddr_un sun;
+    struct sockaddr_un usock;
     mode_t old_umask;
 
     sargc = ifc;
@@ -80,15 +80,15 @@ void child_init(int reqfd, int msgfd, int ifc, char *ifl[],
 	if (csock == -1)
 	    my_fatale("failed to create socket");
 
-	memset(&sun, 0, sizeof(sun));
-	sun.sun_family = AF_UNIX;
-	strlcpy(sun.sun_path, PACKAGE_SOCKET, sizeof(sun.sun_path));
+	memset(&usock, 0, sizeof(usock));
+	usock.sun_family = AF_UNIX;
+	strlcpy(usock.sun_path, PACKAGE_SOCKET, sizeof(usock.sun_path));
 
 	old_umask = umask(S_IXUSR|S_IRWXG|S_IRWXO);
 
 	if ((unlink(PACKAGE_SOCKET) == -1) && (errno != ENOENT))
 	    my_fatale("failed to remove " PACKAGE_SOCKET);
-	if (bind(csock, (struct sockaddr *)&sun, SUN_LEN(&sun)) == -1)
+	if (bind(csock, (struct sockaddr *)&usock, SUN_LEN(&usock)) == -1)
 	    my_fatale("failed to bind " PACKAGE_SOCKET);
 	if (listen(csock, 10) == -1)
 	    my_fatale("failed to listen on " PACKAGE_SOCKET);
