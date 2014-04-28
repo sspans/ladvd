@@ -216,8 +216,10 @@ void my_rlimit_child() {
 
     rl_zero.rlim_cur = rl_zero.rlim_max = 0;
 
+#if defined(RLIMIT_NPROC) 
     if (setrlimit(RLIMIT_NPROC, &rl_zero) == -1)
 	my_fatale("setrlimit(RLIMIT_NPROC, { 0, 0 })");
+#endif
     if (setrlimit(RLIMIT_FSIZE, &rl_zero) == -1)
 	my_fatale("setrlimit(RLIMIT_FSIZE, { 0, 0 })");
 }

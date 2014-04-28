@@ -24,6 +24,7 @@
 #include <sys/file.h>
 #include <sys/un.h>
 #include <netdb.h>
+#include <termios.h> 
 
 extern struct proto protos[];
 int status = EXIT_SUCCESS;
