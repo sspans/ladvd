@@ -30,6 +30,12 @@
 #include <net/ethertypes.h>
 #endif
 
+#ifndef ETHER_ADDR_LEN
+#define ETHER_ADDR_LEN	6
+#define ETHER_MIN_LEN	64
+#define ETHER_MAX_LEN	1518
+#endif
+
 // IEEE 802.3 Ethernet
 struct ether_hdr {
     uint8_t dst[ETHER_ADDR_LEN];

@@ -46,8 +46,10 @@
 #include <sys/socket.h>
 #include <sys/utsname.h>
 #include <sys/ioctl.h>
+#if HAVE_SYS_SYSCTL_H
 #include <sys/param.h>
 #include <sys/sysctl.h>
+#endif
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/uio.h>

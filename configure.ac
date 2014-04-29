@@ -398,7 +398,7 @@ AC_CHECK_HEADERS([net/if_dl.h])
 
 # kenv and sysctl
 AC_CHECK_HEADERS([kenv.h])
-AC_CHECK_HEADERS([sys/sysctl.h], [], AC_MSG_ERROR([required header missing]),
+AC_CHECK_HEADERS([sys/sysctl.h],[],[],
 [
 #include <sys/param.h>
 ])
