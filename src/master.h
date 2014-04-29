@@ -20,8 +20,11 @@
 #ifndef _master_h
 #define _master_h
 
-#include <sys/ioctl.h>
+#ifdef HAVE_NETPACKET_PACKET_H
+#include <netpacket/packet.h>
+#endif /* HAVE_NETPACKET_PACKET_H */
 #include <pcap.h>
+#include <sys/ioctl.h>
 
 struct rawfd {
     uint32_t index;

@@ -25,9 +25,6 @@
 #include <sys/wait.h>
 #include <ctype.h>
 
-#include <pcap.h>
-#include "filter.h"
-
 #ifdef HAVE_LIBCAP_NG
 #include <cap-ng.h>
 #elif defined(HAVE_LIBCAP)
@@ -57,6 +54,8 @@
 #ifdef HAVE_PCI_PCI_H
 #include <pci/pci.h>
 #endif /* HAVE_PCI_PCI_H */
+
+#include "filter.h"
 
 #ifdef HAVE_SYSFS
 #define SYSFS_CLASS_NET		"/sys/class/net"
