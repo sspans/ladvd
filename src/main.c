@@ -24,6 +24,7 @@
 #include <sys/file.h>
 #include <ctype.h>
 #include <syslog.h>
+#include <fcntl.h>
 
 uint32_t options = OPT_DAEMON | OPT_SEND;
 extern struct sysinfo sysinfo;
@@ -50,6 +51,7 @@ int main(int argc, char *argv[]) {
 
     // pids
     extern pid_t pid;
+    struct flock lock = { .l_type = F_WRLCK };
 
     // clear sysinfo
     memset(&sysinfo, 0, sizeof(struct sysinfo));
@@ -194,7 +196,7 @@ int main(int argc, char *argv[]) {
 	fd = open(PACKAGE_PID_FILE, O_WRONLY|O_CREAT, 0666);
 	if (fd == -1)
 	    my_fatale("failed to open pidfile " PACKAGE_PID_FILE);
-	if (flock(fd, LOCK_EX|LOCK_NB) == -1)
+	if (fcntl(fd, F_SETLK, &lock) == -1)
 	    my_fatal(PACKAGE_NAME " already running ("
 			PACKAGE_PID_FILE " locked)");
 
