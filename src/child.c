@@ -607,8 +607,10 @@ void child_link(int fd, short event, void *msgfd) {
 	return;
     if ((ifm.ifm_flags & ifm_flags) != ifm_flags)
 	return;
+#if defined(LINK_STATE_UP)
     if (!LINK_STATE_IS_UP(ifm.ifm_data.ifi_link_state))
 	return;
+#endif
 
     my_log(INFO, "invoking child_send");
     struct child_send_args args = { .index = ifm.ifm_index };
