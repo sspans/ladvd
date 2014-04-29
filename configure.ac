@@ -43,6 +43,9 @@ case "$target_os" in
     darwin*)
 	AC_DEFINE(NETIF_BSD,1, [define for netifs])
 	;;
+    solaris*)
+	AC_DEFINE(NETIF_BSD,1, [define for netifs])
+	;;
     *)
 	AC_MSG_ERROR([Unsupported operating system])
 	;;
@@ -104,6 +107,10 @@ AS_IF([test -n "$chroot_dir"],
     [AC_DEFINE_UNQUOTED(PACKAGE_CHROOT_DIR,"$chroot_dir",[location of chroot])],
     [AC_DEFINE(PACKAGE_CHROOT_DIR,"/var/run/" PACKAGE_NAME,[location of chroot])]
 )
+
+# socket / nss libs
+CF_LIB_SOCKET
+CF_LIB_NSL
 
 # check unit tests
 PKG_CHECK_MODULES([CHECK], [check >= 0.9.4],
@@ -409,10 +416,6 @@ AS_IF([test x$CAPNG_LDADD != x], [], [
 	fi
     fi
 ])
-
-# socket / nss libs
-CF_LIB_SOCKET
-CF_LIB_NSL
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
