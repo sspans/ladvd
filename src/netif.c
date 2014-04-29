@@ -84,8 +84,7 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 
 #ifdef AF_PACKET
     struct sockaddr_ll saddrll;
-#endif
-#ifdef AF_LINK
+#elif defined(AF_LINK)
     struct sockaddr_dl saddrdl;
 #endif
 
@@ -139,7 +138,7 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 	    continue;
 	}
 	index = saddrll.sll_ifindex;
-#elif AF_LINK
+#elif defined(AF_LINK)
 	memcpy(&saddrdl, ifaddr->ifa_addr, sizeof(saddrdl));
 #ifdef IFT_BRIDGE
 	if ((saddrdl.sdl_type != IFT_BRIDGE) &&
