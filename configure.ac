@@ -306,7 +306,7 @@ AC_CHECK_HEADERS([fcntl.h grp.h pwd.h stdarg.h stdint.h stdio.h syslog.h \
 		 [], AC_MSG_ERROR([required header missing]))
 
 # bsd ifmedia
-AC_CHECK_HEADERS([asm/types.h linux/sockios.h net/if_media.h])
+AC_CHECK_HEADERS([asm/types.h linux/sockios.h sys/sockio.h net/if_media.h])
 AC_CHECK_HEADERS([net/if.h net/route.h], [], [],
 [
 #include <sys/types.h>

@@ -33,6 +33,10 @@
 #include <linux/sockios.h>
 #endif /* HAVE_LINUX_SOCKIOS_H */
 
+#if HAVE_SYS_SOCKIO_H
+#include <sys/sockio.h>
+#endif /* HAVE_SYS_SOCKIO_H */
+
 #ifdef HAVE_NETPACKET_PACKET_H
 #include <netpacket/packet.h>
 #endif /* HAVE_NETPACKET_PACKET_H */
