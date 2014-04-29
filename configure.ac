@@ -410,6 +410,10 @@ AS_IF([test x$CAPNG_LDADD != x], [], [
     fi
 ])
 
+# socket / nss libs
+CF_LIB_SOCKET
+CF_LIB_NSL
+
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 AC_TYPE_SIZE_T
