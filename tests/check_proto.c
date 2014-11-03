@@ -118,7 +118,7 @@ START_TEST(test_proto_packet) {
     msg.len = fdp_packet(msg.msg, &netif, &netifs, &sysinfo);
     fail_unless(msg.len == 126, "length should not be %d", msg.len);
     msg.len = ndp_packet(msg.msg, &netif, &netifs, &sysinfo);
-    fail_unless(msg.len == 33, "length should not be %d", msg.len);
+    fail_unless(msg.len == 64, "length should not be %d", msg.len);
 
     mark_point();
     sysinfo.cap = CAP_HOST;
@@ -133,7 +133,7 @@ START_TEST(test_proto_packet) {
     msg.len = fdp_packet(msg.msg, &netif, &netifs, &sysinfo);
     fail_unless(msg.len == 79, "length should not be %d", msg.len);
     msg.len = ndp_packet(msg.msg, &netif, &netifs, &sysinfo);
-    fail_unless(msg.len == 33, "length should not be %d", msg.len);
+    fail_unless(msg.len == 64, "length should not be %d", msg.len);
 
     mark_point();
     sysinfo.cap_active = CAP_BRIDGE;
@@ -146,7 +146,7 @@ START_TEST(test_proto_packet) {
     msg.len = fdp_packet(msg.msg, &netif, &netifs, &sysinfo);
     fail_unless(msg.len == 81, "length should not be %d", msg.len);
     msg.len = ndp_packet(msg.msg, &netif, &netifs, &sysinfo);
-    fail_unless(msg.len == 33, "length should not be %d", msg.len);
+    fail_unless(msg.len == 64, "length should not be %d", msg.len);
 
     mark_point();
     sysinfo.cap_active = CAP_SWITCH;
@@ -159,7 +159,7 @@ START_TEST(test_proto_packet) {
     msg.len = fdp_packet(msg.msg, &netif, &netifs, &sysinfo);
     fail_unless(msg.len == 81, "length should not be %d", msg.len);
     msg.len = ndp_packet(msg.msg, &netif, &netifs, &sysinfo);
-    fail_unless(msg.len == 33, "length should not be %d", msg.len);
+    fail_unless(msg.len == 64, "length should not be %d", msg.len);
 }
 END_TEST
 
