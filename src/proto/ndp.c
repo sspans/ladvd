@@ -22,6 +22,9 @@
 #include "proto/ndp.h"
 #include "proto/tlv.h"
 
+#define NDP_PADDING \
+	(ETHER_MIN_LEN - sizeof(struct ether_hdr) - sizeof(struct ether_llc) \
+	 - sizeof(struct ndp_header))
 
 size_t ndp_packet(void *packet, struct netif *netif,
 	    struct nhead *netifs, struct sysinfo *sysinfo) {
@@ -66,6 +69,8 @@ size_t ndp_packet(void *packet, struct netif *netif,
     memcpy(pos, &ndp, sizeof(struct ndp_header));
     pos += sizeof(struct ndp_header);
 
+    memset(pos, 0, NDP_PADDING);
+    pos += NDP_PADDING;
 
     // ethernet header
     ether.type = htons(VOIDP_DIFF(pos, packet + sizeof(struct ether_hdr)));
