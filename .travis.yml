@@ -2,3 +2,5 @@ language: c
 compiler:
   - clang
   - gcc
+# before build script, run autoreconf
+before_script: autoreconf -i
