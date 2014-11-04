@@ -4,7 +4,8 @@ compiler:
   - gcc
 before_install:
   - sudo apt-get update -qq
-  - sudo apt-get install -qq autotools-dev libpcap-dev libcap-ng-dev libevent-dev libpci-dev check pkg-config
+  - sudo apt-get install -qq libevent-dev libpcap-dev libcap-ng-dev libmnl-dev 
+  - sudo apt-get install -qq libpci-dev autotools-dev check pkg-config
 # before build script, run autoreconf
 before_script:
   - git log --no-merges > doc/ChangeLog

@@ -27,6 +27,7 @@ BuildRequires:  libcap-ng-devel
 BuildRequires:  libcap-devel
 %endif
 BuildRequires:  pciutils-devel
+BuildRequires:  libmnl-devel
 BuildRequires:  pkgconfig
 BuildRequires:  check-devel
 Requires:	/usr/bin/lsb_release
