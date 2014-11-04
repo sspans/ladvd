@@ -17,6 +17,6 @@ before_script:
   - autoreconf -i
 script:
   - '[ "$GCOV" -eq 1 ] && FLAGS="$FLAGS --enable-gcov"'
-  - './configure && make && make check'
+  - './configure $FLAGS && make && make check'
 after_success:
   - '[ "$GCOV" -eq 1 ] && coveralls --exclude tests --gcov-options "\-lp"'
