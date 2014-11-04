@@ -82,6 +82,7 @@ START_TEST(test_proto_packet) {
     master.ipaddr4 = htonl(0xa0000001);
     memset(master.ipaddr6, 'b', sizeof(master.ipaddr6));
     strlcpy(netif.name, "eth0", IFNAMSIZ);
+    strlcpy(netif.device_name, "KittenNic Turbo", IFDESCRSIZE);
     strlcpy(netif.description, "utp naar de buren", IFNAMSIZ);
 
     memset(&vlan1, 0, sizeof(struct netif));
@@ -160,6 +161,19 @@ START_TEST(test_proto_packet) {
     fail_unless(msg.len == 81, "length should not be %d", msg.len);
     msg.len = ndp_packet(msg.msg, &netif, &netifs, &sysinfo);
     fail_unless(msg.len == 64, "length should not be %d", msg.len);
+
+    mark_point();
+    sysinfo.cap = CAP_HOST;
+    sysinfo.cap_active = CAP_HOST;
+    options |= OPT_IFDESCR;
+    netif.master = NULL;
+    msg.len = lldp_packet(msg.msg, &netif, &netifs, &sysinfo);
+    fail_unless(msg.len == 225, "length should not be %d", msg.len);
+    options &= ~OPT_IFDESCR;
+    memset(netif.description, 0, IFNAMSIZ);
+    strlcpy(netif.device_name, "KittenNic Turbo 2", IFDESCRSIZE);
+    msg.len = lldp_packet(msg.msg, &netif, &netifs, &sysinfo);
+    fail_unless(msg.len == 227, "length should not be %d", msg.len);
 }
 END_TEST
 
