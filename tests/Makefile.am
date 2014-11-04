@@ -1,7 +1,7 @@
 
 
 TESTS = $(check_PROGRAMS)
-check_PROGRAMS = check_compat check_proto check_util \
+check_PROGRAMS = check_compat check_proto check_util check_tlv \
 		check_master check_child check_cli
 
 EXTRA_DIST = proto testfile
@@ -14,8 +14,8 @@ AM_CFLAGS = $(WARN_CFLAGS) @CHECK_CFLAGS@
 AM_LDFLAGS = $(check_WRAPFLAGS)
 AM_CPPFLAGS = -I$(top_srcdir)/src
 
-LDADD = $(check_LTLIBRARIES) $(top_builddir)/src/libmisc.la \
-    $(top_builddir)/src/libproto.la $(top_builddir)/src/libcompat.la \
+LDADD = $(top_builddir)/src/libproto.la $(top_builddir)/src/libmisc.la \
+    $(top_builddir)/src/libcompat.la $(check_LTLIBRARIES) \
     $(EVENT_LIB) $(PCI_LIBS) $(PCAP_LIB) $(CAPNG_LDADD) $(CAP_LDADD) \
     $(LIBMNL_LIBS) @CHECK_LIBS@
 common_headers = $(top_srcdir)/src/common.h $(top_srcdir)/src/util.h \
@@ -23,6 +23,7 @@ common_headers = $(top_srcdir)/src/common.h $(top_srcdir)/src/util.h \
 
 check_compat_SOURCES = check_compat.c $(top_srcdir)/src/compat/compat.h
 check_util_SOURCES = check_util.c $(common_headers)
+check_tlv_SOURCES = check_tlv.c $(common_headers)
 check_proto_SOURCES = check_proto.c $(common_headers)
 check_master_SOURCES = check_master.c $(common_headers) \
 	$(top_srcdir)/src/main.h $(top_srcdir)/src/master.h
