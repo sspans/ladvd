@@ -690,6 +690,28 @@ START_TEST(test_lldp_decode) {
 	"vlan id should be empty, not '%s'", msg.peer[PEER_VLAN_ID]);
 
     mark_point();
+    read_packet(&msg, "proto/lldp/51.good.chassis");
+    fail_unless (lldp_decode(&msg) == 118, "packet length incorrect");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+    fail_unless (msg.ttl == 120, "ttl should be 120");
+    fail_unless (strcmp(msg.peer[PEER_HOSTNAME], "(none).(none)") == 0,
+		"system name should be '(none).(none)'");
+    fail_unless (msg.peer[PEER_VLAN_ID] == NULL,
+	"vlan id should be empty, not '%s'", msg.peer[PEER_VLAN_ID]);
+
+    mark_point();
+    read_packet(&msg, "proto/lldp/52.good.chassis");
+    fail_unless (lldp_decode(&msg) == 117, "packet length incorrect");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+    fail_unless (msg.ttl == 120, "ttl should be 120");
+    fail_unless (strcmp(msg.peer[PEER_HOSTNAME], "(none).(none)") == 0,
+		"system name should be '(none).(none)'");
+    fail_unless (msg.peer[PEER_VLAN_ID] == NULL,
+	"vlan id should be empty, not '%s'", msg.peer[PEER_VLAN_ID]);
+
+    mark_point();
     my_log(CRIT, "check");
     errstr = "Invalid LLDP packet: invalid Chassis ID TLV";
     read_packet(&msg, "proto/lldp/A1.fuzzer.chassis_id.long");
