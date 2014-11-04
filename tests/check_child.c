@@ -447,7 +447,7 @@ END_TEST
 
 START_TEST(test_child_link) {
     mark_point();
-    child_link(-1, 0, NULL);
+    child_link_fd();
 }
 END_TEST
 
