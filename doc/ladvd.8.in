@@ -22,6 +22,8 @@ command-line. The only reason for specifying interfaces is to explicitly exclude
 Auto-enable protocols based on received packets (also enables receive mode).
 .IP -d
 Dump pcap-compatible packets to stdout which can be piped to tcpdump (via "| tcpdump -r -") or redirected to a file for further analysis.
+.IP "-e interface"
+Exclude a particular interface, no packets will be transmitted on this interface.
 .IP -f
 Run in the foreground and send logging to stderr.
 .IP -h

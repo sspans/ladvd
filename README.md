@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/sspans/ladvd.png)](https://travis-ci.org/sspans/ladvd)
+
 WHAT IS LADVD?
 --------------
 

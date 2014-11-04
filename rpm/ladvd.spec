@@ -37,7 +37,7 @@ Requires:	hwdata
 Version:	1.0.4
 Release:	1%{?dist}
 License:	ISC
-URL:		http://code.google.com/p/ladvd/
+URL:		http://github.com/sspans/ladvd/
 Source0:	%{pkgname}-%{version}.tar.gz
 Source1:	%{pkgname}.init
 Source2:	%{pkgname}.sysconfig
