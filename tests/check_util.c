@@ -646,9 +646,9 @@ START_TEST(test_my_priv) {
 	"incorrect message logged: %s", check_wrap_errstr);
 
     mark_point();
-    errstr = "stat(\"/nonexistent\"): ";
+    errstr = "stat(\"/inexistant\"): ";
     WRAP_FATAL_START();
-    my_chroot("/nonexistent");
+    my_chroot("/inexistant");
     WRAP_FATAL_END();
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
