@@ -451,6 +451,12 @@ START_TEST(test_child_link) {
 }
 END_TEST
 
+START_TEST(test_child_free) {
+    mark_point();
+    child_free(0, 0, NULL);
+}
+END_TEST
+
 Suite * child_suite (void) {
     Suite *s = suite_create("child.c");
 
@@ -470,6 +476,7 @@ Suite * child_suite (void) {
     tcase_add_test(tc_child, test_child_expire);
     tcase_add_test(tc_child, test_child_cli);
     tcase_add_test(tc_child, test_child_link);
+    tcase_add_test(tc_child, test_child_free);
     suite_add_tcase(s, tc_child);
 
     ifname = "lo";
