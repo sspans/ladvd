@@ -353,6 +353,15 @@ struct netif *subif_iter(struct netif *subif, struct netif *netif) {
     }
 }
 
+int netif_excluded(struct netif *netif, struct ehead *exclifs) {
+    struct exclif *exclif = TAILQ_FIRST(exclifs);
+    for (; exclif != NULL; exclif = TAILQ_NEXT(exclif, entries)) {
+	if (strcmp(netif->name, exclif->name) == 0)
+	    return 1;
+    }
+    return 0;
+}
+
 void netif_protos(struct netif *netif, struct mhead *mqueue) {
     struct netif *subif = NULL;
     struct master_msg *qmsg = NULL;

@@ -55,6 +55,7 @@ ssize_t my_mreq(struct master_req *mreq);
 
 struct netif *netif_iter(struct netif *netif, struct nhead *);
 struct netif *subif_iter(struct netif *subif, struct netif *netif);
+int netif_excluded(struct netif *netif, struct ehead *);
 void netif_protos(struct netif *netif, struct mhead *mqueue);
 void netif_descr(struct netif *netif, struct mhead *mqueue);
 void portname_abbr(char *);

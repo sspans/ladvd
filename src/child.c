@@ -42,6 +42,7 @@ int sargc = 0;
 char **sargv = NULL;
 
 struct nhead netifs;
+struct ehead exclifs;
 struct mhead mqueue;
 struct sysinfo sysinfo;
 extern struct proto protos[];
@@ -192,6 +193,10 @@ void child_send(int fd, short event, struct child_send_args *args) {
 	if ((netif->type == NETIF_TAP) && !(options & OPT_TAP))
 	    continue;
 
+	// skip excluded interfaces
+	if (netif_excluded(netif, &exclifs))
+	    continue;
+
 	my_log(INFO, "starting loop with interface %s", netif->name); 
 
 	while ((subif = subif_iter(subif, netif)) != NULL) {
@@ -211,6 +216,10 @@ void child_send(int fd, short event, struct child_send_args *args) {
 	    if ((subif->type == NETIF_WIRELESS) && !(options & OPT_WIRELESS))
 		continue;
 	    if ((subif->type == NETIF_TAP) && !(options & OPT_TAP))
+		continue;
+
+	    // skip excluded interfaces
+	    if (netif_excluded(subif, &exclifs))
 		continue;
 
 	    // populate msg

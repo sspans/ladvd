@@ -28,6 +28,7 @@
 
 uint32_t options = OPT_DAEMON | OPT_SEND;
 extern struct sysinfo sysinfo;
+extern struct ehead exclifs;
 extern char *__progname;
 
 static void usage() __noreturn;
@@ -53,6 +54,10 @@ int main(int argc, char *argv[]) {
     extern pid_t pid;
     struct flock lock = { .l_type = F_WRLCK };
 
+    // exclude interface support
+    TAILQ_INIT(&exclifs);
+    struct exclif *exclif = NULL;
+
     // clear sysinfo
     memset(&sysinfo, 0, sizeof(struct sysinfo));
     sysinfo.lldpmed_devtype = -1;
@@ -74,7 +79,7 @@ int main(int argc, char *argv[]) {
     argv = sargv;
 #endif
 
-    while ((ch = getopt(argc, argv, "adfhm:noqrstu:vwyzc:l:LCEFN")) != -1) {
+    while ((ch = getopt(argc, argv, "ade:fhm:noqrstu:vwyzc:l:LCEFN")) != -1) {
 	switch(ch) {
 	    case 'a':
 		options |= OPT_AUTO | OPT_RECV;
@@ -82,6 +87,17 @@ int main(int argc, char *argv[]) {
 	    case 'd':
 		options |= OPT_DEBUG;
 		options &= ~OPT_DAEMON;
+		break;
+	    case 'e':
+		// excellent we got an ifindex
+		if (if_nametoindex(optarg)) {
+		    exclif = my_malloc(sizeof(struct exclif));
+		    TAILQ_INSERT_TAIL(&exclifs, exclif, entries);
+		    strlcpy(exclif->name, optarg, IFNAMSIZ);
+		} else {
+		    my_log(CRIT, "invalid exclude interface %s", optarg);
+		    usage();
+		}
 		break;
 	    case 'f':
 		options &= ~OPT_DAEMON;
@@ -259,6 +275,7 @@ static void usage() {
 	"Usage: %s [-a] [INTERFACE] [INTERFACE]\n"
 	    "\t-a = Auto-enable protocols based on received packets\n"
 	    "\t-d = Dump pcap-compatible packets to stdout\n"
+	    "\t-e <interface> = Exclude this interface\n"
 	    "\t-f = Run in the foreground\n"
 	    "\t-h = Print this message\n"
 	    "\t-m <interface> = Management interface\n"

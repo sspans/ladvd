@@ -143,6 +143,13 @@ struct netif {
 
 TAILQ_HEAD(nhead, netif);
 
+struct exclif {
+    char name[IFNAMSIZ];
+    TAILQ_ENTRY(exclif) entries;
+};
+
+TAILQ_HEAD(ehead, exclif);
+
 struct hinv {
     char hw_revision[LLDP_INVENTORY_SIZE + 1];
     char fw_revision[LLDP_INVENTORY_SIZE + 1];
