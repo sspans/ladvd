@@ -9,3 +9,4 @@ before_install:
 before_script:
   - git log --no-merges > doc/ChangeLog
   - autoreconf -i
+script: "./configure && make && make check"
