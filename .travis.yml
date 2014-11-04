@@ -19,4 +19,4 @@ script:
   - 'if [ "$GCOV" = 1 ]; then FLAGS="$FLAGS --enable-gcov"; fi'
   - './configure $FLAGS && make && make check'
 after_success:
-  - 'if [ "$GCOV" = 1 ]; then coveralls --exclude tests --gcov-options "\-lp"; fi'
+  - 'if [ "$GCOV" = 1 ]; then coveralls -b src -r src --gcov-options "\-lp"; fi'
