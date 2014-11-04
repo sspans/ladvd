@@ -1,5 +1,5 @@
 [![Build Status](https://travis-ci.org/sspans/ladvd.png)](https://travis-ci.org/sspans/ladvd)
-[![Coverage Status](https://coveralls.io/repos/sspans/ladvd/badge.png?branch=master)](https://coveralls.io/r/sspans/UtilityBehaviors?branch=master)
+[![Coverage Status](https://coveralls.io/repos/sspans/ladvd/badge.png?branch=master)](https://coveralls.io/r/sspans/ladvd?branch=master)
 
 WHAT IS LADVD?
 --------------
