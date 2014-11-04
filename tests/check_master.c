@@ -466,6 +466,9 @@ START_TEST(test_master_recv) {
     const char *errstr = NULL;
     char *prefix, *suffix, *path = NULL;
     char errbuf[PCAP_ERRBUF_SIZE];
+    int spair[2];
+
+    my_socketpair(spair);
 
     options |= OPT_DEBUG;
     loglevel = INFO;
@@ -476,19 +479,36 @@ START_TEST(test_master_recv) {
     rfd = rfd_byindex(&rawfds, ifindex);
     fail_unless (rfd != NULL, "rfd should be added to the queue");
 
-    suffix = "proto/cdp/43.good.big";
     if ((prefix = getenv("srcdir")) == NULL)
         prefix = ".";
-    fail_if(asprintf(&path, "%s/%s.pcap", prefix, suffix) == -1,
-            "asprintf failed");
 
     mark_point();
+    suffix = "proto/broken/00.unknown";
+    fail_if(asprintf(&path, "%s/%s.pcap", prefix, suffix) == -1,
+            "asprintf failed");
     fail_if((rfd->p_handle = pcap_open_offline(path, errbuf)) == NULL,
         "failed to open %s: %s", path, errbuf);
 
-    // closed child socket
+    errstr = "unknown message type received";
+    my_log(CRIT, "test");
+    WRAP_FATAL_START();
+    master_recv(rfd->fd, event, rfd);
+    WRAP_FATAL_END();
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    pcap_close(rfd->p_handle);
+    rfd->p_handle = NULL;
+    free(path);
+
     mark_point();
-    errstr = "failed to send message to child";
+    suffix = "proto/broken/01.empty";
+    fail_if(asprintf(&path, "%s/%s.pcap", prefix, suffix) == -1,
+            "asprintf failed");
+    fail_if((rfd->p_handle = pcap_open_offline(path, errbuf)) == NULL,
+        "failed to open %s: %s", path, errbuf);
+
+    errstr = "test";
     my_log(CRIT, errstr);
     WRAP_FATAL_START();
     master_recv(rfd->fd, event, rfd);
@@ -499,7 +519,49 @@ START_TEST(test_master_recv) {
     pcap_close(rfd->p_handle);
     rfd->p_handle = NULL;
     free(path);
+
+    mark_point();
+    suffix = "proto/cdp/43.good.big";
+    fail_if(asprintf(&path, "%s/%s.pcap", prefix, suffix) == -1,
+            "asprintf failed");
+    fail_if((rfd->p_handle = pcap_open_offline(path, errbuf)) == NULL,
+        "failed to open %s: %s", path, errbuf);
+
+    // closed child socket
+    mark_point();
+    errstr = "failed to send message to child";
+    my_log(CRIT, "test");
+    WRAP_FATAL_START();
+    master_recv(rfd->fd, event, rfd);
+    WRAP_FATAL_END();
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+    pcap_close(rfd->p_handle);
+    rfd->p_handle = NULL;
+
+    // working
+    mark_point();
+    mfd = spair[0];
+
+    fail_if((rfd->p_handle = pcap_open_offline(path, errbuf)) == NULL,
+        "failed to open %s: %s", path, errbuf);
+
+    errstr = "received CDP message (422 bytes)";
+    my_log(CRIT, "test");
+    WRAP_FATAL_START();
+    master_recv(rfd->fd, event, rfd);
+    WRAP_FATAL_END();
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    pcap_close(rfd->p_handle);
+    rfd->p_handle = NULL;
+    free(path);
+
+    mark_point();
     rfd_closeall(&rawfds);
+    close(spair[0]);
+    close(spair[1]);
 }
 END_TEST
 
