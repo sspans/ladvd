@@ -1,12 +1,15 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
+AC_PREREQ([2.61])
+
 AC_INIT([ladvd], [1.0.4], [sten@blinkenlights.nl])
 AC_CANONICAL_TARGET
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([src/config.h.in])
 AC_CONFIG_HEADER([src/config.h])
 AM_INIT_AUTOMAKE([subdir-objects foreign])
+AM_SILENT_RULES([yes])
 
 # Checks for programs.
 AC_PROG_CC
@@ -23,8 +26,7 @@ AC_PROG_MAKE_SET
 AC_PROG_SED
 PKG_PROG_PKG_CONFIG
 
-# enable PIE by default
-use_pie=yes
+AC_LANG([C])
 
 case "$target_os" in
     linux-gnu*|linux-uclibc*)
@@ -34,7 +36,6 @@ case "$target_os" in
 	AC_DEFINE(NETIF_LINUX,1, [define for netifs])
 	;;
     freebsd*)
-	use_pie=no
 	AC_DEFINE(NETIF_BSD,1, [define for netifs])
 	;;
     openbsd*)
@@ -54,16 +55,15 @@ esac
 # enable warnings/errors/security
 AX_CFLAGS_GCC_OPTION(-Wall -Werror, WCFLAGS)
 AX_CFLAGS_GCC_OPTION(-Wformat -Wformat-security, WCFLAGS)
-AX_CFLAGS_GCC_OPTION(-D_FORTIFY_SOURCE=2, WCFLAGS)
-AX_LDFLAGS_OPTION([-Wl,-z,relro])
-AX_LDFLAGS_OPTION([-Wl,-z,now])
-GCC_STACK_PROTECTOR
-AS_IF([test "$use_pie" = "yes"], [
-    AX_CFLAGS_GCC_OPTION("-fPIE", WCFLAGS, 
-	[ WCFLAGS="$WCFLAGS -fPIE"; WLDFLAGS="-pie"])
-])
-AC_SUBST(WARN_CFLAGS,"$WCFLAGS")
-AC_SUBST(WARN_LDFLAGS,"$WLDFLAGS")
+AC_LD_RELRO
+AC_CC_PIE
+AC_CC_STACK_PROTECTOR
+AC_CC_PARAM_SSP_BUFFER_SIZE([4])
+AC_CC_D_FORTIFY_SOURCE
+
+AC_SUBST(WARN_CFLAGS,"$WCFLAGS $PIE_CFLAGS")
+AC_SUBST(WARN_LDFLAGS,"$RELRO_LDFLAGS")
+
 
 # Enable gcov suport.
 AC_ARG_ENABLE([gcov],
@@ -108,9 +108,13 @@ AS_IF([test -n "$chroot_dir"],
     [AC_DEFINE(PACKAGE_CHROOT_DIR,"/var/run/" PACKAGE_NAME,[location of chroot])]
 )
 
-# socket / nss libs
-CF_LIB_SOCKET
-CF_LIB_NSL
+AC_CHECK_FUNC([socket], [], [
+ AC_CHECK_LIB([socket], [socket], [LIBS="-lsocket $LIBS"])
+])
+
+AC_CHECK_FUNC([gethostent], [], [
+ AC_CHECK_LIB([nsl], [gethostent], [LIBS="-lnsl $LIBS"])
+])
 
 # check unit tests
 PKG_CHECK_MODULES([CHECK], [check >= 0.9.4],
