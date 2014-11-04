@@ -12,6 +12,8 @@ before_install:
   - sudo apt-get install -qq libevent-dev libpcap-dev libcap-ng-dev libmnl-dev 
   - sudo apt-get install -qq libpci-dev autotools-dev check pkg-config
   - sudo pip install cpp-coveralls
+  - sudo ip link add type veth
+  - sudo ip link set veth0 up
 before_script:
   - git log --no-merges > doc/ChangeLog
   - autoreconf -i
