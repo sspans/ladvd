@@ -58,7 +58,7 @@
 
 static int sockfd = -1;
 
-static void netif_addrs(struct ifaddrs *, struct nhead *, struct sysinfo *);
+static void netif_addrs(struct ifaddrs *, struct nhead *, struct my_sysinfo *);
 
 #if defined(NETIF_LINUX)
 #include "netif_linux.c"
@@ -72,7 +72,7 @@ void netif_init() {
 }
 
 // create netifs for a list of interfaces
-uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
+uint16_t netif_fetch(int ifc, char *ifl[], struct my_sysinfo *sysinfo,
 		    struct nhead *netifs) {
 
     struct ifaddrs *ifaddrs, *ifaddr = NULL;
@@ -312,7 +312,7 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *sysinfo,
 
 // perform address detection for all netifs
 static void netif_addrs(struct ifaddrs *ifaddrs, struct nhead *netifs,
-		struct sysinfo *sysinfo) {
+		struct my_sysinfo *sysinfo) {
     struct ifaddrs *ifaddr;
     struct netif *netif, *mnetif;
 

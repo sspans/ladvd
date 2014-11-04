@@ -34,7 +34,7 @@ unsigned int ifindex = 0;
 uint32_t options = OPT_DAEMON | OPT_CHECK;
 extern struct nhead netifs;
 extern struct mhead mqueue;
-extern struct sysinfo sysinfo;
+extern struct my_sysinfo sysinfo;
 extern int msock;
 
 START_TEST(test_child_init) {
@@ -456,7 +456,7 @@ Suite * child_suite (void) {
 
     TAILQ_INIT(&netifs);
     TAILQ_INIT(&mqueue);
-    memset(&sysinfo, 0, sizeof(struct sysinfo));
+    memset(&sysinfo, 0, sizeof(struct my_sysinfo));
     WRAP_FATAL_START();
     sysinfo_fetch(&sysinfo);
     WRAP_FATAL_END();

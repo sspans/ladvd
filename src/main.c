@@ -27,7 +27,7 @@
 #include <fcntl.h>
 
 uint32_t options = OPT_DAEMON | OPT_SEND;
-extern struct sysinfo sysinfo;
+extern struct my_sysinfo sysinfo;
 extern struct ehead exclifs;
 extern char *__progname;
 
@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
     struct exclif *exclif = NULL;
 
     // clear sysinfo
-    memset(&sysinfo, 0, sizeof(struct sysinfo));
+    memset(&sysinfo, 0, sizeof(struct my_sysinfo));
     sysinfo.lldpmed_devtype = -1;
 
     // cli

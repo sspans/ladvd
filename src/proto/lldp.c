@@ -53,7 +53,7 @@ static int lldp_private(struct master_msg *msg, unsigned char *, size_t);
 static int lldp_private_8021(struct master_msg *msg, unsigned char *, size_t);
 
 size_t lldp_packet(void *packet, struct netif *netif,
-		struct nhead *netifs, struct sysinfo *sysinfo) {
+		struct nhead *netifs, struct my_sysinfo *sysinfo) {
 
     struct ether_hdr ether;
 

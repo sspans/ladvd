@@ -27,7 +27,7 @@
 	 - sizeof(struct ndp_header))
 
 size_t ndp_packet(void *packet, struct netif *netif,
-	    struct nhead *netifs, struct sysinfo *sysinfo) {
+	    struct nhead *netifs, struct my_sysinfo *sysinfo) {
 
     struct ether_hdr ether;
     struct ether_llc llc;

@@ -160,7 +160,7 @@ struct hinv {
     char asset_id[LLDP_INVENTORY_SIZE + 1];
 };
 
-struct sysinfo {
+struct my_sysinfo {
     struct utsname uts;
     char uts_str[256];
     uint8_t uts_rel[3];
@@ -301,7 +301,7 @@ struct proto {
     uint8_t llc_org[3];
     uint16_t llc_pid;
     size_t (* const build) (void *, struct netif *, struct nhead *,
-			    struct sysinfo *);
+			    struct my_sysinfo *);
     unsigned char * (* const check) (void *, size_t);
     size_t (* const decode) (struct master_msg *);
 };
@@ -311,9 +311,9 @@ void child_init(int reqfd, int msgfd, int ifc, char *ifl[], struct passwd *pwd);
 void master_init(int reqfd, int msgfd, pid_t pid);
 void master_signal(int fd, short event, void *pid);
 
-void sysinfo_fetch(struct sysinfo *);
+void sysinfo_fetch(struct my_sysinfo *);
 void netif_init();
-uint16_t netif_fetch(int ifc, char *ifl[], struct sysinfo *, struct nhead *);
+uint16_t netif_fetch(int ifc, char *ifl[], struct my_sysinfo *, struct nhead *);
 int netif_media(struct netif *);
 
 #endif /* _common_h */

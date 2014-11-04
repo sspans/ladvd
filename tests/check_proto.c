@@ -33,7 +33,7 @@ START_TEST(test_proto_packet) {
     struct master_msg msg = {};
     struct netif master, netif, vlan1, vlan2;
     struct nhead netifs;
-    struct sysinfo sysinfo = {};
+    struct my_sysinfo sysinfo = {};
 
     mark_point();
     strlcpy(sysinfo.uts_str, "Testing", sizeof(sysinfo.uts_str));

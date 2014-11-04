@@ -43,9 +43,9 @@
 #define PROCFS_FORWARD_IPV6	"/proc/sys/net/ipv6/conf/all/forwarding"
 #endif
 
-static void sysinfo_forwarding(struct sysinfo *);
+static void sysinfo_forwarding(struct my_sysinfo *);
 
-void sysinfo_fetch(struct sysinfo *sysinfo) {
+void sysinfo_fetch(struct my_sysinfo *sysinfo) {
 
     int i, ret;
     char *descr = NULL, *release, *endptr;
@@ -243,7 +243,7 @@ void sysinfo_fetch(struct sysinfo *sysinfo) {
 
 
 // detect forwarding capability
-void sysinfo_forwarding(struct sysinfo *sysinfo) {
+void sysinfo_forwarding(struct my_sysinfo *sysinfo) {
 
 #ifdef HAVE_PROC_SYS_NET
     char line[256];

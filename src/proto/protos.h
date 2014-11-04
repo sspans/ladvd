@@ -34,11 +34,11 @@
 #define PROTO_MAX   5
 
 
-size_t lldp_packet(void *, struct netif *, struct nhead *, struct sysinfo *);
-size_t cdp_packet(void *, struct netif *, struct nhead *, struct sysinfo *);
-size_t edp_packet(void *, struct netif *, struct nhead *, struct sysinfo *);
-size_t fdp_packet(void *, struct netif *, struct nhead *, struct sysinfo *);
-size_t ndp_packet(void *, struct netif *, struct nhead *, struct sysinfo *);
+size_t lldp_packet(void *, struct netif *, struct nhead *, struct my_sysinfo *);
+size_t cdp_packet(void *, struct netif *, struct nhead *, struct my_sysinfo *);
+size_t edp_packet(void *, struct netif *, struct nhead *, struct my_sysinfo *);
+size_t fdp_packet(void *, struct netif *, struct nhead *, struct my_sysinfo *);
+size_t ndp_packet(void *, struct netif *, struct nhead *, struct my_sysinfo *);
 
 unsigned char * lldp_check(void *, size_t);
 unsigned char * cdp_check(void *, size_t);

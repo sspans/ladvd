@@ -44,7 +44,7 @@ char **sargv = NULL;
 struct nhead netifs;
 struct ehead exclifs;
 struct mhead mqueue;
-struct sysinfo sysinfo;
+struct my_sysinfo sysinfo;
 extern struct proto protos[];
 
 void child_init(int reqfd, int msgfd, int ifc, char *ifl[],
