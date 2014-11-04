@@ -239,6 +239,7 @@ START_TEST(test_child_queue) {
 END_TEST
 
 START_TEST(test_child_expire) {
+    const char *errstr = NULL;
     struct master_msg msg, *dmsg;
     struct netif netif;
     int spair[2], count;
@@ -281,12 +282,25 @@ START_TEST(test_child_expire) {
     child_queue(spair[1], event);
     child_expire();
 
+    // try ifdescr
+    errstr = "only -1 bytes written: Bad file descriptor";
+    options = OPT_DAEMON | OPT_CHECK | OPT_IFDESCR;
+    msg.proto = PROTO_LLDP;
+    read_packet(&msg, "proto/lldp/47.good.nexus");
+    WRAP_WRITE(spair[0], &msg, MASTER_MSG_LEN(msg.len));
+    WRAP_FATAL_START();
+    child_queue(spair[1], event);
+    WRAP_FATAL_END();
+    fail_unless(strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+    options = OPT_DAEMON | OPT_CHECK;
+
     // check the message count
     count = 0;
     TAILQ_FOREACH(dmsg, &mqueue, entries) {
 	count++;
     }
-    fail_unless(count == 2, "invalid message count: %d != 2", count);
+    fail_unless(count == 3, "invalid message count: %d != 3", count);
 
     // expire a locked message
     mark_point();
@@ -301,7 +315,7 @@ START_TEST(test_child_expire) {
     TAILQ_FOREACH(dmsg, &mqueue, entries) {
 	count++;
     }
-    fail_unless(count == 2, "invalid message count: %d != 2", count);
+    fail_unless(count == 3, "invalid message count: %d != 3", count);
 
     // expire a message
     mark_point();
@@ -314,9 +328,14 @@ START_TEST(test_child_expire) {
     TAILQ_FOREACH(dmsg, &mqueue, entries) {
 	count++;
     }
-    fail_unless(count == 1, "invalid message count: %d != 1", count);
+    fail_unless(count == 2, "invalid message count: %d != 2", count);
 
     // expire a message
+    mark_point();
+    dmsg = TAILQ_FIRST(&mqueue);
+    dmsg->received -= dmsg->ttl * 2;
+    child_expire();
+
     mark_point();
     dmsg = TAILQ_FIRST(&mqueue);
     dmsg->received -= dmsg->ttl * 2;
