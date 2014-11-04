@@ -16,7 +16,7 @@ before_script:
   - git log --no-merges > doc/ChangeLog
   - autoreconf -i
 script:
-  - [ "$GCOV" -eq 1 ] && FLAGS="$FLAGS --enable-gcov"
-  - ./configure && make && make check
+  - '[ "$GCOV" -eq 1 ] && FLAGS="$FLAGS --enable-gcov"'
+  - './configure && make && make check'
 after_success:
-  - [ "$GCOV" -eq 1 ] && coveralls --exclude tests --gcov-options '\-lp'
+  - '[ "$GCOV" -eq 1 ] && coveralls --exclude tests --gcov-options "\-lp"'
