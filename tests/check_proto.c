@@ -534,6 +534,11 @@ START_TEST(test_lldp_decode) {
     fail_unless (lldp_decode(&msg) == 0, "broken packets should return 0");
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
+    errstr = "Invalid LLDP packet: unknown adress family";
+    read_packet(&msg, "proto/lldp/94.mgt.af");
+    fail_unless (lldp_decode(&msg) == 0, "broken packets should return 0");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
 
     errstr = "Corrupt LLDP packet: invalid END TLV";
     read_packet(&msg, "proto/lldp/97.end.invalid");
@@ -703,6 +708,17 @@ START_TEST(test_lldp_decode) {
     mark_point();
     read_packet(&msg, "proto/lldp/52.good.chassis");
     fail_unless (lldp_decode(&msg) == 117, "packet length incorrect");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+    fail_unless (msg.ttl == 120, "ttl should be 120");
+    fail_unless (strcmp(msg.peer[PEER_HOSTNAME], "(none).(none)") == 0,
+		"system name should be '(none).(none)'");
+    fail_unless (msg.peer[PEER_VLAN_ID] == NULL,
+	"vlan id should be empty, not '%s'", msg.peer[PEER_VLAN_ID]);
+
+    mark_point();
+    read_packet(&msg, "proto/lldp/53.good.ipv6");
+    fail_unless (lldp_decode(&msg) == 130, "packet length incorrect");
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (msg.ttl == 120, "ttl should be 120");

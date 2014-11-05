@@ -850,8 +850,10 @@ static int lldp_mgmt_addr(struct master_msg *msg,
 	}
 
     // unhandled
-    if (!af)
+    if (!af) {
+	my_log(INFO, "Invalid LLDP packet: unknown adress family");
 	return 0;
+    }
 
     // invalid
     if (!(lldp_aflen < length)) {
