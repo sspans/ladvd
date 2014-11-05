@@ -35,16 +35,19 @@ mount -t sysfs none /sys
 # pidfiles and such like
 mkdir -p /var/run
 mount -t tmpfs none /var/run
+mount -t tmpfs none /tmp
 
-# enable ipv4 forwarding for docker
+# enable ip forwarding
 echo 1 > /proc/sys/net/ipv4/ip_forward
+echo 1 > /proc/sys/net/ipv4/conf/all/forwarding
 
 # configure networking
 ip addr add 127.0.0.1 dev lo
+ip -6 addr add ::1/128 dev lo
 ip link set lo up
-ip addr add 10.1.1.1/24 dev eth0
+ip addr add 203.0.113.1/24 dev eth0
+ip -6 addr add 2001:DB8::dead:cafe:babe/64 dev eth0
 ip link set eth0 up
-ip route add default via 10.1.1.254
 
 # create interfaces
 ip link add dev veth0 type veth peer name veth1
@@ -88,7 +91,7 @@ mount -o bind /home /var/run/ladvd/home
 # print usage
 ./src/ladvd -h || :
 # run ladvd once
-./src/ladvd -a -d -f -o -LCEFN -w -c NL -z -m veth0 -e veth13 -e veth14 -vv >/dev/null
+./src/ladvd -a -d -f -o -LCEFN -w -c NL -z -m eth0 -e veth13 -e veth14 -vv >/dev/null
 # run tests
 make check
 
