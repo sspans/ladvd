@@ -2,6 +2,11 @@ ACLOCAL_AMFLAGS = -I m4
 SUBDIRS = src . doc systemd @TESTS_SUBDIR@
 
 if TESTS_ENABLED
+
+check-uml:
+	-chmod +x @top_srcdir@/tests/uml/linux @top_srcdir@/tests/uml/uml.sh
+	-@top_srcdir@/tests/uml/linux quiet mem=256M rootfstype=hostfs rw eth0=slirp,,/usr/bin/slirp-fullbolt init=@abs_srcdir@/tests/uml/uml.sh WORKDIR=$(abs_builddir)
+
 if GCOV_ENABLED
 lcov-reset:
 	lcov -d @top_srcdir@/src --zerocounters

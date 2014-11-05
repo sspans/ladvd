@@ -35,7 +35,3 @@ check_LTLIBRARIES = libcheckwrap.la
 libcheckwrap_la_SOURCES = check_wrap.h check_wrap.c
 libcheckwrap_la_LDFLAGS = $(DL_LIB)
 
-check-uml:
-	-chmod +x uml/linux uml/uml.sh
-	-uml/linux quiet mem=256M rootfstype=hostfs rw eth0=slirp,,/usr/bin/slirp-fullbolt init=$(abs_builddir)/uml/uml.sh WORKDIR=$(abs_builddir)
-
