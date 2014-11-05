@@ -355,7 +355,18 @@ START_TEST(test_master_send) {
     mark_point();
     errstr = "check";
     my_log(CRIT, errstr);
-    WRAP_WRITE(spair[0], &msg, MASTER_MSG_LEN(msg.len) - 1); 
+    WRAP_WRITE(spair[0], &msg, MASTER_MSG_LEN(msg.len) - 1);
+    WRAP_FATAL_START();
+    master_send(spair[1], event);
+    WRAP_FATAL_END();
+    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    // incorrect msend msg.index should fail
+    mark_point();
+    errstr = "invalid ifindex supplied";
+    msg.index = UINT32_MAX;
+    WRAP_WRITE(spair[0], &msg, MASTER_MSG_LEN(msg.len));
     WRAP_FATAL_START();
     master_send(spair[1], event);
     WRAP_FATAL_END();
@@ -363,6 +374,7 @@ START_TEST(test_master_send) {
 	"incorrect message logged: %s", check_wrap_errstr);
 
     mark_point();
+    msg.index = ifindex;
     msg.proto = PROTO_LLDP;
     memcpy(ether.dst, lldp_dst, ETHER_ADDR_LEN);
     ether.type = htons(ETHERTYPE_LLDP);
@@ -371,7 +383,7 @@ START_TEST(test_master_send) {
     close(rfd->fd);
     rfd->fd = -1;
     options &= ~OPT_DEBUG;
-    WRAP_WRITE(spair[0], &msg, MASTER_MSG_LEN(msg.len)); 
+    WRAP_WRITE(spair[0], &msg, MASTER_MSG_LEN(msg.len));
     master_send(spair[1], event);
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
