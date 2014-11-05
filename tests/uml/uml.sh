@@ -50,14 +50,13 @@ ip route add default via 10.1.1.254
 ip link add dev veth0 type veth peer name veth1
 ip link set veth0 up
 ip link add dev bond0 type bond || :
-ip link set bond0 up
 ip link add dev veth11 type veth peer name veth13
-ip link set veth11
 ip link add dev veth12 type veth peer name veth14
-ip link set veth12
 ip link set dev veth11 master bond0
 ip link set dev veth12 master bond0
+ip link set bond0 up
 ip link add link bond0 name bond0.42 type vlan id 42
+ip link set bond0.42 up
 ip link add dev br0 type bridge
 ip link set br0 up
 ip link add dev veth21 type veth peer name veth23
@@ -73,6 +72,13 @@ ip link set eth1 up
 mkdir -p /run/resolvconf
 echo 'nameserver 8.8.8.8' > /run/resolvconf/resolv.conf
 mount --bind /run/resolvconf/resolv.conf /etc/resolv.conf
+
+# setup ladvd
+chmod 755 /var/run
+mkdir /var/run/ladvd
+
+# run ladvd once
+./src/ladvd -u nobody -f -o -LCEF -t -w -m veth0 -vv
 
 # run tests
 make check
