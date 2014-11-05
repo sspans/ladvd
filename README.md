@@ -44,7 +44,7 @@ Makefile and config.h appropriate for your system. Then type
 BUG REPORTS
 -----------
 
-Please email your bug report to sten@blinkenlights.nl.
+Please create an issue on github or email your bug report to sten@blinkenlights.nl.
 
 
 COPYRIGHT
