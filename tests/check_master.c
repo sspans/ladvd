@@ -274,6 +274,13 @@ START_TEST(test_master_check) {
     mreq.len = sizeof(struct ethtool_cmd);
     fail_unless(master_check(&mreq) == EXIT_SUCCESS,
 	"MASTER_ETHTOOL_GSET check failed");
+
+    mark_point();
+    mreq.op = MASTER_ETHTOOL_GDRV;
+    mreq.index = ifindex;
+    mreq.len = sizeof(struct ethtool_drvinfo);
+    fail_unless(master_check(&mreq) == EXIT_SUCCESS,
+	"MASTER_ETHTOOL_GDRV check failed");
 #endif
 
 #ifdef SIOCSIFDESCR
