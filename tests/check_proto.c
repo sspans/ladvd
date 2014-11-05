@@ -722,7 +722,7 @@ START_TEST(test_lldp_decode) {
 
     mark_point();
     read_packet(&msg, "proto/lldp/53.good.ipv6");
-    fail_unless (lldp_decode(&msg) == 130, "packet length incorrect");
+    fail_unless (lldp_decode(&msg) == msg.len, "packet length incorrect");
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (msg.ttl == 120, "ttl should be 120");
@@ -816,7 +816,23 @@ START_TEST(test_lldp_decode) {
     fail_unless (lldp_decode(&msg) == msg.len, "packet length incorrect");
     fflush(stdout);
     fail_if(read(spair[1], sobuf, sizeof(sobuf)) < 0, "read failed");
-    fail_unless(strncmp(sobuf, errstr, strlen(errstr)) == 0, "invalid output: %s", sobuf);
+    fail_unless(strncmp(sobuf, errstr, strlen(errstr)) == 0,
+	"invalid output: %s", sobuf);
+    fail_unless (strcmp(check_wrap_errstr, "check") == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+    close(spair[0]);
+    close(spair[1]);
+
+    mark_point();
+    my_socketpair(spair);
+    errstr = "Chassis id: foobar";
+    memset(sobuf, 0, sizeof(sobuf));
+    read_packet(&msg, "proto/lldp/53.good.ipv6");
+    fail_unless (lldp_decode(&msg) == msg.len, "packet length incorrect");
+    fflush(stdout);
+    fail_if(read(spair[1], sobuf, sizeof(sobuf)) < 0, "read failed");
+    fail_unless(strncmp(sobuf, errstr, strlen(errstr)) == 0,
+	"invalid output: %s", sobuf);
     fail_unless (strcmp(check_wrap_errstr, "check") == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
