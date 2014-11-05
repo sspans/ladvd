@@ -425,6 +425,7 @@ END_TEST
 START_TEST(test_lldp_decode) {
     struct master_msg msg = {};
     const char *errstr = NULL;
+    char sobuf[1024];
     int spair[2], fd = -1;
 
     loglevel = DEBUG;
@@ -808,9 +809,15 @@ START_TEST(test_lldp_decode) {
     my_socketpair(spair);
 
     msg.decode = DECODE_PRINT;
+    my_log(CRIT, "check");
+    errstr = "Chassis id: 0:d:ec:ab:cd:ef";
+    memset(sobuf, 0, sizeof(sobuf));
     read_packet(&msg, "proto/lldp/47.good.nexus");
     fail_unless (lldp_decode(&msg) == 268, "packet length incorrect");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    fflush(stdout);
+    fail_if(read(spair[1], sobuf, sizeof(sobuf)) < 0, "read failed");
+    fail_unless(strncmp(sobuf, errstr, strlen(errstr)) == 0, "invalid output: %s", sobuf);
+    fail_unless (strcmp(check_wrap_errstr, "check") == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     close(spair[0]);
@@ -822,6 +829,7 @@ END_TEST
 START_TEST(test_cdp_decode) {
     struct master_msg msg = {};
     const char *errstr = NULL;
+    char sobuf[1024];
     int spair[2], fd = -1;
 
     loglevel = INFO;
@@ -997,9 +1005,16 @@ START_TEST(test_cdp_decode) {
     close(STDOUT_FILENO);
     my_socketpair(spair);
 
-    msg.decode = DECODE_STR;
-    read_packet(&msg, "proto/cdp/49.good.phone");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    msg.decode = DECODE_PRINT;
+    my_log(CRIT, "check");
+    errstr = "CDP Version: 2";
+    memset(sobuf, 0, sizeof(sobuf));
+    read_packet(&msg, "proto/cdp/43.good.big");
+    fail_unless (cdp_decode(&msg) == msg.len, "packet length incorrect");
+    fflush(stdout);
+    fail_if(read(spair[1], sobuf, sizeof(sobuf)) < 0, "read failed");
+    fail_unless(strncmp(sobuf, errstr, strlen(errstr)) == 0, "invalid output: %s", sobuf);
+    fail_unless (strcmp(check_wrap_errstr, "check") == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     close(spair[0]);
