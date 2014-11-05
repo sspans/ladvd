@@ -41,14 +41,6 @@ mount -t tmpfs none /tmp
 echo 1 > /proc/sys/net/ipv4/ip_forward
 echo 1 > /proc/sys/net/ipv4/conf/all/forwarding
 
-# configure networking
-ip addr add 127.0.0.1 dev lo
-ip -6 addr add ::1/128 dev lo
-ip link set lo up
-ip addr add 203.0.113.1/24 dev eth0
-ip -6 addr add 2001:DB8::dead:cafe:babe/64 dev eth0
-ip link set eth0 up
-
 # create interfaces
 ip link add dev veth0 type veth peer name veth1
 ip link set veth0 up
@@ -72,6 +64,14 @@ ip link set dev veth22 master br0
 ip tuntap add dev eth1 mode tap
 ip link set eth1 up
 
+# configure networking
+ip addr add 127.0.0.1 dev lo
+ip -6 addr add ::1/128 dev lo
+ip link set lo up
+ip addr add 203.0.113.1/24 dev veth0
+ip -6 addr add 2001:DB8::dead:cafe:babe/64 dev veth0
+ip link set veth0 up
+
 # configure dns (google public)
 mkdir -p /run/resolvconf
 echo 'nameserver 8.8.8.8' > /run/resolvconf/resolv.conf
@@ -91,7 +91,7 @@ mount -o bind /home /var/run/ladvd/home
 # print usage
 ./src/ladvd -h || :
 # run ladvd once
-./src/ladvd -a -d -f -o -LCEFN -w -c NL -z -m eth0 -e veth13 -e veth14 -vv >/dev/null
+./src/ladvd -a -d -f -o -LCEFN -w -c NL -z -m veth0 -e veth13 -e veth14 -vv >/dev/null
 # run tests
 make check
 
