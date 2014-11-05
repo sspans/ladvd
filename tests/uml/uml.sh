@@ -88,13 +88,7 @@ mount -o bind /home /var/run/ladvd/home
 # print usage
 ./src/ladvd -h || :
 # run ladvd once
-./src/ladvd -a -d -f -o -LCEFN -w -c NL -z -m veth0 -vv >/dev/null
+./src/ladvd -a -d -f -o -LCEFN -w -c NL -z -m veth0 -e veth13 -e veth14 -vv >/dev/null
 # run tests
 make check
 
-# run daemon
-./src/ladvd -ra -f -e veth13 -e veth14 -e veth23 -e veth24 -vvv -LCEFN -u nobody -w -c NL -z -m veth0 &
-sleep 60
-pkill -f ./src/ladvd || :
-sleep 10
-echo done
