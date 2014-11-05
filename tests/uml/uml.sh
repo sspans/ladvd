@@ -49,6 +49,7 @@ ip route add default via 10.1.1.254
 # create interfaces
 ip link add dev veth0 type veth peer name veth1
 ip link set veth0 up
+ip link set veth1 up
 ip link add dev bond0 type bond || :
 ip link add dev veth11 type veth peer name veth13
 ip link add dev veth12 type veth peer name veth14
@@ -77,11 +78,23 @@ mount --bind /run/resolvconf/resolv.conf /etc/resolv.conf
 chmod 755 /var/run
 mkdir /var/run/ladvd
 
+# setup ladvdc
+[ -e src/ladvdc ] || ln src/ladvd src/ladvdc
+
+# XXX: hack to capture gcov from chroot
+mkdir /var/run/ladvd/home
+mount -o bind /home /var/run/ladvd/home
+
 # print usage
 ./src/ladvd -h || :
 # run ladvd once
-./src/ladvd -r -a -d -f -o -LCEF -t -w -c NL -z -m veth0 -vv >/dev/null
-
+./src/ladvd -a -d -f -o -LCEFN -w -c NL -z -m veth0 -vv >/dev/null
 # run tests
 make check
 
+# run daemon
+./src/ladvd -ra -f -e veth13 -e veth14 -e veth23 -e veth24 -vvv -LCEFN -u nobody -w -c NL -z -m veth0 &
+sleep 60
+pkill -f ./src/ladvd || :
+sleep 10
+echo done
