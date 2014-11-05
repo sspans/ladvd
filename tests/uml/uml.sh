@@ -77,8 +77,10 @@ mount --bind /run/resolvconf/resolv.conf /etc/resolv.conf
 chmod 755 /var/run
 mkdir /var/run/ladvd
 
+# print usage
+./src/ladvd -h || :
 # run ladvd once
-./src/ladvd -d -f -o -LCEF -t -w -m veth0 -vv >/dev/null
+./src/ladvd -r -a -d -f -o -LCEF -t -w -c NL -z -m veth0 -vv >/dev/null
 
 # run tests
 make check
