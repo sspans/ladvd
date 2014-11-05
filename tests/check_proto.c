@@ -425,6 +425,7 @@ END_TEST
 START_TEST(test_lldp_decode) {
     struct master_msg msg = {};
     const char *errstr = NULL;
+    int spair[2], fd = -1;
 
     loglevel = DEBUG;
     msg.decode = DECODE_STR;
@@ -800,20 +801,28 @@ START_TEST(test_lldp_decode) {
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
-    /*
-    my_log(CRIT, "check");
-    errstr = "Invalid LLDP packet: missing Port ID TLV";
-    read_packet(&msg, "proto/lldp/AA.fuzzer.addr.invalid");
-    fail_unless (lldp_decode(&msg) == 0, "invalid packets should return 0");
+    mark_point();
+    // make sure stdout is not a tty
+    fd = dup(STDOUT_FILENO);
+    close(STDOUT_FILENO);
+    my_socketpair(spair);
+
+    msg.decode = DECODE_PRINT;
+    read_packet(&msg, "proto/lldp/47.good.nexus");
+    fail_unless (lldp_decode(&msg) == 268, "packet length incorrect");
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
-    */
+
+    close(spair[0]);
+    close(spair[1]);
+    fd = dup(fd);
 }
 END_TEST
 
 START_TEST(test_cdp_decode) {
     struct master_msg msg = {};
     const char *errstr = NULL;
+    int spair[2], fd = -1;
 
     loglevel = INFO;
     msg.decode = DECODE_STR;
@@ -982,6 +991,20 @@ START_TEST(test_cdp_decode) {
     fail_unless (msg.peer[PEER_VLAN_ID] == NULL,
 	"vlan id should be empty, not '%s'", msg.peer[PEER_VLAN_ID]);
 
+    mark_point();
+    // make sure stdout is not a tty
+    fd = dup(STDOUT_FILENO);
+    close(STDOUT_FILENO);
+    my_socketpair(spair);
+
+    msg.decode = DECODE_STR;
+    read_packet(&msg, "proto/cdp/49.good.phone");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    close(spair[0]);
+    close(spair[1]);
+    fd = dup(fd);
     peer_free(msg.peer);
 }
 END_TEST
