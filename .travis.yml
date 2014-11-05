@@ -17,7 +17,8 @@ before_script:
   - git log --no-merges > doc/ChangeLog
   - autoreconf -i
 script:
-  - 'if [ "$GCOV" = 1 ]; then FLAGS="$FLAGS --enable-gcov"; fi'
-  - './configure $FLAGS && make && make check'
+  - 'CHECK="check"'
+  - 'if [ "$GCOV" = 1 ]; then FLAGS="$FLAGS --enable-gcov"; CHECK="check-uml"; fi'
+  - './configure $FLAGS && make && make $CHECK'
 after_success:
   - 'if [ "$GCOV" = 1 ]; then coveralls -b src -r src -e compat -e netif_bsd.c -E ".*\.h" --gcov-options "\-lp"; fi'
