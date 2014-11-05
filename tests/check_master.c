@@ -50,6 +50,32 @@ extern int dfd;
 extern int mfd;
 extern struct rfdhead rawfds;
 
+START_TEST(test_master_init) {
+    const char *errstr = NULL;
+    int spair[2], fd = -1;
+
+    options |= OPT_DEBUG;
+
+    // make sure stdout is not a tty
+    fd = dup(STDOUT_FILENO);
+    close(STDOUT_FILENO);
+    my_socketpair(spair);
+
+    errstr = "test";
+    my_log(CRIT, errstr);
+    WRAP_FATAL_START();
+    master_init(0, 0, 0);
+    WRAP_FATAL_END();
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+
+    close(spair[0]);
+    close(spair[1]);
+    fd = dup(fd);
+    options &= ~OPT_DEBUG;
+}
+END_TEST
+
 START_TEST(test_master_signal) {
     int sig = 0;
     short event = 0;
@@ -582,6 +608,7 @@ Suite * master_suite (void) {
 
     // master test case
     TCase *tc_master = tcase_create("master");
+    tcase_add_test(tc_master, test_master_init);
     tcase_add_test(tc_master, test_master_signal);
     tcase_add_test(tc_master, test_master_req);
     tcase_add_test(tc_master, test_master_check);
