@@ -197,27 +197,30 @@ START_TEST(test_master_req) {
     fail_unless (rfd_byindex(&rawfds, ifindex) == NULL,
     	"rfd should be removed from the queue");
  
-    // test a correct ETHTOOL / DESCR
+    // test a correct DESCR
     mark_point();
-#ifdef HAVE_LINUX_ETHTOOL_H
-    mreq.op = MASTER_ETHTOOL_GSET;
-    mreq.len = sizeof(struct ethtool_cmd);
-#elif defined SIOCSIFDESCR
     mreq.op = MASTER_DESCR;
-    mreq.len = 0;
-#endif
+    mreq.len = 1;
 
-#if defined(HAVE_LINUX_ETHTOOL_H) || defined(SIOCSIFDESCR)
     WRAP_WRITE(spair[0], &mreq, MASTER_REQ_LEN(mreq.len));
 
     errstr = "check";
     my_log(CRIT, errstr);
-    WRAP_FATAL_START();
     master_req(spair[1], event);
-    WRAP_FATAL_END();
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
-#endif
+
+    mark_point();
+    mreq.op = MASTER_ALIAS;
+    mreq.len = 1;
+
+    WRAP_WRITE(spair[0], &mreq, MASTER_REQ_LEN(mreq.len));
+
+    errstr = "check";
+    my_log(CRIT, errstr);
+    master_req(spair[1], event);
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
 
 #ifdef HAVE_SYSFS
     // test a correct DEVICE
