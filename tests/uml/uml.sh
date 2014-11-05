@@ -78,7 +78,7 @@ chmod 755 /var/run
 mkdir /var/run/ladvd
 
 # run ladvd once
-./src/ladvd -u nobody -f -o -LCEF -t -w -m veth0 -vv
+./src/ladvd -d -f -o -LCEF -t -w -m veth0 -vv >/dev/null
 
 # run tests
 make check
