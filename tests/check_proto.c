@@ -57,6 +57,8 @@ START_TEST(test_proto_packet) {
     strlcpy(sysinfo.hinv.model_name, "lala", LLDP_INVENTORY_SIZE);  
     strlcpy(sysinfo.hinv.asset_id, "lala", LLDP_INVENTORY_SIZE);  
 
+    sysinfo.mnetif = &master;
+
     memset(&master, 0, sizeof(struct netif));
     master.index = 3;
     master.argv = 1;
@@ -113,7 +115,7 @@ START_TEST(test_proto_packet) {
     msg.len = lldp_packet(msg.msg, &netif, &netifs, &sysinfo);
     fail_unless(msg.len == 276, "length should not be %d", msg.len);
     msg.len = cdp_packet(msg.msg, &netif, &netifs, &sysinfo);
-    fail_unless(msg.len == 158, "length should not be %d", msg.len);
+    fail_unless(msg.len == 203, "length should not be %d", msg.len);
     msg.len = edp_packet(msg.msg, &netif, &netifs, &sysinfo);
     fail_unless(msg.len == 131, "length should not be %d", msg.len);
     msg.len = fdp_packet(msg.msg, &netif, &netifs, &sysinfo);
@@ -126,39 +128,39 @@ START_TEST(test_proto_packet) {
     sysinfo.cap_active = CAP_HOST;
     netif.master = NULL;
     msg.len = lldp_packet(msg.msg, &netif, &netifs, &sysinfo);
-    fail_unless(msg.len == 225, "length should not be %d", msg.len);
+    fail_unless(msg.len == 265, "length should not be %d", msg.len);
     msg.len = cdp_packet(msg.msg, &netif, &netifs, &sysinfo);
-    fail_unless(msg.len == 113, "length should not be %d", msg.len);
+    fail_unless(msg.len == 158, "length should not be %d", msg.len);
     msg.len = edp_packet(msg.msg, &netif, &netifs, &sysinfo);
     fail_unless(msg.len == 110, "length should not be %d", msg.len);
     msg.len = fdp_packet(msg.msg, &netif, &netifs, &sysinfo);
-    fail_unless(msg.len == 79, "length should not be %d", msg.len);
+    fail_unless(msg.len == 124, "length should not be %d", msg.len);
     msg.len = ndp_packet(msg.msg, &netif, &netifs, &sysinfo);
     fail_unless(msg.len == 64, "length should not be %d", msg.len);
 
     mark_point();
     sysinfo.cap_active = CAP_BRIDGE;
     msg.len = lldp_packet(msg.msg, &netif, &netifs, &sysinfo);
-    fail_unless(msg.len == 225, "length should not be %d", msg.len);
+    fail_unless(msg.len == 265, "length should not be %d", msg.len);
     msg.len = cdp_packet(msg.msg, &netif, &netifs, &sysinfo);
-    fail_unless(msg.len == 113, "length should not be %d", msg.len);
+    fail_unless(msg.len == 158, "length should not be %d", msg.len);
     msg.len = edp_packet(msg.msg, &netif, &netifs, &sysinfo);
     fail_unless(msg.len == 110, "length should not be %d", msg.len);
     msg.len = fdp_packet(msg.msg, &netif, &netifs, &sysinfo);
-    fail_unless(msg.len == 81, "length should not be %d", msg.len);
+    fail_unless(msg.len == 126, "length should not be %d", msg.len);
     msg.len = ndp_packet(msg.msg, &netif, &netifs, &sysinfo);
     fail_unless(msg.len == 64, "length should not be %d", msg.len);
 
     mark_point();
     sysinfo.cap_active = CAP_SWITCH;
     msg.len = lldp_packet(msg.msg, &netif, &netifs, &sysinfo);
-    fail_unless(msg.len == 225, "length should not be %d", msg.len);
+    fail_unless(msg.len == 265, "length should not be %d", msg.len);
     msg.len = cdp_packet(msg.msg, &netif, &netifs, &sysinfo);
-    fail_unless(msg.len == 113, "length should not be %d", msg.len);
+    fail_unless(msg.len == 158, "length should not be %d", msg.len);
     msg.len = edp_packet(msg.msg, &netif, &netifs, &sysinfo);
     fail_unless(msg.len == 110, "length should not be %d", msg.len);
     msg.len = fdp_packet(msg.msg, &netif, &netifs, &sysinfo);
-    fail_unless(msg.len == 81, "length should not be %d", msg.len);
+    fail_unless(msg.len == 126, "length should not be %d", msg.len);
     msg.len = ndp_packet(msg.msg, &netif, &netifs, &sysinfo);
     fail_unless(msg.len == 64, "length should not be %d", msg.len);
 
@@ -168,12 +170,12 @@ START_TEST(test_proto_packet) {
     options |= OPT_IFDESCR;
     netif.master = NULL;
     msg.len = lldp_packet(msg.msg, &netif, &netifs, &sysinfo);
-    fail_unless(msg.len == 225, "length should not be %d", msg.len);
+    fail_unless(msg.len == 265, "length should not be %d", msg.len);
     options &= ~OPT_IFDESCR;
     memset(netif.description, 0, IFNAMSIZ);
     strlcpy(netif.device_name, "KittenNic Turbo 2", IFDESCRSIZE);
     msg.len = lldp_packet(msg.msg, &netif, &netifs, &sysinfo);
-    fail_unless(msg.len == 227, "length should not be %d", msg.len);
+    fail_unless(msg.len == 267, "length should not be %d", msg.len);
 }
 END_TEST
 
