@@ -810,10 +810,10 @@ START_TEST(test_lldp_decode) {
 
     msg.decode = DECODE_PRINT;
     my_log(CRIT, "check");
-    errstr = "Chassis id: 0:d:ec:ab:cd:ef";
+    errstr = "Chassis id: 0:1:30:f9:ad:a0";
     memset(sobuf, 0, sizeof(sobuf));
-    read_packet(&msg, "proto/lldp/47.good.nexus");
-    fail_unless (lldp_decode(&msg) == 268, "packet length incorrect");
+    read_packet(&msg, "proto/lldp/42.good.big");
+    fail_unless (lldp_decode(&msg) == msg.len, "packet length incorrect");
     fflush(stdout);
     fail_if(read(spair[1], sobuf, sizeof(sobuf)) < 0, "read failed");
     fail_unless(strncmp(sobuf, errstr, strlen(errstr)) == 0, "invalid output: %s", sobuf);
