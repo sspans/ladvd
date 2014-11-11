@@ -31,14 +31,15 @@
 #define PROTO_EDP   2
 #define PROTO_FDP   3
 #define PROTO_NDP   4
-#define PROTO_MAX   5
+#define PROTO_CDP1  5
+#define PROTO_MAX   6
 
 
-size_t lldp_packet(void *, struct netif *, struct nhead *, struct my_sysinfo *);
-size_t cdp_packet(void *, struct netif *, struct nhead *, struct my_sysinfo *);
-size_t edp_packet(void *, struct netif *, struct nhead *, struct my_sysinfo *);
-size_t fdp_packet(void *, struct netif *, struct nhead *, struct my_sysinfo *);
-size_t ndp_packet(void *, struct netif *, struct nhead *, struct my_sysinfo *);
+size_t lldp_packet(uint8_t, void *, struct netif *, struct nhead *, struct my_sysinfo *);
+size_t cdp_packet(uint8_t, void *, struct netif *, struct nhead *, struct my_sysinfo *);
+size_t edp_packet(uint8_t, void *, struct netif *, struct nhead *, struct my_sysinfo *);
+size_t fdp_packet(uint8_t, void *, struct netif *, struct nhead *, struct my_sysinfo *);
+size_t ndp_packet(uint8_t, void *, struct netif *, struct nhead *, struct my_sysinfo *);
 
 unsigned char * lldp_check(void *, size_t);
 unsigned char * cdp_check(void *, size_t);

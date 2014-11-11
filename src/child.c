@@ -252,7 +252,7 @@ void child_send(int fd, short event, struct child_send_args *args) {
 		my_log(INFO, "building %s packet for %s", 
 			    protos[p].name, subif->name);
 		msg.proto = p;
-		msg.len = protos[p].build(msg.msg, subif, 
+		msg.len = protos[p].build(p, msg.msg, subif,
 						&netifs, &sysinfo);
 
 		if (msg.len == 0) {

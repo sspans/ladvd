@@ -26,7 +26,7 @@
 	(ETHER_MIN_LEN - sizeof(struct ether_hdr) - sizeof(struct ether_llc) \
 	 - sizeof(struct ndp_header))
 
-size_t ndp_packet(void *packet, struct netif *netif,
+size_t ndp_packet(uint8_t proto, void *packet, struct netif *netif,
 	    struct nhead *netifs, struct my_sysinfo *sysinfo) {
 
     struct ether_hdr ether;

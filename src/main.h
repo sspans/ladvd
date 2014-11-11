@@ -32,6 +32,8 @@ struct proto protos[] = {
     &fdp_packet, &fdp_check, &fdp_decode },
   { 0, "NDP",  NDP_MULTICAST_ADDR, LLC_ORG_NORTEL, LLC_PID_NDP_HELLO,
     &ndp_packet, &ndp_check, &ndp_decode },
+  { 0, "CDP1",  CDP_MULTICAST_ADDR, LLC_ORG_CISCO, LLC_PID_CDP,
+    &cdp_packet, &cdp_check, &cdp_decode },
   { 0, NULL, {0}, {0}, 0, NULL, NULL, NULL }
 };
 

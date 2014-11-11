@@ -112,56 +112,56 @@ START_TEST(test_proto_packet) {
 
     mark_point();
     memset(msg.msg, 0, ETHER_MAX_LEN);
-    msg.len = lldp_packet(msg.msg, &netif, &netifs, &sysinfo);
+    msg.len = lldp_packet(PROTO_LLDP, msg.msg, &netif, &netifs, &sysinfo);
     fail_unless(msg.len == 276, "length should not be %d", msg.len);
-    msg.len = cdp_packet(msg.msg, &netif, &netifs, &sysinfo);
+    msg.len = cdp_packet(PROTO_CDP, msg.msg, &netif, &netifs, &sysinfo);
     fail_unless(msg.len == 203, "length should not be %d", msg.len);
-    msg.len = edp_packet(msg.msg, &netif, &netifs, &sysinfo);
+    msg.len = edp_packet(PROTO_EDP, msg.msg, &netif, &netifs, &sysinfo);
     fail_unless(msg.len == 131, "length should not be %d", msg.len);
-    msg.len = fdp_packet(msg.msg, &netif, &netifs, &sysinfo);
+    msg.len = fdp_packet(PROTO_FDP, msg.msg, &netif, &netifs, &sysinfo);
     fail_unless(msg.len == 126, "length should not be %d", msg.len);
-    msg.len = ndp_packet(msg.msg, &netif, &netifs, &sysinfo);
+    msg.len = ndp_packet(PROTO_NDP, msg.msg, &netif, &netifs, &sysinfo);
     fail_unless(msg.len == 64, "length should not be %d", msg.len);
 
     mark_point();
     sysinfo.cap = CAP_HOST;
     sysinfo.cap_active = CAP_HOST;
     netif.master = NULL;
-    msg.len = lldp_packet(msg.msg, &netif, &netifs, &sysinfo);
+    msg.len = lldp_packet(PROTO_LLDP, msg.msg, &netif, &netifs, &sysinfo);
     fail_unless(msg.len == 265, "length should not be %d", msg.len);
-    msg.len = cdp_packet(msg.msg, &netif, &netifs, &sysinfo);
+    msg.len = cdp_packet(PROTO_CDP, msg.msg, &netif, &netifs, &sysinfo);
     fail_unless(msg.len == 158, "length should not be %d", msg.len);
-    msg.len = edp_packet(msg.msg, &netif, &netifs, &sysinfo);
+    msg.len = edp_packet(PROTO_EDP, msg.msg, &netif, &netifs, &sysinfo);
     fail_unless(msg.len == 110, "length should not be %d", msg.len);
-    msg.len = fdp_packet(msg.msg, &netif, &netifs, &sysinfo);
+    msg.len = fdp_packet(PROTO_FDP, msg.msg, &netif, &netifs, &sysinfo);
     fail_unless(msg.len == 124, "length should not be %d", msg.len);
-    msg.len = ndp_packet(msg.msg, &netif, &netifs, &sysinfo);
+    msg.len = ndp_packet(PROTO_NDP, msg.msg, &netif, &netifs, &sysinfo);
     fail_unless(msg.len == 64, "length should not be %d", msg.len);
 
     mark_point();
     sysinfo.cap_active = CAP_BRIDGE;
-    msg.len = lldp_packet(msg.msg, &netif, &netifs, &sysinfo);
+    msg.len = lldp_packet(PROTO_LLDP, msg.msg, &netif, &netifs, &sysinfo);
     fail_unless(msg.len == 265, "length should not be %d", msg.len);
-    msg.len = cdp_packet(msg.msg, &netif, &netifs, &sysinfo);
+    msg.len = cdp_packet(PROTO_CDP, msg.msg, &netif, &netifs, &sysinfo);
     fail_unless(msg.len == 158, "length should not be %d", msg.len);
-    msg.len = edp_packet(msg.msg, &netif, &netifs, &sysinfo);
+    msg.len = edp_packet(PROTO_EDP, msg.msg, &netif, &netifs, &sysinfo);
     fail_unless(msg.len == 110, "length should not be %d", msg.len);
-    msg.len = fdp_packet(msg.msg, &netif, &netifs, &sysinfo);
+    msg.len = fdp_packet(PROTO_FDP, msg.msg, &netif, &netifs, &sysinfo);
     fail_unless(msg.len == 126, "length should not be %d", msg.len);
-    msg.len = ndp_packet(msg.msg, &netif, &netifs, &sysinfo);
+    msg.len = ndp_packet(PROTO_NDP, msg.msg, &netif, &netifs, &sysinfo);
     fail_unless(msg.len == 64, "length should not be %d", msg.len);
 
     mark_point();
     sysinfo.cap_active = CAP_SWITCH;
-    msg.len = lldp_packet(msg.msg, &netif, &netifs, &sysinfo);
+    msg.len = lldp_packet(PROTO_LLDP, msg.msg, &netif, &netifs, &sysinfo);
     fail_unless(msg.len == 265, "length should not be %d", msg.len);
-    msg.len = cdp_packet(msg.msg, &netif, &netifs, &sysinfo);
+    msg.len = cdp_packet(PROTO_CDP, msg.msg, &netif, &netifs, &sysinfo);
     fail_unless(msg.len == 158, "length should not be %d", msg.len);
-    msg.len = edp_packet(msg.msg, &netif, &netifs, &sysinfo);
+    msg.len = edp_packet(PROTO_EDP, msg.msg, &netif, &netifs, &sysinfo);
     fail_unless(msg.len == 110, "length should not be %d", msg.len);
-    msg.len = fdp_packet(msg.msg, &netif, &netifs, &sysinfo);
+    msg.len = fdp_packet(PROTO_FDP, msg.msg, &netif, &netifs, &sysinfo);
     fail_unless(msg.len == 126, "length should not be %d", msg.len);
-    msg.len = ndp_packet(msg.msg, &netif, &netifs, &sysinfo);
+    msg.len = ndp_packet(PROTO_NDP, msg.msg, &netif, &netifs, &sysinfo);
     fail_unless(msg.len == 64, "length should not be %d", msg.len);
 
     mark_point();
@@ -169,12 +169,12 @@ START_TEST(test_proto_packet) {
     sysinfo.cap_active = CAP_HOST;
     options |= OPT_IFDESCR;
     netif.master = NULL;
-    msg.len = lldp_packet(msg.msg, &netif, &netifs, &sysinfo);
+    msg.len = lldp_packet(PROTO_LLDP, msg.msg, &netif, &netifs, &sysinfo);
     fail_unless(msg.len == 265, "length should not be %d", msg.len);
     options &= ~OPT_IFDESCR;
     memset(netif.description, 0, IFNAMSIZ);
     strlcpy(netif.device_name, "KittenNic Turbo 2", IFDESCRSIZE);
-    msg.len = lldp_packet(msg.msg, &netif, &netifs, &sysinfo);
+    msg.len = lldp_packet(PROTO_LLDP, msg.msg, &netif, &netifs, &sysinfo);
     fail_unless(msg.len == 267, "length should not be %d", msg.len);
 }
 END_TEST
@@ -897,6 +897,7 @@ START_TEST(test_cdp_decode) {
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (cdp_decode(&msg) == msg.len, "packet length incorrect");
+    fail_unless (msg.proto == PROTO_CDP1, "CDP version should be 1");
     fail_unless (msg.ttl == 180, "ttl should be 180");
     fail_unless (strcmp(msg.peer[PEER_HOSTNAME], "R1") == 0,
 	"system name should be 'R1'");
@@ -910,6 +911,7 @@ START_TEST(test_cdp_decode) {
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (cdp_decode(&msg) == msg.len, "packet length incorrect");
+    fail_unless (msg.proto == PROTO_CDP1, "CDP version should be 1");
     fail_unless (msg.ttl == 180, "ttl should be 180");
     fail_unless (strcmp(msg.peer[PEER_HOSTNAME], "R2D2") == 0,
 		"system name should be 'R2D2'");
@@ -923,6 +925,7 @@ START_TEST(test_cdp_decode) {
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (cdp_decode(&msg) == msg.len, "packet length incorrect");
+    fail_unless (msg.proto == PROTO_CDP, "CDP version should be 2");
     fail_unless (msg.ttl == 180, "ttl should be 180");
     fail_unless (strcmp(msg.peer[PEER_HOSTNAME], "xpfs1.yapkjn.network.bla.nl") == 0,
 		"system name should be 'xpfs1.yapkjn.network.bla.nl'");
@@ -937,6 +940,7 @@ START_TEST(test_cdp_decode) {
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (cdp_decode(&msg) == msg.len, "packet length incorrect");
+    fail_unless (msg.proto == PROTO_CDP, "CDP version should be 2");
     fail_unless (msg.ttl == 180, "ttl should be 180");
     fail_unless (strcmp(msg.peer[PEER_HOSTNAME], "0060B9C14027") == 0,
 		"system name should be '0060B9C14027'");
@@ -950,6 +954,7 @@ START_TEST(test_cdp_decode) {
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (cdp_decode(&msg) == msg.len, "packet length incorrect");
+    fail_unless (msg.proto == PROTO_CDP, "CDP version should be 2");
     fail_unless (msg.ttl == 180, "ttl should be 180");
     fail_unless (strcmp(msg.peer[PEER_HOSTNAME], "mpls-sbp-ams1.leazewep.nat") == 0,
 		"system name should be 'mpls-sbp-ams1.leazewep.nat'");
@@ -964,6 +969,7 @@ START_TEST(test_cdp_decode) {
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (cdp_decode(&msg) == msg.len, "packet length incorrect");
+    fail_unless (msg.proto == PROTO_CDP, "CDP version should be 2");
     fail_unless (msg.ttl == 180, "ttl should be 180");
     fail_unless (strcmp(msg.peer[PEER_HOSTNAME], "c2811.ttttrnal.lottlloou.nl") == 0,
 		"system name should be 'c2811.ttttrnal.lottlloou.nl'");
@@ -978,6 +984,7 @@ START_TEST(test_cdp_decode) {
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (cdp_decode(&msg) == msg.len, "packet length incorrect");
+    fail_unless (msg.proto == PROTO_CDP, "CDP version should be 2");
     fail_unless (msg.ttl == 180, "ttl should be 180");
     fail_unless (strcmp(msg.peer[PEER_HOSTNAME], "sw1.bit-2b.notwork.bot.nl") == 0,
 		"system name should be 'sw1.bit-2b.notwork.bot.nl'");
@@ -992,6 +999,7 @@ START_TEST(test_cdp_decode) {
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (cdp_decode(&msg) == msg.len, "packet length incorrect");
+    fail_unless (msg.proto == PROTO_CDP, "CDP version should be 2");
     fail_unless (msg.ttl == 180, "ttl should be 180");
     fail_unless (strcmp(msg.peer[PEER_HOSTNAME], "trillian.blinkenlights.nl") == 0,
 		"system name should be 'trillian.blinkenlights.nl'");
@@ -1006,11 +1014,27 @@ START_TEST(test_cdp_decode) {
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (cdp_decode(&msg) == msg.len, "packet length incorrect");
+    fail_unless (msg.proto == PROTO_CDP, "CDP version should be 2");
     fail_unless (msg.ttl == 180, "ttl should be 180");
     fail_unless (strcmp(msg.peer[PEER_HOSTNAME], "SEP001B53489EE0") == 0,
 		"system name should be 'SEP001B53489EE0'");
     fail_unless (strcmp(msg.peer[PEER_PORTNAME], "Port 1") == 0,
-	"port id should be 'GigabitEthernet0/1' not '%s'",
+	"port id should be 'Port 1' not '%s'",
+	msg.peer[PEER_PORTNAME]);
+    fail_unless (msg.peer[PEER_VLAN_ID] == NULL,
+	"vlan id should be empty, not '%s'", msg.peer[PEER_VLAN_ID]);
+
+    mark_point();
+    read_packet(&msg, "proto/cdp/50.good.mikrotik");
+    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+	"incorrect message logged: %s", check_wrap_errstr);
+    fail_unless (cdp_decode(&msg) == msg.len, "packet length incorrect");
+    fail_unless (msg.proto == PROTO_CDP1, "CDP version should be 1");
+    fail_unless (msg.ttl == 120, "ttl should be 120");
+    fail_unless (strcmp(msg.peer[PEER_HOSTNAME], "MikroTik") == 0,
+		"system name should be 'MikroTik'");
+    fail_unless (strcmp(msg.peer[PEER_PORTNAME], "ether2") == 0,
+	"port id should be 'ether2' not '%s'",
 	msg.peer[PEER_PORTNAME]);
     fail_unless (msg.peer[PEER_VLAN_ID] == NULL,
 	"vlan id should be empty, not '%s'", msg.peer[PEER_VLAN_ID]);

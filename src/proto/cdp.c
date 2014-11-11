@@ -20,6 +20,7 @@
 #include "common.h"
 #include "util.h"
 #include "proto/cdp.h"
+#include "proto/protos.h"
 #include "proto/tlv.h"
 
 const struct cdp_proto cdp_protos[] = {
@@ -69,7 +70,7 @@ static int cdp_vtp_print(struct master_msg *, unsigned char *, size_t);
 static int cdp_duplex_print(struct master_msg *, unsigned char *, size_t);
 
 
-size_t cdp_packet(void *packet, struct netif *netif,
+size_t cdp_packet(uint8_t proto, void *packet, struct netif *netif,
 		struct nhead *netifs, struct my_sysinfo *sysinfo) {
 
     struct ether_hdr ether;
@@ -113,6 +114,8 @@ size_t cdp_packet(void *packet, struct netif *netif,
 
     // cdp header
     cdp.version = CDP_VERSION;
+    if (proto == PROTO_CDP1)
+	cdp.version = CDP1_VERSION;
     cdp.ttl = LADVD_TTL;
     cdp.checksum = 0;
     memcpy(pos, &cdp, sizeof(struct cdp_header));
@@ -456,6 +459,12 @@ static int cdp_header_check(struct master_msg *msg,
 	my_log(INFO, "invalid CDP version");
 	return 0;
     }
+
+    // update proto based on CDP version
+    msg->proto = PROTO_CDP;
+    if (cdp.version == 1)
+	msg->proto = PROTO_CDP1;
+
     msg->ttl = cdp.ttl;
 
     if ((now = time(NULL)) == (time_t)-1)

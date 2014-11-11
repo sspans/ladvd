@@ -300,7 +300,7 @@ struct proto {
     uint8_t dst_addr[ETHER_ADDR_LEN];
     uint8_t llc_org[3];
     uint16_t llc_pid;
-    size_t (* const build) (void *, struct netif *, struct nhead *,
+    size_t (* const build) (uint8_t, void *, struct netif *, struct nhead *,
 			    struct my_sysinfo *);
     unsigned char * (* const check) (void *, size_t);
     size_t (* const decode) (struct master_msg *);
