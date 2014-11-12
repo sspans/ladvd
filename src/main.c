@@ -195,6 +195,18 @@ int main(int argc, char *argv[]) {
     if (sargc)
 	options |= OPT_ARGV;
 
+    // validate protocols
+    if (!(options & OPT_AUTO)) {
+	int enabled = 0;
+	for (int p = 0; protos[p].name != NULL; p++)
+	    enabled |= protos[p].enabled;
+
+	if (enabled == 0) {
+	    my_log(CRIT, "no protocols enabled");
+	    usage();
+	}
+    }
+
     // validate username
     if (!(options & OPT_DEBUG) && (pwd = getpwnam(username)) == NULL)
 	my_fatal("user %s does not exist", username);
