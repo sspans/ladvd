@@ -239,6 +239,10 @@ void child_send(int fd, short event, struct child_send_args *args) {
 	    if (netif_media(subif) == EXIT_FAILURE)
 		my_log(CRIT, "error fetching interface media details");
 
+	    // bail if sending packets is disabled
+	    if (!(options & OPT_SEND))
+		continue;
+
 	    // generate and send packets
 	    for (int p = 0; protos[p].name != NULL; p++) {
 
