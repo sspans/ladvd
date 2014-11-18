@@ -35,7 +35,7 @@
 #include <time.h>
 #include <errno.h>
 #include <assert.h>
-#ifdef HAVE_STRNVIS
+#if defined(HAVE_STRNVIS) && !defined(BROKEN_STRNVIS)
 #include <vis.h>
 #endif
 #if HAVE_NETINET_IN_H

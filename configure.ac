@@ -37,6 +37,8 @@ case "$target_os" in
 	;;
     freebsd*)
 	AC_DEFINE(NETIF_BSD,1, [define for netifs])
+	AC_DEFINE([BROKEN_STRNVIS], [1],
+	    [FreeBSD strnvis argument order is swapped compared to OpenBSD])
 	;;
     openbsd*)
 	AC_DEFINE(NETIF_BSD,1, [define for netifs])

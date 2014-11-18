@@ -30,13 +30,14 @@
 
 /* OPENBSD ORIGINAL: lib/libc/gen/vis.c */
 
-#if !defined(HAVE_STRNVIS)
+#if !defined(HAVE_STRNVIS) || defined(BROKEN_STRNVIS)
 
 // needed for isascii
 #define _BSD_SOURCE 1;
 
 #include <ctype.h>
 #include <string.h>
+
 #include "vis.h"
 
 #define	isoctal(c)	(((u_char)(c)) >= '0' && ((u_char)(c)) <= '7')

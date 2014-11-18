@@ -33,7 +33,7 @@ size_t strlcpy(char *dst, const char *src, size_t siz);
 size_t strlcat(char *dst, const char *src, size_t siz);
 #endif
 
-#ifndef HAVE_STRNVIS
+#if !defined(HAVE_STRNVIS) || defined(BROKEN_STRNVIS)
 #include <compat/vis.h>
 #endif
 
