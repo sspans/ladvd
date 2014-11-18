@@ -24,6 +24,10 @@
 #include "common.h"
 #include "check_wrap.h"
 
+#ifndef MIN
+#define MIN(a,b) ( a < b ? a : b)
+#endif
+
 jmp_buf check_wrap_env;
 uint32_t check_wrap_fail = 0;
 uint32_t check_wrap_fake = 0;
@@ -53,8 +57,16 @@ void * __wrap_##name params {\
 ret __real_##name params ;\
 ret __wrap_##name params 
 
+#ifdef HAVE_SETRESGID
 WRAP(setresgid, SETRESGID, (gid_t r, gid_t e, gid_t s), (r, e, s));
+#elif defined(HAVE_SETREGID)
+WRAP(setregid, SETRESGID, (gid_t r, gid_t e), (r, e));
+#endif
+#ifdef HAVE_SETRESUID
 WRAP(setresuid, SETRESUID, (uid_t r, uid_t e, uid_t s), (r, e, s));
+#elif defined(HAVE_SETREUID)
+WRAP(setreuid, SETRESUID, (uid_t r, uid_t e), (r, e));
+#endif
 WRAP(setgroups, SETGRP, (int n, const gid_t *s), (n, s));
 WRAP(chdir, CHDIR, (const char *path), (path));
 WRAP(chroot, CHROOT, (const char *dirname), (dirname));

@@ -34,7 +34,9 @@ START_TEST(test_my) {
     char *ptr = NULL;
     int s = -1, spair[2];
     const char *errstr = NULL;
-    char buf[1024];
+    char buf[1024], *bp = NULL;
+    ssize_t len = 0;
+    size_t left;
 
     mark_point();
     loglevel = INFO;
@@ -53,14 +55,23 @@ START_TEST(test_my) {
     mark_point();
     s = dup(STDERR_FILENO);
     close(STDERR_FILENO);
-    fail_if(socketpair(AF_UNIX, SOCK_STREAM, 0, spair) == -1,
-		    "socketpair creation failed");
+    my_socketpair(spair);
+    my_nonblock(spair[1]);
     options &= ~OPT_DAEMON;
     errstr = "test_my: debug\n";
     memset(buf, 0, 1024);
     my_log(INFO, "debug");
     fflush(stderr);
-    fail_if(read(spair[1], buf, 1024) < 0, "read failed");
+
+    bp = buf;
+    left = 1024;
+    while (left > 0) {
+	len = read(spair[1], bp, left);
+	if (len <= 0)
+	    break;
+	left -= len;
+	bp += len;
+    }
     fail_unless(strcmp(buf, errstr) == 0, "invalid output: %s", buf);
     options |= OPT_DAEMON;
     close(spair[0]);
@@ -579,8 +590,6 @@ START_TEST(test_my_priv) {
 	return;
     if (stat(_PATH_DEVNULL, &sb) != 0)
 	return;
-    if (stat(_PATH_CONSOLE, &sb) != 0)
-	return;
 
     mark_point();
     errstr = "unable to setgroups";
@@ -593,7 +602,11 @@ START_TEST(test_my_priv) {
 	"incorrect message logged: %s", check_wrap_errstr);
 
     mark_point();
+#ifdef HAVE_SETRESGID
     errstr = "unable to setresgid";
+#elif defined(HAVE_SETREGID)
+    errstr = "unable to setregid";
+#endif
     check_wrap_fail |= FAIL_SETRESGID;
     check_wrap_fake |= FAKE_SETGRP;
     WRAP_FATAL_START();
@@ -604,7 +617,11 @@ START_TEST(test_my_priv) {
 	"incorrect message logged: %s", check_wrap_errstr);
 
     mark_point();
+#ifdef HAVE_SETRESUID
     errstr = "unable to setresuid";
+#elif defined(HAVE_SETREUID)
+    errstr = "unable to setreuid";
+#endif
     check_wrap_fail |= FAIL_SETRESUID;
     check_wrap_fake |= FAKE_SETRESGID;
     WRAP_FATAL_START();
@@ -660,6 +677,12 @@ START_TEST(test_my_priv) {
     WRAP_FATAL_END();
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
+
+    mark_point();
+    if (stat(_PATH_CONSOLE, &sb) != 0)
+	return;
+    if (sb.st_uid != 0 || (sb.st_mode & 022) != 0)
+	return;
 
     mark_point();
     errstr = "chroot path \"" _PATH_CONSOLE "\" is not a directory";

@@ -223,6 +223,7 @@ START_TEST(test_master_req) {
     fail_unless (rfd_byindex(&rawfds, ifindex) == NULL,
     	"rfd should be removed from the queue");
  
+#if defined(SIOCSIFDESCR) || defined(HAVE_SYSFS)
     // test a correct DESCR
     mark_point();
     mreq.op = MASTER_DESCR;
@@ -235,6 +236,7 @@ START_TEST(test_master_req) {
     master_req(spair[1], event);
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
+#endif
 
 #ifdef HAVE_SYSFS
     mark_point();

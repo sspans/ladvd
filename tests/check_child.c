@@ -283,7 +283,7 @@ START_TEST(test_child_expire) {
     child_expire();
 
     // try ifdescr
-    errstr = "only -1 bytes written: Bad file descriptor";
+    errstr = "only -1 bytes written:";
     options = OPT_DAEMON | OPT_CHECK | OPT_IFDESCR;
     msg.proto = PROTO_LLDP;
     read_packet(&msg, "proto/lldp/47.good.nexus");
