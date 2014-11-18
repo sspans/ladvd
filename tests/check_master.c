@@ -236,6 +236,7 @@ START_TEST(test_master_req) {
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
+#ifdef HAVE_SYSFS
     mark_point();
     mreq.op = MASTER_ALIAS;
     mreq.len = 1;
@@ -248,7 +249,6 @@ START_TEST(test_master_req) {
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
-#ifdef HAVE_SYSFS
     // test a correct DEVICE
     mreq.op = MASTER_DEVICE;
     mreq.len = 0;
