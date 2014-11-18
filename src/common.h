@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <inttypes.h>
+#include <limits.h>
 #include <string.h>
 #ifndef S_SPLINT_S
 #include <unistd.h>
