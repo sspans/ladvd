@@ -27,7 +27,7 @@
 
 void tlv_value_str(struct master_msg *msg,
 	    uint16_t type, uint16_t length, void *value) {
-    char src[TLV_LEN], *str = NULL;
+    char src[TLV_LEN], *v = NULL, *str = NULL;
     size_t srclen, len;
     uint16_t cap, i, j = 0;
     const char *cap_str = CAP_STRING;
@@ -73,10 +73,12 @@ void tlv_value_str(struct master_msg *msg,
 	    }
 	    break;
 	case PEER_ADDR_802:
+	    v = value;
 	    if (length != ETHER_ADDR_LEN)
 		return;
-	    if ((str = ether_ntoa(value)) != NULL)
-		str = my_strdup(str);
+	    if (asprintf(&str, "%02x:%02x:%02x:%02x:%02x:%02x",
+			v[0], v[1], v[2], v[3], v[4], v[5]) == -1)
+		str = NULL;
 	    break;
 	default:
 	    my_fatal("unhandled type %d", type);

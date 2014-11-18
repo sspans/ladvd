@@ -810,7 +810,7 @@ START_TEST(test_lldp_decode) {
 
     msg.decode = DECODE_PRINT;
     my_log(CRIT, "check");
-    errstr = "Chassis id: 0:1:30:f9:ad:a0";
+    errstr = "Chassis id: 00:01:30:f9:ad:a0";
     memset(sobuf, 0, sizeof(sobuf));
     read_packet(&msg, "proto/lldp/42.good.big");
     fail_unless (lldp_decode(&msg) == msg.len, "packet length incorrect");
