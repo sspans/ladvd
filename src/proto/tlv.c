@@ -31,7 +31,7 @@ void tlv_value_str(struct master_msg *msg,
     size_t srclen, len;
     uint16_t cap, i, j = 0;
     const char *cap_str = CAP_STRING;
-    const struct ether_addr *addr = NULL;
+    uint8_t *addr = NULL;
 
     // skip if not wanted or already decoded
     if (msg->peer[type])
@@ -78,9 +78,7 @@ void tlv_value_str(struct master_msg *msg,
 	    if (length != ETHER_ADDR_LEN)
 		return;
 	    if (asprintf(&str, "%02x:%02x:%02x:%02x:%02x:%02x",
-		addr->ether_addr_octet[0], addr->ether_addr_octet[1],
-		addr->ether_addr_octet[2], addr->ether_addr_octet[3],
-		addr->ether_addr_octet[4], addr->ether_addr_octet[5]) == -1)
+		addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]) == -1)
 		str = NULL;
 	    break;
 	default:
@@ -119,7 +117,7 @@ char * tlv_str_cap(uint16_t cap) {
 
 char * tlv_str_addr(uint8_t type, void *pos, size_t length) {
     char *str = NULL;
-    const struct ether_addr *addr = NULL;
+    uint8_t *addr = NULL;
 
     switch(type) {
 	case PEER_ADDR_INET4:
@@ -145,9 +143,7 @@ char * tlv_str_addr(uint8_t type, void *pos, size_t length) {
 	    if (length != ETHER_ADDR_LEN)
 		return NULL;
 	    if (asprintf(&str, "%02x:%02x:%02x:%02x:%02x:%02x",
-		addr->ether_addr_octet[0], addr->ether_addr_octet[1],
-		addr->ether_addr_octet[2], addr->ether_addr_octet[3],
-		addr->ether_addr_octet[4], addr->ether_addr_octet[5]) == -1)
+		addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]) == -1)
 		str = NULL;
 	    break;
 	default:
