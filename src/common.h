@@ -202,8 +202,9 @@ struct my_sysinfo {
 #define NETIF_WIRELESS	1
 #define NETIF_TAP	2
 #define NETIF_PARENT	10
-#define NETIF_BONDING	11
-#define NETIF_BRIDGE	12
+#define NETIF_TEAMING	11
+#define NETIF_BONDING	12
+#define NETIF_BRIDGE	13
 #define NETIF_OLD	INT8_MAX
 
 #define OPT_DAEMON	(1 << 0)

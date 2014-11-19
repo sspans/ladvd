@@ -169,6 +169,8 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct my_sysinfo *sysinfo,
 	    sysinfo->cap_active |= (enabled == 1) ? CAP_WLAN : 0;
 	} else if (type == NETIF_TAP) {
 	    my_log(INFO, "found tun/tap interface %s", ifaddr->ifa_name);
+	} else if (type == NETIF_TEAMING) {
+	    my_log(INFO, "found teaming interface %s", ifaddr->ifa_name);
 	} else if (type == NETIF_BONDING) {
 	    my_log(INFO, "found bond interface %s", ifaddr->ifa_name);
 	} else if (type == NETIF_BRIDGE) {
@@ -253,6 +255,11 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct my_sysinfo *sysinfo,
     TAILQ_FOREACH(netif, netifs, entries) {
 	my_log(INFO, "detecting %s settings", netif->name);
 	switch(netif->type) {
+#ifdef HAVE_LINUX_IF_TEAM_H
+	    case NETIF_TEAMING:
+		netif_team(sockfd, netifs, netif, &ifr);
+		break;
+#endif /* HAVE_LINUX_IF_TEAM_H */
 	    case NETIF_BONDING:
 		netif_bond(sockfd, netifs, netif, &ifr);
 		break;

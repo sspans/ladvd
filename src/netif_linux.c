@@ -115,6 +115,8 @@ static int netif_type(int sockfd, uint32_t index,
 	// handle bonding
 	if (strcmp(dname, "bonding") == 0) {
 	    return(NETIF_BONDING);
+	} else if (strcmp(dname, "team") == 0) {
+	    return(NETIF_TEAMING);
 	// handle bridge
 	} else if (strcmp(dname, "bridge") == 0) {
 	    return(NETIF_BRIDGE);
@@ -195,6 +197,13 @@ static void netif_device_id(int sockfd, struct netif *netif, struct ifreq *ifr) 
 
     strlcpy(netif->device_name, mreq.buf, sizeof(netif->device_name));
 #endif /* HAVE_PCI_PCI_H */
+}
+
+// handle teaming interfaces
+static void netif_team(int sockfd, struct nhead *netifs, struct netif *master,
+		struct ifreq *ifr) {
+
+    // XXX: this should talk to teamd
 }
 
 // handle aggregated interfaces
