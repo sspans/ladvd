@@ -199,12 +199,14 @@ static void netif_device_id(int sockfd, struct netif *netif, struct ifreq *ifr) 
 #endif /* HAVE_PCI_PCI_H */
 }
 
+#ifdef HAVE_LINUX_IF_TEAM_H
 // handle teaming interfaces
 static void netif_team(int sockfd, struct nhead *netifs, struct netif *master,
 		struct ifreq *ifr) {
 
     // XXX: this should talk to teamd
 }
+#endif /* HAVE_LINUX_IF_TEAM_H */
 
 // handle aggregated interfaces
 static void netif_bond(int sockfd, struct nhead *netifs, struct netif *master,
