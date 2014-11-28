@@ -38,9 +38,14 @@ Ladvd needs root privileges to initialize the required raw-sockets.
 It can run in `daemon' mode, logging to syslog, or in the foreground,
 logging to stderr.
 
-To install ladvd, first run the "configure" script. This will create a
+To prepare for building ladvd, first run "autoreconf -fi", 
+this will create the configure script and makefiles needed to compile ladvd. 
+This will only work if autoconf, automake, pkgconfig and libtool are installed.
+Feel free to skip this step when building from a release tarball.
+
+To build ladvd, first run the "configure" script. This will create a
 Makefile and config.h appropriate for your system. Then type
-"make" and "make install". 
+"make" and optionally "make install". 
 
 
 BUG REPORTS
