@@ -91,8 +91,10 @@ void child_init(int reqfd, int msgfd, int ifc, char *ifl[],
 	    my_fatale("failed to remove " PACKAGE_SOCKET);
 	if (bind(csock, (struct sockaddr *)&usock, SUN_LEN(&usock)) == -1)
 	    my_fatale("failed to bind " PACKAGE_SOCKET);
-	if (listen(csock, 10) == -1)
-	    my_fatale("failed to listen on " PACKAGE_SOCKET);
+	if (options & OPT_RECV) {
+	    if (listen(csock, 10) == -1)
+		my_fatale("failed to listen on " PACKAGE_SOCKET);
+	}
 
 	if (chmod(PACKAGE_SOCKET, S_IRWXU|S_IRWXG) == -1)
 	    my_fatale("failed to chmod " PACKAGE_SOCKET);

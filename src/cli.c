@@ -159,6 +159,8 @@ void cli_main(int argc, char *argv[]) {
     if (connect(fd, (struct sockaddr *)&usock, sizeof(usock)) == -1) {
 	if (errno == EACCES)
 	    my_fatal("please add yourself to the " PACKAGE_USER " group");
+	else if (errno == ECONNREFUSED)
+	    my_fatal("please enable receive mode before using " PACKAGE_CLI);
 	else
 	    my_fatale("failed to open " PACKAGE_SOCKET);
     }
