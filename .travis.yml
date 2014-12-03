@@ -15,7 +15,6 @@ before_install:
   - sudo apt-get install -qq slirp aufs-tools
   - sudo pip install cpp-coveralls
 before_script:
-  - git log --no-merges > doc/ChangeLog
   - autoreconf -i
 script:
   - 'CHECK="check"'

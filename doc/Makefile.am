@@ -7,7 +7,7 @@ EXTRA_DIST = ladvd.8.in ladvdc.8.in
 .PHONY: ChangeLog
 
 ChangeLog: Makefile
-	(GIT_DIR=$(top_srcdir)/.git git log > $@) || \
+	(GIT_DIR=$(top_srcdir)/.git git log --no-merges > $@) || \
 	echo 'Git directory missing: installing possibly empty changelog.' >&2
 
 dist-hook: ChangeLog
