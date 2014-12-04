@@ -128,8 +128,8 @@ void child_init(int reqfd, int msgfd, int ifc, char *ifl[],
     if (options & OPT_ONCE)
 	exit(EXIT_SUCCESS);
 
-    // listen for messages from the master
     if (options & OPT_RECV) {
+	// listen for messages from the master
 	event_set(&evq, msgfd, EV_READ|EV_PERSIST, (void *)child_queue, NULL);
 	event_add(&evq, NULL);
 
@@ -137,13 +137,13 @@ void child_init(int reqfd, int msgfd, int ifc, char *ifl[],
 	signal_set(&ev_sigterm, SIGTERM, child_free, NULL);
 	signal_add(&ev_sigint, NULL);
 	signal_add(&ev_sigterm, NULL);
-    }
 
-    // accept cli connections
-    if (csock != -1) {
-	event_set(&eva, csock, EV_READ|EV_PERSIST,
+	// accept cli connections
+	if (csock != -1) {
+	    event_set(&eva, csock, EV_READ|EV_PERSIST,
 			(void *)child_cli_accept, NULL);
-	event_add(&eva, NULL);
+	    event_add(&eva, NULL);
+	}
     }
 
     // create link fd
