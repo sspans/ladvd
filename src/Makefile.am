@@ -8,9 +8,9 @@ common_headers = common.h ether.h filter.h util.h \
 	compat/compat.h compat/sys-queue.h proto/protos.h
 
 noinst_LTLIBRARIES = libmisc.la libproto.la libcompat.la 
-libcompat_la_SOURCES = compat/compat.h compat/vis.h \
+libcompat_la_SOURCES = compat/compat.h compat/imsg.h compat/vis.h \
 	compat/strlcpy.c compat/strlcat.c compat/setproctitle.c \
-	compat/imsg.c compat/vis.c
+	compat/imsg.c compat/imsg-buffer.c compat/vis.c
 libproto_la_SOURCES = proto/protos.h proto/tlv.c proto/tlv.h \
 	proto/lldp.c proto/lldp.h \
 	proto/cdp.c proto/cdp.h \
