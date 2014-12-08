@@ -313,14 +313,14 @@ static void netif_bond(int sockfd, struct nhead *netifs, struct netif *parent,
 
 	// XXX: multi-level bonds not supported
 	if ((subif != NULL) && (subif->type < NETIF_PARENT)) {
-	    my_log(INFO, "found slave %s", subif->name);
-	    subif->slave = NETIF_SLAVE_ACTIVE;
+	    my_log(INFO, "found child %s", subif->name);
+	    subif->subif = NETIF_CHILD_ACTIVE;
 #ifdef HAVE_NET_IF_LAGG_H
 	    if (!(rpbuf[i].rp_flags & LAGG_PORT_ACTIVE))
 #elif HAVE_NET_IF_TRUNK_H
 	    if (!(rpbuf[i].rp_flags & TRUNK_PORT_ACTIVE))
 #endif
-		subif->slave = NETIF_SLAVE_BACKUP;
+		subif->child = NETIF_CHILD_BACKUP;
 		
 	    subif->lacp_index = i;
 	    subif->parent = parent;
@@ -359,8 +359,8 @@ static void netif_bond(int sockfd, struct nhead *netifs, struct netif *parent,
 
 	    // XXX: multi-level bonds not supported
 	    if ((subif != NULL) && (subif->type < NETIF_PARENT)) {
-		my_log(INFO, "found slave %s", subif->name);
-		subif->slave = NETIF_SLAVE_ACTIVE;
+		my_log(INFO, "found child %s", subif->name);
+		subif->child = NETIF_CHILD_ACTIVE;
 		subif->parent = parent;
 		subif->lacp_index = i++;
 		csubif->subif = subif;
@@ -432,8 +432,8 @@ static void netif_bridge(int sockfd, struct nhead *netifs, struct netif *parent,
 
 	// XXX: multi-level bridges not supported
 	if ((subif != NULL) && (subif->type < NETIF_PARENT)) {
-	    my_log(INFO, "found slave %s", subif->name);
-	    subif->slave = NETIF_SLAVE_ACTIVE;
+	    my_log(INFO, "found child %s", subif->name);
+	    subif->child = NETIF_CHILD_ACTIVE;
 	    subif->parent = parent;
 	    csubif->subif = subif;
 	    csubif = subif;

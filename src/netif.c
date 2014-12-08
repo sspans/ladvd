@@ -250,7 +250,7 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct my_sysinfo *sysinfo,
 	free(netif);
     }
 
-    // add slave subif lists to each bond/bridge
+    // add child subif lists to each bond/bridge
     // detect vlan interface settings
     TAILQ_FOREACH(netif, netifs, entries) {
 	my_log(INFO, "detecting %s settings", netif->name);

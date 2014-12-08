@@ -101,8 +101,8 @@
 
 #define NETIF_BONDING_LACP  	1
 #define NETIF_BONDING_FAILOVER	2
-#define NETIF_SLAVE_ACTIVE	1
-#define NETIF_SLAVE_BACKUP	2
+#define NETIF_CHILD_ACTIVE	1
+#define NETIF_CHILD_BACKUP	2
 
 struct netif {
     uint32_t index;
@@ -121,7 +121,7 @@ struct netif {
 
     uint8_t argv;
     int8_t type;
-    uint8_t slave;
+    uint8_t child;
     uint8_t bonding_mode;
     uint8_t lacp_index;
 

@@ -210,7 +210,7 @@ START_TEST(test_netif) {
 
     tnetifs[0].index = 0;
     tnetifs[0].argv = 0;
-    tnetifs[0].slave = 0;
+    tnetifs[0].child = 0;
     tnetifs[0].type = NETIF_BONDING;
     tnetifs[0].subif = &tnetifs[1];
     strlcpy(tnetifs[0].name, "bond0", IFNAMSIZ); 
@@ -218,7 +218,7 @@ START_TEST(test_netif) {
 
     tnetifs[1].index = 1;
     tnetifs[1].argv = 1;
-    tnetifs[1].slave = 1;
+    tnetifs[1].child = 1;
     tnetifs[1].type = NETIF_REGULAR;
     tnetifs[1].subif = &tnetifs[2];
     strlcpy(tnetifs[1].name, "eth0", IFNAMSIZ); 
@@ -226,7 +226,7 @@ START_TEST(test_netif) {
 
     tnetifs[2].index = 2;
     tnetifs[2].argv = 0;
-    tnetifs[2].slave = 1;
+    tnetifs[2].child = 1;
     tnetifs[2].type = NETIF_REGULAR;
     tnetifs[2].subif = NULL,
     strlcpy(tnetifs[2].name, "eth2", IFNAMSIZ); 
@@ -234,14 +234,14 @@ START_TEST(test_netif) {
 
     tnetifs[3].index = 4;
     tnetifs[3].argv = 0;
-    tnetifs[3].slave = 0;
+    tnetifs[3].child = 0;
     tnetifs[3].type = NETIF_BRIDGE;
     tnetifs[3].subif = NULL,
     strlcpy(tnetifs[3].name, "bridge0", IFNAMSIZ); 
 
     tnetifs[4].index = 5;
     tnetifs[4].argv = 1;
-    tnetifs[4].slave = 0;
+    tnetifs[4].child = 0;
     tnetifs[4].type = NETIF_BONDING;
     tnetifs[4].subif = NULL,
     strlcpy(tnetifs[4].name, "lagg0", IFNAMSIZ); 
@@ -249,7 +249,7 @@ START_TEST(test_netif) {
 
     tnetifs[5].index = 3;
     tnetifs[5].argv = 1;
-    tnetifs[5].slave = 0;
+    tnetifs[5].child = 0;
     tnetifs[5].type = NETIF_REGULAR;
     tnetifs[5].subif = NULL,
     strlcpy(tnetifs[5].name, "eth1", IFNAMSIZ); 

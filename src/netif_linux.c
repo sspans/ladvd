@@ -235,7 +235,7 @@ static void netif_bond(int sockfd, struct nhead *netifs, struct netif *parent,
 	my_log(INFO, "lacp enabled on %s", parent->name);
 
 
-    // handle slaves
+    // handle childs
 
     // check for a sensible num_slaves entry
     if (ifbond.num_slaves <= 0)
@@ -250,10 +250,10 @@ static void netif_bond(int sockfd, struct nhead *netifs, struct netif *parent,
 
 	    // XXX: multi-level bonds not supported
 	    if ((subif != NULL) && (subif->type < NETIF_PARENT)) {
-		my_log(INFO, "found slave %s", subif->name);
-		subif->slave = NETIF_SLAVE_ACTIVE;
+		my_log(INFO, "found child %s", subif->name);
+		subif->child = NETIF_CHILD_ACTIVE;
 		if (ifslave.state == BOND_STATE_BACKUP)
-		    subif->slave = NETIF_SLAVE_BACKUP;
+		    subif->child = NETIF_CHILD_BACKUP;
 		subif->lacp_index = i;
 		subif->parent = parent;
 		csubif->subif = subif;
@@ -276,7 +276,7 @@ static void netif_bridge(int sockfd, struct nhead *netifs, struct netif *parent,
     unsigned long args[4] = { BRCTL_GET_PORT_LIST,
 		    (unsigned long)ifindex, BRIDGE_MAX_PORTS, 0 };
 
-    // handle slaves
+    // handle childs
     strlcpy(ifr->ifr_name, parent->name, IFNAMSIZ);
     ifr->ifr_data = (char *)&args;
 
@@ -290,8 +290,8 @@ static void netif_bridge(int sockfd, struct nhead *netifs, struct netif *parent,
 
 	// XXX: multi-level bridges not supported
 	if ((subif != NULL) && (subif->type < NETIF_PARENT)) {
-	    my_log(INFO, "found slave %s", subif->name);
-	    subif->slave = NETIF_SLAVE_ACTIVE;
+	    my_log(INFO, "found child %s", subif->name);
+	    subif->child = NETIF_CHILD_ACTIVE;
 	    subif->parent = parent;
 	    csubif->subif = subif;
 	    csubif = subif;

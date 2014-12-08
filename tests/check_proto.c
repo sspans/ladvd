@@ -62,7 +62,7 @@ START_TEST(test_proto_packet) {
     memset(&parent, 0, sizeof(struct netif));
     parent.index = 3;
     parent.argv = 1;
-    parent.slave = 0;
+    parent.child = 0;
     parent.bonding_mode = NETIF_BONDING_LACP;
     parent.type = NETIF_BONDING;
     netif.mtu = 1500;
@@ -75,7 +75,7 @@ START_TEST(test_proto_packet) {
     memset(&netif, 0, sizeof(struct netif));
     netif.index = 1;
     netif.argv = 0;
-    netif.slave = 1;
+    netif.child = 1;
     netif.type = NETIF_REGULAR;
     netif.mtu = 9000;
     netif.duplex = 1;
