@@ -679,6 +679,10 @@ START_TEST(test_my_priv) {
 	"incorrect message logged: %s", check_wrap_errstr);
 
     mark_point();
+    if (stat(_PATH_DEV, &sb) != 0)
+	return;
+    if (sb.st_uid != 0 || (sb.st_mode & 022) != 0)
+	return;
     if (stat(_PATH_CONSOLE, &sb) != 0)
 	return;
     if (sb.st_uid != 0 || (sb.st_mode & 022) != 0)
