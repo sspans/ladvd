@@ -558,6 +558,9 @@ int master_socket(struct rawfd *rfd) {
     if (options & OPT_DEBUG)
 	return(dup(STDIN_FILENO));
 
+    // newer libpcap versions need immediate_mode to work
+    // so we use pcap_create/pcap_activate to set this up
+#if defined(HAVE_PCAP_CREATE)
     p_handle = pcap_create(rfd->name, p_errbuf);
     if (!p_handle)
 	my_fatal("pcap_open for %s failed: %s", rfd->name, p_errbuf);
@@ -575,6 +578,13 @@ int master_socket(struct rawfd *rfd) {
 
     if (pcap_activate(p_handle) != 0)
 	my_fatal("pcap_activate for %s failed", rfd->name);
+
+    // on older versions we use pcap_open_live
+#else
+    p_handle = pcap_open_live(rfd->name, ETHER_MAX_LEN, 0, 10, p_errbuf);
+    if (!p_handle)
+	my_fatal("pcap_open for %s failed: %s", rfd->name, p_errbuf);
+#endif
 
     // setup bpf receive
     if (options & OPT_RECV) {

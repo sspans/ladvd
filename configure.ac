@@ -145,6 +145,8 @@ AC_ARG_ENABLE([static-libpcap],
 AC_CHECK_HEADER([pcap.h])
 AC_CHECK_LIB(pcap, pcap_compile, AC_SUBST(PCAP_LIB,"-lpcap"), 
     AC_MSG_ERROR([libpcap is required]))
+AC_CHECK_LIB(pcap, pcap_create,
+    AC_DEFINE(HAVE_PCAP_CREATE, 1, [have pcap_create]))
 AC_CHECK_LIB(pcap, pcap_set_immediate_mode,
     AC_DEFINE(HAVE_PCAP_IMMEDIATE_MODE, 1, [have pcap_set_immediate_mode]))
 
