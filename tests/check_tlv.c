@@ -31,7 +31,7 @@
 uint32_t options = OPT_DAEMON | OPT_CHECK;
 
 START_TEST(test_value_str) {
-    struct master_msg msg = {};
+    struct parent_msg msg = {};
     uint16_t type = 0;
     uint16_t length = 0;
     char value[32] = {};

@@ -31,7 +31,7 @@ struct child_send_args {
 
 struct child_session {
     struct event event;
-    struct master_msg *msg;
+    struct parent_msg *msg;
 };
 
 void child_send(int fd, short event, struct child_send_args *);

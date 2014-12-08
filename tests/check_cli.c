@@ -42,7 +42,7 @@ START_TEST(test_cli_main) {
     int argc;
     char *argv[7], ifname[IFNAMSIZ];
     char buf[8192];
-    struct master_msg msg = {};
+    struct parent_msg msg = {};
     int sobuf = MASTER_MSG_MAX * 10;
     time_t now;
 #if HAVE_EVHTTP_H
@@ -282,7 +282,7 @@ START_TEST(test_cli_main) {
 END_TEST
 
 START_TEST(test_batch_write) {
-    struct master_msg msg = {};
+    struct parent_msg msg = {};
     int ostdout, spair[2];
     char buf[8192];
     int sobuf = 8192;
@@ -331,7 +331,7 @@ END_TEST
 
 START_TEST(test_cli) {
     int ostdout, spair[2];
-    struct master_msg msg = {};
+    struct parent_msg msg = {};
     char buf[2048];
     int sobuf = 2048;
 
@@ -380,7 +380,7 @@ START_TEST(test_debug) {
     int ostdout, spair[2];
     ssize_t len;
     struct pcap_file_header pcap_fhdr = {};
-    struct master_msg msg = {};
+    struct parent_msg msg = {};
     char buf[2048];
 
     mark_point();
@@ -435,7 +435,7 @@ END_TEST
 
 #if HAVE_EVHTTP_H
 START_TEST(test_http) {
-    struct master_msg msg = {};
+    struct parent_msg msg = {};
     const char *errstr = NULL;
     extern char *http_host, *http_path;
     static struct event_base *base;

@@ -47,10 +47,10 @@ unsigned char * edp_check(void *, size_t);
 unsigned char * fdp_check(void *, size_t);
 unsigned char * ndp_check(void *, size_t);
 
-size_t lldp_decode(struct master_msg *msg);
-size_t cdp_decode(struct master_msg *msg);
-size_t edp_decode(struct master_msg *msg);
-size_t fdp_decode(struct master_msg *msg);
-size_t ndp_decode(struct master_msg *msg);
+size_t lldp_decode(struct parent_msg *msg);
+size_t cdp_decode(struct parent_msg *msg);
+size_t edp_decode(struct parent_msg *msg);
+size_t fdp_decode(struct parent_msg *msg);
+size_t ndp_decode(struct parent_msg *msg);
 
 #endif /* _protos_h */

@@ -68,4 +68,4 @@ extern char check_wrap_errstr[];
     fail_if(len < MASTER_REQ_MIN, "message read failed"); \
     fail_if(len != MASTER_REQ_LEN(mreq->len), "message read failed");
 
-void read_packet(struct master_msg *msg, const char *suffix);
+void read_packet(struct parent_msg *msg, const char *suffix);

@@ -217,7 +217,7 @@ unsigned char * fdp_check(void *packet, size_t length) {
     return(NULL);
 }
 
-size_t fdp_decode(struct master_msg *msg) {
+size_t fdp_decode(struct parent_msg *msg) {
 
     unsigned char *packet = NULL;
     size_t length;

@@ -22,20 +22,20 @@
 
 struct mode {
     void (*init) ();
-    void (*write) (struct master_msg *, const uint16_t);
+    void (*write) (struct parent_msg *, const uint16_t);
     void (*dispatch) ();
 };
 
-void batch_write(struct master_msg *msg, const uint16_t);
+void batch_write(struct parent_msg *msg, const uint16_t);
 void cli_header();
-void cli_write(struct master_msg *msg, const uint16_t);
+void cli_write(struct parent_msg *msg, const uint16_t);
 void debug_header();
-void debug_write(struct master_msg *msg, const uint16_t);
+void debug_write(struct parent_msg *msg, const uint16_t);
 void debug_close();
 
 #if HAVE_EVHTTP_H
 void http_connect();
-void http_request(struct master_msg *msg, const uint16_t);
+void http_request(struct parent_msg *msg, const uint16_t);
 void http_reply(struct evhttp_request *req, void *arg);
 void http_dispatch();
 #endif /* HAVE_EVHTTP_H */

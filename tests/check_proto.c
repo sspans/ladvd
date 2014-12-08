@@ -30,7 +30,7 @@
 uint32_t options = OPT_DAEMON | OPT_CHECK;
 
 START_TEST(test_proto_packet) {
-    struct master_msg msg = {};
+    struct parent_msg msg = {};
     struct netif master, netif, vlan1, vlan2;
     struct nhead netifs;
     struct my_sysinfo sysinfo = {};
@@ -180,7 +180,7 @@ START_TEST(test_proto_packet) {
 END_TEST
 
 START_TEST(test_lldp_check) {
-    struct master_msg msg = {};
+    struct parent_msg msg = {};
     struct ether_hdr ether = {};
     static uint8_t lldp_dst[] = LLDP_MULTICAST_ADDR;
 
@@ -215,7 +215,7 @@ START_TEST(test_lldp_check) {
 END_TEST
 
 START_TEST(test_cdp_check) {
-    struct master_msg msg = {};
+    struct parent_msg msg = {};
     struct ether_hdr ether = {};
     struct ether_llc llc = {};
     static uint8_t cdp_dst[] = CDP_MULTICAST_ADDR;
@@ -267,7 +267,7 @@ START_TEST(test_cdp_check) {
 END_TEST
 
 START_TEST(test_edp_check) {
-    struct master_msg msg = {};
+    struct parent_msg msg = {};
     struct ether_hdr ether = {};
     struct ether_llc llc = {};
     static uint8_t edp_dst[] = EDP_MULTICAST_ADDR;
@@ -319,7 +319,7 @@ START_TEST(test_edp_check) {
 END_TEST
 
 START_TEST(test_fdp_check) {
-    struct master_msg msg = {};
+    struct parent_msg msg = {};
     struct ether_hdr ether = {};
     struct ether_llc llc = {};
     static uint8_t fdp_dst[] = FDP_MULTICAST_ADDR;
@@ -371,7 +371,7 @@ START_TEST(test_fdp_check) {
 END_TEST
 
 START_TEST(test_ndp_check) {
-    struct master_msg msg = {};
+    struct parent_msg msg = {};
     struct ether_hdr ether = {};
     struct ether_llc llc = {};
     static uint8_t ndp_dst[] = NDP_MULTICAST_ADDR;
@@ -423,7 +423,7 @@ START_TEST(test_ndp_check) {
 END_TEST
 
 START_TEST(test_lldp_decode) {
-    struct master_msg msg = {};
+    struct parent_msg msg = {};
     const char *errstr = NULL;
     char sobuf[1024];
     int spair[2], fd = -1;
@@ -843,7 +843,7 @@ START_TEST(test_lldp_decode) {
 END_TEST
 
 START_TEST(test_cdp_decode) {
-    struct master_msg msg = {};
+    struct parent_msg msg = {};
     const char *errstr = NULL;
     char sobuf[1024];
     int spair[2], fd = -1;
@@ -1065,7 +1065,7 @@ START_TEST(test_cdp_decode) {
 END_TEST
 
 START_TEST(test_edp_decode) {
-    struct master_msg msg = {};
+    struct parent_msg msg = {};
     const char *errstr = NULL;
 
     loglevel = INFO;
@@ -1143,7 +1143,7 @@ START_TEST(test_edp_decode) {
 END_TEST
 
 START_TEST(test_fdp_decode) {
-    struct master_msg msg = {};
+    struct parent_msg msg = {};
     const char *errstr = NULL;
 
     loglevel = INFO;

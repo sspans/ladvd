@@ -17,8 +17,8 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef _master_h
-#define _master_h
+#ifndef _parent_h
+#define _parent_h
 
 #ifdef HAVE_NETPACKET_PACKET_H
 #include <netpacket/packet.h>
@@ -40,26 +40,26 @@ struct rawfd {
 
 TAILQ_HEAD(rfdhead, rawfd);
 
-void master_req(int fd, short event);
-void master_send(int fd, short event);
-void master_recv(int fd, short event, struct rawfd *rfd);
+void parent_req(int fd, short event);
+void parent_send(int fd, short event);
+void parent_recv(int fd, short event, struct rawfd *rfd);
 
-void master_open(const uint32_t index, const char *name);
+void parent_open(const uint32_t index, const char *name);
 #if HAVE_LINUX_ETHTOOL_H
-ssize_t master_ethtool(struct master_req *mreq);
+ssize_t parent_ethtool(struct parent_req *mreq);
 #endif /* HAVE_LINUX_ETHTOOL_H */
-ssize_t master_descr(struct master_req *mreq);
+ssize_t parent_descr(struct parent_req *mreq);
 #ifdef HAVE_SYSFS
-ssize_t master_device(struct master_req *mreq);
+ssize_t parent_device(struct parent_req *mreq);
 #endif /* HAVE_SYSFS */
 #if defined(HAVE_SYSFS) && defined(HAVE_PCI_PCI_H)
-ssize_t master_device_id(struct master_req *mreq);
+ssize_t parent_device_id(struct parent_req *mreq);
 #endif /* HAVE_SYSFS && HAVE_PCI_PCI_H */
-void master_close(struct rawfd *rfd);
+void parent_close(struct rawfd *rfd);
 
-int master_check(struct master_req *mreq);
-int master_socket(struct rawfd *rfd);
-void master_multi(struct rawfd *rfd, struct proto *protos, int op);
+int parent_check(struct parent_req *mreq);
+int parent_socket(struct rawfd *rfd);
+void parent_multi(struct rawfd *rfd, struct proto *protos, int op);
 
 static inline
 struct rawfd *rfd_byindex(struct rfdhead *rawfds, uint32_t index) {
@@ -77,8 +77,8 @@ void rfd_closeall(struct rfdhead *rawfds) {
     struct rawfd *rfd, *nrfd;
 
     TAILQ_FOREACH_SAFE(rfd, rawfds, entries, nrfd) {
-	master_close(rfd);
+	parent_close(rfd);
     }
 }
 
-#endif /* _master_h */
+#endif /* _parent_h */

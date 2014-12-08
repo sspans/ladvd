@@ -42,15 +42,15 @@ static const struct type_str lldp_tlv_types[] = {
 };
 
 static tlv_t type;
-static int lldp_port_id(struct master_msg *, unsigned char *, size_t);
-static int lldp_chassis_id(struct master_msg *, unsigned char *, size_t);
-static int lldp_system_name(struct master_msg *, unsigned char *, size_t);
+static int lldp_port_id(struct parent_msg *, unsigned char *, size_t);
+static int lldp_chassis_id(struct parent_msg *, unsigned char *, size_t);
+static int lldp_system_name(struct parent_msg *, unsigned char *, size_t);
 static int lldp_descr_print(uint16_t, unsigned char *, size_t);
-static int lldp_ttl_print(struct master_msg *msg);
-static int lldp_system_cap(struct master_msg *, unsigned char *, size_t);
-static int lldp_mgmt_addr(struct master_msg *msg, unsigned char *, size_t);
-static int lldp_private(struct master_msg *msg, unsigned char *, size_t);
-static int lldp_private_8021(struct master_msg *msg, unsigned char *, size_t);
+static int lldp_ttl_print(struct parent_msg *msg);
+static int lldp_system_cap(struct parent_msg *, unsigned char *, size_t);
+static int lldp_mgmt_addr(struct parent_msg *msg, unsigned char *, size_t);
+static int lldp_private(struct parent_msg *msg, unsigned char *, size_t);
+static int lldp_private_8021(struct parent_msg *msg, unsigned char *, size_t);
 
 size_t lldp_packet(uint8_t proto, void *packet, struct netif *netif,
 		struct nhead *netifs, struct my_sysinfo *sysinfo) {
@@ -466,7 +466,7 @@ unsigned char * lldp_check(void *packet, size_t length) {
     return(NULL);
 }
 
-size_t lldp_decode(struct master_msg *msg) {
+size_t lldp_decode(struct parent_msg *msg) {
 
     unsigned char *packet = NULL;
     size_t length;
@@ -590,7 +590,7 @@ out:
 }
 
 
-static int lldp_chassis_id(struct master_msg *msg,
+static int lldp_chassis_id(struct parent_msg *msg,
     unsigned char *pos, size_t length) {
 
     char *str = NULL;
@@ -638,7 +638,7 @@ static int lldp_chassis_id(struct master_msg *msg,
     return 1;
 }
 
-static int lldp_port_id(struct master_msg *msg,
+static int lldp_port_id(struct parent_msg *msg,
     unsigned char *pos, size_t length) {
 
     char *str = NULL;
@@ -682,7 +682,7 @@ static int lldp_port_id(struct master_msg *msg,
     return 1;
 }
 
-static int lldp_system_name(struct master_msg *msg, 
+static int lldp_system_name(struct parent_msg *msg, 
     unsigned char *pos, size_t length) {
 
     char *str = NULL;
@@ -740,7 +740,7 @@ static int lldp_descr_print(uint16_t tlv_type,
     return 1;
 }
 
-static int lldp_ttl_print(struct master_msg *msg) {
+static int lldp_ttl_print(struct parent_msg *msg) {
 
     time_t now;
     uint16_t holdtime;
@@ -754,7 +754,7 @@ static int lldp_ttl_print(struct master_msg *msg) {
     return 1;
 }
 
-static int lldp_system_cap(struct master_msg *msg, 
+static int lldp_system_cap(struct parent_msg *msg, 
     unsigned char *pos, size_t length) {
 
     uint16_t lldp_cap_avail = 0, lldp_cap = 0, cap_avail = 0, cap = 0;
@@ -818,7 +818,7 @@ static int lldp_system_cap(struct master_msg *msg,
     return 1;
 }
 
-static int lldp_mgmt_addr(struct master_msg *msg,
+static int lldp_mgmt_addr(struct parent_msg *msg,
     unsigned char *pos, size_t length) {
 
     uint8_t lldp_aflen, lldp_afnum, af;
@@ -879,7 +879,7 @@ static int lldp_mgmt_addr(struct master_msg *msg,
     return 1;
 }
 
-static int lldp_private(struct master_msg *msg,
+static int lldp_private(struct parent_msg *msg,
     unsigned char *pos, size_t length) {
     char *oui = NULL;
     int ret = 1;
@@ -896,7 +896,7 @@ static int lldp_private(struct master_msg *msg,
     return ret;
 }
 
-static int lldp_private_8021(struct master_msg *msg,
+static int lldp_private_8021(struct parent_msg *msg,
     unsigned char *pos, size_t length) {
     uint8_t tlv_subtype;
 

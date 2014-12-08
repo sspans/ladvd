@@ -55,7 +55,7 @@ void child_init(int reqfd, int msgfd, int ifc, char *ifl[],
     struct event evq, eva, evl;
     struct event ev_sigterm, ev_sigint;
 
-    // master socket
+    // parent socket
     extern int msock;
     int lsock, csock = -1;
     struct sockaddr_un usock;
@@ -129,7 +129,7 @@ void child_init(int reqfd, int msgfd, int ifc, char *ifl[],
 	exit(EXIT_SUCCESS);
 
     if (options & OPT_RECV) {
-	// listen for messages from the master
+	// listen for messages from the parent
 	event_set(&evq, msgfd, EV_READ|EV_PERSIST, (void *)child_queue, NULL);
 	event_add(&evq, NULL);
 
@@ -161,7 +161,7 @@ void child_init(int reqfd, int msgfd, int ifc, char *ifl[],
 }
 
 void child_send(int fd, short event, struct child_send_args *args) {
-    struct master_msg msg;
+    struct parent_msg msg;
     struct netif *netif = NULL, *subif = NULL, *linkif = NULL;
     ssize_t len;
 
@@ -230,7 +230,7 @@ void child_send(int fd, short event, struct child_send_args *args) {
 
 	    // explicitly listen when recv is enabled
 	    if ((options & OPT_RECV) && (subif->protos == 0)) {
-		struct master_req mreq = {};
+		struct parent_req mreq = {};
 		mreq.op = MASTER_OPEN;
 		mreq.index = subif->index;
 		my_mreq(&mreq);
@@ -296,14 +296,14 @@ out:
 }
 
 void child_queue(int fd, short event) {
-    struct master_msg rmsg = {};
-    struct master_msg  *msg = NULL, *qmsg = NULL, *pmsg = NULL;
+    struct parent_msg rmsg = {};
+    struct parent_msg  *msg = NULL, *qmsg = NULL, *pmsg = NULL;
     struct netif *subif, *netif;
     struct ether_hdr *ether;
     time_t now;
     ssize_t len;
 
-    my_log(INFO, "receiving message from master");
+    my_log(INFO, "receiving message from parent");
     if ((len = read(fd, &rmsg, MASTER_MSG_MAX)) == -1)
 	return;
     if (len < MASTER_MSG_MIN || len != MASTER_MSG_LEN(rmsg.len))
@@ -365,12 +365,12 @@ void child_queue(int fd, short event) {
 	// free the old peer decode
 	peer_free(msg->peer);
 	// copy everything upto the tailq_entry
-	memcpy(msg, &rmsg, offsetof(struct master_msg, entries));
+	memcpy(msg, &rmsg, offsetof(struct parent_msg, entries));
     } else {
 	char *hostname = NULL;
 
 	msg = my_malloc(MASTER_MSG_SIZ);
-	memcpy(msg, &rmsg, offsetof(struct master_msg, entries));
+	memcpy(msg, &rmsg, offsetof(struct parent_msg, entries));
 	// group messages per peer
 	if (pmsg)
 	    TAILQ_INSERT_AFTER(&mqueue, pmsg, msg, entries);
@@ -410,7 +410,7 @@ void child_queue(int fd, short event) {
 
 void child_expire() {
     time_t now;
-    struct master_msg *msg = NULL, *nmsg = NULL;
+    struct parent_msg *msg = NULL, *nmsg = NULL;
     struct netif *netif = NULL, *subif = NULL;
     char *hostname = NULL;
 
@@ -462,7 +462,7 @@ void child_expire() {
 }
 
 void child_free(int sig, short event, void *arg) {
-    struct master_msg *msg = NULL, *nmsg = NULL;
+    struct parent_msg *msg = NULL, *nmsg = NULL;
 
     TAILQ_FOREACH_SAFE(msg, &mqueue, entries, nmsg) {
 	TAILQ_REMOVE(&mqueue, msg, entries);
@@ -494,7 +494,7 @@ void child_cli_accept(int socket, short event) {
 }
 
 void child_cli_write(int fd, short event, struct child_session *sess) {
-    struct master_msg *msg = sess->msg;
+    struct parent_msg *msg = sess->msg;
     struct timeval tv = { .tv_sec = 1 };
 
     if (event == EV_TIMEOUT)

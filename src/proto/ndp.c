@@ -108,7 +108,7 @@ unsigned char * ndp_check(void *packet, size_t length) {
     return(NULL);
 }
 
-size_t ndp_decode(struct master_msg *msg) {
+size_t ndp_decode(struct parent_msg *msg) {
 
     unsigned char *packet = NULL;
     size_t length;

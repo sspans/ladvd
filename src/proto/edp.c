@@ -190,7 +190,7 @@ unsigned char * edp_check(void *packet, size_t length) {
     return(NULL);
 }
 
-size_t edp_decode(struct master_msg *msg) {
+size_t edp_decode(struct parent_msg *msg) {
 
     unsigned char *packet = NULL;
     size_t length;

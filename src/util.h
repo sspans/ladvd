@@ -51,7 +51,7 @@ int read_line(const char *path, char *line, uint16_t len) __nonnull();
 int write_line(const char *path, char *line, uint16_t len) __nonnull();
 uint16_t my_chksum(const void *data, size_t length, int cisco) __nonnull();
 
-ssize_t my_mreq(struct master_req *mreq);
+ssize_t my_mreq(struct parent_req *mreq);
 
 struct netif *netif_iter(struct netif *netif, struct nhead *);
 struct netif *subif_iter(struct netif *subif, struct netif *netif);
@@ -103,7 +103,7 @@ struct netif *netif_byaddr(struct nhead *netifs, uint8_t *hwaddr) {
 #define PCAP_PKTHDR_SIZ  16
 
 void my_pcap_init(int fd);
-void my_pcap_write(struct master_msg *);
+void my_pcap_write(struct parent_msg *);
 void my_pcap_close();
 
 #endif /* _util_h */

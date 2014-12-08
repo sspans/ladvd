@@ -68,7 +68,7 @@ void cli_main(int argc, char *argv[]) {
     struct sockaddr_un usock = {};
     int fd = -1;
     time_t now;
-    struct master_msg *msg;
+    struct parent_msg *msg;
     uint16_t holdtime;
 
     options = 0;
@@ -242,7 +242,7 @@ static inline void swapchr(char *str, const int c, const int d) {
 
 #define STR(x)	(x) ? x : ""
 
-void batch_write(struct master_msg *msg, const uint16_t holdtime) {
+void batch_write(struct parent_msg *msg, const uint16_t holdtime) {
     char *peer_host = msg->peer[PEER_HOSTNAME];
     char *peer_portname = msg->peer[PEER_PORTNAME];
     char *peer_portdescr = msg->peer[PEER_PORTDESCR];
@@ -297,7 +297,7 @@ void cli_header() {
 	"Hold-time    Capability    Port ID\n", host_width, "Device ID");
 }
 
-void cli_write(struct master_msg *msg, const uint16_t holdtime) {
+void cli_write(struct parent_msg *msg, const uint16_t holdtime) {
     char *peer_host = msg->peer[PEER_HOSTNAME];
     char *peer_portname = msg->peer[PEER_PORTNAME];
     char *peer_portdescr = msg->peer[PEER_PORTDESCR];
@@ -323,7 +323,7 @@ void debug_header() {
     my_pcap_init(STDOUT_FILENO);
 }
 
-void debug_write(struct master_msg *msg, const uint16_t holdtime) {
+void debug_write(struct parent_msg *msg, const uint16_t holdtime) {
     my_pcap_write(msg);
 }
 
@@ -357,7 +357,7 @@ void http_connect() {
 	strlcpy(hostname, hp->h_name, _POSIX_HOST_NAME_MAX);
 }
 
-void http_request(struct master_msg *msg, const uint16_t holdtime) {
+void http_request(struct parent_msg *msg, const uint16_t holdtime) {
     int ret;
     char *peer_host, *peer_port, *data;
     char *cap = msg->peer[PEER_CAP];

@@ -24,7 +24,7 @@
 #include "util.h"
 #include "proto/protos.h"
 #include "main.h"
-#include "master.h"
+#include "parent.h"
 #include "check_wrap.h"
 
 #ifdef USE_CAPABILITIES
@@ -50,7 +50,7 @@ extern int dfd;
 extern int mfd;
 extern struct rfdhead rawfds;
 
-START_TEST(test_master_init) {
+START_TEST(test_parent_init) {
     const char *errstr = NULL;
     int spair[2], fd = -1;
 
@@ -64,7 +64,7 @@ START_TEST(test_master_init) {
     errstr = "test";
     my_log(CRIT, errstr);
     WRAP_FATAL_START();
-    master_init(0, 0, 0);
+    parent_init(0, 0, 0);
     WRAP_FATAL_END();
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -76,7 +76,7 @@ START_TEST(test_master_init) {
 }
 END_TEST
 
-START_TEST(test_master_signal) {
+START_TEST(test_parent_signal) {
     int sig = 0;
     short event = 0;
     pid_t pid = 1;
@@ -88,7 +88,7 @@ START_TEST(test_master_signal) {
     sig = SIGCHLD;
     errstr = "quitting";
     WRAP_FATAL_START();
-    master_signal(sig, event, &pid);
+    parent_signal(sig, event, &pid);
     WRAP_FATAL_END();
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -98,7 +98,7 @@ START_TEST(test_master_signal) {
     sig = SIGINT;
     errstr = "quitting";
     WRAP_FATAL_START();
-    master_signal(sig, event, &pid);
+    parent_signal(sig, event, &pid);
     WRAP_FATAL_END();
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -107,7 +107,7 @@ START_TEST(test_master_signal) {
     sig = SIGTERM;
     errstr = "quitting";
     WRAP_FATAL_START();
-    master_signal(sig, event, &pid);
+    parent_signal(sig, event, &pid);
     WRAP_FATAL_END();
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -117,7 +117,7 @@ START_TEST(test_master_signal) {
     sig = SIGHUP;
     errstr = "check";
     my_log(CRIT, errstr);
-    master_signal(sig, event, NULL);
+    parent_signal(sig, event, NULL);
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
@@ -125,7 +125,7 @@ START_TEST(test_master_signal) {
     sig = 0;
     errstr = "unexpected signal";
     WRAP_FATAL_START();
-    master_signal(sig, event, NULL);
+    parent_signal(sig, event, NULL);
     WRAP_FATAL_END();
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -135,8 +135,8 @@ START_TEST(test_master_signal) {
 }
 END_TEST
 
-START_TEST(test_master_req) {
-    struct master_req mreq = {};
+START_TEST(test_parent_req) {
+    struct parent_req mreq = {};
     struct ether_hdr ether = {};
     static uint8_t lldp_dst[] = LLDP_MULTICAST_ADDR;
     struct rawfd *rfd;
@@ -152,7 +152,7 @@ START_TEST(test_master_req) {
     errstr = "invalid request received";
     my_log(CRIT, errstr);
     WRAP_FATAL_START();
-    master_req(fd, event);
+    parent_req(fd, event);
     WRAP_FATAL_END();
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -162,7 +162,7 @@ START_TEST(test_master_req) {
     errstr = "invalid request received";
     WRAP_WRITE(spair[0], &mreq, 1);
     WRAP_FATAL_START();
-    master_req(spair[1], event);
+    parent_req(spair[1], event);
     WRAP_FATAL_END();
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -176,7 +176,7 @@ START_TEST(test_master_req) {
     my_log(CRIT, errstr);
     WRAP_WRITE(spair[0], &mreq, MASTER_REQ_LEN(mreq.len));
     WRAP_FATAL_START();
-    master_req(spair[1], event);
+    parent_req(spair[1], event);
     WRAP_FATAL_END();
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -196,7 +196,7 @@ START_TEST(test_master_req) {
     errstr = "check";
     my_log(CRIT, errstr);
     WRAP_FATAL_START();
-    master_req(spair[1], event);
+    parent_req(spair[1], event);
     WRAP_FATAL_END();
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -207,7 +207,7 @@ START_TEST(test_master_req) {
     	"the queue should be empty");
 
     options |= OPT_DEBUG;
-    master_open(ifindex, ifname);
+    parent_open(ifindex, ifname);
     fail_unless (rfd_byindex(&rawfds, ifindex) != NULL,
     	"rfd should be added to the queue");
 
@@ -217,7 +217,7 @@ START_TEST(test_master_req) {
     mreq.index = ifindex;
     strlcpy(mreq.name, ifname, IFNAMSIZ);
     WRAP_WRITE(spair[0], &mreq, MASTER_REQ_LEN(mreq.len));
-    master_req(spair[1], event);
+    parent_req(spair[1], event);
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     fail_unless (rfd_byindex(&rawfds, ifindex) == NULL,
@@ -233,7 +233,7 @@ START_TEST(test_master_req) {
 
     errstr = "check";
     my_log(CRIT, errstr);
-    master_req(spair[1], event);
+    parent_req(spair[1], event);
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 #endif
@@ -247,7 +247,7 @@ START_TEST(test_master_req) {
 
     errstr = "check";
     my_log(CRIT, errstr);
-    master_req(spair[1], event);
+    parent_req(spair[1], event);
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
@@ -255,14 +255,14 @@ START_TEST(test_master_req) {
     mreq.op = MASTER_DEVICE;
     mreq.len = 0;
     WRAP_WRITE(spair[0], &mreq, MASTER_REQ_LEN(mreq.len));
-    master_req(spair[1], event);
+    parent_req(spair[1], event);
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 #endif /* HAVE_SYSFS */
 
     // test a failing return message
     mark_point();
-    master_open(ifindex, ifname);
+    parent_open(ifindex, ifname);
     rfd = rfd_byindex(&rawfds, ifindex);
     fail_unless (rfd != NULL, "rfd should be added to the queue");
     mreq.op = MASTER_CLOSE;
@@ -273,7 +273,7 @@ START_TEST(test_master_req) {
 
     errstr = "failed to return request to child";
     WRAP_FATAL_START();
-    master_req(spair[1], event);
+    parent_req(spair[1], event);
     WRAP_FATAL_END();
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -285,17 +285,17 @@ START_TEST(test_master_req) {
 }
 END_TEST
 
-START_TEST(test_master_check) {
-    struct master_req mreq = {};
+START_TEST(test_parent_check) {
+    struct parent_req mreq = {};
 
     mark_point();
     mreq.op = MASTER_OPEN;
-    fail_unless(master_check(&mreq) == EXIT_SUCCESS,
+    fail_unless(parent_check(&mreq) == EXIT_SUCCESS,
 	"MASTER_OPEN check failed");
 
     mark_point();
     mreq.op = MASTER_CLOSE;
-    fail_unless(master_check(&mreq) == EXIT_SUCCESS,
+    fail_unless(parent_check(&mreq) == EXIT_SUCCESS,
 	"MASTER_CLOSE check failed");
 
 #ifdef HAVE_LINUX_ETHTOOL_H
@@ -303,14 +303,14 @@ START_TEST(test_master_check) {
     mreq.op = MASTER_ETHTOOL_GSET;
     mreq.index = ifindex;
     mreq.len = sizeof(struct ethtool_cmd);
-    fail_unless(master_check(&mreq) == EXIT_SUCCESS,
+    fail_unless(parent_check(&mreq) == EXIT_SUCCESS,
 	"MASTER_ETHTOOL_GSET check failed");
 
     mark_point();
     mreq.op = MASTER_ETHTOOL_GDRV;
     mreq.index = ifindex;
     mreq.len = sizeof(struct ethtool_drvinfo);
-    fail_unless(master_check(&mreq) == EXIT_SUCCESS,
+    fail_unless(parent_check(&mreq) == EXIT_SUCCESS,
 	"MASTER_ETHTOOL_GDRV check failed");
 #endif
 
@@ -319,22 +319,22 @@ START_TEST(test_master_check) {
     mreq.op = MASTER_DESCR;
     mreq.index = ifindex;
     mreq.len = 0;
-    fail_unless(master_check(&mreq) == EXIT_SUCCESS,
+    fail_unless(parent_check(&mreq) == EXIT_SUCCESS,
 	"MASTER_DESCR check failed");
 #endif
 
 #ifndef HAVE_LINUX_ETHTOOL_H
     mark_point();
     mreq.op = MASTER_ETHTOOL_GSET;
-    fail_unless(master_check(&mreq) == EXIT_FAILURE,
-	"master_check should fail");
+    fail_unless(parent_check(&mreq) == EXIT_FAILURE,
+	"parent_check should fail");
 #endif
 }
 END_TEST
 
-START_TEST(test_master_send) {
+START_TEST(test_parent_send) {
     struct rawfd *rfd;
-    struct master_msg msg = {};
+    struct parent_msg msg = {};
     struct ether_hdr ether = {};
     static uint8_t lldp_dst[] = LLDP_MULTICAST_ADDR;
     int spair[2];
@@ -349,7 +349,7 @@ START_TEST(test_master_send) {
     strlcpy(msg.name, ifname, IFNAMSIZ);
 
     dfd = spair[1];
-    master_open(ifindex, ifname);
+    parent_open(ifindex, ifname);
     rfd = rfd_byindex(&rawfds, ifindex);
     fail_unless (rfd != NULL, "rfd should be added to the queue");
 
@@ -359,7 +359,7 @@ START_TEST(test_master_send) {
     my_log(CRIT, errstr);
     WRAP_WRITE(spair[0], &msg, MASTER_MSG_LEN(msg.len) - 1);
     WRAP_FATAL_START();
-    master_send(spair[1], event);
+    parent_send(spair[1], event);
     WRAP_FATAL_END();
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -370,7 +370,7 @@ START_TEST(test_master_send) {
     msg.index = UINT32_MAX;
     WRAP_WRITE(spair[0], &msg, MASTER_MSG_LEN(msg.len));
     WRAP_FATAL_START();
-    master_send(spair[1], event);
+    parent_send(spair[1], event);
     WRAP_FATAL_END();
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -386,7 +386,7 @@ START_TEST(test_master_send) {
     rfd->fd = -1;
     options &= ~OPT_DEBUG;
     WRAP_WRITE(spair[0], &msg, MASTER_MSG_LEN(msg.len));
-    master_send(spair[1], event);
+    parent_send(spair[1], event);
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
@@ -398,28 +398,28 @@ START_TEST(test_master_send) {
 }
 END_TEST
 
-START_TEST(test_master_open_close) {
+START_TEST(test_parent_open_close) {
     struct rawfd *rfd;
 
     options |= OPT_DEBUG;
     dfd = STDOUT_FILENO;
 
     mark_point();
-    master_open(ifindex, ifname);
+    parent_open(ifindex, ifname);
     rfd = rfd_byindex(&rawfds, ifindex);
     fail_unless (rfd != NULL,
     	"rfd should be added to the queue");
-    master_close(rfd);
+    parent_close(rfd);
     fail_unless (rfd_byindex(&rawfds, ifindex) == NULL,
     	"rfd should be removed from the queue");
 
     mark_point();
-    master_open(ifindex, ifname);
+    parent_open(ifindex, ifname);
     rfd = rfd_byindex(&rawfds, ifindex);
     fail_unless (rfd != NULL,
     	"rfd should be added to the queue");
 
-    master_open(2, "lo1");
+    parent_open(2, "lo1");
     rfd = rfd_byindex(&rawfds, 2);
     fail_unless (rfd != NULL,
     	"rfd should be added to the queue");
@@ -430,7 +430,7 @@ START_TEST(test_master_open_close) {
 }
 END_TEST
 
-START_TEST(test_master_socket) {
+START_TEST(test_parent_socket) {
     struct rawfd *rfd;
     const char *errstr;
 
@@ -438,7 +438,7 @@ START_TEST(test_master_socket) {
     dfd = STDOUT_FILENO;
 
     mark_point();
-    master_open(ifindex, ifname);
+    parent_open(ifindex, ifname);
     rfd = rfd_byindex(&rawfds, ifindex);
     fail_unless (rfd != NULL, "rfd should be added to the queue");
 
@@ -450,7 +450,7 @@ START_TEST(test_master_socket) {
     options &= ~OPT_DEBUG;
     errstr = "pcap_";
     WRAP_FATAL_START();
-    master_socket(rfd);
+    parent_socket(rfd);
     WRAP_FATAL_END();
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -458,13 +458,13 @@ START_TEST(test_master_socket) {
     rfd = rfd_byindex(&rawfds, ifindex);
     fail_unless (rfd != NULL,
     	"rfd not found");
-    master_close(rfd);
+    parent_close(rfd);
     fail_unless (TAILQ_EMPTY(&rawfds),
     	"the queue should be empty");
 }
 END_TEST
 
-START_TEST(test_master_multi) {
+START_TEST(test_parent_multi) {
     struct rawfd rfd;
     int spair[2];
     const char *errstr;
@@ -481,7 +481,7 @@ START_TEST(test_master_multi) {
     options |= OPT_DEBUG;
     errstr = "check";
     my_log(CRIT, errstr);
-    master_multi(&rfd, protos, 0);
+    parent_multi(&rfd, protos, 0);
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
@@ -489,7 +489,7 @@ START_TEST(test_master_multi) {
     options &= ~OPT_DEBUG;
     errstr = "unable to change LLDP multicast on";
     WRAP_FATAL_START();
-    master_multi(&rfd, protos, 1);
+    parent_multi(&rfd, protos, 1);
     WRAP_FATAL_END();
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -498,7 +498,7 @@ START_TEST(test_master_multi) {
     check_wrap_fake |= FAKE_IOCTL|FAKE_SETSOCKOPT;
     errstr = "check";
     my_log(CRIT, errstr);
-    master_multi(&rfd, protos, 1);
+    parent_multi(&rfd, protos, 1);
     check_wrap_fake = 0;
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -510,7 +510,7 @@ START_TEST(test_master_multi) {
 }
 END_TEST
 
-START_TEST(test_master_recv) {
+START_TEST(test_parent_recv) {
     struct rawfd *rfd;
     short event = 0;
     const char *errstr = NULL;
@@ -525,7 +525,7 @@ START_TEST(test_master_recv) {
     dfd = STDOUT_FILENO;
 
     mark_point();
-    master_open(ifindex, ifname);
+    parent_open(ifindex, ifname);
     rfd = rfd_byindex(&rawfds, ifindex);
     fail_unless (rfd != NULL, "rfd should be added to the queue");
 
@@ -542,7 +542,7 @@ START_TEST(test_master_recv) {
     errstr = "unknown message type received";
     my_log(CRIT, "test");
     WRAP_FATAL_START();
-    master_recv(rfd->fd, event, rfd);
+    parent_recv(rfd->fd, event, rfd);
     WRAP_FATAL_END();
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -561,7 +561,7 @@ START_TEST(test_master_recv) {
     errstr = "test";
     my_log(CRIT, errstr);
     WRAP_FATAL_START();
-    master_recv(rfd->fd, event, rfd);
+    parent_recv(rfd->fd, event, rfd);
     WRAP_FATAL_END();
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -582,7 +582,7 @@ START_TEST(test_master_recv) {
     errstr = "failed to send message to child";
     my_log(CRIT, "test");
     WRAP_FATAL_START();
-    master_recv(rfd->fd, event, rfd);
+    parent_recv(rfd->fd, event, rfd);
     WRAP_FATAL_END();
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -599,7 +599,7 @@ START_TEST(test_master_recv) {
     errstr = "received CDP message (422 bytes)";
     my_log(CRIT, "test");
     WRAP_FATAL_START();
-    master_recv(rfd->fd, event, rfd);
+    parent_recv(rfd->fd, event, rfd);
     WRAP_FATAL_END();
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -615,23 +615,23 @@ START_TEST(test_master_recv) {
 }
 END_TEST
 
-Suite * master_suite (void) {
-    Suite *s = suite_create("master.c");
+Suite * parent_suite (void) {
+    Suite *s = suite_create("parent.c");
 
     TAILQ_INIT(&rawfds);
 
-    // master test case
-    TCase *tc_master = tcase_create("master");
-    tcase_add_test(tc_master, test_master_init);
-    tcase_add_test(tc_master, test_master_signal);
-    tcase_add_test(tc_master, test_master_req);
-    tcase_add_test(tc_master, test_master_check);
-    tcase_add_test(tc_master, test_master_send);
-    tcase_add_test(tc_master, test_master_open_close);
-    tcase_add_test(tc_master, test_master_socket);
-    tcase_add_test(tc_master, test_master_multi);
-    tcase_add_test(tc_master, test_master_recv);
-    suite_add_tcase(s, tc_master);
+    // parent test case
+    TCase *tc_parent = tcase_create("parent");
+    tcase_add_test(tc_parent, test_parent_init);
+    tcase_add_test(tc_parent, test_parent_signal);
+    tcase_add_test(tc_parent, test_parent_req);
+    tcase_add_test(tc_parent, test_parent_check);
+    tcase_add_test(tc_parent, test_parent_send);
+    tcase_add_test(tc_parent, test_parent_open_close);
+    tcase_add_test(tc_parent, test_parent_socket);
+    tcase_add_test(tc_parent, test_parent_multi);
+    tcase_add_test(tc_parent, test_parent_recv);
+    suite_add_tcase(s, tc_parent);
 
     ifname = "lo";
     ifindex = if_nametoindex(ifname);
@@ -645,7 +645,7 @@ Suite * master_suite (void) {
 
 int main (void) {
     int number_failed;
-    Suite *s = master_suite ();
+    Suite *s = parent_suite ();
     SRunner *sr = srunner_create (s);
     srunner_run_all (sr, CK_NORMAL);
     number_failed = srunner_ntests_failed (sr);

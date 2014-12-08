@@ -28,7 +28,7 @@
  * added extended GRAB macros
  */
 
-void tlv_value_str(struct master_msg *, uint16_t, uint16_t, void *);
+void tlv_value_str(struct parent_msg *, uint16_t, uint16_t, void *);
 char * tlv_str_copy(void *pos, size_t length);
 char * tlv_str_cap(uint16_t cap);
 char * tlv_str_addr(uint8_t type, void *pos, size_t length);

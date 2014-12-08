@@ -80,7 +80,7 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct my_sysinfo *sysinfo,
     int count = 0;
     int type, enabled;
     uint32_t index;
-    struct master_req mreq = {};
+    struct parent_req mreq = {};
 
 #ifdef AF_PACKET
     struct sockaddr_ll saddrll;

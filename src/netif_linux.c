@@ -91,7 +91,7 @@ static int netif_type(int sockfd, uint32_t index,
 	return(NETIF_WIRELESS);
 
 #ifdef HAVE_SYSFS
-    struct master_req mreq = {};
+    struct parent_req mreq = {};
 
     mreq.op = MASTER_DEVICE;
     mreq.index = index;
@@ -145,7 +145,7 @@ static int netif_type(int sockfd, uint32_t index,
 static void netif_driver(int sockfd, uint32_t index, struct ifreq *ifr,
 		    char *dname, size_t len) {
 #if HAVE_LINUX_ETHTOOL_H
-    struct master_req mreq = {};
+    struct parent_req mreq = {};
     struct ethtool_drvinfo drvinfo = {};
 
     memset(dname, 0, len);
@@ -187,7 +187,7 @@ static void netif_device_id(int sockfd, struct netif *netif, struct ifreq *ifr) 
     netif->device_identified = 1;
 
 #if defined(HAVE_PCI_PCI_H)
-    struct master_req mreq = {};
+    struct parent_req mreq = {};
 
     mreq.op = MASTER_DEVICE_ID;
     mreq.index = netif->index;
@@ -337,7 +337,7 @@ static void netif_physical(int sockfd, struct netif *netif) {
 
 #if HAVE_LINUX_ETHTOOL_H
     struct ethtool_cmd ecmd;
-    struct master_req mreq = {};
+    struct parent_req mreq = {};
 
     int ecmd_to_lldp_pmd[][2] = {
 	{ADVERTISED_10baseT_Half,   LLDP_MAU_PMD_10BASE_T},

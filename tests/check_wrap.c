@@ -138,7 +138,7 @@ MWRAP(__vsyslog_chk, void, (int p, int __flag, const char *fmt, va_list ap)) {
     vsnprintf(check_wrap_errstr, 1024, fmt, ap);
 }
 
-void read_packet(struct master_msg *msg, const char *suffix) {
+void read_packet(struct parent_msg *msg, const char *suffix) {
     char *prefix, *path = NULL;
 
     pcap_t *p = NULL;

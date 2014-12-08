@@ -149,7 +149,7 @@ START_TEST(test_my) {
 END_TEST
 
 START_TEST(test_my_mreq) {
-    struct master_req mreq = {};
+    struct parent_req mreq = {};
     int spair[2];
     extern int msock;
     size_t ret;
@@ -178,7 +178,7 @@ START_TEST(test_my_mreq) {
 	"incorrect size %lu returned from my_mreq", ret);
 
     mark_point();
-    errstr = "invalid reply received from master";
+    errstr = "invalid reply received from parent";
     WRAP_WRITE(spair[0], &mreq, ETHER_MIN_LEN);
     WRAP_FATAL_START();
     my_mreq(&mreq);
@@ -197,8 +197,8 @@ START_TEST(test_netif) {
     struct netif tnetifs[6];
     struct netif *netif = NULL, *subif = NULL;
     struct mhead mqueue;
-    struct master_msg *msg = NULL, *nmsg = NULL;
-    struct master_req *mreq = NULL;
+    struct parent_msg *msg = NULL, *nmsg = NULL;
+    struct parent_req *mreq = NULL;
     char *descr = NULL;
     int spair[2];
     ssize_t len;
@@ -774,7 +774,7 @@ START_TEST(test_pcap) {
     const char *errstr = NULL;
     char buf[1024];
     struct pcap_file_header pcap_fhdr = {};
-    struct master_msg msg = {};
+    struct parent_msg msg = {};
 
     loglevel = INFO;
     my_socketpair(spair);

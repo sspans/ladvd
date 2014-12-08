@@ -38,7 +38,7 @@ extern struct my_sysinfo sysinfo;
 extern int msock;
 
 START_TEST(test_child_init) {
-    struct master_req *mreq;
+    struct parent_req *mreq;
     struct netif *netif, *nnetif;
     const char *errstr = NULL;
     int spair[2], null;
@@ -93,7 +93,7 @@ START_TEST(test_child_init) {
 END_TEST
 
 START_TEST(test_child_send) {
-    struct master_req *mreq;
+    struct parent_req *mreq;
     struct netif *netif, *nnetif;
     int spair[2], null;
     struct child_send_args args = { .index = -1 };
@@ -150,7 +150,7 @@ START_TEST(test_child_send) {
 END_TEST
 
 START_TEST(test_child_queue) {
-    struct master_msg msg, *dmsg, *nmsg;
+    struct parent_msg msg, *dmsg, *nmsg;
     struct netif netif;
     struct ether_hdr ether;
     static uint8_t lldp_dst[] = LLDP_MULTICAST_ADDR;
@@ -160,13 +160,13 @@ START_TEST(test_child_queue) {
 
     loglevel = INFO;
     my_socketpair(spair);
-    memset(&msg, 0, sizeof(struct master_msg));
+    memset(&msg, 0, sizeof(struct parent_msg));
     msg.len = ETHER_MIN_LEN;
     msg.proto = PROTO_LLDP;
 
     // unknown interface
     mark_point();
-    errstr = "receiving message from master";
+    errstr = "receiving message from parent";
     WRAP_WRITE(spair[0], &msg, MASTER_MSG_LEN(msg.len));
     child_queue(spair[1], event);
     fail_unless(strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
@@ -240,7 +240,7 @@ END_TEST
 
 START_TEST(test_child_expire) {
     const char *errstr = NULL;
-    struct master_msg msg, *dmsg;
+    struct parent_msg msg, *dmsg;
     struct netif netif;
     int spair[2], count;
     short event = 0;
@@ -253,7 +253,7 @@ START_TEST(test_child_expire) {
     strlcpy(netif.name, ifname, IFNAMSIZ);
     TAILQ_INSERT_TAIL(&netifs, &netif, entries);
 
-    memset(&msg, 0, sizeof(struct master_msg));
+    memset(&msg, 0, sizeof(struct parent_msg));
     msg.index = ifindex;
     msg.len = ETHER_MIN_LEN;
     msg.proto = PROTO_LLDP;
@@ -356,7 +356,7 @@ START_TEST(test_child_cli) {
     struct sockaddr_in sa;
     socklen_t len = sizeof(sa);
     pid_t pid;
-    struct master_msg msg;
+    struct parent_msg msg;
     struct ether_hdr ether;
     static uint8_t lldp_dst[] = LLDP_MULTICAST_ADDR;
     struct netif netif;
@@ -374,7 +374,7 @@ START_TEST(test_child_cli) {
     strlcpy(netif.name, ifname, IFNAMSIZ);
     TAILQ_INSERT_TAIL(&netifs, &netif, entries);
 
-    memset(&msg, 0, sizeof(struct master_msg));
+    memset(&msg, 0, sizeof(struct parent_msg));
     msg.len = ETHER_MIN_LEN;
     msg.index = ifindex;
 

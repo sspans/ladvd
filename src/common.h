@@ -225,7 +225,7 @@ struct my_sysinfo {
 
 extern uint32_t options;
 
-struct master_req {
+struct parent_req {
     uint8_t op;
     uint32_t index;
     char name[IFNAMSIZ];
@@ -233,8 +233,8 @@ struct master_req {
     char buf[512];
 };
 
-#define MASTER_REQ_MIN	    offsetof(struct master_req, buf)
-#define MASTER_REQ_MAX	    sizeof(struct master_req)
+#define MASTER_REQ_MIN	    offsetof(struct parent_req, buf)
+#define MASTER_REQ_MAX	    sizeof(struct parent_req)
 #define MASTER_REQ_LEN(l)   MASTER_REQ_MIN + l
 
 #define DECODE_STR	1
@@ -262,7 +262,7 @@ void peer_free(char *p[]) {
     }
 }
 
-struct master_msg {
+struct parent_msg {
     uint32_t index;
     char name[IFNAMSIZ];
     uint8_t proto;
@@ -277,14 +277,14 @@ struct master_msg {
     uint8_t lock;
 
     // should be last
-    TAILQ_ENTRY(master_msg) entries;
+    TAILQ_ENTRY(parent_msg) entries;
 };
 
-TAILQ_HEAD(mhead, master_msg);
+TAILQ_HEAD(mhead, parent_msg);
 
-#define MASTER_MSG_MIN	    offsetof(struct master_msg, msg)
-#define MASTER_MSG_MAX	    offsetof(struct master_msg, decode)
-#define MASTER_MSG_SIZ	    sizeof(struct master_msg)
+#define MASTER_MSG_MIN	    offsetof(struct parent_msg, msg)
+#define MASTER_MSG_MAX	    offsetof(struct parent_msg, decode)
+#define MASTER_MSG_SIZ	    sizeof(struct parent_msg)
 #define MASTER_MSG_LEN(l)   MASTER_MSG_MIN + l
 #define MASTER_OPEN	    0
 #define MASTER_CLOSE	    1
@@ -305,13 +305,13 @@ struct proto {
     size_t (* const build) (uint8_t, void *, struct netif *, struct nhead *,
 			    struct my_sysinfo *);
     unsigned char * (* const check) (void *, size_t);
-    size_t (* const decode) (struct master_msg *);
+    size_t (* const decode) (struct parent_msg *);
 };
 
 void cli_main(int argc, char *argv[]) __noreturn;
 void child_init(int reqfd, int msgfd, int ifc, char *ifl[], struct passwd *pwd);
-void master_init(int reqfd, int msgfd, pid_t pid);
-void master_signal(int fd, short event, void *pid);
+void parent_init(int reqfd, int msgfd, pid_t pid);
+void parent_signal(int fd, short event, void *pid);
 
 void sysinfo_fetch(struct my_sysinfo *);
 void netif_init();

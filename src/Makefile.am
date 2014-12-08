@@ -17,7 +17,7 @@ libproto_la_SOURCES = proto/protos.h proto/tlv.c proto/tlv.h \
 	proto/edp.c proto/edp.h \
 	proto/fdp.c proto/fdp.h \
 	proto/ndp.c proto/ndp.h
-libmisc_la_SOURCES = $(common_headers) child.h child.c master.h master.c \
+libmisc_la_SOURCES = $(common_headers) child.h child.c parent.h parent.c \
 	cli.h cli.c util.c sysinfo.c netif.c
 
 sbin_PROGRAMS = ladvd

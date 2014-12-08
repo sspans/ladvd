@@ -2,7 +2,7 @@
 
 TESTS = $(check_PROGRAMS)
 check_PROGRAMS = check_compat check_proto check_util check_tlv \
-		check_master check_child check_cli
+		check_parent check_child check_cli
 
 EXTRA_DIST = proto testfile
 
@@ -25,8 +25,8 @@ check_compat_SOURCES = check_compat.c $(top_srcdir)/src/compat/compat.h
 check_util_SOURCES = check_util.c $(common_headers)
 check_tlv_SOURCES = check_tlv.c $(common_headers)
 check_proto_SOURCES = check_proto.c $(common_headers)
-check_master_SOURCES = check_master.c $(common_headers) \
-	$(top_srcdir)/src/main.h $(top_srcdir)/src/master.h
+check_parent_SOURCES = check_parent.c $(common_headers) \
+	$(top_srcdir)/src/main.h $(top_srcdir)/src/parent.h
 check_child_SOURCES = check_child.c $(common_headers) \
 	$(top_srcdir)/src/main.h $(top_srcdir)/src/child.h
 check_cli_SOURCES = check_cli.c $(common_headers) $(top_srcdir)/src/cli.h

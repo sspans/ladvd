@@ -256,11 +256,11 @@ int main(int argc, char *argv[]) {
 	close(cpair[0]);
 	close(mpair[0]);
 
-	// enter the master loop
-	master_init(cpair[1], mpair[1], pid);
+	// enter the parent loop
+	parent_init(cpair[1], mpair[1], pid);
 
 	// not reached
-	my_fatal("master process failed");
+	my_fatal("parent process failed");
 
     } else {
 

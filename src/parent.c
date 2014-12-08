@@ -20,7 +20,7 @@
 #include "common.h"
 #include "util.h"
 #include "proto/protos.h"
-#include "master.h"
+#include "parent.h"
 #include <sys/select.h>
 #include <sys/wait.h>
 #include <ctype.h>
@@ -74,7 +74,7 @@ int dfd = -1;
 
 extern struct proto protos[];
 
-void master_init(int reqfd, int msgfd, pid_t child) {
+void parent_init(int reqfd, int msgfd, pid_t child) {
 
     // events
     struct event ev_cmd, ev_msg;
@@ -89,7 +89,7 @@ void master_init(int reqfd, int msgfd, pid_t child) {
     TAILQ_INIT(&rawfds);
 
     // proctitle
-    setproctitle("master [priv]");
+    setproctitle("parent [priv]");
 
     // setup global sockets
     sock = my_socket(AF_INET, SOCK_DGRAM, 0);
@@ -126,16 +126,16 @@ void master_init(int reqfd, int msgfd, pid_t child) {
     event_init();
 
     // listen for request and messages from the child
-    event_set(&ev_cmd, reqfd, EV_READ|EV_PERSIST, (void *)master_req, NULL);
-    event_set(&ev_msg, msgfd, EV_READ|EV_PERSIST, (void *)master_send, NULL);
+    event_set(&ev_cmd, reqfd, EV_READ|EV_PERSIST, (void *)parent_req, NULL);
+    event_set(&ev_msg, msgfd, EV_READ|EV_PERSIST, (void *)parent_send, NULL);
     event_add(&ev_cmd, NULL);
     event_add(&ev_msg, NULL);
 
     // handle signals
-    signal_set(&ev_sigchld, SIGCHLD, master_signal, &child);
-    signal_set(&ev_sigint, SIGINT, master_signal, &child);
-    signal_set(&ev_sigterm, SIGTERM, master_signal, &child);
-    signal_set(&ev_sighup, SIGHUP, master_signal, NULL);
+    signal_set(&ev_sigchld, SIGCHLD, parent_signal, &child);
+    signal_set(&ev_sigint, SIGINT, parent_signal, &child);
+    signal_set(&ev_sigterm, SIGTERM, parent_signal, &child);
+    signal_set(&ev_sighup, SIGHUP, parent_signal, NULL);
     signal_add(&ev_sigchld, NULL);
     signal_add(&ev_sigint, NULL);
     signal_add(&ev_sigterm, NULL);
@@ -149,11 +149,11 @@ void master_init(int reqfd, int msgfd, pid_t child) {
     event_dispatch();
 
     // not reached
-    my_fatal("master event-loop failed");
+    my_fatal("parent event-loop failed");
 }
 
 
-void master_signal(int sig, short event, void *pid) {
+void parent_signal(int sig, short event, void *pid) {
     int status;
 
     switch (sig) {
@@ -186,8 +186,8 @@ void master_signal(int sig, short event, void *pid) {
 }
 
 
-void master_req(int reqfd, short event) {
-    struct master_req mreq = {};
+void parent_req(int reqfd, short event) {
+    struct parent_req mreq = {};
     struct rawfd *rfd;
     ssize_t len;
 
@@ -205,40 +205,40 @@ void master_req(int reqfd, short event) {
     }
 
     // validate request
-    if (master_check(&mreq) != EXIT_SUCCESS)
+    if (parent_check(&mreq) != EXIT_SUCCESS)
 	my_fatal("invalid request supplied");
 
     switch (mreq.op) {
 	// open socket
 	case MASTER_OPEN:
 	    if ((rfd = rfd_byindex(&rawfds, mreq.index)) == NULL)
-		master_open(mreq.index, mreq.name);
+		parent_open(mreq.index, mreq.name);
 	    break;
 	// close socket
 	case MASTER_CLOSE:
 	    if ((rfd = rfd_byindex(&rawfds, mreq.index)) != NULL)
-		master_close(rfd);
+		parent_close(rfd);
 	    break;
 #if HAVE_LINUX_ETHTOOL_H
 	// fetch ethtool details
 	case MASTER_ETHTOOL_GSET:
 	case MASTER_ETHTOOL_GDRV:
-	    mreq.len = master_ethtool(&mreq);
+	    mreq.len = parent_ethtool(&mreq);
 	    break;
 #endif /* HAVE_LINUX_ETHTOOL_H */
 	// manage interface description
 	case MASTER_DESCR:
 	case MASTER_ALIAS:
-	    mreq.len = master_descr(&mreq);
+	    mreq.len = parent_descr(&mreq);
 	    break;
 #ifdef HAVE_SYSFS
 	case MASTER_DEVICE:
-	    mreq.len = master_device(&mreq);
+	    mreq.len = parent_device(&mreq);
 	    break;
 #endif /* HAVE_SYSFS */
 #if defined(HAVE_SYSFS) && defined(HAVE_PCI_PCI_H)
 	case MASTER_DEVICE_ID:
-	    mreq.len = master_device_id(&mreq);
+	    mreq.len = parent_device_id(&mreq);
 	    break;
 #endif /* HAVE_SYSFS && HAVE_PCI_PCI_H */
 	// invalid request
@@ -253,7 +253,7 @@ out:
 }
 
 
-int master_check(struct master_req *mreq) {
+int parent_check(struct parent_req *mreq) {
 
     assert(mreq);
     assert(mreq->len <= ETHER_MAX_LEN);
@@ -294,8 +294,8 @@ int master_check(struct master_req *mreq) {
 }
 
 
-void master_send(int msgfd, short event) {
-    struct master_msg msend = {};
+void parent_send(int msgfd, short event) {
+    struct parent_msg msend = {};
     struct rawfd *rfd = NULL;
     ssize_t len;
 
@@ -323,7 +323,7 @@ void master_send(int msgfd, short event) {
 
     // create rfd if needed
     if (rfd_byindex(&rawfds, msend.index) == NULL)
-	master_open(msend.index, msend.name);
+	parent_open(msend.index, msend.name);
 
     assert((rfd = rfd_byindex(&rawfds, msend.index)) != NULL);
     len = write(rfd->fd, msend.msg, msend.len);
@@ -331,7 +331,7 @@ void master_send(int msgfd, short event) {
     // close the socket if the device vanished
     // if needed a new socket will be created on the next run
     if ((len == -1) && ((errno == ENODEV) || (errno == EIO)))
-	master_close(rfd);
+	parent_close(rfd);
 
     if (len != msend.len)
 	my_loge(WARN, "only %zi bytes written", len);
@@ -340,7 +340,7 @@ void master_send(int msgfd, short event) {
 }
 
 
-void master_open(const uint32_t index, const char *name) {
+void parent_open(const uint32_t index, const char *name) {
     struct rawfd *rfd = NULL;
 
     assert(name != NULL);
@@ -351,7 +351,7 @@ void master_open(const uint32_t index, const char *name) {
     rfd->index = index;
     strlcpy(rfd->name, name, IFNAMSIZ);
 
-    rfd->fd = master_socket(rfd);
+    rfd->fd = parent_socket(rfd);
     if (rfd->fd < 0)
 	my_fatal("opening raw socket failed");
 
@@ -359,22 +359,22 @@ void master_open(const uint32_t index, const char *name) {
 	return;
 
     // register multicast membership
-    master_multi(rfd, protos, 1);
+    parent_multi(rfd, protos, 1);
 
     // listen for received packets
     event_set(&rfd->event, rfd->fd, EV_READ|EV_PERSIST,
-	(void *)master_recv, rfd);
+	(void *)parent_recv, rfd);
     event_add(&rfd->event, NULL);
 
     return;
 }
 
-void master_close(struct rawfd *rfd) {
+void parent_close(struct rawfd *rfd) {
     assert(rfd != NULL);
 
     if ((options & OPT_RECV) && !(options & OPT_DEBUG)) {
 	// unregister multicast membership
-	master_multi(rfd, protos, 0);
+	parent_multi(rfd, protos, 0);
 	// delete event
 	event_del(&rfd->event);
     }
@@ -389,7 +389,7 @@ void master_close(struct rawfd *rfd) {
 }
 
 #if HAVE_LINUX_ETHTOOL_H
-ssize_t master_ethtool(struct master_req *mreq) {
+ssize_t parent_ethtool(struct parent_req *mreq) {
     struct ifreq ifr = {};
     struct ethtool_cmd ecmd = {};
     struct ethtool_drvinfo edrvinfo = {};
@@ -421,7 +421,7 @@ ssize_t master_ethtool(struct master_req *mreq) {
 }
 #endif /* HAVE_LINUX_ETHTOOL_H */
 
-ssize_t master_descr(struct master_req *mreq) {
+ssize_t parent_descr(struct parent_req *mreq) {
 #ifdef HAVE_SYSFS
     char path[SYSFS_PATH_MAX];
     struct stat sb;
@@ -466,7 +466,7 @@ ssize_t master_descr(struct master_req *mreq) {
 }
 
 #ifdef HAVE_SYSFS
-ssize_t master_device(struct master_req *mreq) {
+ssize_t parent_device(struct parent_req *mreq) {
     char path[SYSFS_PATH_MAX];
     struct stat sb;
     ssize_t ret = 0;
@@ -482,7 +482,7 @@ ssize_t master_device(struct master_req *mreq) {
 #endif /* HAVE_SYSFS */
 
 #if defined(HAVE_SYSFS) && defined(HAVE_PCI_PCI_H)
-ssize_t master_device_id(struct master_req *mreq) {
+ssize_t parent_device_id(struct parent_req *mreq) {
     uint16_t device_id = 0, vendor_id = 0;
     static struct pci_access *pacc = NULL;
     char path[SYSFS_PATH_MAX], id_str[16];
@@ -550,7 +550,7 @@ ssize_t master_device_id(struct master_req *mreq) {
 }
 #endif /* HAVE_SYSFS && HAVE_PCI_PCI_H */
 
-int master_socket(struct rawfd *rfd) {
+int parent_socket(struct rawfd *rfd) {
     pcap_t *p_handle = NULL;
     char p_errbuf[PCAP_ERRBUF_SIZE] = {};
     struct bpf_program fprog = {};
@@ -617,7 +617,7 @@ int master_socket(struct rawfd *rfd) {
 }
 
 
-void master_multi(struct rawfd *rfd, struct proto *protos, int op) {
+void parent_multi(struct rawfd *rfd, struct proto *protos, int op) {
 
 #ifdef AF_PACKET
     struct packet_mreq mreq = {};
@@ -678,9 +678,9 @@ void master_multi(struct rawfd *rfd, struct proto *protos, int op) {
 }
 
 
-void master_recv(int fd, short event, struct rawfd *rfd) {
+void parent_recv(int fd, short event, struct rawfd *rfd) {
     // packet
-    struct master_msg mrecv = {};
+    struct parent_msg mrecv = {};
     struct pcap_pkthdr p_pkthdr = {};
     const unsigned char *data = NULL;
     struct ether_hdr *ether;

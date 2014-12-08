@@ -10,7 +10,7 @@ ladvd is a lldp / cdp / edp / fdp / ndp sender for Unix.
 
 ladvd uses link-layer advertisements to inform switches about connected
 hosts, which simplifies Ethernet switch management. It does this by forking
-into a privileged master which handles all raw sockets (and certain ioctls),
+into a privileged parent which handles all raw sockets (and certain ioctls),
 and an unprivileged child which creates and parses all packets.
 Every 30 seconds the child generates advertisement frames reflecting the
 current system state. Interfaces (bridge, bonding, wireless),

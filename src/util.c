@@ -71,7 +71,7 @@ void __my_fatal(const char *func, int err, const char *fmt, ...) {
 
     // exit via a sigterm signal
     if (pid)
-	master_signal(SIGTERM, 0, &pid);
+	parent_signal(SIGTERM, 0, &pid);
 
     exit(EXIT_FAILURE);
 }
@@ -286,7 +286,7 @@ uint16_t my_chksum(const void *data, size_t length, int cisco) {
     return (uint16_t)~sum;
 }
 
-ssize_t my_mreq(struct master_req *mreq) {
+ssize_t my_mreq(struct parent_req *mreq) {
     ssize_t len = 0;
 
     assert(mreq != NULL);
@@ -298,7 +298,7 @@ ssize_t my_mreq(struct master_req *mreq) {
     memset(mreq, 0, MASTER_REQ_MAX);
     len = read(msock, mreq, MASTER_REQ_MAX);
     if (len < MASTER_REQ_MIN || len != MASTER_REQ_LEN(mreq->len))
-	my_fatal("invalid reply received from master");
+	my_fatal("invalid reply received from parent");
 
     return(mreq->len);
 };
@@ -364,7 +364,7 @@ int netif_excluded(struct netif *netif, struct ehead *exclifs) {
 
 void netif_protos(struct netif *netif, struct mhead *mqueue) {
     struct netif *subif = NULL;
-    struct master_msg *qmsg = NULL;
+    struct parent_msg *qmsg = NULL;
     uint16_t protos = 0;
     
     while ((subif = subif_iter(subif, netif)) != NULL) {
@@ -377,8 +377,8 @@ void netif_protos(struct netif *netif, struct mhead *mqueue) {
 }
 
 void netif_descr(struct netif *netif, struct mhead *mqueue) {
-    struct master_msg *qmsg = NULL;
-    struct master_req *mreq = NULL;
+    struct parent_msg *qmsg = NULL;
+    struct parent_req *mreq = NULL;
     char *peer = NULL, *suffix = NULL;
     char descr[IFDESCRSIZE] = {};
     char paddr[ETHER_ADDR_LEN] = {};
@@ -480,7 +480,7 @@ void my_pcap_init(int fd) {
     fflush(p_fd);
 }
 
-void my_pcap_write(struct master_msg *msg) {
+void my_pcap_write(struct parent_msg *msg) {
     struct pcap_pkthdr pcap_rec_hdr = {};
     struct timeval tv = {};
 

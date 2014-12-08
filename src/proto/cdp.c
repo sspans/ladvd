@@ -58,16 +58,16 @@ static const struct type_str cdp_tlv_types[] = {
 };
 
 static tlv_t type;
-static int cdp_header_check(struct master_msg *, unsigned char *, size_t);
-static int cdp_system_name(struct master_msg *, unsigned char *, size_t,
+static int cdp_header_check(struct parent_msg *, unsigned char *, size_t);
+static int cdp_system_name(struct parent_msg *, unsigned char *, size_t,
 			    uint16_t);
-static int cdp_port_id(struct master_msg *, unsigned char *, size_t);
-static int cdp_system_cap(struct master_msg *, unsigned char *, size_t);
-static int cdp_addr(struct master_msg *, unsigned char *, size_t, uint16_t);
-static int cdp_vlan(struct master_msg *, unsigned char *, size_t);
+static int cdp_port_id(struct parent_msg *, unsigned char *, size_t);
+static int cdp_system_cap(struct parent_msg *, unsigned char *, size_t);
+static int cdp_addr(struct parent_msg *, unsigned char *, size_t, uint16_t);
+static int cdp_vlan(struct parent_msg *, unsigned char *, size_t);
 static int cdp_descr_print(uint16_t, unsigned char *, size_t);
-static int cdp_vtp_print(struct master_msg *, unsigned char *, size_t);
-static int cdp_duplex_print(struct master_msg *, unsigned char *, size_t);
+static int cdp_vtp_print(struct parent_msg *, unsigned char *, size_t);
+static int cdp_duplex_print(struct parent_msg *, unsigned char *, size_t);
 
 
 size_t cdp_packet(uint8_t proto, void *packet, struct netif *netif,
@@ -347,7 +347,7 @@ unsigned char * cdp_check(void *packet, size_t length) {
     return(NULL);
 }
 
-size_t cdp_decode(struct master_msg *msg) {
+size_t cdp_decode(struct parent_msg *msg) {
 
     unsigned char *packet = NULL;
     size_t length;
@@ -442,7 +442,7 @@ size_t cdp_decode(struct master_msg *msg) {
     return(VOIDP_DIFF(pos, packet));
 }
 
-static int cdp_header_check(struct master_msg *msg, 
+static int cdp_header_check(struct parent_msg *msg, 
     unsigned char *pos, size_t length) {
 
     struct cdp_header cdp;
@@ -479,7 +479,7 @@ static int cdp_header_check(struct master_msg *msg,
     return 1;
 }
 
-static int cdp_system_name(struct master_msg *msg, 
+static int cdp_system_name(struct parent_msg *msg, 
     unsigned char *pos, size_t length, uint16_t tlv_type) {
 
     char *str = NULL;
@@ -497,7 +497,7 @@ static int cdp_system_name(struct master_msg *msg,
     return 1;
 }
 
-static int cdp_port_id(struct master_msg *msg, 
+static int cdp_port_id(struct parent_msg *msg, 
     unsigned char *pos, size_t length) {
 
     char *str = NULL;
@@ -547,7 +547,7 @@ static int cdp_descr_print(uint16_t tlv_type,
     return 1;
 }
 
-static int cdp_system_cap(struct master_msg *msg,
+static int cdp_system_cap(struct parent_msg *msg,
     unsigned char *pos, size_t length) {
 
     uint32_t cdp_cap = 0;
@@ -577,7 +577,7 @@ static int cdp_system_cap(struct master_msg *msg,
     return 1;
 }
 
-static int cdp_addr(struct master_msg *msg,
+static int cdp_addr(struct parent_msg *msg,
     unsigned char *pos, size_t length, uint16_t tlv_type) {
 
     char *str = NULL;
@@ -653,7 +653,7 @@ next_addr:
     return 1;
 }
 
-static int cdp_vlan(struct master_msg *msg, 
+static int cdp_vlan(struct parent_msg *msg, 
     unsigned char *pos, size_t length) {
 
     char *str = NULL;
@@ -673,7 +673,7 @@ static int cdp_vlan(struct master_msg *msg,
     return 1;
 }
 
-static int cdp_vtp_print(struct master_msg *msg, 
+static int cdp_vtp_print(struct parent_msg *msg, 
     unsigned char *pos, size_t length) {
 
     char *str = NULL;
@@ -685,7 +685,7 @@ static int cdp_vtp_print(struct master_msg *msg,
     return 1;
 }
 
-static int cdp_duplex_print(struct master_msg *msg, 
+static int cdp_duplex_print(struct parent_msg *msg, 
     unsigned char *pos, size_t length) {
 
     uint8_t duplex = 0;
