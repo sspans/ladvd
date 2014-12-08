@@ -45,4 +45,7 @@ size_t strlcat(char *dst, const char *src, size_t siz);
 	    (var) = (tvar))
 #endif
 
+#include <sys/uio.h>
+#include <compat/imsg.h>
+
 #endif /* _compat_h */
