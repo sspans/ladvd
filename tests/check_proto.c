@@ -31,7 +31,7 @@ uint32_t options = OPT_DAEMON | OPT_CHECK;
 
 START_TEST(test_proto_packet) {
     struct parent_msg msg = {};
-    struct netif master, netif, vlan1, vlan2;
+    struct netif parent, netif, vlan1, vlan2;
     struct nhead netifs;
     struct my_sysinfo sysinfo = {};
 
@@ -57,20 +57,20 @@ START_TEST(test_proto_packet) {
     strlcpy(sysinfo.hinv.model_name, "lala", LLDP_INVENTORY_SIZE);  
     strlcpy(sysinfo.hinv.asset_id, "lala", LLDP_INVENTORY_SIZE);  
 
-    sysinfo.mnetif = &master;
+    sysinfo.mnetif = &parent;
 
-    memset(&master, 0, sizeof(struct netif));
-    master.index = 3;
-    master.argv = 1;
-    master.slave = 0;
-    master.bonding_mode = NETIF_BONDING_LACP;
-    master.type = NETIF_BONDING;
+    memset(&parent, 0, sizeof(struct netif));
+    parent.index = 3;
+    parent.argv = 1;
+    parent.slave = 0;
+    parent.bonding_mode = NETIF_BONDING_LACP;
+    parent.type = NETIF_BONDING;
     netif.mtu = 1500;
-    master.subif = &netif;
-    master.master = NULL;
-    master.ipaddr4 = htonl(0x7f000001);
-    memset(master.ipaddr6, 'a', sizeof(master.ipaddr6));
-    strlcpy(master.name, "bond0", IFNAMSIZ);
+    parent.subif = &netif;
+    parent.parent = NULL;
+    parent.ipaddr4 = htonl(0x7f000001);
+    memset(parent.ipaddr6, 'a', sizeof(parent.ipaddr6));
+    strlcpy(parent.name, "bond0", IFNAMSIZ);
 
     memset(&netif, 0, sizeof(struct netif));
     netif.index = 1;
@@ -80,9 +80,9 @@ START_TEST(test_proto_packet) {
     netif.mtu = 9000;
     netif.duplex = 1;
     netif.subif = NULL;
-    netif.master = &master;
-    master.ipaddr4 = htonl(0xa0000001);
-    memset(master.ipaddr6, 'b', sizeof(master.ipaddr6));
+    netif.parent = &parent;
+    parent.ipaddr4 = htonl(0xa0000001);
+    memset(parent.ipaddr6, 'b', sizeof(parent.ipaddr6));
     strlcpy(netif.name, "eth0", IFNAMSIZ);
     strlcpy(netif.device_name, "KittenNic Turbo", IFDESCRSIZE);
     strlcpy(netif.description, "utp naar de buren", IFNAMSIZ);
@@ -106,7 +106,7 @@ START_TEST(test_proto_packet) {
 
     TAILQ_INIT(&netifs);
     TAILQ_INSERT_TAIL(&netifs, &netif, entries);
-    TAILQ_INSERT_TAIL(&netifs, &master, entries);
+    TAILQ_INSERT_TAIL(&netifs, &parent, entries);
     TAILQ_INSERT_TAIL(&netifs, &vlan1, entries);
     TAILQ_INSERT_TAIL(&netifs, &vlan2, entries);
 
@@ -126,7 +126,7 @@ START_TEST(test_proto_packet) {
     mark_point();
     sysinfo.cap = CAP_HOST;
     sysinfo.cap_active = CAP_HOST;
-    netif.master = NULL;
+    netif.parent = NULL;
     msg.len = lldp_packet(PROTO_LLDP, msg.msg, &netif, &netifs, &sysinfo);
     fail_unless(msg.len == 265, "length should not be %d", msg.len);
     msg.len = cdp_packet(PROTO_CDP, msg.msg, &netif, &netifs, &sysinfo);
@@ -168,7 +168,7 @@ START_TEST(test_proto_packet) {
     sysinfo.cap = CAP_HOST;
     sysinfo.cap_active = CAP_HOST;
     options |= OPT_IFDESCR;
-    netif.master = NULL;
+    netif.parent = NULL;
     msg.len = lldp_packet(PROTO_LLDP, msg.msg, &netif, &netifs, &sysinfo);
     fail_unless(msg.len == 265, "length should not be %d", msg.len);
     options &= ~OPT_IFDESCR;

@@ -37,7 +37,7 @@ size_t fdp_packet(uint8_t proto, void *packet, struct netif *netif,
 
     void *fdp_start, *cap_str;
     uint8_t addr_count = 0;
-    struct netif *master, *mgmt;
+    struct netif *parent, *mgmt;
 
     const uint8_t fdp_dst[] = FDP_MULTICAST_ADDR;
     const uint8_t llc_org[] = LLC_ORG_FOUNDRY;
@@ -45,16 +45,16 @@ size_t fdp_packet(uint8_t proto, void *packet, struct netif *netif,
 	ADDR_PROTO_CLNP, ADDR_PROTO_IPV4, ADDR_PROTO_IPV6,
     };
 
-    // fixup master netif
-    if (netif->master != NULL)
-	master = netif->master;
+    // fixup parent netif
+    if (netif->parent != NULL)
+	parent = netif->parent;
     else
-	master = netif;
+	parent = netif;
 
     // configure managment interface
     mgmt = sysinfo->mnetif;
     if (!mgmt)
-	mgmt = master;
+	mgmt = parent;
 
 
     // ethernet header

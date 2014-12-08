@@ -269,10 +269,10 @@ static void netif_device_id(int sockfd, struct netif *netif, struct ifreq *ifr) 
 }
 
 // handle aggregated interfaces
-static void netif_bond(int sockfd, struct nhead *netifs, struct netif *master,
+static void netif_bond(int sockfd, struct nhead *netifs, struct netif *parent,
 		struct ifreq *ifr) {
 #if HAVE_NET_IF_LAGG_H || HAVE_NET_IF_TRUNK_H || HAVE_NET_IF_BOND_VAR_H
-    struct netif *subif = NULL, *csubif = master;
+    struct netif *subif = NULL, *csubif = parent;
 #endif
 
 #if HAVE_NET_IF_LAGG_H
@@ -288,23 +288,23 @@ static void netif_bond(int sockfd, struct nhead *netifs, struct netif *master,
 #endif
 
 #if defined(HAVE_NET_IF_LAGG_H) || defined(HAVE_NET_IF_TRUNK_H)
-    strlcpy(ra.ra_ifname, master->name, sizeof(ra.ra_ifname));
+    strlcpy(ra.ra_ifname, parent->name, sizeof(ra.ra_ifname));
     ra.ra_size = sizeof(rpbuf);
     ra.ra_port = rpbuf;
 
 #ifdef HAVE_NET_IF_LAGG_H
     if (ioctl(sockfd, SIOCGLAGG, &ra) >= 0) {
 	if (ra.ra_proto == LAGG_PROTO_LACP)
-	    master->bonding_mode = NETIF_BONDING_LACP;
+	    parent->bonding_mode = NETIF_BONDING_LACP;
 	else if (ra.ra_proto == LAGG_PROTO_FAILOVER)
-	    master->bonding_mode = NETIF_BONDING_FAILOVER;
+	    parent->bonding_mode = NETIF_BONDING_FAILOVER;
     }
 #elif HAVE_NET_IF_TRUNK_H
     if (ioctl(sockfd, SIOCGTRUNK, &ra) >= 0) {
 	if (ra.ra_proto == TRUNK_PROTO_LACP)
-	    master->bonding_mode = NETIF_BONDING_LACP;
+	    parent->bonding_mode = NETIF_BONDING_LACP;
 	else if (ra.ra_proto == TRUNK_PROTO_FAILOVER)
-	    master->bonding_mode = NETIF_BONDING_FAILOVER;
+	    parent->bonding_mode = NETIF_BONDING_FAILOVER;
     }
 #endif
     
@@ -323,7 +323,7 @@ static void netif_bond(int sockfd, struct nhead *netifs, struct netif *master,
 		subif->slave = NETIF_SLAVE_BACKUP;
 		
 	    subif->lacp_index = i;
-	    subif->master = master;
+	    subif->parent = parent;
 	    csubif->subif = subif;
 	    csubif = subif;
 	}
@@ -337,12 +337,12 @@ static void netif_bond(int sockfd, struct nhead *netifs, struct netif *master,
     ibsr = &ibr.ibr_ibru.ibru_status;
     ibsr->ibsr_version = IF_BOND_STATUS_REQ_VERSION;
 
-    strlcpy(ifr->ifr_name, master->name, IFNAMSIZ);
+    strlcpy(ifr->ifr_name, parent->name, IFNAMSIZ);
     ifr->ifr_data = (caddr_t)&ibr;
 
     if (ioctl(sockfd, SIOCGIFBOND, ifr) >= 0)
 	if (ibsr->ibsr_mode == IF_BOND_MODE_LACP)
-	    master->bonding_mode = NETIF_BONDING_LACP;
+	    parent->bonding_mode = NETIF_BONDING_LACP;
 
     if (ibsr->ibsr_total <= 0) 
 	return;
@@ -361,7 +361,7 @@ static void netif_bond(int sockfd, struct nhead *netifs, struct netif *master,
 	    if ((subif != NULL) && (subif->type < NETIF_PARENT)) {
 		my_log(INFO, "found slave %s", subif->name);
 		subif->slave = NETIF_SLAVE_ACTIVE;
-		subif->master = master;
+		subif->parent = parent;
 		subif->lacp_index = i++;
 		csubif->subif = subif;
 		csubif = subif;
@@ -376,11 +376,11 @@ static void netif_bond(int sockfd, struct nhead *netifs, struct netif *master,
 
 
 // handle bridge interfaces
-static void netif_bridge(int sockfd, struct nhead *netifs, struct netif *master,
+static void netif_bridge(int sockfd, struct nhead *netifs, struct netif *parent,
 		  struct ifreq *ifr) {
 
 #if defined(HAVE_NET_IF_BRIDGEVAR_H) || defined(HAVE_NET_IF_BRIDGE_H)
-    struct netif *subif = NULL, *csubif = master;
+    struct netif *subif = NULL, *csubif = parent;
 
     struct ifbifconf bifc;
     struct ifbreq *req;
@@ -390,12 +390,12 @@ static void netif_bridge(int sockfd, struct nhead *netifs, struct netif *master,
 #ifdef HAVE_NET_IF_BRIDGEVAR_H
     struct ifdrv ifd = {};
 
-    strlcpy(ifd.ifd_name, master->name, sizeof(ifd.ifd_name));
+    strlcpy(ifd.ifd_name, parent->name, sizeof(ifd.ifd_name));
     ifd.ifd_cmd = BRDGGIFS;
     ifd.ifd_len = sizeof(bifc);
     ifd.ifd_data = &bifc;
 #elif HAVE_NET_IF_BRIDGE_H
-    strlcpy(bifc.ifbic_name, master->name, sizeof(bifc.ifbic_name));
+    strlcpy(bifc.ifbic_name, parent->name, sizeof(bifc.ifbic_name));
 #endif /* HAVE_NET_IF_BRIDGEVAR_H */
 
     for (;;) {
@@ -434,7 +434,7 @@ static void netif_bridge(int sockfd, struct nhead *netifs, struct netif *master,
 	if ((subif != NULL) && (subif->type < NETIF_PARENT)) {
 	    my_log(INFO, "found slave %s", subif->name);
 	    subif->slave = NETIF_SLAVE_ACTIVE;
-	    subif->master = master;
+	    subif->parent = parent;
 	    csubif->subif = subif;
 	    csubif = subif;
 	}

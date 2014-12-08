@@ -322,7 +322,7 @@ struct netif *netif_iter(struct netif *netif, struct nhead *netifs) {
 	if ((options & OPT_ARGV) && (netif->argv == 0))
 	    continue;
 
-	// skip masters without slaves
+	// skip parents without subifs
 	if ((netif->type > NETIF_PARENT) && (netif->subif == NULL)) {
 	    my_log(INFO, "skipping interface %s", netif->name);
 	    continue;

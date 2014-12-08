@@ -35,16 +35,16 @@ size_t ndp_packet(uint8_t proto, void *packet, struct netif *netif,
 
     uint8_t *pos = packet;
 
-    struct netif *master;
+    struct netif *parent;
 
     const uint8_t ndp_dst[] = NDP_MULTICAST_ADDR;
     const uint8_t llc_org[] = LLC_ORG_NORTEL;
 
-    // fixup master netif
-    if (netif->master != NULL)
-	master = netif->master;
+    // fixup parent netif
+    if (netif->parent != NULL)
+	parent = netif->parent;
     else
-	master = netif;
+	parent = netif;
 
     // ethernet header
     memcpy(ether.dst, ndp_dst, ETHER_ADDR_LEN);
@@ -60,7 +60,7 @@ size_t ndp_packet(uint8_t proto, void *packet, struct netif *netif,
     pos += sizeof(struct ether_llc);
 
     // ndp header
-    ndp.addr = master->ipaddr4;
+    ndp.addr = parent->ipaddr4;
     ndp.seg[2] = netif->index;
     ndp.chassis = NDP_CHASSIS_OTHER;
     ndp.backplane = NDP_BACKPLANE_ETH_FE_GE;

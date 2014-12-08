@@ -337,8 +337,8 @@ void child_queue(int fd, short event) {
 	rmsg.received = now;
 
     // fetch the parent netif
-    if (subif->master)
-	netif = subif->master;
+    if (subif->parent)
+	netif = subif->parent;
     else
 	netif = subif;
 
@@ -444,8 +444,8 @@ void child_expire() {
 	    continue;
 
 	// fetch the parent netif
-	if (subif->master)
-	    netif = subif->master;
+	if (subif->parent)
+	    netif = subif->parent;
 	else
 	    netif = subif;
 

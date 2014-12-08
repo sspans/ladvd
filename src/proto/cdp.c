@@ -84,16 +84,16 @@ size_t cdp_packet(uint8_t proto, void *packet, struct netif *netif,
     void *cdp_start;
     uint8_t cap = 0;
     uint32_t addr_count = 0;
-    struct netif *master, *mgmt;
+    struct netif *parent, *mgmt;
 
     const uint8_t cdp_dst[] = CDP_MULTICAST_ADDR;
     const uint8_t llc_org[] = LLC_ORG_CISCO;
 
-    // fixup master netif
-    if (netif->master != NULL)
-	master = netif->master;
+    // fixup parent netif
+    if (netif->parent != NULL)
+	parent = netif->parent;
     else
-	master = netif;
+	parent = netif;
 
     // configure managment interface
     mgmt = sysinfo->mnetif;
@@ -181,9 +181,9 @@ size_t cdp_packet(uint8_t proto, void *packet, struct netif *netif,
 
     // interface addrs
     addr_count = 0;
-    if (master->ipaddr4 != 0)
+    if (parent->ipaddr4 != 0)
 	addr_count++;
-    if (!IN6_IS_ADDR_UNSPECIFIED((struct in6_addr *)master->ipaddr6)) 
+    if (!IN6_IS_ADDR_UNSPECIFIED((struct in6_addr *)parent->ipaddr6)) 
 	addr_count++;
 
     if (addr_count > 0) {
@@ -193,26 +193,26 @@ size_t cdp_packet(uint8_t proto, void *packet, struct netif *netif,
 	))
 	    return 0;
 
-	if (master->ipaddr4 != 0) {
+	if (parent->ipaddr4 != 0) {
 	    if (!(
 		PUSH_UINT8(cdp_protos[CDP_ADDR_IPV4].protocol_type) &&
 		PUSH_UINT8(cdp_protos[CDP_ADDR_IPV4].protocol_length) &&
 		PUSH_BYTES(cdp_protos[CDP_ADDR_IPV4].protocol,
 			   cdp_protos[CDP_ADDR_IPV4].protocol_length) &&
-		PUSH_UINT16(sizeof(master->ipaddr4)) &&
-		PUSH_BYTES(&master->ipaddr4, sizeof(master->ipaddr4))
+		PUSH_UINT16(sizeof(parent->ipaddr4)) &&
+		PUSH_BYTES(&parent->ipaddr4, sizeof(parent->ipaddr4))
 	    ))
 		return 0;
 	}
 
-	if (!IN6_IS_ADDR_UNSPECIFIED((struct in6_addr *)master->ipaddr6)) {
+	if (!IN6_IS_ADDR_UNSPECIFIED((struct in6_addr *)parent->ipaddr6)) {
 	    if (!(
 		PUSH_UINT8(cdp_protos[CDP_ADDR_IPV6].protocol_type) &&
 		PUSH_UINT8(cdp_protos[CDP_ADDR_IPV6].protocol_length) &&
 		PUSH_BYTES(cdp_protos[CDP_ADDR_IPV6].protocol,
 			   cdp_protos[CDP_ADDR_IPV6].protocol_length) &&
-		PUSH_UINT16(sizeof(master->ipaddr6)) &&
-		PUSH_BYTES(master->ipaddr6, sizeof(master->ipaddr6))
+		PUSH_UINT16(sizeof(parent->ipaddr6)) &&
+		PUSH_BYTES(parent->ipaddr6, sizeof(parent->ipaddr6))
 	    ))
 		return 0;
 	}

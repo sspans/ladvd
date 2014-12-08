@@ -62,23 +62,23 @@ size_t lldp_packet(uint8_t proto, void *packet, struct netif *netif,
     size_t length = ETHER_MAX_LEN;
 
     uint16_t cap = 0, cap_active = 0;
-    struct netif *master, *mgmt, *vlanif = NULL;
+    struct netif *parent, *mgmt, *vlanif = NULL;
     uint8_t *hwaddr;
     struct hinv *hinv;
     char *description;
 
     const uint8_t lldp_dst[] = LLDP_MULTICAST_ADDR;
 
-    // fixup master netif
-    if (netif->master != NULL)
-	master = netif->master;
+    // fixup parent netif
+    if (netif->parent != NULL)
+	parent = netif->parent;
     else
-	master = netif;
+	parent = netif;
 
     // configure managment interface
     mgmt = sysinfo->mnetif;
     if (!mgmt)
-	mgmt = master;
+	mgmt = parent;
 
     // ethernet header
     memcpy(ether.dst, lldp_dst, ETHER_ADDR_LEN);
@@ -127,8 +127,8 @@ size_t lldp_packet(uint8_t proto, void *packet, struct netif *netif,
 	description = netif->device_name;
     else if (strlen(netif->description))
 	description = netif->description;
-    else if (strlen(master->description))
-	description = master->description;
+    else if (strlen(parent->description))
+	description = parent->description;
     else
 	description = netif->device_name;
 
@@ -240,7 +240,7 @@ size_t lldp_packet(uint8_t proto, void *packet, struct netif *netif,
 
 	    // skip unless attached to this interface or the parent
 	    if ((vlanif->vlan_parent != netif->index) &&
-		(vlanif->vlan_parent != master->index))
+		(vlanif->vlan_parent != parent->index))
 		continue;
 
 	    if (!(
@@ -275,7 +275,7 @@ size_t lldp_packet(uint8_t proto, void *packet, struct netif *netif,
 
 
     // lacp
-    if (master->bonding_mode == NETIF_BONDING_LACP) {
+    if (parent->bonding_mode == NETIF_BONDING_LACP) {
 	if (!(
 	    START_LLDP_TLV(LLDP_TYPE_PRIVATE) &&
 	    PUSH_BYTES(OUI_IEEE_8023_PRIVATE, OUI_LEN) &&

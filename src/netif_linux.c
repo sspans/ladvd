@@ -201,7 +201,7 @@ static void netif_device_id(int sockfd, struct netif *netif, struct ifreq *ifr) 
 
 #ifdef HAVE_LINUX_IF_TEAM_H
 // handle teaming interfaces
-static void netif_team(int sockfd, struct nhead *netifs, struct netif *master,
+static void netif_team(int sockfd, struct nhead *netifs, struct netif *parent,
 		struct ifreq *ifr) {
 
     // XXX: this should talk to teamd
@@ -209,30 +209,30 @@ static void netif_team(int sockfd, struct nhead *netifs, struct netif *master,
 #endif /* HAVE_LINUX_IF_TEAM_H */
 
 // handle aggregated interfaces
-static void netif_bond(int sockfd, struct nhead *netifs, struct netif *master,
+static void netif_bond(int sockfd, struct nhead *netifs, struct netif *parent,
 		struct ifreq *ifr) {
 
 #if HAVE_LINUX_IF_BONDING_H
-    struct netif *subif = NULL, *csubif = master;
+    struct netif *subif = NULL, *csubif = parent;
 
     struct ifbond ifbond = {};
     struct ifslave ifslave = {};
 
     // check for lacp
-    strlcpy(ifr->ifr_name, master->name, IFNAMSIZ);
+    strlcpy(ifr->ifr_name, parent->name, IFNAMSIZ);
     ifr->ifr_data = (char *)&ifbond;
 
     if (ioctl(sockfd, SIOCBONDINFOQUERY, ifr) >= 0) {
 #if defined(BOND_MODE_8023AD)
 	if (ifbond.bond_mode == BOND_MODE_8023AD)
-	    master->bonding_mode = NETIF_BONDING_LACP;
+	    parent->bonding_mode = NETIF_BONDING_LACP;
 #endif
 	if (ifbond.bond_mode == BOND_MODE_ACTIVEBACKUP)
-	    master->bonding_mode = NETIF_BONDING_FAILOVER;
+	    parent->bonding_mode = NETIF_BONDING_FAILOVER;
     }
 
-    if (master->bonding_mode == NETIF_BONDING_LACP)
-	my_log(INFO, "lacp enabled on %s", master->name);
+    if (parent->bonding_mode == NETIF_BONDING_LACP)
+	my_log(INFO, "lacp enabled on %s", parent->name);
 
 
     // handle slaves
@@ -255,7 +255,7 @@ static void netif_bond(int sockfd, struct nhead *netifs, struct netif *master,
 		if (ifslave.state == BOND_STATE_BACKUP)
 		    subif->slave = NETIF_SLAVE_BACKUP;
 		subif->lacp_index = i;
-		subif->master = master;
+		subif->parent = parent;
 		csubif->subif = subif;
 		csubif = subif;
 	    }
@@ -266,22 +266,22 @@ static void netif_bond(int sockfd, struct nhead *netifs, struct netif *master,
 
 
 // handle bridge interfaces
-static void netif_bridge(int sockfd, struct nhead *netifs, struct netif *master,
+static void netif_bridge(int sockfd, struct nhead *netifs, struct netif *parent,
 		  struct ifreq *ifr) {
 
 #if defined(HAVE_LINUX_IF_BRIDGE_H)
-    struct netif *subif = NULL, *csubif = master;
+    struct netif *subif = NULL, *csubif = parent;
 
     int ifindex[BRIDGE_MAX_PORTS] = {};
     unsigned long args[4] = { BRCTL_GET_PORT_LIST,
 		    (unsigned long)ifindex, BRIDGE_MAX_PORTS, 0 };
 
     // handle slaves
-    strlcpy(ifr->ifr_name, master->name, IFNAMSIZ);
+    strlcpy(ifr->ifr_name, parent->name, IFNAMSIZ);
     ifr->ifr_data = (char *)&args;
 
     if (ioctl(sockfd, SIOCDEVPRIVATE, ifr) < 0) {
-	my_loge(CRIT, "bridge ioctl failed on interface %s", master->name);
+	my_loge(CRIT, "bridge ioctl failed on interface %s", parent->name);
 	return;
     }
 
@@ -292,7 +292,7 @@ static void netif_bridge(int sockfd, struct nhead *netifs, struct netif *master,
 	if ((subif != NULL) && (subif->type < NETIF_PARENT)) {
 	    my_log(INFO, "found slave %s", subif->name);
 	    subif->slave = NETIF_SLAVE_ACTIVE;
-	    subif->master = master;
+	    subif->parent = parent;
 	    csubif->subif = subif;
 	    csubif = subif;
 	}

@@ -131,7 +131,7 @@ struct netif {
     uint8_t protos;
     uint8_t update;
 
-    struct netif *master;
+    struct netif *parent;
     struct netif *subif;
 
     // should be last

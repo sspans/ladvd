@@ -38,17 +38,17 @@ size_t edp_packet(uint8_t proto, void *packet, struct netif *netif,
     static uint16_t edp_count = 0;
 
     void *edp_start;
-    struct netif *master, *vlanif = NULL;
+    struct netif *parent, *vlanif = NULL;
     uint8_t *hwaddr;
 
     const uint8_t edp_dst[] = EDP_MULTICAST_ADDR;
     const uint8_t llc_org[] = LLC_ORG_EXTREME;
 
-    // fixup master netif
-    if (netif->master != NULL)
-	master = netif->master;
+    // fixup parent netif
+    if (netif->parent != NULL)
+	parent = netif->parent;
     else
-	master = netif;
+	parent = netif;
 
     // chassis id
     hwaddr = (options & OPT_CHASSIS_IF) ? netif->hwaddr : sysinfo->hwaddr;
@@ -103,14 +103,14 @@ size_t edp_packet(uint8_t proto, void *packet, struct netif *netif,
 
 
     // vlan
-    if (master->ipaddr4 != 0) {
+    if (parent->ipaddr4 != 0) {
 	if (!(
 	    START_EDP_TLV(EDP_TYPE_VLAN) &&
 	    PUSH_UINT8(EDP_VLAN_FLAG_IP) &&
 	    PUSH_UINT8(0) &&	    // reserved
 	    PUSH_UINT16(0) &&	    // vlan-id
 	    PUSH_UINT32(0) &&	    // reserved
-	    PUSH_BYTES(&master->ipaddr4, sizeof(master->ipaddr4)) &&
+	    PUSH_BYTES(&parent->ipaddr4, sizeof(parent->ipaddr4)) &&
 	    PUSH_BYTES(netif->name, strlen(netif->name)) &&
 	    PUSH_UINT8(0)
 	))
@@ -124,7 +124,7 @@ size_t edp_packet(uint8_t proto, void *packet, struct netif *netif,
     
 	// skip unless attached to this interface or the parent
 	if ((vlanif->vlan_parent != netif->index) &&
-	    (vlanif->vlan_parent != master->index))
+	    (vlanif->vlan_parent != parent->index))
 	    continue;
 
 	if (!(
