@@ -233,9 +233,9 @@ struct parent_req {
     char buf[512];
 };
 
-#define MASTER_REQ_MIN	    offsetof(struct parent_req, buf)
-#define MASTER_REQ_MAX	    sizeof(struct parent_req)
-#define MASTER_REQ_LEN(l)   MASTER_REQ_MIN + l
+#define PARENT_REQ_MIN	    offsetof(struct parent_req, buf)
+#define PARENT_REQ_MAX	    sizeof(struct parent_req)
+#define PARENT_REQ_LEN(l)   PARENT_REQ_MIN + l
 
 #define DECODE_STR	1
 #define DECODE_PRINT	2
@@ -282,19 +282,19 @@ struct parent_msg {
 
 TAILQ_HEAD(mhead, parent_msg);
 
-#define MASTER_MSG_MIN	    offsetof(struct parent_msg, msg)
-#define MASTER_MSG_MAX	    offsetof(struct parent_msg, decode)
-#define MASTER_MSG_SIZ	    sizeof(struct parent_msg)
-#define MASTER_MSG_LEN(l)   MASTER_MSG_MIN + l
-#define MASTER_OPEN	    0
-#define MASTER_CLOSE	    1
-#define MASTER_DESCR	    2
-#define MASTER_ALIAS	    3
-#define MASTER_DEVICE	    4
-#define MASTER_DEVICE_ID    5
-#define MASTER_ETHTOOL_GSET 6
-#define MASTER_ETHTOOL_GDRV 7
-#define MASTER_MAX	    8
+#define PARENT_MSG_MIN	    offsetof(struct parent_msg, msg)
+#define PARENT_MSG_MAX	    offsetof(struct parent_msg, decode)
+#define PARENT_MSG_SIZ	    sizeof(struct parent_msg)
+#define PARENT_MSG_LEN(l)   PARENT_MSG_MIN + l
+#define PARENT_OPEN	    0
+#define PARENT_CLOSE	    1
+#define PARENT_DESCR	    2
+#define PARENT_ALIAS	    3
+#define PARENT_DEVICE	    4
+#define PARENT_DEVICE_ID    5
+#define PARENT_ETHTOOL_GSET 6
+#define PARENT_ETHTOOL_GDRV 7
+#define PARENT_MAX	    8
 
 struct proto {
     uint8_t enabled;

@@ -64,8 +64,8 @@ extern char check_wrap_errstr[];
 #define WRAP_WRITE(sock, msg, size)	\
     fail_unless(write(sock, msg, size) == size, "message write failed");
 #define WRAP_REQ_READ(sock, mreq, len)	\
-    len = read(sock, mreq, MASTER_REQ_MAX); \
-    fail_if(len < MASTER_REQ_MIN, "message read failed"); \
-    fail_if(len != MASTER_REQ_LEN(mreq->len), "message read failed");
+    len = read(sock, mreq, PARENT_REQ_MAX); \
+    fail_if(len < PARENT_REQ_MIN, "message read failed"); \
+    fail_if(len != PARENT_REQ_LEN(mreq->len), "message read failed");
 
 void read_packet(struct parent_msg *msg, const char *suffix);

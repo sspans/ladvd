@@ -169,12 +169,12 @@ START_TEST(test_parent_req) {
 
     // test a message with incorrect ifindex
     mark_point();
-    mreq.op = MASTER_MAX - 1;
+    mreq.op = PARENT_MAX - 1;
     mreq.len = ETHER_MIN_LEN;
 
     errstr = "check";
     my_log(CRIT, errstr);
-    WRAP_WRITE(spair[0], &mreq, MASTER_REQ_LEN(mreq.len));
+    WRAP_WRITE(spair[0], &mreq, PARENT_REQ_LEN(mreq.len));
     WRAP_FATAL_START();
     parent_req(spair[1], event);
     WRAP_FATAL_END();
@@ -185,13 +185,13 @@ START_TEST(test_parent_req) {
     mark_point();
     dfd = spair[1];
     options |= OPT_DEBUG;
-    mreq.op = MASTER_CLOSE;
+    mreq.op = PARENT_CLOSE;
     mreq.index = ifindex;
     mreq.len = 0;
     memcpy(ether.dst, lldp_dst, ETHER_ADDR_LEN);
     ether.type = htons(ETHERTYPE_LLDP);
     memcpy(mreq.buf, &ether, sizeof(struct ether_hdr));
-    WRAP_WRITE(spair[0], &mreq, MASTER_REQ_LEN(mreq.len));
+    WRAP_WRITE(spair[0], &mreq, PARENT_REQ_LEN(mreq.len));
 
     errstr = "check";
     my_log(CRIT, errstr);
@@ -213,10 +213,10 @@ START_TEST(test_parent_req) {
 
     errstr = "check";
     my_log(CRIT, errstr);
-    mreq.op = MASTER_CLOSE;
+    mreq.op = PARENT_CLOSE;
     mreq.index = ifindex;
     strlcpy(mreq.name, ifname, IFNAMSIZ);
-    WRAP_WRITE(spair[0], &mreq, MASTER_REQ_LEN(mreq.len));
+    WRAP_WRITE(spair[0], &mreq, PARENT_REQ_LEN(mreq.len));
     parent_req(spair[1], event);
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -226,10 +226,10 @@ START_TEST(test_parent_req) {
 #if defined(SIOCSIFDESCR) || defined(HAVE_SYSFS)
     // test a correct DESCR
     mark_point();
-    mreq.op = MASTER_DESCR;
+    mreq.op = PARENT_DESCR;
     mreq.len = 1;
 
-    WRAP_WRITE(spair[0], &mreq, MASTER_REQ_LEN(mreq.len));
+    WRAP_WRITE(spair[0], &mreq, PARENT_REQ_LEN(mreq.len));
 
     errstr = "check";
     my_log(CRIT, errstr);
@@ -240,10 +240,10 @@ START_TEST(test_parent_req) {
 
 #ifdef HAVE_SYSFS
     mark_point();
-    mreq.op = MASTER_ALIAS;
+    mreq.op = PARENT_ALIAS;
     mreq.len = 1;
 
-    WRAP_WRITE(spair[0], &mreq, MASTER_REQ_LEN(mreq.len));
+    WRAP_WRITE(spair[0], &mreq, PARENT_REQ_LEN(mreq.len));
 
     errstr = "check";
     my_log(CRIT, errstr);
@@ -252,9 +252,9 @@ START_TEST(test_parent_req) {
 	"incorrect message logged: %s", check_wrap_errstr);
 
     // test a correct DEVICE
-    mreq.op = MASTER_DEVICE;
+    mreq.op = PARENT_DEVICE;
     mreq.len = 0;
-    WRAP_WRITE(spair[0], &mreq, MASTER_REQ_LEN(mreq.len));
+    WRAP_WRITE(spair[0], &mreq, PARENT_REQ_LEN(mreq.len));
     parent_req(spair[1], event);
     fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
@@ -265,10 +265,10 @@ START_TEST(test_parent_req) {
     parent_open(ifindex, ifname);
     rfd = rfd_byindex(&rawfds, ifindex);
     fail_unless (rfd != NULL, "rfd should be added to the queue");
-    mreq.op = MASTER_CLOSE;
+    mreq.op = PARENT_CLOSE;
     close(rfd->fd);
     rfd->fd = dup(spair[1]);
-    WRAP_WRITE(spair[0], &mreq, MASTER_REQ_LEN(mreq.len));
+    WRAP_WRITE(spair[0], &mreq, PARENT_REQ_LEN(mreq.len));
     close(spair[0]);
 
     errstr = "failed to return request to child";
@@ -289,43 +289,43 @@ START_TEST(test_parent_check) {
     struct parent_req mreq = {};
 
     mark_point();
-    mreq.op = MASTER_OPEN;
+    mreq.op = PARENT_OPEN;
     fail_unless(parent_check(&mreq) == EXIT_SUCCESS,
-	"MASTER_OPEN check failed");
+	"PARENT_OPEN check failed");
 
     mark_point();
-    mreq.op = MASTER_CLOSE;
+    mreq.op = PARENT_CLOSE;
     fail_unless(parent_check(&mreq) == EXIT_SUCCESS,
-	"MASTER_CLOSE check failed");
+	"PARENT_CLOSE check failed");
 
 #ifdef HAVE_LINUX_ETHTOOL_H
     mark_point();
-    mreq.op = MASTER_ETHTOOL_GSET;
+    mreq.op = PARENT_ETHTOOL_GSET;
     mreq.index = ifindex;
     mreq.len = sizeof(struct ethtool_cmd);
     fail_unless(parent_check(&mreq) == EXIT_SUCCESS,
-	"MASTER_ETHTOOL_GSET check failed");
+	"PARENT_ETHTOOL_GSET check failed");
 
     mark_point();
-    mreq.op = MASTER_ETHTOOL_GDRV;
+    mreq.op = PARENT_ETHTOOL_GDRV;
     mreq.index = ifindex;
     mreq.len = sizeof(struct ethtool_drvinfo);
     fail_unless(parent_check(&mreq) == EXIT_SUCCESS,
-	"MASTER_ETHTOOL_GDRV check failed");
+	"PARENT_ETHTOOL_GDRV check failed");
 #endif
 
 #ifdef SIOCSIFDESCR
     mark_point();
-    mreq.op = MASTER_DESCR;
+    mreq.op = PARENT_DESCR;
     mreq.index = ifindex;
     mreq.len = 0;
     fail_unless(parent_check(&mreq) == EXIT_SUCCESS,
-	"MASTER_DESCR check failed");
+	"PARENT_DESCR check failed");
 #endif
 
 #ifndef HAVE_LINUX_ETHTOOL_H
     mark_point();
-    mreq.op = MASTER_ETHTOOL_GSET;
+    mreq.op = PARENT_ETHTOOL_GSET;
     fail_unless(parent_check(&mreq) == EXIT_FAILURE,
 	"parent_check should fail");
 #endif
@@ -357,7 +357,7 @@ START_TEST(test_parent_send) {
     mark_point();
     errstr = "check";
     my_log(CRIT, errstr);
-    WRAP_WRITE(spair[0], &msg, MASTER_MSG_LEN(msg.len) - 1);
+    WRAP_WRITE(spair[0], &msg, PARENT_MSG_LEN(msg.len) - 1);
     WRAP_FATAL_START();
     parent_send(spair[1], event);
     WRAP_FATAL_END();
@@ -368,7 +368,7 @@ START_TEST(test_parent_send) {
     mark_point();
     errstr = "invalid ifindex supplied";
     msg.index = UINT32_MAX;
-    WRAP_WRITE(spair[0], &msg, MASTER_MSG_LEN(msg.len));
+    WRAP_WRITE(spair[0], &msg, PARENT_MSG_LEN(msg.len));
     WRAP_FATAL_START();
     parent_send(spair[1], event);
     WRAP_FATAL_END();
@@ -385,7 +385,7 @@ START_TEST(test_parent_send) {
     close(rfd->fd);
     rfd->fd = -1;
     options &= ~OPT_DEBUG;
-    WRAP_WRITE(spair[0], &msg, MASTER_MSG_LEN(msg.len));
+    WRAP_WRITE(spair[0], &msg, PARENT_MSG_LEN(msg.len));
     parent_send(spair[1], event);
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);

@@ -113,7 +113,7 @@ int my_socket(int af, int type, int proto) {
 }
 
 void my_socketpair(int spair[]) {
-    int rbuf = MASTER_MSG_MAX * 10;
+    int rbuf = PARENT_MSG_MAX * 10;
 
     assert(spair != NULL);
 
@@ -291,13 +291,13 @@ ssize_t my_mreq(struct parent_req *mreq) {
 
     assert(mreq != NULL);
 
-    len = write(msock, mreq, MASTER_REQ_LEN(mreq->len));
-    if (len < MASTER_REQ_MIN || len != MASTER_REQ_LEN(mreq->len))
+    len = write(msock, mreq, PARENT_REQ_LEN(mreq->len));
+    if (len < PARENT_REQ_MIN || len != PARENT_REQ_LEN(mreq->len))
 	my_fatale("only %zi bytes written", len);
 
-    memset(mreq, 0, MASTER_REQ_MAX);
-    len = read(msock, mreq, MASTER_REQ_MAX);
-    if (len < MASTER_REQ_MIN || len != MASTER_REQ_LEN(mreq->len))
+    memset(mreq, 0, PARENT_REQ_MAX);
+    len = read(msock, mreq, PARENT_REQ_MAX);
+    if (len < PARENT_REQ_MIN || len != PARENT_REQ_LEN(mreq->len))
 	my_fatal("invalid reply received from parent");
 
     return(mreq->len);
@@ -427,8 +427,8 @@ void netif_descr(struct netif *netif, struct mhead *mqueue) {
     if (strncmp(descr, netif->description, IFDESCRSIZE) == 0)
 	return;
 
-    mreq = my_malloc(MASTER_REQ_MAX);
-    mreq->op = MASTER_DESCR;
+    mreq = my_malloc(PARENT_REQ_MAX);
+    mreq->op = PARENT_DESCR;
     mreq->index = netif->index;
     mreq->len = strlen(descr) + 1;
     memcpy(mreq->buf, descr, mreq->len);

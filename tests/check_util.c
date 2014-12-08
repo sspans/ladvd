@@ -172,7 +172,7 @@ START_TEST(test_my_mreq) {
     errstr = "check";
     my_log(CRIT, errstr);
     mreq.len = ETHER_MIN_LEN; 
-    WRAP_WRITE(spair[0], &mreq, MASTER_REQ_LEN(mreq.len));
+    WRAP_WRITE(spair[0], &mreq, PARENT_REQ_LEN(mreq.len));
     ret = my_mreq(&mreq);
     fail_unless (ret == ETHER_MIN_LEN,
 	"incorrect size %lu returned from my_mreq", ret);
@@ -346,7 +346,7 @@ START_TEST(test_netif) {
 
     // XXX: netif_byaddr checks
 
-    msg = my_malloc(MASTER_MSG_SIZ);
+    msg = my_malloc(PARENT_MSG_SIZ);
     netif = netif_byname(netifs, "eth0");
     msg->index = netif->index;
     msg->proto = PROTO_LLDP;
@@ -355,7 +355,7 @@ START_TEST(test_netif) {
     msg->peer[PEER_PORTNAME] = my_strdup("FastEthernet6/20");
     TAILQ_INSERT_TAIL(&mqueue, msg, entries);
 
-    msg = my_malloc(MASTER_MSG_SIZ);
+    msg = my_malloc(PARENT_MSG_SIZ);
     netif = netif_byname(netifs, "eth2");
     msg->index = netif->index;
     msg->proto = PROTO_CDP;
@@ -363,7 +363,7 @@ START_TEST(test_netif) {
     msg->peer[PEER_HOSTNAME] = my_strdup("bar");
     TAILQ_INSERT_TAIL(&mqueue, msg, entries);
 
-    msg = my_malloc(MASTER_MSG_SIZ);
+    msg = my_malloc(PARENT_MSG_SIZ);
     netif = netif_byname(netifs, "eth1");
     msg->index = netif->index;
     msg->proto = PROTO_LLDP;
@@ -372,7 +372,7 @@ START_TEST(test_netif) {
     msg->peer[PEER_PORTNAME] = my_strdup("Ethernet4");
     TAILQ_INSERT_TAIL(&mqueue, msg, entries);
 
-    msg = my_malloc(MASTER_MSG_SIZ);
+    msg = my_malloc(PARENT_MSG_SIZ);
     netif = netif_byname(netifs, "eth1");
     msg->index = netif->index;
     msg->proto = PROTO_LLDP;
@@ -381,7 +381,7 @@ START_TEST(test_netif) {
     msg->peer[PEER_PORTNAME] = my_strdup("Ethernet5");
     TAILQ_INSERT_TAIL(&mqueue, msg, entries);
 
-    msg = my_malloc(MASTER_MSG_SIZ);
+    msg = my_malloc(PARENT_MSG_SIZ);
     netif = netif_byname(netifs, "eth1");
     msg->index = netif->index;
     msg->proto = PROTO_FDP;
@@ -390,7 +390,7 @@ START_TEST(test_netif) {
     msg->peer[PEER_PORTNAME] = my_strdup("Ethernet5");
     TAILQ_INSERT_TAIL(&mqueue, msg, entries);
 
-    msg = my_malloc(MASTER_MSG_SIZ);
+    msg = my_malloc(PARENT_MSG_SIZ);
     netif = netif_byname(netifs, "lagg0");
     msg->index = netif->index;
     msg->proto = PROTO_LLDP;
@@ -416,15 +416,15 @@ START_TEST(test_netif) {
     // netif_descr checks
     mark_point();
     msock = spair[1];
-    mreq = my_malloc(MASTER_REQ_MAX);
+    mreq = my_malloc(PARENT_REQ_MAX);
     mreq->len = IFDESCRSIZE;
 
     netif = netif_byname(netifs, "bond0");
     descr = "";
-    WRAP_WRITE(spair[0], mreq, MASTER_REQ_LEN(mreq->len));
+    WRAP_WRITE(spair[0], mreq, PARENT_REQ_LEN(mreq->len));
     netif_descr(netif, &mqueue);
     WRAP_REQ_READ(spair[0], mreq, len);
-    fail_unless (mreq->op == MASTER_DESCR,
+    fail_unless (mreq->op == PARENT_DESCR,
 	"incorrect command: %d", mreq->op);
     fail_unless (mreq->index == netif->index,
 	"incorrect interface index: %d", mreq->index);
@@ -435,10 +435,10 @@ START_TEST(test_netif) {
 
     netif = netif_byname(netifs, "eth0");
     descr = "connected to foo (Fa6/20)";
-    WRAP_WRITE(spair[0], mreq, MASTER_REQ_LEN(mreq->len));
+    WRAP_WRITE(spair[0], mreq, PARENT_REQ_LEN(mreq->len));
     netif_descr(netif, &mqueue);
     WRAP_REQ_READ(spair[0], mreq, len);
-    fail_unless (mreq->op == MASTER_DESCR,
+    fail_unless (mreq->op == PARENT_DESCR,
 	"incorrect command: %d", mreq->op);
     fail_unless (mreq->index == netif->index,
 	"incorrect interface index: %d", mreq->index);
@@ -449,10 +449,10 @@ START_TEST(test_netif) {
 
     netif = netif_byname(netifs, "eth2");
     descr = "connected to bar";
-    WRAP_WRITE(spair[0], mreq, MASTER_REQ_LEN(mreq->len));
+    WRAP_WRITE(spair[0], mreq, PARENT_REQ_LEN(mreq->len));
     netif_descr(netif, &mqueue);
     WRAP_REQ_READ(spair[0], mreq, len);
-    fail_unless (mreq->op == MASTER_DESCR,
+    fail_unless (mreq->op == PARENT_DESCR,
 	"incorrect command: %d", mreq->op);
     fail_unless (mreq->index == netif->index,
 	"incorrect interface index: %d", mreq->index);
@@ -463,10 +463,10 @@ START_TEST(test_netif) {
 
     netif = netif_byname(netifs, "eth1");
     descr = "connected to 2 peers";
-    WRAP_WRITE(spair[0], mreq, MASTER_REQ_LEN(mreq->len));
+    WRAP_WRITE(spair[0], mreq, PARENT_REQ_LEN(mreq->len));
     netif_descr(netif, &mqueue);
     WRAP_REQ_READ(spair[0], mreq, len);
-    fail_unless (mreq->op == MASTER_DESCR,
+    fail_unless (mreq->op == PARENT_DESCR,
 	"incorrect command: %d", mreq->op);
     fail_unless (mreq->index == netif->index,
 	"incorrect interface index: %d", mreq->index);
@@ -477,10 +477,10 @@ START_TEST(test_netif) {
 
     netif = netif_byname(netifs, "lagg0");
     descr = "";
-    WRAP_WRITE(spair[0], mreq, MASTER_REQ_LEN(mreq->len));
+    WRAP_WRITE(spair[0], mreq, PARENT_REQ_LEN(mreq->len));
     netif_descr(netif, &mqueue);
     WRAP_REQ_READ(spair[0], mreq, len);
-    fail_unless (mreq->op == MASTER_DESCR,
+    fail_unless (mreq->op == PARENT_DESCR,
 	"incorrect command: %d", mreq->op);
     fail_unless (mreq->index == netif->index,
 	"incorrect interface index: %d", mreq->index);

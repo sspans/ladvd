@@ -192,10 +192,10 @@ void parent_req(int reqfd, short event) {
     ssize_t len;
 
     // receive request
-    len = read(reqfd, &mreq, MASTER_REQ_MAX);
+    len = read(reqfd, &mreq, PARENT_REQ_MAX);
 
     // check request size
-    if (len < MASTER_REQ_MIN || len != MASTER_REQ_LEN(mreq.len))
+    if (len < PARENT_REQ_MIN || len != PARENT_REQ_LEN(mreq.len))
 	my_fatal("invalid request received");
 
     // validate ifindex
@@ -210,34 +210,34 @@ void parent_req(int reqfd, short event) {
 
     switch (mreq.op) {
 	// open socket
-	case MASTER_OPEN:
+	case PARENT_OPEN:
 	    if ((rfd = rfd_byindex(&rawfds, mreq.index)) == NULL)
 		parent_open(mreq.index, mreq.name);
 	    break;
 	// close socket
-	case MASTER_CLOSE:
+	case PARENT_CLOSE:
 	    if ((rfd = rfd_byindex(&rawfds, mreq.index)) != NULL)
 		parent_close(rfd);
 	    break;
 #if HAVE_LINUX_ETHTOOL_H
 	// fetch ethtool details
-	case MASTER_ETHTOOL_GSET:
-	case MASTER_ETHTOOL_GDRV:
+	case PARENT_ETHTOOL_GSET:
+	case PARENT_ETHTOOL_GDRV:
 	    mreq.len = parent_ethtool(&mreq);
 	    break;
 #endif /* HAVE_LINUX_ETHTOOL_H */
 	// manage interface description
-	case MASTER_DESCR:
-	case MASTER_ALIAS:
+	case PARENT_DESCR:
+	case PARENT_ALIAS:
 	    mreq.len = parent_descr(&mreq);
 	    break;
 #ifdef HAVE_SYSFS
-	case MASTER_DEVICE:
+	case PARENT_DEVICE:
 	    mreq.len = parent_device(&mreq);
 	    break;
 #endif /* HAVE_SYSFS */
 #if defined(HAVE_SYSFS) && defined(HAVE_PCI_PCI_H)
-	case MASTER_DEVICE_ID:
+	case PARENT_DEVICE_ID:
 	    mreq.len = parent_device_id(&mreq);
 	    break;
 #endif /* HAVE_SYSFS && HAVE_PCI_PCI_H */
@@ -247,8 +247,8 @@ void parent_req(int reqfd, short event) {
     }
 
 out:
-    len = write(reqfd, &mreq, MASTER_REQ_LEN(mreq.len));
-    if (len != MASTER_REQ_LEN(mreq.len))
+    len = write(reqfd, &mreq, PARENT_REQ_LEN(mreq.len));
+    if (len != PARENT_REQ_LEN(mreq.len))
 	    my_fatal("failed to return request to child");
 }
 
@@ -257,33 +257,33 @@ int parent_check(struct parent_req *mreq) {
 
     assert(mreq);
     assert(mreq->len <= ETHER_MAX_LEN);
-    assert(mreq->op < MASTER_MAX);
+    assert(mreq->op < PARENT_MAX);
 
     switch (mreq->op) {
-	case MASTER_OPEN:
+	case PARENT_OPEN:
 	    return(EXIT_SUCCESS);
-	case MASTER_CLOSE:
+	case PARENT_CLOSE:
 	    return(EXIT_SUCCESS);
 #if HAVE_LINUX_ETHTOOL_H
-	case MASTER_ETHTOOL_GSET:
+	case PARENT_ETHTOOL_GSET:
 	    assert(mreq->len == sizeof(struct ethtool_cmd));
 	    return(EXIT_SUCCESS);
-	case MASTER_ETHTOOL_GDRV:
+	case PARENT_ETHTOOL_GDRV:
 	    assert(mreq->len == sizeof(struct ethtool_drvinfo));
 	    return(EXIT_SUCCESS);
 #endif /* HAVE_LINUX_ETHTOOL_H */
 #if defined(SIOCSIFDESCR) || defined(HAVE_SYSFS)
-	case MASTER_DESCR:
+	case PARENT_DESCR:
 	    assert(mreq->len <= IFDESCRSIZE);
 	    return(EXIT_SUCCESS);
 #endif /* SIOCSIFDESCR */
 #ifdef HAVE_SYSFS
-	case MASTER_ALIAS:
-	case MASTER_DEVICE:
+	case PARENT_ALIAS:
+	case PARENT_DEVICE:
 	    return(EXIT_SUCCESS);
 #endif /* HAVE_SYSFS */
 #if defined(HAVE_SYSFS) && defined(HAVE_PCI_PCI_H)
-	case MASTER_DEVICE_ID:
+	case PARENT_DEVICE_ID:
 	    return(EXIT_SUCCESS);
 #endif /* HAVE_SYSFS && HAVE_PCI_PCI_H */
 	default:
@@ -300,10 +300,10 @@ void parent_send(int msgfd, short event) {
     ssize_t len;
 
     // receive request
-    len = read(msgfd, &msend, MASTER_MSG_MAX);
+    len = read(msgfd, &msend, PARENT_MSG_MAX);
 
     // check request size
-    if (len < MASTER_MSG_MIN || len != MASTER_MSG_LEN(msend.len))
+    if (len < PARENT_MSG_MIN || len != PARENT_MSG_LEN(msend.len))
 	return;
 
     if (if_indextoname(msend.index, msend.name) == NULL) {
@@ -399,7 +399,7 @@ ssize_t parent_ethtool(struct parent_req *mreq) {
     // prepare ifr struct
     strlcpy(ifr.ifr_name, mreq->name, IFNAMSIZ);
 
-    if (mreq->op == MASTER_ETHTOOL_GSET) { 
+    if (mreq->op == PARENT_ETHTOOL_GSET) { 
 	ecmd.cmd = ETHTOOL_GSET;
 	ifr.ifr_data = (caddr_t)&ecmd;
 
@@ -407,7 +407,7 @@ ssize_t parent_ethtool(struct parent_req *mreq) {
 	    return(0);
 	memcpy(mreq->buf, &ecmd, sizeof(ecmd));
 	return(sizeof(ecmd));
-    } else if (mreq->op == MASTER_ETHTOOL_GDRV) { 
+    } else if (mreq->op == PARENT_ETHTOOL_GDRV) { 
 	edrvinfo.cmd = ETHTOOL_GDRVINFO;
 	ifr.ifr_data = (caddr_t)&edrvinfo;
 
@@ -435,9 +435,9 @@ ssize_t parent_descr(struct parent_req *mreq) {
     if (!(ret > 0) || (stat(path, &sb) != 0))
 	return(0);
 
-    if (mreq->op == MASTER_DESCR)
+    if (mreq->op == PARENT_DESCR)
 	return write_line(path, mreq->buf, strlen(mreq->buf));
-    else if (mreq->op == MASTER_ALIAS)
+    else if (mreq->op == PARENT_ALIAS)
 	return read_line(path, mreq->buf, IFDESCRSIZE);
 
     return(0);
@@ -725,8 +725,8 @@ void parent_recv(int fd, short event, struct rawfd *rfd) {
 	my_log(INFO, "received %s message (%zu bytes)",
 		protos[p].name, mrecv.len);
 
-	len = write(mfd, &mrecv, MASTER_MSG_LEN(mrecv.len));
-	if (len != MASTER_MSG_LEN(mrecv.len))
+	len = write(mfd, &mrecv, PARENT_MSG_LEN(mrecv.len));
+	if (len != PARENT_MSG_LEN(mrecv.len))
 	    my_fatal("failed to send message to child");
 	rcount++;
     }

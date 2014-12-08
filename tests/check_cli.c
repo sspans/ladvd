@@ -43,7 +43,7 @@ START_TEST(test_cli_main) {
     char *argv[7], ifname[IFNAMSIZ];
     char buf[8192];
     struct parent_msg msg = {};
-    int sobuf = MASTER_MSG_MAX * 10;
+    int sobuf = PARENT_MSG_MAX * 10;
     time_t now;
 #if HAVE_EVHTTP_H
     extern char *http_host, *http_path;
@@ -180,42 +180,42 @@ START_TEST(test_cli_main) {
     msg.proto = PROTO_LLDP;
     msg.index = 1;
     strlcpy(msg.name, ifname, IFNAMSIZ);
-    fail_if(write(spair[1], &msg, MASTER_MSG_MAX) < 0,
+    fail_if(write(spair[1], &msg, PARENT_MSG_MAX) < 0,
 	    "write failed");
 
     // invalid proto
     mark_point();
     read_packet(&msg, "proto/cdp/43.good.big");
     msg.proto = PROTO_MAX;
-    fail_if(write(spair[1], &msg, MASTER_MSG_MAX) < 0,
+    fail_if(write(spair[1], &msg, PARENT_MSG_MAX) < 0,
 	    "write failed");
 
     // invalid len
     mark_point();
     msg.proto = PROTO_CDP;
     msg.len += ETHER_MAX_LEN;
-    fail_if(write(spair[1], &msg, MASTER_MSG_MAX) < 0,
+    fail_if(write(spair[1], &msg, PARENT_MSG_MAX) < 0,
 	    "write failed");
 
     // invalid ifindex
     mark_point();
     msg.len -= ETHER_MAX_LEN;
     msg.index = 0;
-    fail_if(write(spair[1], &msg, MASTER_MSG_MAX) < 0,
+    fail_if(write(spair[1], &msg, PARENT_MSG_MAX) < 0,
 	    "write failed");
 
     // unwanted proto
     mark_point();
     msg.index = 1;
     msg.proto = PROTO_NDP;
-    fail_if(write(spair[1], &msg, MASTER_MSG_MAX) < 0,
+    fail_if(write(spair[1], &msg, PARENT_MSG_MAX) < 0,
 	    "write failed");
 
     // invalid packet
     mark_point();
     msg.proto = PROTO_LLDP;
     read_packet(&msg, "proto/lldp/A3.fuzzer.chassis_id.broken");
-    fail_if(write(spair[1], &msg, MASTER_MSG_MAX) < 0,
+    fail_if(write(spair[1], &msg, PARENT_MSG_MAX) < 0,
 	    "write failed");
 
     // old message
@@ -223,14 +223,14 @@ START_TEST(test_cli_main) {
     msg.proto = PROTO_LLDP;
     read_packet(&msg, "proto/lldp/45.good.vlan");
     msg.received = 0;
-    fail_if(write(spair[1], &msg, MASTER_MSG_MAX) < 0,
+    fail_if(write(spair[1], &msg, PARENT_MSG_MAX) < 0,
 	    "write failed");
 
     // valid
     mark_point();
     msg.received = now;
     strlcpy(msg.name, ifname, IFNAMSIZ);
-    fail_if(write(spair[1], &msg, MASTER_MSG_MAX) < 0,
+    fail_if(write(spair[1], &msg, PARENT_MSG_MAX) < 0,
 	    "write failed");
 
     mark_point();

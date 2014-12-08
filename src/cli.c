@@ -170,9 +170,9 @@ void cli_main(int argc, char *argv[]) {
     if (modes[mode].init)
 	modes[mode].init();
 
-    msg = my_malloc(MASTER_MSG_SIZ);
+    msg = my_malloc(PARENT_MSG_SIZ);
 
-    while (read(fd, msg, MASTER_MSG_MAX) == MASTER_MSG_MAX) {
+    while (read(fd, msg, PARENT_MSG_MAX) == PARENT_MSG_MAX) {
 
 	if (msg->proto >= PROTO_MAX)
 	    continue;
@@ -213,7 +213,7 @@ void cli_main(int argc, char *argv[]) {
 	    modes[mode].write(msg, holdtime);
 
 	peer_free(msg->peer);
-	memset(msg, 0, MASTER_MSG_SIZ);
+	memset(msg, 0, PARENT_MSG_SIZ);
 
 	if (options & OPT_ONCE)
 	    goto out;

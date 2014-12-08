@@ -211,7 +211,7 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct my_sysinfo *sysinfo,
 	netif->type = type;
 
 #ifdef HAVE_SYSFS
-	mreq.op = MASTER_ALIAS;
+	mreq.op = PARENT_ALIAS;
 	mreq.index = netif->index;
 
 	if (my_mreq(&mreq))
@@ -240,7 +240,7 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct my_sysinfo *sysinfo,
 
 	my_log(INFO, "removing old interface %s", netif->name);
 
-	mreq.op = MASTER_CLOSE;
+	mreq.op = PARENT_CLOSE;
 	mreq.index = netif->index;
 	my_mreq(&mreq);
 

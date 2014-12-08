@@ -231,7 +231,7 @@ void child_send(int fd, short event, struct child_send_args *args) {
 	    // explicitly listen when recv is enabled
 	    if ((options & OPT_RECV) && (subif->protos == 0)) {
 		struct parent_req mreq = {};
-		mreq.op = MASTER_OPEN;
+		mreq.op = PARENT_OPEN;
 		mreq.index = subif->index;
 		my_mreq(&mreq);
 	    }
@@ -275,8 +275,8 @@ void child_send(int fd, short event, struct child_send_args *args) {
 		// write it to the wire.
 		my_log(INFO, "sending %s packet (%zu bytes) on %s",
 			    protos[p].name, msg.len, subif->name);
-		len = write(fd, &msg, MASTER_MSG_LEN(msg.len));
-		if (len < MASTER_MSG_MIN || len != MASTER_MSG_LEN(msg.len))
+		len = write(fd, &msg, PARENT_MSG_LEN(msg.len));
+		if (len < PARENT_MSG_MIN || len != PARENT_MSG_LEN(msg.len))
 		    my_fatale("only %zi bytes written", len);
 	    }
 	}
@@ -304,9 +304,9 @@ void child_queue(int fd, short event) {
     ssize_t len;
 
     my_log(INFO, "receiving message from parent");
-    if ((len = read(fd, &rmsg, MASTER_MSG_MAX)) == -1)
+    if ((len = read(fd, &rmsg, PARENT_MSG_MAX)) == -1)
 	return;
-    if (len < MASTER_MSG_MIN || len != MASTER_MSG_LEN(rmsg.len))
+    if (len < PARENT_MSG_MIN || len != PARENT_MSG_LEN(rmsg.len))
 	return;
     if ((now = time(NULL)) == (time_t)-1)
 	return;
@@ -369,7 +369,7 @@ void child_queue(int fd, short event) {
     } else {
 	char *hostname = NULL;
 
-	msg = my_malloc(MASTER_MSG_SIZ);
+	msg = my_malloc(PARENT_MSG_SIZ);
 	memcpy(msg, &rmsg, offsetof(struct parent_msg, entries));
 	// group messages per peer
 	if (pmsg)
@@ -473,7 +473,7 @@ void child_free(int sig, short event, void *arg) {
 }
 
 void child_cli_accept(int socket, short event) {
-    int	fd, sndbuf = MASTER_MSG_MAX * 10;
+    int	fd, sndbuf = PARENT_MSG_MAX * 10;
     struct sockaddr sa;
     socklen_t addrlen = sizeof(sa);
     struct child_session *session = NULL;
@@ -508,7 +508,7 @@ void child_cli_write(int fd, short event, struct child_session *sess) {
 	msg->lock--;
 
     for (; msg != NULL; msg = TAILQ_NEXT(msg, entries)) {
-	if (write(fd, msg, MASTER_MSG_MAX) != -1)
+	if (write(fd, msg, PARENT_MSG_MAX) != -1)
 	    continue;
 
 	// bail unless non-block

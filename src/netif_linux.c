@@ -93,7 +93,7 @@ static int netif_type(int sockfd, uint32_t index,
 #ifdef HAVE_SYSFS
     struct parent_req mreq = {};
 
-    mreq.op = MASTER_DEVICE;
+    mreq.op = PARENT_DEVICE;
     mreq.index = index;
 
     if (my_mreq(&mreq))
@@ -150,7 +150,7 @@ static void netif_driver(int sockfd, uint32_t index, struct ifreq *ifr,
 
     memset(dname, 0, len);
 
-    mreq.op = MASTER_ETHTOOL_GDRV;
+    mreq.op = PARENT_ETHTOOL_GDRV;
     mreq.index = index;
     mreq.len = sizeof(drvinfo);
 
@@ -189,7 +189,7 @@ static void netif_device_id(int sockfd, struct netif *netif, struct ifreq *ifr) 
 #if defined(HAVE_PCI_PCI_H)
     struct parent_req mreq = {};
 
-    mreq.op = MASTER_DEVICE_ID;
+    mreq.op = PARENT_DEVICE_ID;
     mreq.index = netif->index;
 
     if (!my_mreq(&mreq))
@@ -361,7 +361,7 @@ static void netif_physical(int sockfd, struct netif *netif) {
 	{0, 0}
     };
 
-    mreq.op = MASTER_ETHTOOL_GSET;
+    mreq.op = PARENT_ETHTOOL_GSET;
     mreq.index = netif->index;
     mreq.len = sizeof(ecmd);
 
