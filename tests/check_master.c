@@ -448,7 +448,7 @@ START_TEST(test_master_socket) {
 	return;
 
     options &= ~OPT_DEBUG;
-    errstr = "pcap_activate";
+    errstr = "pcap_";
     WRAP_FATAL_START();
     master_socket(rfd);
     WRAP_FATAL_END();
