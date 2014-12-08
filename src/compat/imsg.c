@@ -16,6 +16,9 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include "config.h"
+#include "compat/compat.h"
+
 #include <sys/types.h>
 #include <sys/queue.h>
 #include <sys/socket.h>

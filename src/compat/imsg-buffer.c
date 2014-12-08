@@ -16,6 +16,9 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include "config.h"
+#include "compat/compat.h"
+
 #include <sys/types.h>
 #include <sys/queue.h>
 #include <sys/socket.h>
@@ -255,7 +258,8 @@ msgbuf_write(struct msgbuf *msgbuf)
 		cmsg->cmsg_len = CMSG_LEN(sizeof(int));
 		cmsg->cmsg_level = SOL_SOCKET;
 		cmsg->cmsg_type = SCM_RIGHTS;
-		*(int *)CMSG_DATA(cmsg) = buf->fd;
+		//*(int *)CMSG_DATA(cmsg) = buf->fd;
+		memcpy(CMSG_DATA(cmsg), &buf->fd, sizeof(int));
 	}
 
 again:
