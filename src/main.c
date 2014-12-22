@@ -52,7 +52,9 @@ int main(int argc, char *argv[]) {
 
     // pids
     extern pid_t pid;
+#ifndef __APPLE__
     struct flock lock = { .l_type = F_WRLCK };
+#endif /* __APPLE__ */
 
     // exclude interface support
     TAILQ_INIT(&exclifs);
