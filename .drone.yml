@@ -1,4 +1,6 @@
 image: gcc-4.8
+env:
+  - EVENT_NOEPOLL=1
 script:
   - sudo apt-get install -qq libevent-dev libpcap-dev libcap-ng-dev libmnl-dev 
   - sudo apt-get install -qq libpci-dev autotools-dev check pkg-config
@@ -7,7 +9,6 @@ script:
   - ./configure
   - make
   - sudo chmod 600 /dev/console
-  - export EVENT_NOEPOLL=1
   - make check
 notify:
   email:
