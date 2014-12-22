@@ -27,7 +27,12 @@ AC_DEFUN([AC_CC_PIE],[
       *)
       gl_COMPILER_OPTION_IF([-fPIE -DPIE], [
         PIE_CFLAGS="-fPIE -DPIE"
-        PIE_LDFLAGS="-pie"
+        gl_COMPILER_OPTION_IF([-Werror -pie], [
+            PIE_LDFLAGS="-pie"
+        ], [
+            dnl clang requires -Wl,-pie instead of -pie
+            gl_COMPILER_OPTION_IF([-Wl,-pie], [ PIE_LDFLAGS="-Wl,-pie" ])
+        ])
       ])
     esac
     AC_SUBST([PIE_CFLAGS])
