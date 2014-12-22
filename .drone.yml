@@ -1,0 +1,15 @@
+image: gcc-4.8
+script:
+  - sudo apt-get install -qq libevent-dev libpcap-dev libcap-ng-dev libmnl-dev 
+  - sudo apt-get install -qq libpci-dev autotools-dev check pkg-config
+  - sudo apt-get install -qq lsb-base pciutils
+  - autoreconf -fi
+  - ./configure
+  - make
+  - sudo chmod 600 /dev/console
+  - export EVENT_NOEPOLL=1
+  - make check
+notify:
+  email:
+    recipients:
+      - sten@blinkenlights.nl
