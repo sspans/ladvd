@@ -51,7 +51,7 @@ void child_init(int reqfd, int msgfd, int ifc, char *ifl[],
 		struct passwd *pwd) {
 
     // events
-    struct child_send_args args = { .index = -1 };
+    struct child_send_args args = { .index = NETIF_INDEX_MAX };
     struct event evq, eva, evl;
     struct event ev_sigterm, ev_sigint;
 
@@ -166,7 +166,7 @@ void child_send(int fd, short event, struct child_send_args *args) {
     ssize_t len;
 
     // bail early on known flapping interfaces
-    if (args->index != -1) {
+    if (args->index != NETIF_INDEX_MAX) {
 	linkif = netif_byindex(&netifs, args->index);
 	if (linkif && (linkif->link_event > 3))
 	    goto out;
@@ -180,7 +180,7 @@ void child_send(int fd, short event, struct child_send_args *args) {
 	goto out;
 
     // no interface matching the given ifindex found
-    if (args->index != -1) {
+    if (args->index != NETIF_INDEX_MAX) {
 	if ((linkif = netif_byindex(&netifs, args->index)) == NULL)
 	    goto out;
     }
@@ -204,7 +204,7 @@ void child_send(int fd, short event, struct child_send_args *args) {
 	while ((subif = subif_iter(subif, netif)) != NULL) {
 
 	    // handle a given ifindex
-	    if (args->index != -1) {
+	    if (args->index != NETIF_INDEX_MAX) {
 		if (args->index != subif->index)
 		    continue;
 		subif->link_event++;
@@ -295,7 +295,7 @@ out:
     event_add(&args->event, &tv);
 }
 
-void child_queue(int fd, short event) {
+void child_queue(int fd, short __unused(event)) {
     struct parent_msg rmsg = {};
     struct parent_msg  *msg = NULL, *qmsg = NULL, *pmsg = NULL;
     struct netif *subif, *netif;
@@ -461,7 +461,7 @@ void child_expire() {
     }
 }
 
-void child_free(int sig, short event, void *arg) {
+void child_free(int __unused(sig), short __unused(event), void __unused(*arg)) {
     struct parent_msg *msg = NULL, *nmsg = NULL;
 
     TAILQ_FOREACH_SAFE(msg, &mqueue, entries, nmsg) {
@@ -472,7 +472,7 @@ void child_free(int sig, short event, void *arg) {
     exit(EXIT_SUCCESS);
 }
 
-void child_cli_accept(int socket, short event) {
+void child_cli_accept(int socket, short __unused(event)) {
     int	fd, sndbuf = PARENT_MSG_MAX * 10;
     struct sockaddr sa;
     socklen_t addrlen = sizeof(sa);
@@ -587,7 +587,7 @@ out:
     return MNL_CB_OK;
 }
 #endif
-void child_link(int fd, short event, void *msgfd) {
+void child_link(int __unused(fd), short __unused(event), void *msgfd) {
 
 #ifdef HAVE_LIBMNL
     char buf[MNL_SOCKET_BUFFER_SIZE];

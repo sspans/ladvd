@@ -79,6 +79,9 @@
 #ifndef __nonnull
 # define __nonnull(x)	__attribute__ ((__nonnull__ x))
 #endif
+#ifndef __unused
+#  define __unused(x)	__attribute__((__unused__)) x
+#endif
 #if __GNUC__ >= 3
 # define likely(x)	__builtin_expect (!!(x), 1)
 # define unlikely(x)	__builtin_expect (!!(x), 0)
@@ -103,6 +106,8 @@
 #define NETIF_BONDING_FAILOVER	2
 #define NETIF_CHILD_ACTIVE	1
 #define NETIF_CHILD_BACKUP	2
+
+#define NETIF_INDEX_MAX		UINT32_MAX
 
 struct netif {
     uint32_t index;
