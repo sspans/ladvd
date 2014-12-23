@@ -9,8 +9,9 @@ matrix:
   include:
     - compiler: gcc
       env: GCOV=1
-  allow_failures:
-      - os: osx
+  exclude:
+    - os: osx
+      compiler: gcc
 
 before_install:
   - echo "$TRAVIS_OS_NAME"
