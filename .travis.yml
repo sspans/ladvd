@@ -28,7 +28,7 @@ install:
     fi
   # OSX packages
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-    sudo brew install autoconf automake pkgconfig libtool libevent check;
+    brew install autoconf automake pkgconfig libtool libevent check;
     fi
   # coveralls
   - sudo pip install cpp-coveralls
