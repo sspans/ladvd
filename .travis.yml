@@ -2,23 +2,54 @@ language: c
 compiler:
   - clang
   - gcc
+os:
+  - linux
+  - osx
 matrix:
   include:
     - compiler: gcc
+      os: linux
       env: GCOV=1
+  exclude:
+    - os: osx
+      compiler: gcc
 
 before_install:
-  - sudo apt-get update -qq
-  - sudo apt-get install -qq libevent-dev libpcap-dev libcap-ng-dev libmnl-dev 
-  - sudo apt-get install -qq libpci-dev autotools-dev check pkg-config
-  - sudo apt-get install -qq lsb-base pciutils
-  - sudo apt-get install -qq slirp aufs-tools
+  - echo "$TRAVIS_OS_NAME"
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then sudo apt-get update -qq; fi
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew update; fi
+
+install:
+  - echo "$TRAVIS_OS_NAME"
+  # Linux packages
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+    sudo apt-get install -qq libevent-dev libpcap-dev libcap-ng-dev libmnl-dev;
+    sudo apt-get install -qq libpci-dev autotools-dev check pkg-config;
+    sudo apt-get install -qq lsb-base pciutils;
+    sudo apt-get install -qq slirp aufs-tools;
+    fi
+  # OSX packages
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
+    brew upgrade autoconf automake pkgconfig libtool || :;
+    brew install libevent check;
+    fi
+  # coveralls
   - sudo pip install cpp-coveralls
+
 before_script:
+  - echo "$TRAVIS_OS_NAME"
   - autoreconf -i
+
 script:
-  - 'CHECK="check"'
-  - 'if [ "$GCOV" = 1 ]; then FLAGS="$FLAGS --enable-gcov"; CHECK="check-uml"; fi'
-  - './configure $FLAGS && make && make $CHECK'
+  - echo "$TRAVIS_OS_NAME"
+  - CHECK="check"
+  - if [ "$GCOV" = 1 ]; then
+    FLAGS="$FLAGS --enable-gcov"; CHECK="check-uml";
+    fi
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then CHECK=""; fi
+  - ./configure $FLAGS && make && make $CHECK
+
 after_success:
-  - 'if [ "$GCOV" = 1 ]; then coveralls -b src -r src -e compat -e netif_bsd.c -E ".*\.h" --gcov-options "\-lp"; fi'
+  - if [ "$GCOV" = 1 ]; then
+    coveralls -b src -r src -e compat -e netif_bsd.c -E ".*\.h" --gcov-options "\-lp";
+    fi
