@@ -28,6 +28,10 @@ BuildRequires:  libcap-devel
 %endif
 BuildRequires:  pciutils-devel
 BuildRequires:  libmnl-devel
+%if 0%{?fedora} >= 19
+BuildRequires:  libteam-devel
+BuildRequires:  libnl3-devel
+%endif
 BuildRequires:  pkgconfig
 BuildRequires:  check-devel
 Requires:	/usr/bin/lsb_release

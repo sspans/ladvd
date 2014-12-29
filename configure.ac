@@ -355,6 +355,10 @@ AC_CHECK_HEADERS([linux/filter.h], [], [],
 #include <linux/types.h>
 ])
 
+# check for libteam
+PKG_CHECK_MODULES(LIBTEAM, [ libteam ],
+    AC_DEFINE(HAVE_LIBTEAM, 1, [have libteam]), :)
+
 # vlan / bridge / bonding
 AC_CHECK_HEADERS([linux/if_vlan.h linux/if_bridge.h \
 		  linux/if_bonding.h linux/if_team.h], [], [],
