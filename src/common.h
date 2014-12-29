@@ -104,6 +104,7 @@
 
 #define NETIF_BONDING_LACP  	1
 #define NETIF_BONDING_FAILOVER	2
+#define NETIF_BONDING_OTHER	3
 #define NETIF_CHILD_ACTIVE	1
 #define NETIF_CHILD_BACKUP	2
 
@@ -238,6 +239,13 @@ struct parent_req {
     char buf[512];
 };
 
+#define TEAM_NETIF_CNT 32
+struct parent_team_info {
+    uint8_t mode;
+    uint32_t netif_active;
+    uint32_t netifs[TEAM_NETIF_CNT];
+};
+
 #define PARENT_REQ_MIN	    offsetof(struct parent_req, buf)
 #define PARENT_REQ_MAX	    sizeof(struct parent_req)
 #define PARENT_REQ_LEN(l)   PARENT_REQ_MIN + l
@@ -299,7 +307,8 @@ TAILQ_HEAD(mhead, parent_msg);
 #define PARENT_DEVICE_ID    5
 #define PARENT_ETHTOOL_GSET 6
 #define PARENT_ETHTOOL_GDRV 7
-#define PARENT_MAX	    8
+#define PARENT_TEAMNL	    8
+#define PARENT_MAX	    9
 
 struct proto {
     uint8_t enabled;

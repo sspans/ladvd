@@ -50,6 +50,9 @@
 #if HAVE_LINUX_ETHTOOL_H
 #include <linux/ethtool.h>
 #endif /* HAVE_LINUX_ETHTOOL_H */
+#ifdef HAVE_LIBTEAM
+#include <team.h>
+#endif /* HAVE_LIBTEAM */
 
 #ifdef HAVE_PCI_PCI_H
 #include <pci/pci.h>
@@ -241,6 +244,11 @@ void parent_req(int reqfd, short event) {
 	    mreq.len = parent_device_id(&mreq);
 	    break;
 #endif /* HAVE_SYSFS && HAVE_PCI_PCI_H */
+#if defined(HAVE_LIBTEAM)
+	case PARENT_TEAMNL:
+	    mreq.len = parent_libteam(&mreq);
+	    break;
+#endif /* HAVE_LIBTEAM */
 	// invalid request
 	default:
 	    my_fatal("invalid request received");
@@ -272,6 +280,10 @@ int parent_check(struct parent_req *mreq) {
 	    assert(mreq->len == sizeof(struct ethtool_drvinfo));
 	    return(EXIT_SUCCESS);
 #endif /* HAVE_LINUX_ETHTOOL_H */
+#if HAVE_LIBTEAM
+	case PARENT_TEAMNL:
+	    return(EXIT_SUCCESS);
+#endif /* HAVE_LIBTEAM */
 #if defined(SIOCSIFDESCR) || defined(HAVE_SYSFS)
 	case PARENT_DESCR:
 	    assert(mreq->len <= IFDESCRSIZE);
@@ -420,6 +432,56 @@ ssize_t parent_ethtool(struct parent_req *mreq) {
     return(0);
 }
 #endif /* HAVE_LINUX_ETHTOOL_H */
+
+#if HAVE_LIBTEAM
+ssize_t parent_libteam(struct parent_req *mreq) {
+    struct team_handle *th;
+    struct team_port *port;
+    int err, cnt = 0;
+    char *mode_name;
+    struct parent_team_info pt_info = {};
+    ssize_t pt_size = 0;
+
+    th = team_alloc();
+    if (!th) {
+	my_loge(CRIT, "Team alloc failed for %s", mreq->name);
+	return 0;
+    }
+    err = team_init(th, mreq->index);
+    if (err) {
+	my_loge(CRIT, "Team init failed for %s", mreq->name);
+	goto team_free;
+    }
+
+    err = team_get_mode_name(th, &mode_name);
+    if (err) {
+	my_loge(CRIT, "Team get mode failed for %s", mreq->name);
+	goto team_free;
+    }
+
+    pt_info.mode = NETIF_BONDING_OTHER;
+
+    if (strcmp("activebackup", mode_name) == 0) {
+	pt_info.mode = NETIF_BONDING_FAILOVER;
+	team_get_active_port(th, &pt_info.netif_active);
+    }
+
+    team_for_each_port(port, th) {
+	pt_info.netifs[cnt++] = team_get_port_ifindex(port);
+	if (cnt == TEAM_NETIF_CNT)
+	    break;
+    }
+
+    pt_size = offsetof(struct parent_team_info, netifs) + \
+	    (cnt * sizeof(uint32_t));
+    memcpy(mreq->buf, &pt_info, pt_size);
+
+team_free:
+    team_free(th);
+
+    return pt_size;
+}
+#endif /* HAVE_LIBTEAM */
 
 ssize_t parent_descr(struct parent_req *mreq) {
 #ifdef HAVE_SYSFS

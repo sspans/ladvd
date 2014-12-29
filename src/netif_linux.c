@@ -66,7 +66,6 @@
 #include <linux/wireless.h>
 #endif /* HAVE_LINUX_WIRELESS_H */
 
-
 static int netif_wireless(int, struct ifaddrs *ifaddr, struct ifreq *);
 static void netif_driver(int, uint32_t index, struct ifreq *, char *, size_t);
 
@@ -199,14 +198,50 @@ static void netif_device_id(int sockfd, struct netif *netif, struct ifreq *ifr) 
 #endif /* HAVE_PCI_PCI_H */
 }
 
-#ifdef HAVE_LINUX_IF_TEAM_H
+#ifdef HAVE_LIBTEAM
 // handle teaming interfaces
 static void netif_team(int sockfd, struct nhead *netifs, struct netif *parent,
-		struct ifreq *ifr) {
+               struct ifreq *ifr) {
 
-    // XXX: this should talk to teamd
+    struct netif *subif = NULL, *csubif = parent;
+    struct parent_req mreq = {};
+    struct parent_team_info pt_info = {};
+    ssize_t cnt = 0;
+
+    mreq.op = PARENT_TEAMNL;
+    mreq.index = parent->index;
+
+    if (my_mreq(&mreq) == 0)
+	return;
+
+    memcpy(&pt_info, mreq.buf, mreq.len);
+    parent->bonding_mode = pt_info.mode;
+
+    cnt = mreq.len - offsetof(struct parent_team_info, netifs);
+    cnt /= sizeof(uint32_t);
+
+    for (int i = 0; i < cnt; i++) {
+	subif = netif_byindex(netifs, pt_info.netifs[i]);
+	if ((subif == NULL) || (subif->type > NETIF_PARENT))
+	    continue;
+
+	my_log(INFO, "found child %s", subif->name);
+	subif->child = NETIF_CHILD_ACTIVE;
+	if (parent->bonding_mode == NETIF_BONDING_FAILOVER)
+	    subif->child = NETIF_CHILD_BACKUP;
+	subif->parent = parent;
+	csubif->subif = subif;
+	csubif = subif;
+    }
+
+    if (parent->bonding_mode == NETIF_BONDING_FAILOVER) {
+	subif = netif_byindex(netifs, pt_info.netif_active);
+	if (subif != NULL)
+	    subif->child = NETIF_CHILD_ACTIVE;
+    }
 }
-#endif /* HAVE_LINUX_IF_TEAM_H */
+
+#endif /* HAVE_LIBTEAM */
 
 // handle aggregated interfaces
 static void netif_bond(int sockfd, struct nhead *netifs, struct netif *parent,

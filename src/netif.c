@@ -255,11 +255,11 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct my_sysinfo *sysinfo,
     TAILQ_FOREACH(netif, netifs, entries) {
 	my_log(INFO, "detecting %s settings", netif->name);
 	switch(netif->type) {
-#ifdef HAVE_LINUX_IF_TEAM_H
+#ifdef HAVE_LIBTEAM
 	    case NETIF_TEAMING:
 		netif_team(sockfd, netifs, netif, &ifr);
 		break;
-#endif /* HAVE_LINUX_IF_TEAM_H */
+#endif /* HAVE_LIBTEAM */
 	    case NETIF_BONDING:
 		netif_bond(sockfd, netifs, netif, &ifr);
 		break;

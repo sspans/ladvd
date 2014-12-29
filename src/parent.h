@@ -48,6 +48,9 @@ void parent_open(const uint32_t index, const char *name);
 #if HAVE_LINUX_ETHTOOL_H
 ssize_t parent_ethtool(struct parent_req *mreq);
 #endif /* HAVE_LINUX_ETHTOOL_H */
+#if HAVE_LIBTEAM
+ssize_t parent_libteam(struct parent_req *mreq);
+#endif /* HAVE_LIBTEAM */
 ssize_t parent_descr(struct parent_req *mreq);
 #ifdef HAVE_SYSFS
 ssize_t parent_device(struct parent_req *mreq);
