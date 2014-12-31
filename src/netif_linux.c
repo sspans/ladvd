@@ -206,7 +206,6 @@ static void netif_team(int sockfd, struct nhead *netifs, struct netif *parent,
     struct netif *subif = NULL, *csubif = parent;
     struct parent_req mreq = {};
     struct parent_team_info pt_info = {};
-    ssize_t cnt = 0;
 
     mreq.op = PARENT_TEAMNL;
     mreq.index = parent->index;
@@ -217,10 +216,7 @@ static void netif_team(int sockfd, struct nhead *netifs, struct netif *parent,
     memcpy(&pt_info, mreq.buf, mreq.len);
     parent->bonding_mode = pt_info.mode;
 
-    cnt = mreq.len - offsetof(struct parent_team_info, netifs);
-    cnt /= sizeof(uint32_t);
-
-    for (int i = 0; i < cnt; i++) {
+    for (int i = 0; i < pt_info.cnt; i++) {
 	subif = netif_byindex(netifs, pt_info.netifs[i]);
 	if ((subif == NULL) || (subif->type > NETIF_PARENT))
 	    continue;

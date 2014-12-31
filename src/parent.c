@@ -440,13 +440,13 @@ ssize_t parent_libteam(struct parent_req *mreq) {
     int err, cnt = 0;
     char *mode_name;
     struct parent_team_info pt_info = {};
-    ssize_t pt_size = 0;
 
     th = team_alloc();
     if (!th) {
 	my_loge(CRIT, "Team alloc failed for %s", mreq->name);
 	return 0;
     }
+
     err = team_init(th, mreq->index);
     if (err) {
 	my_loge(CRIT, "Team init failed for %s", mreq->name);
@@ -460,7 +460,6 @@ ssize_t parent_libteam(struct parent_req *mreq) {
     }
 
     pt_info.mode = NETIF_BONDING_OTHER;
-
     if (strcmp("activebackup", mode_name) == 0) {
 	pt_info.mode = NETIF_BONDING_FAILOVER;
 	team_get_active_port(th, &pt_info.netif_active);
@@ -472,14 +471,13 @@ ssize_t parent_libteam(struct parent_req *mreq) {
 	    break;
     }
 
-    pt_size = offsetof(struct parent_team_info, netifs) + \
-	    (cnt * sizeof(uint32_t));
-    memcpy(mreq->buf, &pt_info, pt_size);
+    pt_info.cnt = cnt;
+    memcpy(mreq->buf, &pt_info, sizeof(pt_info));
 
 team_free:
     team_free(th);
 
-    return pt_size;
+    return sizeof(pt_info);
 }
 #endif /* HAVE_LIBTEAM */
 

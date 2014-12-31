@@ -242,8 +242,9 @@ struct parent_req {
 #define TEAM_NETIF_CNT 32
 struct parent_team_info {
     uint8_t mode;
-    uint32_t netif_active;
+    uint8_t cnt;
     uint32_t netifs[TEAM_NETIF_CNT];
+    uint32_t netif_active;
 };
 
 #define PARENT_REQ_MIN	    offsetof(struct parent_req, buf)
