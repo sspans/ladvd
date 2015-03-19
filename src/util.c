@@ -229,9 +229,6 @@ int read_line(const char *path, char *line, uint16_t len) {
     FILE *file;
     int ret = 0;
 
-    if (path == NULL || line == NULL)
-	return(0);
-
     if ((file = fopen(path, "r")) == NULL)
 	return(0);
 
@@ -247,9 +244,6 @@ int read_line(const char *path, char *line, uint16_t len) {
 __nonnull()
 int write_line(const char *path, char *line, uint16_t len) {
     int fd, ret;
-
-    if (path == NULL || line == NULL)
-	return(0);
 
     if ((fd = open(path, O_WRONLY|O_TRUNC)) == -1)
 	return(0);
