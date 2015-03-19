@@ -79,7 +79,6 @@ WRAP(setsockopt, SETSOCKOPT,
     (s, level, optname, optval, optlen));
 WRAP(kill, KILL, (pid_t pid, int sig), (pid, sig));
 
-VWRAP(malloc, MALLOC, (size_t size), (size));
 VWRAP(calloc, CALLOC, (size_t nmemb, size_t size), (nmemb, size));
 VWRAP(strdup, STRDUP, (const char *s1), (s1));
 #ifdef HAVE___STRDUP

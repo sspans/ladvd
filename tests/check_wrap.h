@@ -31,7 +31,6 @@
 #define FAIL_SETSOCKOPT	(1 << 9)
 #define FAIL_OPEN	(1 << 10)
 #define FAIL_KILL	(1 << 11)
-#define FAIL_MALLOC	(1 << 29)
 #define FAIL_CALLOC	(1 << 30)
 #define FAIL_STRDUP	(1 << 31)
 
