@@ -392,8 +392,11 @@ void netif_descr(struct netif *netif, struct mhead *mqueue) {
 	if (netif->index != qmsg->index)
 	    continue;
 
-	if (!peer && qmsg->peer[PEER_HOSTNAME])
-	    peer = qmsg->peer[PEER_HOSTNAME];
+	if (!peer && qmsg->peer[PEER_HOSTNAME]) {
+	    peer = my_strdup(qmsg->peer[PEER_HOSTNAME]);
+	    peer[strcspn(peer, ".")] = '\0';
+	}
+
 	if (!suffix && qmsg->peer[peer_suffix])
 	    suffix = my_strdup(qmsg->peer[peer_suffix]);
 
@@ -420,6 +423,8 @@ void netif_descr(struct netif *netif, struct mhead *mqueue) {
 	snprintf(descr, IFDESCRSIZE, "connected to %" PRIu16 " peers", peers);
     }
 
+    if (peer)
+	free(peer);
     if (suffix)
 	free(suffix);
 
