@@ -335,7 +335,9 @@ void parent_send(int msgfd, short event) {
 
     // create rfd if needed
     if (rfd_byindex(&rawfds, msend.index) == NULL)
-	parent_open(msend.index, msend.name);
+	// bail if that fails
+	if (parent_open(msend.index, msend.name) < 0)
+	    return;
 
     assert((rfd = rfd_byindex(&rawfds, msend.index)) != NULL);
     len = write(rfd->fd, msend.msg, msend.len);
@@ -352,23 +354,27 @@ void parent_send(int msgfd, short event) {
 }
 
 
-void parent_open(const uint32_t index, const char *name) {
+int parent_open(const uint32_t index, const char *name) {
     struct rawfd *rfd = NULL;
 
     assert(name != NULL);
 
     rfd = my_malloc(sizeof(struct rawfd));
-    TAILQ_INSERT_TAIL(&rawfds, rfd, entries);
 
     rfd->index = index;
     strlcpy(rfd->name, name, IFNAMSIZ);
 
     rfd->fd = parent_socket(rfd);
-    if (rfd->fd < 0)
-	my_fatal("opening raw socket failed");
+    if (rfd->fd < 0) {
+	my_log(CRIT, "opening raw socket failed");
+	free(rfd);
+	return(-1);
+    }
+
+    TAILQ_INSERT_TAIL(&rawfds, rfd, entries);
 
     if (!(options & OPT_RECV) || (options & OPT_DEBUG))
-	return;
+	return(0);
 
     // register multicast membership
     parent_multi(rfd, protos, 1);
@@ -378,7 +384,7 @@ void parent_open(const uint32_t index, const char *name) {
 	(void *)parent_recv, rfd);
     event_add(&rfd->event, NULL);
 
-    return;
+    return(0);
 }
 
 void parent_close(struct rawfd *rfd) {
@@ -636,14 +642,18 @@ int parent_socket(struct rawfd *rfd) {
 	my_fatal("pcap_set_immediate_mode for %s failed", rfd->name);
 #endif
 
-    if (pcap_activate(p_handle) != 0)
-	my_fatal("pcap_activate for %s failed", rfd->name);
+    if (pcap_activate(p_handle) != 0) {
+	my_log(CRIT, "pcap_activate for %s failed", rfd->name);
+	goto failed;
+    }
 
     // on older versions we use pcap_open_live
 #else
     p_handle = pcap_open_live(rfd->name, ETHER_MAX_LEN, 0, 10, p_errbuf);
-    if (!p_handle)
-	my_fatal("pcap_open for %s failed: %s", rfd->name, p_errbuf);
+    if (!p_handle) {
+	my_log(CRIT, "pcap_open for %s failed: %s", rfd->name, p_errbuf);
+	return(-1);
+    }
 #endif
 
     // setup bpf receive
@@ -656,14 +666,20 @@ int parent_socket(struct rawfd *rfd) {
     }
 
     // install bpf filter
-    if (pcap_setfilter(p_handle, &fprog) != 0)
-	my_fatal("unable to configure socket filter for %s", rfd->name);
+    if (pcap_setfilter(p_handle, &fprog) != 0) {
+	my_log(CRIT, "unable to configure socket filter for %s", rfd->name);
+	goto failed;
+    }
 
-    if (pcap_setnonblock(p_handle, 1, p_errbuf) < 0)
-	my_fatal("pcap_setnonblock for %s failed: %s", rfd->name, p_errbuf);
+    if (pcap_setnonblock(p_handle, 1, p_errbuf) < 0) {
+	my_log(CRIT, "pcap_setnonblock for %s failed: %s", rfd->name, p_errbuf);
+	goto failed;
+    }
 
-    if (pcap_setdirection(p_handle, PCAP_D_IN) < 0)
-	my_fatal("pcap_setdirection for %s failed", rfd->name);
+    if (pcap_setdirection(p_handle, PCAP_D_IN) < 0) {
+	my_log(CRIT, "pcap_setdirection for %s failed", rfd->name);
+	goto failed;
+    }
 
 #if defined(__OpenBSD__) || defined(__FreeBSD__)
     // we enable immediate mode to receive packets timely
@@ -674,6 +690,10 @@ int parent_socket(struct rawfd *rfd) {
     rfd->p_handle = p_handle;
 
     return(pcap_get_selectable_fd(p_handle));
+
+failed:
+    pcap_close(p_handle);
+    return(-1);
 }
 
 

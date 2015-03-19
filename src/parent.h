@@ -44,7 +44,7 @@ void parent_req(int fd, short event);
 void parent_send(int fd, short event);
 void parent_recv(int fd, short event, struct rawfd *rfd);
 
-void parent_open(const uint32_t index, const char *name);
+int parent_open(const uint32_t index, const char *name);
 #if HAVE_LINUX_ETHTOOL_H
 ssize_t parent_ethtool(struct parent_req *mreq);
 #endif /* HAVE_LINUX_ETHTOOL_H */
