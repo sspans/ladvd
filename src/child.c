@@ -544,6 +544,8 @@ int child_link_fd() {
 	mnl_socket_close(nl);
 	return -1;
     }
+    my_nonblock(mnl_socket_get_fd(nl));
+
     return mnl_socket_get_fd(nl);
 #endif
 
@@ -593,6 +595,7 @@ void child_link(int __unused(fd), short __unused(event), void *msgfd) {
     char buf[MNL_SOCKET_BUFFER_SIZE];
     int ret;
 
+    my_log(INFO, "reading link event");
     while ((ret = mnl_socket_recvfrom(nl, buf, sizeof(buf))) > 0) {
         ret = mnl_cb_run(buf, ret, 0, 0, child_link_cb, msgfd);
         if (ret <= 0)
