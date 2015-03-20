@@ -1,6 +1,5 @@
 
 # http://fedoraproject.org/wiki/Packaging:RPMMacros
-# http://en.opensuse.org/Packaging/RPM_Macros
 # http://www.rpm.org/wiki/Problems/Distributions
 
 %global pkgname	ladvd
@@ -18,14 +17,12 @@
 %global	configure_args	--enable-static-libevent --enable-static-libpcap
 %endif
 
+%define use_systemd (0%{?fedora} && 0%{?fedora} >= 18) || (0%{?rhel} && 0%{?rhel} >= 7) || (0%{?suse_version} && 0%{?suse_version} >=1210)
+
 Name:		%{pkgname}%{?name_suffix}
 BuildRequires:  libpcap-devel
 BuildRequires:  libevent-devel
-%if 0%{?fedora} >= 12
 BuildRequires:  libcap-ng-devel
-%else
-BuildRequires:  libcap-devel
-%endif
 BuildRequires:  pciutils-devel
 BuildRequires:  libmnl-devel
 %if 0%{?fedora} >= 19
@@ -35,10 +32,18 @@ BuildRequires:  libnl3-devel
 BuildRequires:  pkgconfig
 BuildRequires:  check-devel
 Requires:	/usr/bin/lsb_release
-%if ! 0%{?suse_version}
-Requires:	hwdata
+Requires:	libmnl,libevent,libpcap
+
+%if %{use_systemd}
+Requires: systemd
+BuildRequires: systemd
+%else
+Requires(postun):   initscripts
+Requires(post):     chkconfig
+Requires(preun):    chkconfig
 %endif
-Version:	1.0.4
+
+Version:	1.1.0
 Release:	1%{?dist}
 License:	ISC
 URL:		http://github.com/sspans/ladvd/
@@ -75,11 +80,19 @@ make check
 rm -rf %{buildroot}
 make DESTDIR=%{buildroot} install-strip
 rm -rf %{buildroot}%{_docdir}/%{pkgname}
-install -D -m 755 %{SOURCE1} %{buildroot}%{_initrddir}/%{pkgname}
-%if 0%{?suse_version}
-    install -D -m 0644 %{SOURCE2} %{buildroot}/var/adm/fillup-templates/sysconfig.%{pkgname}
+
+%if %{use_systemd}
+# install systemd-specific files
+%{__mkdir} -p %{buildroot}%{_unitdir}
+%{__install} -m644 systemd/%{pkgname}.service \
+    %{buildroot}%{_unitdir}/%{pkgname}.service
+%{__mkdir} -p %{buildroot}%{_prefix}/lib/tmpfiles.d
+%{__install} -m644 systemd/%{pkgname}.conf \
+    %{buildroot}%{_prefix}/lib/tmpfiles.d/%{pkgname}.conf
 %else
-    install -D -m 644 %{SOURCE2} %{buildroot}%{_sysconfdir}/sysconfig/%{pkgname}
+# install SYSV init stuff
+%{__install} -D -m 755 %{SOURCE1} %{buildroot}%{_initrddir}/%{pkgname}
+%{__install} -D -m 644 %{SOURCE2} %{buildroot}%{_sysconfdir}/sysconfig/%{pkgname}
 %endif
 mkdir -p %{buildroot}%{homedir}
 
@@ -89,52 +102,55 @@ rm -rf %{buildroot}
 
 
 %pre
-/usr/sbin/groupadd -r %{pkgname} &>/dev/null || :
-/usr/sbin/useradd  -r -s /sbin/nologin -d %{homedir} -M \
-    -c '%{gecos}' -g %{pkgname} %{pkgname} &>/dev/null || :
+getent group %{pkgname} >/dev/null || /usr/sbin/groupadd -r %{pkgname}
+getent passwd %{pkgname} >/dev/null || \
+    /usr/sbin/useradd  -r -s /sbin/nologin -d %{homedir} -M \
+    -c '%{gecos}' -g %{pkgname} %{pkgname}
 
 
 %post
-%if ! 0%{?suse_version}
-/sbin/chkconfig --add %{pkgname}
+%if %{use_systemd}
+    /usr/bin/systemctl preset %{pkgname}.service >/dev/null 2>&1 ||:
 %else
-%fillup_and_insserv %{pkgname}
-%restart_on_update %{pkgname}
+    /sbin/chkconfig --add %{pkgname}
+#   /sbin/chkconfig %{pkgname} on
 %endif
 
 
 %preun
-%if ! 0%{?suse_version}
+%if %{use_systemd}
+    /usr/bin/systemctl --no-reload disable %{pkgname}.service >/dev/null 2>&1 || :
+    /usr/bin/systemctl stop %{pkgname}.service >/dev/null 2>&1 ||:
+%else
 if [ "$1" = "0" ]; then
 	/sbin/service %{pkgname} stop >/dev/null 2>&1 || :
 	/sbin/chkconfig --del %{pkgname}
 fi
-%else
-%stop_on_removal %{pkgname}
 %endif
 
 
 %postun
-%if ! 0%{?suse_version}
 if [ "$1" -ge "1" ]; then
-	/sbin/service %{pkgname} condrestart >/dev/null 2>&1 || :
-fi
-/usr/sbin/userdel %{pkgname} >/dev/null 2>&1 || :
-/usr/sbin/groupdel %{pkgname} >/dev/null 2>&1 || :
+%if %{use_systemd}
+    /usr/bin/systemctl daemon-reload >/dev/null 2>&1 ||:
 %else
-%{insserv_cleanup}  
+    /sbin/service %{pkgname} condrestart >/dev/null 2>&1 || :
 %endif
+fi
+test "$1" != 0 || /usr/sbin/userdel %{pkgname} >/dev/null 2>&1 || :
+test "$1" != 0 || /usr/sbin/groupdel %{pkgname} >/dev/null 2>&1 || :
 
 
 %files
 %defattr(-,root,root)
 %doc doc/ChangeLog doc/README doc/LICENSE doc/TODO doc/HACKING
-%if 0%{?suse_version}
-/var/adm/fillup-templates/sysconfig.%{pkgname}
+%if %{use_systemd}
+%{_unitdir}/%{pkgname}.service
+%{_prefix}/lib/tmpfiles.d/ladvd.conf
 %else
+%{_initrddir}/%{pkgname}
 %config(noreplace) %{_sysconfdir}/sysconfig/%{pkgname}
 %endif
-%{_initrddir}/%{pkgname}
 %{_sbindir}/%{pkgname}
 %{_sbindir}/%{pkgname}c
 %{_mandir}/man8/%{pkgname}.8*
@@ -143,6 +159,8 @@ fi
 
 
 %changelog
+* Wed Feb 04 2015 Anton Samets <a_samets@wargaming.net> - 1.1.0-1
+- Updates for systemd / Centos 7
 * Mon Jan 30 2012 sten@blinkenlights.nl
 - new upstream release
 * Sat Feb 20 2010 sten@blinkenlights.nl
