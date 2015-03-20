@@ -3,7 +3,7 @@
 
 AC_PREREQ([2.61])
 
-AC_INIT([ladvd], [1.0.4], [sten@blinkenlights.nl])
+AC_INIT([ladvd], [1.1.0], [sten@blinkenlights.nl])
 AC_CANONICAL_TARGET
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([src/config.h.in])
