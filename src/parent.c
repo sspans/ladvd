@@ -750,7 +750,7 @@ void parent_multi(struct rawfd *rfd, struct proto *protos, int op) {
 	memcpy(ifr.ifr_addr.sa_data, protos[p].dst_addr, ETHER_ADDR_LEN);
 #endif
 	if ((ioctl(sock, (op) ? SIOCADDMULTI: SIOCDELMULTI, &ifr) < 0) &&
-	    (errno != EADDRINUSE))
+	    (errno != EADDRINUSE) && (p != PROTO_CDP1))
 	    my_loge(CRIT, "unable to change %s multicast on %s",
 		     protos[p].name, rfd->name);
 #endif
