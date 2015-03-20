@@ -314,7 +314,7 @@ static void netif_bond(int sockfd, struct nhead *netifs, struct netif *parent,
 	// XXX: multi-level bonds not supported
 	if ((subif != NULL) && (subif->type < NETIF_PARENT)) {
 	    my_log(INFO, "found child %s", subif->name);
-	    subif->subif = NETIF_CHILD_ACTIVE;
+	    subif->child = NETIF_CHILD_ACTIVE;
 #ifdef HAVE_NET_IF_LAGG_H
 	    if (!(rpbuf[i].rp_flags & LAGG_PORT_ACTIVE))
 #elif HAVE_NET_IF_TRUNK_H
