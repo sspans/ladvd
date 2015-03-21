@@ -19,7 +19,7 @@ dnl <http://www.gnu.org/licenses/>.
 dnl
 
 AC_DEFUN([AC_CC_STACK_PROTECTOR],[
-      gl_COMPILER_OPTION_IF([-fstack-protector], [
+      gl_COMPILER_OPTION_IF([-fstack-protector -Werror], [
         CFLAGS="-fstack-protector $CFLAGS"
         CXXFLAGS="-fstack-protector $CXXFLAGS"
       ])
