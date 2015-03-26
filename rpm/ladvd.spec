@@ -20,6 +20,9 @@
 %define use_systemd (0%{?fedora} && 0%{?fedora} >= 18) || (0%{?rhel} && 0%{?rhel} >= 7) || (0%{?suse_version} && 0%{?suse_version} >=1210)
 
 Name:		%{pkgname}%{?name_suffix}
+BuildRequires:  autoconf
+BuildRequires:  automake
+BuildRequires:  libtool
 BuildRequires:  libpcap-devel
 BuildRequires:  libevent-devel
 BuildRequires:  libcap-ng-devel
@@ -68,6 +71,7 @@ IPv6) are detected dynamically.
 
 
 %build
+autoreconf -fi
 %configure --docdir=%{_docdir}/%{pkgname} %{?configure_args}
 make %{?_smp_mflags}
 
