@@ -9,6 +9,7 @@ AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([src/config.h.in])
 AC_CONFIG_HEADER([src/config.h])
 AM_INIT_AUTOMAKE([subdir-objects foreign])
+m4_ifndef([AM_SILENT_RULES], [m4_define([AM_SILENT_RULES],[])])
 AM_SILENT_RULES([yes])
 
 # Checks for programs.
