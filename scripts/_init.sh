@@ -7,8 +7,8 @@ BASE=$(pwd)
 RELEASE="${BASE}/release"
 
 # prepare
-hg pull -u
-hg log --style=changelog > ${BASE}/doc/ChangeLog
+git pull -u
+git log --date=short --pretty=format:'%ad [%h] [%an]: %s' > ${BASE}/doc/ChangeLog
 
 # create release dir
 if [ -n "${CLEAN}" ]; then
