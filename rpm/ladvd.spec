@@ -28,7 +28,7 @@ BuildRequires:  libevent-devel
 BuildRequires:  libcap-ng-devel
 BuildRequires:  pciutils-devel
 BuildRequires:  libmnl-devel
-%if 0%{?fedora} >= 19
+%if %{use_systemd}
 BuildRequires:  libteam-devel
 BuildRequires:  libnl3-devel
 %endif
