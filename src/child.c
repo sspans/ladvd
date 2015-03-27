@@ -267,9 +267,9 @@ void child_send(int fd, short event, struct child_send_args *args) {
 		    continue;
 		}
 
-		// zero the src when sending on a failover subif
-		if (subif->child &&
-		    (netif->bonding_mode == NETIF_BONDING_FAILOVER))
+		// zero the src when sending on a backup subif
+		if ((netif->bonding_mode == NETIF_BONDING_FAILOVER) &&
+		    (subif->child != NETIF_CHILD_ACTIVE))
 		    memset(msg.msg + ETHER_ADDR_LEN, 0, ETHER_ADDR_LEN);
 
 		// write it to the wire.
