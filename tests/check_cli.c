@@ -126,6 +126,7 @@ START_TEST(test_cli_main) {
     mark_point();
     fail_unless(ifindex, "missing loopback interface");
 
+#ifndef __sun__
     mark_point();
     memset(buf, 0, sizeof(buf));
     argv[5] = if_indextoname(ifindex, ifname);
@@ -164,6 +165,7 @@ START_TEST(test_cli_main) {
 	    "cli_main read failed");
     fail_unless (strncmp(buf, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", buf);
+#endif
 
     // cleanup
 #if HAVE_EVHTTP_H

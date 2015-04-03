@@ -17,7 +17,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/src
 LDADD = $(top_builddir)/src/libproto.la $(top_builddir)/src/libmisc.la \
     $(top_builddir)/src/libcompat.la $(check_LTLIBRARIES) \
     $(EVENT_LIB) $(PCI_LIBS) $(PCAP_LIB) $(CAPNG_LDADD) $(CAP_LDADD) \
-    $(LIBMNL_LIBS) $(LIBTEAM_LIBS) @CHECK_LIBS@
+    $(LIBMNL_LIBS) $(LIBTEAM_LIBS) $(DLADM_LIBS) @CHECK_LIBS@
 common_headers = $(top_srcdir)/src/common.h $(top_srcdir)/src/util.h \
 	    $(top_srcdir)/src/proto/protos.h
 

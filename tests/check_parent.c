@@ -485,6 +485,7 @@ START_TEST(test_parent_multi) {
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
+#if !defined(NETIF_SOLARIS)
     mark_point();
     options &= ~OPT_DEBUG;
     errstr = "unable to change LLDP multicast on";
@@ -502,6 +503,7 @@ START_TEST(test_parent_multi) {
     check_wrap_fake = 0;
     fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
+#endif
 
     // reset
     check_wrap_fake = 0;
