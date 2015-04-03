@@ -23,6 +23,13 @@
 #include <inttypes.h>
 #include <sys/types.h>
 
+#ifndef HAVE_BSD_TYPES
+typedef uint8_t u_int8_t;
+typedef uint16_t u_int16_t;
+typedef uint32_t u_int32_t;
+typedef uint64_t u_int64_t;
+#endif
+
 #ifndef HAVE_SETPROCTITLE
 void setproctitle(const char *fmt, ...);
 void compat_init_setproctitle(int argc, char *argv[]);
@@ -47,6 +54,8 @@ size_t strlcat(char *dst, const char *src, size_t siz);
 	    (var) && ((tvar) = TAILQ_NEXT((var), field), 1);		\
 	    (var) = (tvar))
 #endif
+
+extern void bzero(void *, size_t);
 
 #include <sys/uio.h>
 #include "compat/imsg.h"

@@ -119,6 +119,59 @@ AC_CHECK_FUNC([gethostent], [], [
  AC_CHECK_LIB([nsl], [gethostent], [LIBS="-lnsl $LIBS"])
 ])
 
+# Check for CMSG_DATA. Some platforms require _XOPEN_SOURCE_EXTENDED
+# (for example see xopen_networking(7) on HP-UX).
+XOPEN_DEFINES=
+AC_MSG_CHECKING(for CMSG_DATA)
+AC_EGREP_CPP(
+	yes,
+	[
+		#include <sys/socket.h>
+		#ifdef CMSG_DATA
+		yes
+		#endif
+	],
+	found_cmsg_data=yes,
+	found_cmsg_data=no
+)
+AC_MSG_RESULT($found_cmsg_data)
+if test "x$found_cmsg_data" = xno; then
+	AC_MSG_CHECKING(if CMSG_DATA needs _XOPEN_SOURCE_EXTENDED)
+	AC_EGREP_CPP(
+		yes,
+		[
+			#define _XOPEN_SOURCE 600
+			#include <sys/socket.h>
+			#ifdef CMSG_DATA
+			yes
+			#endif
+		],
+		found_cmsg_data=yes,
+		found_cmsg_data=no
+	)
+	AC_MSG_RESULT($found_cmsg_data)
+	if test "x$found_cmsg_data" = xyes; then
+		XOPEN_DEFINES="-D_XOPEN_SOURCE=600"
+	else
+		AC_MSG_ERROR("CMSG_DATA not found")
+	fi
+fi
+AC_SUBST(XOPEN_DEFINES)
+
+# Check for BSD-style integer types.
+AC_COMPILE_IFELSE([AC_LANG_SOURCE(
+	[
+		#include <sys/types.h>
+		#ifdef HAVE_STDINT_H
+		#include <stdint.h>
+		#else
+		#include <inttypes.h>
+		#endif
+		int main(void)
+		{ u_int8_t u8; u_int16_t u16; u_int32_t u32; u_int64_t u64; }
+	])], [AC_DEFINE(HAVE_BSD_TYPES, 1, [for BSD-style unsigned types])]
+)
+
 # check unit tests
 PKG_CHECK_MODULES([CHECK], [check >= 0.9.4],
     AC_SUBST([TESTS_SUBDIR], ["tests"])

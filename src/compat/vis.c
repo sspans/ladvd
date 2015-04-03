@@ -40,6 +40,9 @@
 
 #include "vis.h"
 
+typedef unsigned char u_char;
+typedef unsigned int  u_int;
+
 #define	isoctal(c)	(((u_char)(c)) >= '0' && ((u_char)(c)) <= '7')
 #define	isvisible(c)							\
 	(((u_int)(c) <= UCHAR_MAX && isascii((u_char)(c)) &&		\

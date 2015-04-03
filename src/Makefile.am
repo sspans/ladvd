@@ -1,5 +1,5 @@
 
-AM_CFLAGS = $(WARN_CFLAGS)
+AM_CFLAGS = $(WARN_CFLAGS) @XOPEN_DEFINES@
 AM_LDFLAGS = $(WARN_LDFLAGS)
 
 EXTRA_DIST = netif_bsd.c netif_linux.c
