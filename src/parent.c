@@ -699,7 +699,7 @@ failed:
 
 void parent_multi(struct rawfd *rfd, struct proto *protos, int op) {
 
-#ifdef AF_PACKET
+#ifdef NETIF_LINUX
     struct packet_mreq mreq = {};
 #endif
 #ifdef __FreeBSD__
@@ -718,7 +718,7 @@ void parent_multi(struct rawfd *rfd, struct proto *protos, int op) {
 	if ((protos[p].enabled == 0) && !(options & OPT_AUTO))
 	    continue;
 
-#ifdef AF_PACKET
+#if defined(NETIF_LINUX)
 	// prepare a packet_mreq struct
 	mreq.mr_ifindex = rfd->index;
 	mreq.mr_type = PACKET_MR_MULTICAST;
@@ -731,7 +731,7 @@ void parent_multi(struct rawfd *rfd, struct proto *protos, int op) {
 	    my_loge(CRIT, "unable to change %s multicast on %s",
 		     protos[p].name, rfd->name);
 
-#elif defined AF_LINK
+#elif defined(NETIF_BSD)
 	// too bad for EDP
 	if (!ETHER_IS_MULTICAST(protos[p].dst_addr))
 	    continue;
