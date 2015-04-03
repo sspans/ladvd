@@ -1,8 +1,8 @@
 
-AM_CFLAGS = $(WARN_CFLAGS) @XOPEN_DEFINES@
+AM_CFLAGS = $(WARN_CFLAGS) @EXTENSIONS@ @XOPEN_DEFINES@
 AM_LDFLAGS = $(WARN_LDFLAGS)
 
-EXTRA_DIST = netif_bsd.c netif_linux.c
+EXTRA_DIST = netif_bsd.c netif_linux.c netif_solaris.c
 
 common_headers = common.h ether.h filter.h util.h \
 	compat/compat.h compat/sys-queue.h proto/protos.h
@@ -23,7 +23,8 @@ libmisc_la_SOURCES = $(common_headers) child.h child.c parent.h parent.c \
 sbin_PROGRAMS = ladvd
 ladvd_SOURCES = $(common_headers) main.h main.c
 ladvd_LDADD = $(noinst_LTLIBRARIES) $(EVENT_LIB) $(PCAP_LIB) $(PCI_LIBS) \
-	$(CAPNG_LDADD) $(CAP_LDADD) $(LIBMNL_LIBS) $(LIBTEAM_LIBS)
+	$(CAPNG_LDADD) $(CAP_LDADD) $(LIBMNL_LIBS) $(LIBTEAM_LIBS) \
+	$(DLADM_LIBS)
 
 install-exec-hook:
 	$(LN_S) @PACKAGE_NAME@$(EXEEXT) \

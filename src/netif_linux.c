@@ -474,3 +474,4 @@ static void netif_physical(int sockfd, struct netif *netif) {
 #endif /* HAVE_LINUX_ETHTOOL_H */
 }
 
+void netif_init_custom() {};

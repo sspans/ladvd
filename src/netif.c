@@ -60,13 +60,17 @@ static int sockfd = -1;
 
 static void netif_addrs(struct ifaddrs *, struct nhead *, struct my_sysinfo *);
 
-#if defined(NETIF_LINUX)
-#include "netif_linux.c"
-#elif defined(NETIF_BSD)
+#if defined(NETIF_BSD)
 #include "netif_bsd.c"
+#elif defined(NETIF_LINUX)
+#include "netif_linux.c"
+#elif defined(NETIF_SOLARIS)
+#include "netif_solaris.c"
 #endif
 
 void netif_init() {
+    netif_init_custom();
+
     if (sockfd == -1)
 	sockfd = my_socket(AF_INET, SOCK_DGRAM, 0);
 }

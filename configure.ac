@@ -48,7 +48,9 @@ case "$target_os" in
 	AC_DEFINE(NETIF_BSD,1, [define for netifs])
 	;;
     solaris*)
-	AC_DEFINE(NETIF_BSD,1, [define for netifs])
+	AC_DEFINE(NETIF_SOLARIS,1, [define for netifs])
+    	AC_SUBST(DLADM_LIBS,"-ldladm")
+    	AC_SUBST(EXTENSIONS,"-D__EXTENSIONS__")
 	;;
     *)
 	AC_MSG_ERROR([Unsupported operating system])

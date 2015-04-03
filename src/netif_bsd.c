@@ -643,3 +643,5 @@ static int netif_physical(int sockfd, struct netif *netif) {
     return(EXIT_SUCCESS);
 }
 
+void netif_init_custom() {};
+
