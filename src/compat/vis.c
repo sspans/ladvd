@@ -33,7 +33,8 @@
 #if !defined(HAVE_STRNVIS) || defined(BROKEN_STRNVIS)
 
 // needed for isascii
-#define _BSD_SOURCE 1;
+//#define _BSD_SOURCE 1;
+#define _DEFAULT_SOURCE
 
 #include <ctype.h>
 #include <string.h>
