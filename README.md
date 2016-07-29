@@ -47,6 +47,10 @@ To build ladvd, first run the "configure" script. This will create a
 Makefile and config.h appropriate for your system. Then type
 "make" and optionally "make install". 
 
+Please note that a ladvd user should be created for normal operation.
+And that the provided systemd unit-file (for linux systems) uses FHS standard
+paths (/usr/sbin) and not the autoconf default (/usr/local/sbin).
+
 
 BUG REPORTS
 -----------
