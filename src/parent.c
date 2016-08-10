@@ -549,12 +549,17 @@ ssize_t parent_device(struct parent_req *mreq) {
 
 #if defined(HAVE_SYSFS) && defined(HAVE_PCI_PCI_H)
 ssize_t parent_device_id(struct parent_req *mreq) {
+    struct stat sb;
     uint16_t device_id = 0, vendor_id = 0;
     static struct pci_access *pacc = NULL;
     char path[SYSFS_PATH_MAX], id_str[16];
     char sub_path[SYSFS_PATH_MAX] = {}, *sub_base = NULL;
     char vendor_str[32], device_str[32], *s = NULL;
     ssize_t ret = 0;
+
+    // prevent libpci breakage
+    if (stat("/proc/bus/pci", &sb) != 0)
+	return(0);
 
     if (!pacc) {
 	pacc = pci_alloc();
