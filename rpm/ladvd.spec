@@ -46,7 +46,7 @@ Requires(post):     chkconfig
 Requires(preun):    chkconfig
 %endif
 
-Version:	1.1.0
+Version:	1.1.1
 Release:	1%{?dist}
 License:	ISC
 URL:		http://github.com/sspans/ladvd/
@@ -163,6 +163,8 @@ test "$1" != 0 || /usr/sbin/groupdel %{pkgname} >/dev/null 2>&1 || :
 
 
 %changelog
+* Sat Jul 10 2017 sten@blinkenlights.nl
+- new upstream release
 * Wed Feb 04 2015 Anton Samets <a_samets@wargaming.net> - 1.1.0-1
 - Updates for systemd / Centos 7
 * Mon Jan 30 2012 sten@blinkenlights.nl
