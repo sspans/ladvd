@@ -3,7 +3,7 @@
 
 AC_PREREQ([2.61])
 
-AC_INIT([ladvd], [1.1.0], [sten@blinkenlights.nl])
+AC_INIT([ladvd], [1.1.1], [sten@blinkenlights.nl])
 AC_CANONICAL_TARGET
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([src/config.h.in])
@@ -56,7 +56,7 @@ case "$target_os" in
 esac
 
 # enable warnings/errors/security
-AX_CFLAGS_GCC_OPTION(-Wall -Werror, WCFLAGS)
+AX_CFLAGS_GCC_OPTION(-Wall, WCFLAGS)
 AX_CFLAGS_GCC_OPTION(-Wformat -Wformat-security, WCFLAGS)
 AC_LD_RELRO
 AC_CC_PIE
