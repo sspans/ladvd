@@ -35,3 +35,7 @@ lcov-check:
 endif
 endif
 
+if HAVE_SYSTEMD
+DISTCHECK_CONFIGURE_FLAGS = \
+  --with-systemdsystemunitdir=$$dc_install_base/$(systemdsystemunitdir)
+endif
