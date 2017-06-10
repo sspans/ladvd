@@ -25,5 +25,5 @@ else
 endif
 
 clean-local:
-	-rm $(man_MANS)
+	-rm $(man_MANS) ChangeLog
 
