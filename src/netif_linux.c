@@ -123,7 +123,7 @@ static int netif_type(int sockfd, uint32_t index,
 	} else if (strcmp(dname, "802.1Q VLAN Support") == 0) {
 	    return(NETIF_VLAN);
 	// handle tun/tap
-	} else if (strcmp(dname, "tun") == 0) {
+	} else if (strcmp(dname, "tun") == 0 || strcmp(dname, "veth") == 0) {
 	    return(NETIF_TAP);
 	}
 
