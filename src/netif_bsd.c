@@ -629,6 +629,21 @@ static int netif_physical(int sockfd, struct netif *netif) {
 	    netif->mau = LLDP_MAU_TYPE_10GBASE_T;
 	    break;
 #endif
+#ifdef IFM_40G_CR4
+	case IFM_40G_CR4:
+	    netif->mau = LLDP_MAU_TYPE_40GBASE_CR4;
+	    break;
+#endif
+#ifdef IFM_40G_SR4
+	case IFM_40G_SR4:
+	    netif->mau = LLDP_MAU_TYPE_40GBASE_SR4;
+	    break;
+#endif
+#ifdef IFM_40G_LR4
+	case IFM_40G_LR4:
+	    netif->mau = LLDP_MAU_TYPE_40GBASE_LR4;
+	    break;
+#endif
     }
 
     free(media_list);
