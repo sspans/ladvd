@@ -563,6 +563,9 @@ ssize_t parent_device_id(struct parent_req *mreq) {
 
     if (!pacc) {
 	pacc = pci_alloc();
+       if (!pacc)
+            return(0);
+        pci_init(pacc);
     }
 
     ret = snprintf(path, SYSFS_PATH_MAX,
