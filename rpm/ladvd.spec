@@ -46,7 +46,7 @@ Requires(post):     chkconfig
 Requires(preun):    chkconfig
 %endif
 
-Version:	1.1.1
+Version:	1.1.2
 Release:	1%{?dist}
 License:	ISC
 URL:		http://github.com/sspans/ladvd/
