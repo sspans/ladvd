@@ -147,7 +147,7 @@ test "$1" != 0 || /usr/sbin/groupdel %{pkgname} >/dev/null 2>&1 || :
 
 %files
 %defattr(-,root,root)
-%doc doc/ChangeLog doc/README doc/LICENSE doc/TODO doc/HACKING
+%doc doc/README doc/LICENSE doc/TODO doc/HACKING
 %if %{use_systemd}
 %{_unitdir}/%{pkgname}.service
 %{_prefix}/lib/tmpfiles.d/ladvd.conf
