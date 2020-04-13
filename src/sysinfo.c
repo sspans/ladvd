@@ -214,7 +214,7 @@ void sysinfo_fetch(struct my_sysinfo *sysinfo) {
 
     // FreeBSD
 #ifdef HAVE_KENV_H
-    len = LLDP_INVENTORY_SIZE + 1;
+    len = LLDP_INVENTORY_SIZE;
     kenv(KENV_GET, "smbios.system.version", hinv->hw_revision, len);
     kenv(KENV_GET, "smbios.bios.version", hinv->fw_revision, len);
     kenv(KENV_GET, "smbios.system.serial", hinv->serial_number, len);
