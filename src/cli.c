@@ -47,6 +47,7 @@ static struct mode modes[] = {
 #define MODE_HTTP   4
 
 #define TERM_DEFAULT 80
+static int term_width = 0;
 static int host_width = 20;
 static int port_width = 10;
 
@@ -273,10 +274,9 @@ void cli_header() {
     struct winsize ws = {};
 
     // Try to fetch the terminal width
-    if (ioctl(0, TIOCGWINSZ, &ws) == -1)
-	port_width = 0;
-    else {
-	int extra = ws.ws_col - TERM_DEFAULT;
+    if (ioctl(0, TIOCGWINSZ, &ws) == 0)
+        term_width = ws.ws_col
+	int extra = term_width - TERM_DEFAULT;
 
 	if (extra > 0) {
 	    if (extra > 20) {
@@ -314,7 +314,7 @@ void cli_write(struct parent_msg *msg, const uint16_t holdtime) {
     if (peer_suffix)
 	portname_abbr(peer_suffix);
 
-    if (port_width > 0)
+    if (term_width > 0)
 	printf("%-*.*s %-13.13s %-7.7s %-12" PRIu16 " %-13.13s %-*.*s\n",
 	    host_width, host_width, STR(peer_host), STR(msg->name), protos[msg->proto].name,
 	    holdtime, STR(cap), port_width, port_width, STR(peer_suffix));
