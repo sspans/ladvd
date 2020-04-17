@@ -270,22 +270,22 @@ void batch_write(struct parent_msg *msg, const uint16_t holdtime) {
 }
 
 void cli_header() {
-    int twidth = TERM_DEFAULT;
     struct winsize ws = {};
 
     // Try to fetch the terminal width
-    if (ioctl(0, TIOCGWINSZ, &ws) == 0)
-	twidth = ws.ws_col;
+    if (ioctl(0, TIOCGWINSZ, &ws) == -1)
+	port_width = 0;
+    else {
+	int extra = ws.ws_col - TERM_DEFAULT;
 
-    twidth -= TERM_DEFAULT;
-    if (twidth > 0) {
-	if (twidth > 20) {
-	    host_width += 10;
-	    port_width = twidth;
-	} else {
-	    twidth /= 2;
-	    host_width += twidth;
-	    port_width += twidth;
+	if (extra > 0) {
+	    if (extra > 20) {
+		host_width += 10;
+		port_width = extra;
+	    } else {
+		host_width += extra / 2;
+		port_width += extra - (extra / 2);
+	    }
 	}
     }
 
@@ -314,9 +314,14 @@ void cli_write(struct parent_msg *msg, const uint16_t holdtime) {
     if (peer_suffix)
 	portname_abbr(peer_suffix);
 
-    printf("%-*.*s %-13.13s %-7.7s %-12" PRIu16 " %-13.13s %-*.*s\n",
-	host_width, host_width, STR(peer_host), STR(msg->name), protos[msg->proto].name,
-	holdtime, STR(cap), port_width, port_width, STR(peer_suffix));
+    if (port_width > 0)
+	printf("%-*.*s %-13.13s %-7.7s %-12" PRIu16 " %-13.13s %-*.*s\n",
+	    host_width, host_width, STR(peer_host), STR(msg->name), protos[msg->proto].name,
+	    holdtime, STR(cap), port_width, port_width, STR(peer_suffix));
+    else
+	printf("%-*.*s %-13.13s %-7.7s %-12" PRIu16 " %-13.13s %s\n",
+	    host_width, host_width, STR(peer_host), STR(msg->name), protos[msg->proto].name,
+	    holdtime, STR(cap), STR(peer_suffix));
 }
 
 void debug_header() {
