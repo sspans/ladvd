@@ -21,6 +21,7 @@
 #include "util.h"
 #include <syslog.h>
 #include <grp.h>
+#include <sys/param.h>
 #include <sys/resource.h>
 #include <pcap.h>
 
