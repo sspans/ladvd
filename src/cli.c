@@ -274,8 +274,8 @@ void cli_header() {
     struct winsize ws = {};
 
     // Try to fetch the terminal width
-    if (ioctl(0, TIOCGWINSZ, &ws) == 0)
-	term_width = ws.ws_col
+    if (ioctl(0, TIOCGWINSZ, &ws) == 0) {
+	term_width = ws.ws_col;
 	int extra = term_width - TERM_DEFAULT;
 
 	if (extra > 0) {
