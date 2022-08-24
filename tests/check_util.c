@@ -573,7 +573,7 @@ START_TEST(test_my_priv) {
     struct passwd *pwd = NULL;
     struct stat sb;
     const char *errstr = NULL;
-    char path[MAXPATHLEN + 1] = {};
+    char path[PATH_MAX + 1] = {};
 
     loglevel = INFO;
     errno = EPERM;
@@ -638,7 +638,7 @@ START_TEST(test_my_priv) {
 
     mark_point();
     errstr = "chroot path does not begin at root";
-    memset(path, 'a', MAXPATHLEN);
+    memset(path, 'a', PATH_MAX);
     WRAP_FATAL_START();
     my_chroot(path);
     WRAP_FATAL_END();
@@ -690,7 +690,7 @@ START_TEST(test_my_priv) {
 
     mark_point();
     errstr = "unable to chdir to chroot path";
-    strlcpy(path, "/", MAXPATHLEN);
+    strlcpy(path, "/", PATH_MAX);
     check_wrap_fail |= FAIL_CHDIR;
     WRAP_FATAL_START();
     my_chroot(path);

@@ -149,7 +149,7 @@ int my_nonblock(int s) {
 __nonnull()
 void my_chroot(const char *path) {
     const char *cp;
-    char component[MAXPATHLEN];
+    char component[PATH_MAX];
     struct stat st;
 
     if (*path != '/')
