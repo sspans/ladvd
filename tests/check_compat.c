@@ -50,9 +50,9 @@ START_TEST(test_setproctitle) {
     compat_init_setproctitle(argc, argv);
     setproctitle(str);
 
-    fail_unless(asprintf(&ptitle, "%s: %s", __progname, str) != -1,
+    ck_assert_msg(asprintf(&ptitle, "%s: %s", __progname, str) != -1,
 	"asprintf failed");
-    fail_unless (strcmp(argv[0], ptitle) == 0,
+    ck_assert_msg (strcmp(argv[0], ptitle) == 0,
 	"title should be '%s' not '%s'", ptitle, argv[0]);
 }
 END_TEST
@@ -66,35 +66,35 @@ START_TEST(test_strlcat) {
 
     memset(&dst, 0, BUFSIZ);
     len = strlcat(dst, src, 0);
-    fail_unless (len == strlen(src), "length should not be %zu", len);
-    fail_unless (strlen(dst) == 0, "length should be 0");
+    ck_assert_msg (len == strlen(src), "length should not be %zu", len);
+    ck_assert_msg (strlen(dst) == 0, "length should be 0");
     len = strlcat(dst, src, 1);
-    fail_unless (len == strlen(src), "length should not be %zu", len);
-    fail_unless (strlen(dst) == 0, "length should be 0");
+    ck_assert_msg (len == strlen(src), "length should not be %zu", len);
+    ck_assert_msg (strlen(dst) == 0, "length should be 0");
     len = strlcat(dst, src, 10);
-    fail_unless (len == strlen(src), "length should not be %zu", len);
-    fail_unless (strlen(dst) == 9, "length should be equal to 9");
+    ck_assert_msg (len == strlen(src), "length should not be %zu", len);
+    ck_assert_msg (strlen(dst) == 9, "length should be equal to 9");
 
     memset(&dst, 0, BUFSIZ);
     len = strlcat(dst, src, BUFSIZ);
-    fail_unless (len == strlen(src), "length should be equal to src");
-    fail_unless (strlen(dst) == strlen(src),
+    ck_assert_msg (len == strlen(src), "length should be equal to src");
+    ck_assert_msg (strlen(dst) == strlen(src),
 	"length should be equal to src");
     len = strlcat(dst, src, BUFSIZ);
-    fail_unless (len == strlen(src) * 2, "length should be equal to src * 2");
-    fail_unless (strlen(dst) == strlen(src) * 2,
+    ck_assert_msg (len == strlen(src) * 2, "length should be equal to src * 2");
+    ck_assert_msg (strlen(dst) == strlen(src) * 2,
 	"length should be equal to src * 2");
 
     memset(&dst, 'a', BUFSIZ - 8);
     len = strlcat(dst, src, BUFSIZ);
-    fail_unless (len == BUFSIZ + strlen(src) - 8, "length should not be %zu");
-    fail_unless (strlen(dst) == BUFSIZ - 1, "length should be BUFSIZ - 1");
+    ck_assert_msg (len == BUFSIZ + strlen(src) - 8, "length should not be %zu", len);
+    ck_assert_msg (strlen(dst) == BUFSIZ - 1, "length should be BUFSIZ - 1");
 
     memset(&dst, 'a', BUFSIZ - 1);
     len = strlcat(dst, src, BUFSIZ);
-    fail_unless (len == BUFSIZ + strlen(src) - 1,
+    ck_assert_msg (len == BUFSIZ + strlen(src) - 1,
 	"length should not be %zu", len);
-    fail_unless (strlen(dst) == BUFSIZ - 1, "length should be BUFSIZ - 1");
+    ck_assert_msg (strlen(dst) == BUFSIZ - 1, "length should be BUFSIZ - 1");
 }
 END_TEST
 #endif  /* HAVE_STRLCAT */
@@ -107,24 +107,24 @@ START_TEST(test_strlcpy) {
 
     memset(&dst, 0, BUFSIZ);
     len = strlcpy(dst, src, 0);
-    fail_unless (len == strlen(src), "length should not be %zu", len);
-    fail_unless (strlen(dst) == 0, "length should be 0");
+    ck_assert_msg (len == strlen(src), "length should not be %zu", len);
+    ck_assert_msg (strlen(dst) == 0, "length should be 0");
     len = strlcpy(dst, src, 1);
-    fail_unless (len == strlen(src), "length should not be %zu", len);
-    fail_unless (strlen(dst) == 0, "length should be 0");
+    ck_assert_msg (len == strlen(src), "length should not be %zu", len);
+    ck_assert_msg (strlen(dst) == 0, "length should be 0");
     len = strlcpy(dst, src, 10);
-    fail_unless (len == strlen(src), "length should not be %zu", len);
-    fail_unless (strlen(dst) == 9, "length should be equal to 9");
+    ck_assert_msg (len == strlen(src), "length should not be %zu", len);
+    ck_assert_msg (strlen(dst) == 9, "length should be equal to 9");
 
     memset(&dst, 0, BUFSIZ);
     len = strlcpy(dst, src, BUFSIZ);
-    fail_unless (len == strlen(src), "length should be equal to src");
-    fail_unless (strlen(dst) == strlen(src), "length should be equal to src");
+    ck_assert_msg (len == strlen(src), "length should be equal to src");
+    ck_assert_msg (strlen(dst) == strlen(src), "length should be equal to src");
 
     memset(&dst, 'a', BUFSIZ);
     len = strlcpy(dst, src, BUFSIZ);
-    fail_unless (len == strlen(src), "length should be equal to src");
-    fail_unless (strlen(dst) == strlen(src), "length should be equal to src");
+    ck_assert_msg (len == strlen(src), "length should be equal to src");
+    ck_assert_msg (strlen(dst) == strlen(src), "length should be equal to src");
 }
 END_TEST
 #endif /* HAVE_STRLCPY */
@@ -136,15 +136,15 @@ START_TEST(test_strnvis) {
 
     mark_point();
     strvis(dst, src, VIS_CSTYLE|VIS_NL|VIS_TAB|VIS_OCTAL);
-    fail_unless (strlen(dst) == 40, "length should be equal to 40");
+    ck_assert_msg (strlen(dst) == 40, "length should be equal to 40");
 
     mark_point();
     strvisx(dst, src, strlen(src), VIS_CSTYLE|VIS_NL|VIS_TAB|VIS_OCTAL);
-    fail_unless (strlen(dst) == 40, "length should be equal to 40");
+    ck_assert_msg (strlen(dst) == 40, "length should be equal to 40");
 
     mark_point();
     strnvis(dst, src, BUFSIZ, VIS_CSTYLE|VIS_NL|VIS_TAB|VIS_OCTAL|VIS_NOSLASH);
-    fail_unless (strlen(dst) == 39, "length should be equal to 39");
+    ck_assert_msg (strlen(dst) == 39, "length should be equal to 39");
 }
 END_TEST
 #endif  /* HAVE_STRNVIS */

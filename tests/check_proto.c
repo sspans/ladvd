@@ -113,56 +113,56 @@ START_TEST(test_proto_packet) {
     mark_point();
     memset(msg.msg, 0, ETHER_MAX_LEN);
     msg.len = lldp_packet(PROTO_LLDP, msg.msg, &netif, &netifs, &sysinfo);
-    fail_unless(msg.len == 276, "length should not be %d", msg.len);
+    ck_assert_msg(msg.len == 276, "length should not be %ld", msg.len);
     msg.len = cdp_packet(PROTO_CDP, msg.msg, &netif, &netifs, &sysinfo);
-    fail_unless(msg.len == 203, "length should not be %d", msg.len);
+    ck_assert_msg(msg.len == 203, "length should not be %ld", msg.len);
     msg.len = edp_packet(PROTO_EDP, msg.msg, &netif, &netifs, &sysinfo);
-    fail_unless(msg.len == 131, "length should not be %d", msg.len);
+    ck_assert_msg(msg.len == 131, "length should not be %ld", msg.len);
     msg.len = fdp_packet(PROTO_FDP, msg.msg, &netif, &netifs, &sysinfo);
-    fail_unless(msg.len == 126, "length should not be %d", msg.len);
+    ck_assert_msg(msg.len == 126, "length should not be %ld", msg.len);
     msg.len = ndp_packet(PROTO_NDP, msg.msg, &netif, &netifs, &sysinfo);
-    fail_unless(msg.len == 64, "length should not be %d", msg.len);
+    ck_assert_msg(msg.len == 64, "length should not be %ld", msg.len);
 
     mark_point();
     sysinfo.cap = CAP_HOST;
     sysinfo.cap_active = CAP_HOST;
     netif.parent = NULL;
     msg.len = lldp_packet(PROTO_LLDP, msg.msg, &netif, &netifs, &sysinfo);
-    fail_unless(msg.len == 265, "length should not be %d", msg.len);
+    ck_assert_msg(msg.len == 265, "length should not be %ld", msg.len);
     msg.len = cdp_packet(PROTO_CDP, msg.msg, &netif, &netifs, &sysinfo);
-    fail_unless(msg.len == 158, "length should not be %d", msg.len);
+    ck_assert_msg(msg.len == 158, "length should not be %ld", msg.len);
     msg.len = edp_packet(PROTO_EDP, msg.msg, &netif, &netifs, &sysinfo);
-    fail_unless(msg.len == 110, "length should not be %d", msg.len);
+    ck_assert_msg(msg.len == 110, "length should not be %ld", msg.len);
     msg.len = fdp_packet(PROTO_FDP, msg.msg, &netif, &netifs, &sysinfo);
-    fail_unless(msg.len == 124, "length should not be %d", msg.len);
+    ck_assert_msg(msg.len == 124, "length should not be %ld", msg.len);
     msg.len = ndp_packet(PROTO_NDP, msg.msg, &netif, &netifs, &sysinfo);
-    fail_unless(msg.len == 64, "length should not be %d", msg.len);
+    ck_assert_msg(msg.len == 64, "length should not be %ld", msg.len);
 
     mark_point();
     sysinfo.cap_active = CAP_BRIDGE;
     msg.len = lldp_packet(PROTO_LLDP, msg.msg, &netif, &netifs, &sysinfo);
-    fail_unless(msg.len == 265, "length should not be %d", msg.len);
+    ck_assert_msg(msg.len == 265, "length should not be %ld", msg.len);
     msg.len = cdp_packet(PROTO_CDP, msg.msg, &netif, &netifs, &sysinfo);
-    fail_unless(msg.len == 158, "length should not be %d", msg.len);
+    ck_assert_msg(msg.len == 158, "length should not be %ld", msg.len);
     msg.len = edp_packet(PROTO_EDP, msg.msg, &netif, &netifs, &sysinfo);
-    fail_unless(msg.len == 110, "length should not be %d", msg.len);
+    ck_assert_msg(msg.len == 110, "length should not be %ld", msg.len);
     msg.len = fdp_packet(PROTO_FDP, msg.msg, &netif, &netifs, &sysinfo);
-    fail_unless(msg.len == 126, "length should not be %d", msg.len);
+    ck_assert_msg(msg.len == 126, "length should not be %ld", msg.len);
     msg.len = ndp_packet(PROTO_NDP, msg.msg, &netif, &netifs, &sysinfo);
-    fail_unless(msg.len == 64, "length should not be %d", msg.len);
+    ck_assert_msg(msg.len == 64, "length should not be %ld", msg.len);
 
     mark_point();
     sysinfo.cap_active = CAP_SWITCH;
     msg.len = lldp_packet(PROTO_LLDP, msg.msg, &netif, &netifs, &sysinfo);
-    fail_unless(msg.len == 265, "length should not be %d", msg.len);
+    ck_assert_msg(msg.len == 265, "length should not be %ld", msg.len);
     msg.len = cdp_packet(PROTO_CDP, msg.msg, &netif, &netifs, &sysinfo);
-    fail_unless(msg.len == 158, "length should not be %d", msg.len);
+    ck_assert_msg(msg.len == 158, "length should not be %ld", msg.len);
     msg.len = edp_packet(PROTO_EDP, msg.msg, &netif, &netifs, &sysinfo);
-    fail_unless(msg.len == 110, "length should not be %d", msg.len);
+    ck_assert_msg(msg.len == 110, "length should not be %ld", msg.len);
     msg.len = fdp_packet(PROTO_FDP, msg.msg, &netif, &netifs, &sysinfo);
-    fail_unless(msg.len == 126, "length should not be %d", msg.len);
+    ck_assert_msg(msg.len == 126, "length should not be %ld", msg.len);
     msg.len = ndp_packet(PROTO_NDP, msg.msg, &netif, &netifs, &sysinfo);
-    fail_unless(msg.len == 64, "length should not be %d", msg.len);
+    ck_assert_msg(msg.len == 64, "length should not be %ld", msg.len);
 
     mark_point();
     sysinfo.cap = CAP_HOST;
@@ -170,12 +170,12 @@ START_TEST(test_proto_packet) {
     options |= OPT_IFDESCR;
     netif.parent = NULL;
     msg.len = lldp_packet(PROTO_LLDP, msg.msg, &netif, &netifs, &sysinfo);
-    fail_unless(msg.len == 265, "length should not be %d", msg.len);
+    ck_assert_msg(msg.len == 265, "length should not be %ld", msg.len);
     options &= ~OPT_IFDESCR;
     memset(netif.description, 0, IFNAMSIZ);
     strlcpy(netif.device_name, "KittenNic Turbo 2", IFDESCRSIZE);
     msg.len = lldp_packet(PROTO_LLDP, msg.msg, &netif, &netifs, &sysinfo);
-    fail_unless(msg.len == 267, "length should not be %d", msg.len);
+    ck_assert_msg(msg.len == 267, "length should not be %ld", msg.len);
 }
 END_TEST
 
@@ -186,30 +186,30 @@ START_TEST(test_lldp_check) {
 
     mark_point();
     msg.len = ETHER_MIN_LEN;
-    fail_unless (lldp_check(msg.msg, msg.len) == NULL,
+    ck_assert_msg(lldp_check(msg.msg, msg.len) == NULL,
 	    "empty packets should generate a NULL");
 
     mark_point();
     memcpy(ether.dst, lldp_dst, ETHER_ADDR_LEN);
     memcpy(msg.msg, &ether, sizeof(ether));
-    fail_unless (lldp_check(msg.msg, msg.len) == NULL,
+    ck_assert_msg(lldp_check(msg.msg, msg.len) == NULL,
 	    "packets without an ethertype should generate a NULL");
 
     mark_point();
     ether.type = htons(ETHERTYPE_VLAN);
     memcpy(msg.msg, &ether, sizeof(ether));
-    fail_unless (lldp_check(msg.msg, msg.len) == NULL,
+    ck_assert_msg(lldp_check(msg.msg, msg.len) == NULL,
 	    "packets without an encapsulated ethertype should generate a NULL");
 
     ether.type = htons(ETHERTYPE_LLDP);
     memcpy(msg.msg + offsetof(struct ether_hdr, type) + ETHER_VLAN_ENCAP_LEN, 
 	    &ether.type, sizeof(ether.type));
-    fail_unless (lldp_check(msg.msg, msg.len) ==
+    ck_assert_msg(lldp_check(msg.msg, msg.len) ==
 	    msg.msg + sizeof(ether) + ETHER_VLAN_ENCAP_LEN,
 	    "valid encapsulated packets should return a correct ptr");
 
     memcpy(msg.msg, &ether, sizeof(ether));
-    fail_unless (lldp_check(msg.msg, msg.len) == msg.msg + sizeof(ether),
+    ck_assert_msg(lldp_check(msg.msg, msg.len) == msg.msg + sizeof(ether),
 	    "valid packets should return a correct ptr");
 }
 END_TEST
@@ -223,44 +223,44 @@ START_TEST(test_cdp_check) {
 
     mark_point();
     msg.len = ETHER_MIN_LEN;
-    fail_unless (cdp_check(msg.msg, msg.len) == NULL,
+    ck_assert_msg(cdp_check(msg.msg, msg.len) == NULL,
 	    "empty packets should generate a NULL");
 
     mark_point();
     memcpy(ether.dst, cdp_dst, ETHER_ADDR_LEN);
     memcpy(msg.msg, &ether, sizeof(ether));
-    fail_unless (cdp_check(msg.msg, msg.len) == NULL,
+    ck_assert_msg(cdp_check(msg.msg, msg.len) == NULL,
 	    "packets without an llc header should generate a NULL");
 
     mark_point();
     llc.dsap = llc.ssap = LLC_SNAP_LSAP;
     llc.control = LLC_UI;
     memcpy(msg.msg + sizeof(ether), &llc, sizeof(llc));
-    fail_unless (cdp_check(msg.msg, msg.len) == NULL,
+    ck_assert_msg(cdp_check(msg.msg, msg.len) == NULL,
 	    "packets with an incomplete llc header should generate a NULL");
 
     mark_point();
     memcpy(llc.org, cdp_org, sizeof(llc.org));
     memcpy(msg.msg + sizeof(ether), &llc, sizeof(llc));
-    fail_unless (cdp_check(msg.msg, msg.len) == NULL,
+    ck_assert_msg(cdp_check(msg.msg, msg.len) == NULL,
 	    "packets with an invalid llc header should generate a NULL");
 
     mark_point();
     llc.protoid = htons(LLC_PID_CDP);
     memcpy(msg.msg + sizeof(ether), &llc, sizeof(llc));
-    fail_unless (cdp_check(msg.msg, msg.len) == 
+    ck_assert_msg(cdp_check(msg.msg, msg.len) == 
 		 msg.msg + sizeof(ether) + sizeof(llc),
 	    "valid packets should return a correct ptr");
 
     mark_point();
     ether.type = htons(ETHERTYPE_VLAN);
     memcpy(msg.msg, &ether, sizeof(ether));
-    fail_unless (cdp_check(msg.msg, msg.len) == NULL,
+    ck_assert_msg(cdp_check(msg.msg, msg.len) == NULL,
 	    "packets without an encapsulated llc should generate a NULL");
 
     mark_point();
     memcpy(msg.msg + sizeof(ether) + ETHER_VLAN_ENCAP_LEN, &llc, sizeof(llc));
-    fail_unless (cdp_check(msg.msg, msg.len) == 
+    ck_assert_msg(cdp_check(msg.msg, msg.len) == 
 		 msg.msg + sizeof(ether) + ETHER_VLAN_ENCAP_LEN + sizeof(llc),
 	    "valid packets should return a correct ptr");
 }
@@ -275,44 +275,44 @@ START_TEST(test_edp_check) {
 
     mark_point();
     msg.len = ETHER_MIN_LEN;
-    fail_unless (edp_check(msg.msg, msg.len) == NULL,
+    ck_assert_msg(edp_check(msg.msg, msg.len) == NULL,
 	    "empty packets should generate a NULL");
 
     mark_point();
     memcpy(ether.dst, edp_dst, ETHER_ADDR_LEN);
     memcpy(msg.msg, &ether, sizeof(ether));
-    fail_unless (edp_check(msg.msg, msg.len) == NULL,
+    ck_assert_msg(edp_check(msg.msg, msg.len) == NULL,
 	    "packets without an llc header should generate a NULL");
 
     mark_point();
     llc.dsap = llc.ssap = LLC_SNAP_LSAP;
     llc.control = LLC_UI;
     memcpy(msg.msg + sizeof(ether), &llc, sizeof(llc));
-    fail_unless (edp_check(msg.msg, msg.len) == NULL,
+    ck_assert_msg(edp_check(msg.msg, msg.len) == NULL,
 	    "packets with an incomplete llc header should generate a NULL");
 
     mark_point();
     memcpy(llc.org, edp_org, sizeof(llc.org));
     memcpy(msg.msg + sizeof(ether), &llc, sizeof(llc));
-    fail_unless (edp_check(msg.msg, msg.len) == NULL,
+    ck_assert_msg(edp_check(msg.msg, msg.len) == NULL,
 	    "packets with an invalid llc header should generate a NULL");
 
     mark_point();
     llc.protoid = htons(LLC_PID_EDP);
     memcpy(msg.msg + sizeof(ether), &llc, sizeof(llc));
-    fail_unless (edp_check(msg.msg, msg.len) == 
+    ck_assert_msg(edp_check(msg.msg, msg.len) == 
 		 msg.msg + sizeof(ether) + sizeof(llc),
 	    "valid packets should return a correct ptr");
 
     mark_point();
     ether.type = htons(ETHERTYPE_VLAN);
     memcpy(msg.msg, &ether, sizeof(ether));
-    fail_unless (edp_check(msg.msg, msg.len) == NULL,
+    ck_assert_msg(edp_check(msg.msg, msg.len) == NULL,
 	    "packets without an encapsulated llc should generate a NULL");
 
     mark_point();
     memcpy(msg.msg + sizeof(ether) + ETHER_VLAN_ENCAP_LEN, &llc, sizeof(llc));
-    fail_unless (edp_check(msg.msg, msg.len) == 
+    ck_assert_msg(edp_check(msg.msg, msg.len) == 
 		 msg.msg + sizeof(ether) + ETHER_VLAN_ENCAP_LEN + sizeof(llc),
 	    "valid packets should return a correct ptr");
 }
@@ -327,44 +327,44 @@ START_TEST(test_fdp_check) {
 
     mark_point();
     msg.len = ETHER_MIN_LEN;
-    fail_unless (fdp_check(msg.msg, msg.len) == NULL,
+    ck_assert_msg(fdp_check(msg.msg, msg.len) == NULL,
 	    "empty packets should generate a NULL");
 
     mark_point();
     memcpy(ether.dst, fdp_dst, ETHER_ADDR_LEN);
     memcpy(msg.msg, &ether, sizeof(ether));
-    fail_unless (fdp_check(msg.msg, msg.len) == NULL,
+    ck_assert_msg(fdp_check(msg.msg, msg.len) == NULL,
 	    "packets without an llc header should generate a NULL");
 
     mark_point();
     llc.dsap = llc.ssap = LLC_SNAP_LSAP;
     llc.control = LLC_UI;
     memcpy(msg.msg + sizeof(ether), &llc, sizeof(llc));
-    fail_unless (fdp_check(msg.msg, msg.len) == NULL,
+    ck_assert_msg(fdp_check(msg.msg, msg.len) == NULL,
 	    "packets with an incomplete llc header should generate a NULL");
 
     mark_point();
     memcpy(llc.org, fdp_org, sizeof(llc.org));
     memcpy(msg.msg + sizeof(ether), &llc, sizeof(llc));
-    fail_unless (fdp_check(msg.msg, msg.len) == NULL,
+    ck_assert_msg(fdp_check(msg.msg, msg.len) == NULL,
 	    "packets with an invalid llc header should generate a NULL");
 
     mark_point();
     llc.protoid = htons(LLC_PID_FDP);
     memcpy(msg.msg + sizeof(ether), &llc, sizeof(llc));
-    fail_unless (fdp_check(msg.msg, msg.len) == 
+    ck_assert_msg(fdp_check(msg.msg, msg.len) == 
 		 msg.msg + sizeof(ether) + sizeof(llc),
 	    "valid packets should return a correct ptr");
 
     mark_point();
     ether.type = htons(ETHERTYPE_VLAN);
     memcpy(msg.msg, &ether, sizeof(ether));
-    fail_unless (fdp_check(msg.msg, msg.len) == NULL,
+    ck_assert_msg(fdp_check(msg.msg, msg.len) == NULL,
 	    "packets without an encapsulated llc should generate a NULL");
 
     mark_point();
     memcpy(msg.msg + sizeof(ether) + ETHER_VLAN_ENCAP_LEN, &llc, sizeof(llc));
-    fail_unless (fdp_check(msg.msg, msg.len) == 
+    ck_assert_msg(fdp_check(msg.msg, msg.len) == 
 		 msg.msg + sizeof(ether) + ETHER_VLAN_ENCAP_LEN + sizeof(llc),
 	    "valid packets should return a correct ptr");
 }
@@ -379,44 +379,44 @@ START_TEST(test_ndp_check) {
 
     mark_point();
     msg.len = ETHER_MIN_LEN;
-    fail_unless (ndp_check(msg.msg, msg.len) == NULL,
+    ck_assert_msg(ndp_check(msg.msg, msg.len) == NULL,
 	    "empty packets should generate a NULL");
 
     mark_point();
     memcpy(ether.dst, ndp_dst, ETHER_ADDR_LEN);
     memcpy(msg.msg, &ether, sizeof(ether));
-    fail_unless (ndp_check(msg.msg, msg.len) == NULL,
+    ck_assert_msg(ndp_check(msg.msg, msg.len) == NULL,
 	    "packets without an llc header should generate a NULL");
 
     mark_point();
     llc.dsap = llc.ssap = LLC_SNAP_LSAP;
     llc.control = LLC_UI;
     memcpy(msg.msg + sizeof(ether), &llc, sizeof(llc));
-    fail_unless (ndp_check(msg.msg, msg.len) == NULL,
+    ck_assert_msg(ndp_check(msg.msg, msg.len) == NULL,
 	    "packets with an incomplete llc header should generate a NULL");
 
     mark_point();
     memcpy(llc.org, ndp_org, sizeof(llc.org));
     memcpy(msg.msg + sizeof(ether), &llc, sizeof(llc));
-    fail_unless (ndp_check(msg.msg, msg.len) == NULL,
+    ck_assert_msg(ndp_check(msg.msg, msg.len) == NULL,
 	    "packets with an invalid llc header should generate a NULL");
 
     mark_point();
     llc.protoid = htons(LLC_PID_NDP_HELLO);
     memcpy(msg.msg + sizeof(ether), &llc, sizeof(llc));
-    fail_unless (ndp_check(msg.msg, msg.len) == 
+    ck_assert_msg(ndp_check(msg.msg, msg.len) == 
 		 msg.msg + sizeof(ether) + sizeof(llc),
 	    "valid packets should return a correct ptr");
 
     mark_point();
     ether.type = htons(ETHERTYPE_VLAN);
     memcpy(msg.msg, &ether, sizeof(ether));
-    fail_unless (ndp_check(msg.msg, msg.len) == NULL,
+    ck_assert_msg(ndp_check(msg.msg, msg.len) == NULL,
 	    "packets without an encapsulated llc should generate a NULL");
 
     mark_point();
     memcpy(msg.msg + sizeof(ether) + ETHER_VLAN_ENCAP_LEN, &llc, sizeof(llc));
-    fail_unless (ndp_check(msg.msg, msg.len) == 
+    ck_assert_msg(ndp_check(msg.msg, msg.len) == 
 		 msg.msg + sizeof(ether) + ETHER_VLAN_ENCAP_LEN + sizeof(llc),
 	    "valid packets should return a correct ptr");
 }
@@ -433,373 +433,373 @@ START_TEST(test_lldp_decode) {
 
     errstr = "Invalid LLDP packet: missing Chassis ID TLV";
     read_packet(&msg, "proto/lldp/00.empty");
-    fail_unless (lldp_decode(&msg) == 0, "empty packets should return 0");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(lldp_decode(&msg) == 0, "empty packets should return 0");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     my_log(CRIT, "check");
     errstr = "Invalid LLDP packet: invalid Chassis ID TLV";
     read_packet(&msg, "proto/lldp/01.chassis_id.broken");
-    fail_unless (lldp_decode(&msg) == 0, "broken packets should return 0");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(lldp_decode(&msg) == 0, "broken packets should return 0");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     errstr = "Invalid LLDP packet: missing Port ID TLV";
     read_packet(&msg, "proto/lldp/02.chassis_id.only");
-    fail_unless (lldp_decode(&msg) == 0, "incomplete packets should return 0");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(lldp_decode(&msg) == 0, "incomplete packets should return 0");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     errstr = "Invalid LLDP packet: missing Chassis ID TLV";
     read_packet(&msg, "proto/lldp/03.chassis_id.missing");
-    fail_unless (lldp_decode(&msg) == 0, "incomplete packets should return 0");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(lldp_decode(&msg) == 0, "incomplete packets should return 0");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     errstr = "Corrupt LLDP packet: invalid Port ID TLV";
     my_log(CRIT, errstr);
     read_packet(&msg, "proto/lldp/11.port_id.broken");
-    fail_unless (lldp_decode(&msg) == 0, "broken packets should return 0");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(lldp_decode(&msg) == 0, "broken packets should return 0");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     errstr = "Invalid LLDP packet: missing TTL TLV";
     read_packet(&msg, "proto/lldp/12.port_id.only");
-    fail_unless (lldp_decode(&msg) == 0, "incomplete packets should return 0");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(lldp_decode(&msg) == 0, "incomplete packets should return 0");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     errstr = "Invalid LLDP packet: missing Port ID TLV";
     read_packet(&msg, "proto/lldp/13.port_id.missing");
-    fail_unless (lldp_decode(&msg) == 0, "incomplete packets should return 0");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(lldp_decode(&msg) == 0, "incomplete packets should return 0");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     errstr = "Corrupt LLDP packet: invalid Port ID TLV";
     read_packet(&msg, "proto/lldp/14.port_id.long");
-    fail_unless (lldp_decode(&msg) == 0, "incomplete packets should return 0");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(lldp_decode(&msg) == 0, "incomplete packets should return 0");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     errstr = "Corrupt LLDP packet: invalid Port ID TLV";
     read_packet(&msg, "proto/lldp/15.port_id.broken");
-    fail_unless (lldp_decode(&msg) == 0, "incomplete packets should return 0");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(lldp_decode(&msg) == 0, "incomplete packets should return 0");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     errstr = "Corrupt LLDP packet: invalid Port ID TLV";
     read_packet(&msg, "proto/lldp/16.port_id.broken");
-    fail_unless (lldp_decode(&msg) == 0, "incomplete packets should return 0");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(lldp_decode(&msg) == 0, "incomplete packets should return 0");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     errstr = "Corrupt LLDP packet: invalid Port ID TLV";
     read_packet(&msg, "proto/lldp/17.port_id.broken");
-    fail_unless (lldp_decode(&msg) == 0, "incomplete packets should return 0");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(lldp_decode(&msg) == 0, "incomplete packets should return 0");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     errstr = "Invalid LLDP packet: invalid TTL TLV";
     read_packet(&msg, "proto/lldp/21.ttl.broken");
-    fail_unless (lldp_decode(&msg) == 0, "broken packets should return 0");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(lldp_decode(&msg) == 0, "broken packets should return 0");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     errstr = "Corrupt LLDP packet: missing END TLV";
     read_packet(&msg, "proto/lldp/22.ttl.only");
-    fail_unless (lldp_decode(&msg) == 0, "incomplete packets should return 0");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(lldp_decode(&msg) == 0, "incomplete packets should return 0");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     errstr = "Invalid LLDP packet: missing TTL TLV";
     read_packet(&msg, "proto/lldp/23.ttl.missing");
-    fail_unless (lldp_decode(&msg) == 0, "incomplete packets should return 0");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(lldp_decode(&msg) == 0, "incomplete packets should return 0");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     errstr = "Corrupt LLDP packet: duplicate System Name TLV";
     read_packet(&msg, "proto/lldp/31.system_name.dup");
-    fail_unless (lldp_decode(&msg) == 0, "broken packets should return 0");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(lldp_decode(&msg) == 0, "broken packets should return 0");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     errstr = "Corrupt LLDP packet: invalid TLV length";
     read_packet(&msg, "proto/lldp/32.system_name.broken");
-    fail_unless (lldp_decode(&msg) == 0, "broken packets should return 0");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(lldp_decode(&msg) == 0, "broken packets should return 0");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     errstr = "Corrupt LLDP packet: invalid TLV length";
     read_packet(&msg, "proto/lldp/33.system_name.broken");
-    fail_unless (lldp_decode(&msg) == 0, "broken packets should return 0");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(lldp_decode(&msg) == 0, "broken packets should return 0");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     errstr = "Corrupt LLDP packet: invalid TLV Type";
     read_packet(&msg, "proto/lldp/91.tlv.unknown");
-    fail_unless (lldp_decode(&msg) == 0, "unknown tlv's should return 0");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(lldp_decode(&msg) == 0, "unknown tlv's should return 0");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     errstr = "Corrupt LLDP packet: invalid TLV";
     read_packet(&msg, "proto/lldp/92.tlv.broken");
-    fail_unless (lldp_decode(&msg) == 0, "broken packets should return 0");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(lldp_decode(&msg) == 0, "broken packets should return 0");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     errstr = "Corrupt LLDP packet: invalid TLV length";
     read_packet(&msg, "proto/lldp/93.tlv.long");
-    fail_unless (lldp_decode(&msg) == 0, "broken packets should return 0");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(lldp_decode(&msg) == 0, "broken packets should return 0");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     errstr = "Invalid LLDP packet: unknown adress family";
     read_packet(&msg, "proto/lldp/94.mgt.af");
-    fail_unless (lldp_decode(&msg) == 0, "broken packets should return 0");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(lldp_decode(&msg) == 0, "broken packets should return 0");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     errstr = "Corrupt LLDP packet: invalid END TLV";
     read_packet(&msg, "proto/lldp/97.end.invalid");
-    fail_unless (lldp_decode(&msg) == 0, "invalid packets should return 0");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(lldp_decode(&msg) == 0, "invalid packets should return 0");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     errstr = "Corrupt LLDP packet: invalid TLV";
     read_packet(&msg, "proto/lldp/98.end.broken");
-    fail_unless (lldp_decode(&msg) == 0, "broken packets should return 0");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(lldp_decode(&msg) == 0, "broken packets should return 0");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     errstr = "Corrupt LLDP packet: missing END TLV";
     read_packet(&msg, "proto/lldp/99.end.missing");
-    fail_unless (lldp_decode(&msg) == 0, "incomplete packets should return 0");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(lldp_decode(&msg) == 0, "incomplete packets should return 0");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     mark_point();
     errstr = "check";
     my_log(CRIT, errstr);
     read_packet(&msg, "proto/lldp/41.good.small");
-    fail_unless (lldp_decode(&msg) == msg.len, "packet length incorrect");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(lldp_decode(&msg) == msg.len, "packet length incorrect");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
-    fail_unless (msg.ttl == 120, "ttl should be 120");
-    fail_unless (strcmp(msg.peer[PEER_HOSTNAME], "test") == 0,
+    ck_assert_msg(msg.ttl == 120, "ttl should be 120");
+    ck_assert_msg(strcmp(msg.peer[PEER_HOSTNAME], "test") == 0,
 	"system name should be 'test'");
-    fail_unless (strcmp(msg.peer[PEER_PORTNAME], "1/3") == 0,
+    ck_assert_msg(strcmp(msg.peer[PEER_PORTNAME], "1/3") == 0,
 	"port id should be '1/3' not '%s'", msg.peer[PEER_PORTNAME]);
-    fail_unless (msg.peer[PEER_VLAN_ID] == NULL,
+    ck_assert_msg(msg.peer[PEER_VLAN_ID] == NULL,
 	"vlan id should be empty, not '%s'", msg.peer[PEER_VLAN_ID]);
 
     mark_point();
     read_packet(&msg, "proto/lldp/42.good.big");
-    fail_unless (lldp_decode(&msg) == msg.len, "packet length incorrect");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(lldp_decode(&msg) == msg.len, "packet length incorrect");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
-    fail_unless (msg.ttl == 120, "ttl should be 120");
-    fail_unless (strcmp(msg.peer[PEER_HOSTNAME], "Summit300-48") == 0,
+    ck_assert_msg(msg.ttl == 120, "ttl should be 120");
+    ck_assert_msg(strcmp(msg.peer[PEER_HOSTNAME], "Summit300-48") == 0,
 		"system name should be 'Summit300-48'");
-    fail_unless (strcmp(msg.peer[PEER_PORTNAME], "1/1") == 0,
+    ck_assert_msg(strcmp(msg.peer[PEER_PORTNAME], "1/1") == 0,
 	"port id should be '1/1' not '%s'", msg.peer[PEER_PORTNAME]);
-    fail_unless (
+    ck_assert_msg(
 	strcmp(msg.peer[PEER_PORTDESCR], "Summit300-48-Port 1001") == 0,
 	"port descr should be 'Summit300-48-Port 1001' not '%s'",
 		    msg.peer[PEER_PORTDESCR]);
-    fail_unless (strcmp(msg.peer[PEER_VLAN_ID], "488") == 0,
+    ck_assert_msg(strcmp(msg.peer[PEER_VLAN_ID], "488") == 0,
 	"vlan id should be '488' not '%s'", msg.peer[PEER_VLAN_ID]);
 
     mark_point();
     read_packet(&msg, "proto/lldp/43.good.lldpmed");
-    fail_unless (lldp_decode(&msg) == msg.len, "packet length incorrect");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(lldp_decode(&msg) == msg.len, "packet length incorrect");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
-    fail_unless (msg.ttl == 120, "ttl should be 120");
-    fail_unless (strcmp(msg.peer[PEER_HOSTNAME], "ProCurve Switch 2600-8-PWR") == 0,
+    ck_assert_msg(msg.ttl == 120, "ttl should be 120");
+    ck_assert_msg(strcmp(msg.peer[PEER_HOSTNAME], "ProCurve Switch 2600-8-PWR") == 0,
 		"system name should be 'ProCurve Switch 2600-8-PWR'");
-    fail_unless (strcmp(msg.peer[PEER_PORTNAME], "1") == 0,
+    ck_assert_msg(strcmp(msg.peer[PEER_PORTNAME], "1") == 0,
 	"port id should be '1' not '%s'", msg.peer[PEER_PORTNAME]);
-    fail_unless (strcmp(msg.peer[PEER_PORTDESCR], "1") == 0,
+    ck_assert_msg(strcmp(msg.peer[PEER_PORTDESCR], "1") == 0,
 	"port descr should be '1' not '%s'", msg.peer[PEER_PORTDESCR]);
-    fail_unless (msg.peer[PEER_VLAN_ID] == NULL,
+    ck_assert_msg(msg.peer[PEER_VLAN_ID] == NULL,
 	"vlan id should be empty, not '%s'", msg.peer[PEER_VLAN_ID]);
 
     mark_point();
     read_packet(&msg, "proto/lldp/44.good.spaces");
-    fail_unless (lldp_decode(&msg) == msg.len, "packet length incorrect");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(lldp_decode(&msg) == msg.len, "packet length incorrect");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
-    fail_unless (msg.ttl == 120, "ttl should be 120");
-    fail_unless (strcmp(msg.peer[PEER_HOSTNAME], "HP ProCurve Switch 2626") == 0,
+    ck_assert_msg(msg.ttl == 120, "ttl should be 120");
+    ck_assert_msg(strcmp(msg.peer[PEER_HOSTNAME], "HP ProCurve Switch 2626") == 0,
 		"system name should be 'HP ProCurve Switch 2626'");
-    fail_unless (strcmp(msg.peer[PEER_PORTNAME], "25") == 0,
+    ck_assert_msg(strcmp(msg.peer[PEER_PORTNAME], "25") == 0,
 	"port id should be '25' not '%s'", msg.peer[PEER_PORTNAME]);
-    fail_unless (strcmp(msg.peer[PEER_PORTDESCR], "25") == 0,
+    ck_assert_msg(strcmp(msg.peer[PEER_PORTDESCR], "25") == 0,
 	"port descr should be '25' not '%s'", msg.peer[PEER_PORTDESCR]);
-    fail_unless (msg.peer[PEER_VLAN_ID] == NULL,
+    ck_assert_msg(msg.peer[PEER_VLAN_ID] == NULL,
 	"vlan id should be empty, not '%s'", msg.peer[PEER_VLAN_ID]);
 
     mark_point();
     read_packet(&msg, "proto/lldp/45.good.vlan");
-    fail_unless (lldp_decode(&msg) == msg.len, "packet length incorrect");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(lldp_decode(&msg) == msg.len, "packet length incorrect");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
-    fail_unless (msg.ttl == 120, "ttl should be 120");
-    fail_unless (strcmp(msg.peer[PEER_HOSTNAME], "trillian.blinkenlights.nl") == 0,
+    ck_assert_msg(msg.ttl == 120, "ttl should be 120");
+    ck_assert_msg(strcmp(msg.peer[PEER_HOSTNAME], "trillian.blinkenlights.nl") == 0,
 		"system name should be 'trillian.blinkenlights.nl'");
-    fail_unless (strcmp(msg.peer[PEER_PORTNAME], "Gi0/1") == 0,
+    ck_assert_msg(strcmp(msg.peer[PEER_PORTNAME], "Gi0/1") == 0,
 	"port id should be 'Gi0/1' not '%s'", msg.peer[PEER_PORTNAME]);
-    fail_unless (
+    ck_assert_msg(
 	strcmp(msg.peer[PEER_PORTDESCR], "GigabitEthernet0/1") == 0,
 	"port descr should be 'GigabitEthernet0/1' not '%s'",
 		    msg.peer[PEER_PORTDESCR]);
 
     mark_point();
     read_packet(&msg, "proto/lldp/46.good.d-link");
-    fail_unless (lldp_decode(&msg) == 35, "packet length incorrect");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(lldp_decode(&msg) == 35, "packet length incorrect");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
-    fail_unless (msg.ttl == 120, "ttl should be 120");
-    fail_unless (strcmp(msg.peer[PEER_PORTNAME], "23") == 0,
+    ck_assert_msg(msg.ttl == 120, "ttl should be 120");
+    ck_assert_msg(strcmp(msg.peer[PEER_PORTNAME], "23") == 0,
 	"port id should be '23' not '%s'", msg.peer[PEER_PORTNAME]);
-    fail_unless (msg.peer[PEER_PORTDESCR] == NULL,
+    ck_assert_msg(msg.peer[PEER_PORTDESCR] == NULL,
 	"port descr should be NULL not '%s'", msg.peer[PEER_PORTDESCR]);
-    fail_unless (msg.peer[PEER_VLAN_ID] == NULL,
+    ck_assert_msg(msg.peer[PEER_VLAN_ID] == NULL,
 	"vlan id should be empty, not '%s'", msg.peer[PEER_VLAN_ID]);
 
     mark_point();
     read_packet(&msg, "proto/lldp/47.good.nexus");
-    fail_unless (lldp_decode(&msg) == 268, "packet length incorrect");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(lldp_decode(&msg) == 268, "packet length incorrect");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
-    fail_unless (msg.ttl == 120, "ttl should be 120");
-    fail_unless (strcmp(msg.peer[PEER_HOSTNAME], "XdasdXZ") == 0,
+    ck_assert_msg(msg.ttl == 120, "ttl should be 120");
+    ck_assert_msg(strcmp(msg.peer[PEER_HOSTNAME], "XdasdXZ") == 0,
 		"system name should be 'XdasdXZ'");
-    fail_unless (strcmp(msg.peer[PEER_PORTNAME], "Eth110/1/13") == 0,
+    ck_assert_msg(strcmp(msg.peer[PEER_PORTNAME], "Eth110/1/13") == 0,
 	"port id should be 'Eth110/1/13' not '%s'", msg.peer[PEER_PORTNAME]);
-    fail_unless (
+    ck_assert_msg(
 	strcmp(msg.peer[PEER_PORTDESCR], "Ethernet110/1/13") == 0,
 	"port descr should be 'Ethernet110/1/13' not '%s'",
 		    msg.peer[PEER_PORTDESCR]);
-    fail_unless (msg.peer[PEER_VLAN_ID] == NULL,
+    ck_assert_msg(msg.peer[PEER_VLAN_ID] == NULL,
 	"vlan id should be empty, not '%s'", msg.peer[PEER_VLAN_ID]);
 
     mark_point();
     read_packet(&msg, "proto/lldp/48.good.4500G");
-    fail_unless (lldp_decode(&msg) == 359, "packet length incorrect");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(lldp_decode(&msg) == 359, "packet length incorrect");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
-    fail_unless (msg.ttl == 120, "ttl should be 120");
-    fail_unless (strcmp(msg.peer[PEER_HOSTNAME], "sw2.blat") == 0,
+    ck_assert_msg(msg.ttl == 120, "ttl should be 120");
+    ck_assert_msg(strcmp(msg.peer[PEER_HOSTNAME], "sw2.blat") == 0,
 		"system name should be 'sw2.blat'");
-    fail_unless (msg.peer[PEER_PORTNAME] == NULL,
+    ck_assert_msg(msg.peer[PEER_PORTNAME] == NULL,
 	"port id should be NULL not '%s'", msg.peer[PEER_PORTNAME]);
-    fail_unless (strcmp(msg.peer[PEER_PORTDESCR],
+    ck_assert_msg(strcmp(msg.peer[PEER_PORTDESCR],
 			"GigabitEthernet1/0/9 Interface") == 0,
 	"port descr should not be '%s'", msg.peer[PEER_PORTDESCR]);
-    fail_unless (strcmp(msg.peer[PEER_VLAN_ID], "1") == 0,
+    ck_assert_msg(strcmp(msg.peer[PEER_VLAN_ID], "1") == 0,
 	"vlan id should be '1' not '%s'", msg.peer[PEER_VLAN_ID]);
 
     mark_point();
     read_packet(&msg, "proto/lldp/49.good.ipmi");
-    fail_unless (lldp_decode(&msg) == 118, "packet length incorrect");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(lldp_decode(&msg) == 118, "packet length incorrect");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
-    fail_unless (msg.ttl == 120, "ttl should be 120");
-    fail_unless (strcmp(msg.peer[PEER_HOSTNAME], "(none).(none)") == 0,
+    ck_assert_msg(msg.ttl == 120, "ttl should be 120");
+    ck_assert_msg(strcmp(msg.peer[PEER_HOSTNAME], "(none).(none)") == 0,
 		"system name should be '(none).(none)'");
-    fail_unless (strcmp(msg.peer[PEER_PORTNAME], "bond0") == 0,
+    ck_assert_msg(strcmp(msg.peer[PEER_PORTNAME], "bond0") == 0,
 	"port id should not be '%s'", msg.peer[PEER_PORTNAME]);
-    fail_unless (strcmp(msg.peer[PEER_PORTDESCR], "bond0") == 0,
+    ck_assert_msg(strcmp(msg.peer[PEER_PORTDESCR], "bond0") == 0,
 	"port descr should not be '%s'", msg.peer[PEER_PORTDESCR]);
-    fail_unless (msg.peer[PEER_VLAN_ID] == NULL,
+    ck_assert_msg(msg.peer[PEER_VLAN_ID] == NULL,
 	"vlan id should be empty, not '%s'", msg.peer[PEER_VLAN_ID]);
 
     mark_point();
     read_packet(&msg, "proto/lldp/51.good.chassis");
-    fail_unless (lldp_decode(&msg) == 118, "packet length incorrect");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(lldp_decode(&msg) == 118, "packet length incorrect");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
-    fail_unless (msg.ttl == 120, "ttl should be 120");
-    fail_unless (strcmp(msg.peer[PEER_HOSTNAME], "(none).(none)") == 0,
+    ck_assert_msg(msg.ttl == 120, "ttl should be 120");
+    ck_assert_msg(strcmp(msg.peer[PEER_HOSTNAME], "(none).(none)") == 0,
 		"system name should be '(none).(none)'");
-    fail_unless (msg.peer[PEER_VLAN_ID] == NULL,
+    ck_assert_msg(msg.peer[PEER_VLAN_ID] == NULL,
 	"vlan id should be empty, not '%s'", msg.peer[PEER_VLAN_ID]);
 
     mark_point();
     read_packet(&msg, "proto/lldp/52.good.chassis");
-    fail_unless (lldp_decode(&msg) == 117, "packet length incorrect");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(lldp_decode(&msg) == 117, "packet length incorrect");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
-    fail_unless (msg.ttl == 120, "ttl should be 120");
-    fail_unless (strcmp(msg.peer[PEER_HOSTNAME], "(none).(none)") == 0,
+    ck_assert_msg(msg.ttl == 120, "ttl should be 120");
+    ck_assert_msg(strcmp(msg.peer[PEER_HOSTNAME], "(none).(none)") == 0,
 		"system name should be '(none).(none)'");
-    fail_unless (msg.peer[PEER_VLAN_ID] == NULL,
+    ck_assert_msg(msg.peer[PEER_VLAN_ID] == NULL,
 	"vlan id should be empty, not '%s'", msg.peer[PEER_VLAN_ID]);
 
     mark_point();
     read_packet(&msg, "proto/lldp/53.good.ipv6");
-    fail_unless (lldp_decode(&msg) == msg.len, "packet length incorrect");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(lldp_decode(&msg) == msg.len, "packet length incorrect");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
-    fail_unless (msg.ttl == 120, "ttl should be 120");
-    fail_unless (strcmp(msg.peer[PEER_HOSTNAME], "(none).(none)") == 0,
+    ck_assert_msg(msg.ttl == 120, "ttl should be 120");
+    ck_assert_msg(strcmp(msg.peer[PEER_HOSTNAME], "(none).(none)") == 0,
 		"system name should be '(none).(none)'");
-    fail_unless (msg.peer[PEER_VLAN_ID] == NULL,
+    ck_assert_msg(msg.peer[PEER_VLAN_ID] == NULL,
 	"vlan id should be empty, not '%s'", msg.peer[PEER_VLAN_ID]);
 
     mark_point();
     my_log(CRIT, "check");
     errstr = "Invalid LLDP packet: invalid Chassis ID TLV";
     read_packet(&msg, "proto/lldp/A1.fuzzer.chassis_id.long");
-    fail_unless (lldp_decode(&msg) == 0, "invalid packets should return 0");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(lldp_decode(&msg) == 0, "invalid packets should return 0");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     my_log(CRIT, "check");
     errstr = "Invalid LLDP packet: invalid Chassis ID TLV";
     read_packet(&msg, "proto/lldp/A2.fuzzer.chassis_id.short");
-    fail_unless (lldp_decode(&msg) == 0, "invalid packets should return 0");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(lldp_decode(&msg) == 0, "invalid packets should return 0");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     my_log(CRIT, "check");
     errstr = "Invalid LLDP packet: invalid Chassis ID TLV";
     read_packet(&msg, "proto/lldp/A3.fuzzer.chassis_id.broken");
-    fail_unless (lldp_decode(&msg) == 0, "invalid packets should return 0");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(lldp_decode(&msg) == 0, "invalid packets should return 0");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     my_log(CRIT, "check");
     errstr = "Invalid LLDP packet: invalid Chassis ID TLV";
     read_packet(&msg, "proto/lldp/A4.fuzzer.chassis_id.one");
-    fail_unless (lldp_decode(&msg) == 0, "invalid packets should return 0");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(lldp_decode(&msg) == 0, "invalid packets should return 0");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     errstr = "check";
     my_log(CRIT, errstr);
     read_packet(&msg, "proto/lldp/A6.fuzzer.end.short");
-    fail_unless (lldp_decode(&msg) != 0, "we should allow trailing bytes");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(lldp_decode(&msg) != 0, "we should allow trailing bytes");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     my_log(CRIT, "check");
     errstr = "Corrupt LLDP packet: invalid END TLV";
     read_packet(&msg, "proto/lldp/A7.fuzzer.end.trail");
-    fail_unless (lldp_decode(&msg) == 0, "invalid packets should return 0");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(lldp_decode(&msg) == 0, "invalid packets should return 0");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     my_log(CRIT, "check");
     errstr = "Invalid LLDP packet: unavailable cap enabled";
     read_packet(&msg, "proto/lldp/A8.fuzzer.cap.conflict");
-    fail_unless (lldp_decode(&msg) == 0, "invalid packets should return 0");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(lldp_decode(&msg) == 0, "invalid packets should return 0");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     my_log(CRIT, "check");
     errstr = "Invalid LLDP packet: host-only cap combined";
     read_packet(&msg, "proto/lldp/A8.fuzzer.cap.host");
-    fail_unless (lldp_decode(&msg) == 0, "invalid packets should return 0");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(lldp_decode(&msg) == 0, "invalid packets should return 0");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     my_log(CRIT, "check");
     errstr = "Corrupt LLDP packet: invalid TLV length";
     read_packet(&msg, "proto/lldp/A8.fuzzer.cap.short");
-    fail_unless (lldp_decode(&msg) == 0, "invalid packets should return 0");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(lldp_decode(&msg) == 0, "invalid packets should return 0");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     my_log(CRIT, "check");
     errstr = "Invalid LLDP packet: missing Port ID TLV";
     read_packet(&msg, "proto/lldp/A9.fuzzer.port_id.missing");
-    fail_unless (lldp_decode(&msg) == 0, "invalid packets should return 0");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(lldp_decode(&msg) == 0, "invalid packets should return 0");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     mark_point();
@@ -813,12 +813,12 @@ START_TEST(test_lldp_decode) {
     errstr = "Chassis id: 00:01:30:f9:ad:a0";
     memset(sobuf, 0, sizeof(sobuf));
     read_packet(&msg, "proto/lldp/42.good.big");
-    fail_unless (lldp_decode(&msg) == msg.len, "packet length incorrect");
+    ck_assert_msg(lldp_decode(&msg) == msg.len, "packet length incorrect");
     fflush(stdout);
-    fail_if(read(spair[1], sobuf, sizeof(sobuf)) < 0, "read failed");
-    fail_unless(strncmp(sobuf, errstr, strlen(errstr)) == 0,
+    ck_assert_msg(read(spair[1], sobuf, sizeof(sobuf)) >= 0, "read failed");
+    ck_assert_msg(strncmp(sobuf, errstr, strlen(errstr)) == 0,
 	"invalid output: %s", sobuf);
-    fail_unless (strcmp(check_wrap_errstr, "check") == 0,
+    ck_assert_msg(strcmp(check_wrap_errstr, "check") == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     close(spair[0]);
     close(spair[1]);
@@ -828,12 +828,12 @@ START_TEST(test_lldp_decode) {
     errstr = "Chassis id: foobar";
     memset(sobuf, 0, sizeof(sobuf));
     read_packet(&msg, "proto/lldp/53.good.ipv6");
-    fail_unless (lldp_decode(&msg) == msg.len, "packet length incorrect");
+    ck_assert_msg(lldp_decode(&msg) == msg.len, "packet length incorrect");
     fflush(stdout);
-    fail_if(read(spair[1], sobuf, sizeof(sobuf)) < 0, "read failed");
-    fail_unless(strncmp(sobuf, errstr, strlen(errstr)) == 0,
+    ck_assert_msg(read(spair[1], sobuf, sizeof(sobuf)) >= 0, "read failed");
+    ck_assert_msg(strncmp(sobuf, errstr, strlen(errstr)) == 0,
 	"invalid output: %s", sobuf);
-    fail_unless (strcmp(check_wrap_errstr, "check") == 0,
+    ck_assert_msg(strcmp(check_wrap_errstr, "check") == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     close(spair[0]);
@@ -853,190 +853,190 @@ START_TEST(test_cdp_decode) {
 
     errstr = "missing CDP header";
     read_packet(&msg, "proto/cdp/00.empty");
-    fail_unless (cdp_decode(&msg) == 0, "empty packets should return 0");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(cdp_decode(&msg) == 0, "empty packets should return 0");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     errstr = "missing CDP header";
     read_packet(&msg, "proto/cdp/01.header.broken");
-    fail_unless (cdp_decode(&msg) == 0, "broken packets should return 0");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(cdp_decode(&msg) == 0, "broken packets should return 0");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     errstr = "invalid CDP version";
     read_packet(&msg, "proto/cdp/02.header.invalid");
-    fail_unless (cdp_decode(&msg) == 0, "broken packets should return 0");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(cdp_decode(&msg) == 0, "broken packets should return 0");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     read_packet(&msg, "proto/cdp/03.header.only");
-    fail_unless (cdp_decode(&msg) == msg.len, "packet length incorrect");
+    ck_assert_msg(cdp_decode(&msg) == msg.len, "packet length incorrect");
 
     errstr = "Corrupt CDP packet: invalid TLV length";
     read_packet(&msg, "proto/cdp/21.device_id.broken");
-    fail_unless (cdp_decode(&msg) == 0, "broken packets should return 0");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(cdp_decode(&msg) == 0, "broken packets should return 0");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     read_packet(&msg, "proto/cdp/91.tlv.unknown");
-    fail_unless (cdp_decode(&msg) == msg.len, "packet length incorrect");
+    ck_assert_msg(cdp_decode(&msg) == msg.len, "packet length incorrect");
     errstr = "Corrupt CDP packet: invalid TLV";
     read_packet(&msg, "proto/cdp/92.tlv.broken");
-    fail_unless (cdp_decode(&msg) == 0, "broken packets should return 0");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(cdp_decode(&msg) == 0, "broken packets should return 0");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     errstr = "Corrupt CDP packet: invalid TLV length";
     read_packet(&msg, "proto/cdp/93.tlv.long");
-    fail_unless (cdp_decode(&msg) == 0, "broken packets should return 0");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(cdp_decode(&msg) == 0, "broken packets should return 0");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     mark_point();
     errstr = "check";
     my_log(CRIT, errstr);
     read_packet(&msg, "proto/cdp/41.good.small");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
-    fail_unless (cdp_decode(&msg) == msg.len, "packet length incorrect");
-    fail_unless (msg.proto == PROTO_CDP1, "CDP version should be 1");
-    fail_unless (msg.ttl == 180, "ttl should be 180");
-    fail_unless (strcmp(msg.peer[PEER_HOSTNAME], "R1") == 0,
+    ck_assert_msg(cdp_decode(&msg) == msg.len, "packet length incorrect");
+    ck_assert_msg(msg.proto == PROTO_CDP1, "CDP version should be 1");
+    ck_assert_msg(msg.ttl == 180, "ttl should be 180");
+    ck_assert_msg(strcmp(msg.peer[PEER_HOSTNAME], "R1") == 0,
 	"system name should be 'R1'");
-    fail_unless (msg.peer[PEER_PORTNAME] == NULL,
+    ck_assert_msg(msg.peer[PEER_PORTNAME] == NULL,
 	"port id should be empty, not '%s'", msg.peer[PEER_PORTNAME]);
-    fail_unless (msg.peer[PEER_VLAN_ID] == NULL,
+    ck_assert_msg(msg.peer[PEER_VLAN_ID] == NULL,
 	"vlan id should be empty, not '%s'", msg.peer[PEER_VLAN_ID]);
 
     mark_point();
     read_packet(&msg, "proto/cdp/42.good.medium");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
-    fail_unless (cdp_decode(&msg) == msg.len, "packet length incorrect");
-    fail_unless (msg.proto == PROTO_CDP1, "CDP version should be 1");
-    fail_unless (msg.ttl == 180, "ttl should be 180");
-    fail_unless (strcmp(msg.peer[PEER_HOSTNAME], "R2D2") == 0,
+    ck_assert_msg(cdp_decode(&msg) == msg.len, "packet length incorrect");
+    ck_assert_msg(msg.proto == PROTO_CDP1, "CDP version should be 1");
+    ck_assert_msg(msg.ttl == 180, "ttl should be 180");
+    ck_assert_msg(strcmp(msg.peer[PEER_HOSTNAME], "R2D2") == 0,
 		"system name should be 'R2D2'");
-    fail_unless (strcmp(msg.peer[PEER_PORTNAME], "Ethernet0") == 0,
+    ck_assert_msg(strcmp(msg.peer[PEER_PORTNAME], "Ethernet0") == 0,
 	"port id should be 'Ethernet0' not '%s'", msg.peer[PEER_PORTNAME]);
-    fail_unless (msg.peer[PEER_VLAN_ID] == NULL,
+    ck_assert_msg(msg.peer[PEER_VLAN_ID] == NULL,
 	"vlan id should be empty, not '%s'", msg.peer[PEER_VLAN_ID]);
 
     mark_point();
     read_packet(&msg, "proto/cdp/43.good.big");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
-    fail_unless (cdp_decode(&msg) == msg.len, "packet length incorrect");
-    fail_unless (msg.proto == PROTO_CDP, "CDP version should be 2");
-    fail_unless (msg.ttl == 180, "ttl should be 180");
-    fail_unless (strcmp(msg.peer[PEER_HOSTNAME], "xpfs1.yapkjn.network.bla.nl") == 0,
+    ck_assert_msg(cdp_decode(&msg) == msg.len, "packet length incorrect");
+    ck_assert_msg(msg.proto == PROTO_CDP, "CDP version should be 2");
+    ck_assert_msg(msg.ttl == 180, "ttl should be 180");
+    ck_assert_msg(strcmp(msg.peer[PEER_HOSTNAME], "xpfs1.yapkjn.network.bla.nl") == 0,
 		"system name should be 'xpfs1.yapkjn.network.bla.nl'");
-    fail_unless (strcmp(msg.peer[PEER_PORTNAME], "FastEthernet6/20") == 0,
+    ck_assert_msg(strcmp(msg.peer[PEER_PORTNAME], "FastEthernet6/20") == 0,
 	"port id should be 'FastEthernet6/20' not '%s'",
 	msg.peer[PEER_PORTNAME]);
-    fail_unless (strcmp(msg.peer[PEER_VLAN_ID], "389") == 0,
+    ck_assert_msg(strcmp(msg.peer[PEER_VLAN_ID], "389") == 0,
 	"vlan id should be '389' not '%s'", msg.peer[PEER_VLAN_ID]);
 
     mark_point();
     read_packet(&msg, "proto/cdp/44.good.bcm");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
-    fail_unless (cdp_decode(&msg) == msg.len, "packet length incorrect");
-    fail_unless (msg.proto == PROTO_CDP, "CDP version should be 2");
-    fail_unless (msg.ttl == 180, "ttl should be 180");
-    fail_unless (strcmp(msg.peer[PEER_HOSTNAME], "0060B9C14027") == 0,
+    ck_assert_msg(cdp_decode(&msg) == msg.len, "packet length incorrect");
+    ck_assert_msg(msg.proto == PROTO_CDP, "CDP version should be 2");
+    ck_assert_msg(msg.ttl == 180, "ttl should be 180");
+    ck_assert_msg(strcmp(msg.peer[PEER_HOSTNAME], "0060B9C14027") == 0,
 		"system name should be '0060B9C14027'");
-    fail_unless (msg.peer[PEER_PORTNAME] == NULL,
+    ck_assert_msg(msg.peer[PEER_PORTNAME] == NULL,
 	"port id should be empty, not '%s'", msg.peer[PEER_PORTNAME]);
-    fail_unless (msg.peer[PEER_VLAN_ID] == NULL,
+    ck_assert_msg(msg.peer[PEER_VLAN_ID] == NULL,
 	"vlan id should be empty, not '%s'", msg.peer[PEER_VLAN_ID]);
 
     mark_point();
     read_packet(&msg, "proto/cdp/45.good.6504");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
-    fail_unless (cdp_decode(&msg) == msg.len, "packet length incorrect");
-    fail_unless (msg.proto == PROTO_CDP, "CDP version should be 2");
-    fail_unless (msg.ttl == 180, "ttl should be 180");
-    fail_unless (strcmp(msg.peer[PEER_HOSTNAME], "mpls-sbp-ams1.leazewep.nat") == 0,
+    ck_assert_msg(cdp_decode(&msg) == msg.len, "packet length incorrect");
+    ck_assert_msg(msg.proto == PROTO_CDP, "CDP version should be 2");
+    ck_assert_msg(msg.ttl == 180, "ttl should be 180");
+    ck_assert_msg(strcmp(msg.peer[PEER_HOSTNAME], "mpls-sbp-ams1.leazewep.nat") == 0,
 		"system name should be 'mpls-sbp-ams1.leazewep.nat'");
-    fail_unless (strcmp(msg.peer[PEER_PORTNAME], "FastEthernet4/11") == 0,
+    ck_assert_msg(strcmp(msg.peer[PEER_PORTNAME], "FastEthernet4/11") == 0,
 	"port id should be 'FastEthernet4/11' not '%s'",
 	msg.peer[PEER_PORTNAME]);
-    fail_unless (strcmp(msg.peer[PEER_VLAN_ID], "971") == 0,
+    ck_assert_msg(strcmp(msg.peer[PEER_VLAN_ID], "971") == 0,
 	"vlan id should be '971' not '%s'", msg.peer[PEER_VLAN_ID]);
 
     mark_point();
     read_packet(&msg, "proto/cdp/46.good.2811");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
-    fail_unless (cdp_decode(&msg) == msg.len, "packet length incorrect");
-    fail_unless (msg.proto == PROTO_CDP, "CDP version should be 2");
-    fail_unless (msg.ttl == 180, "ttl should be 180");
-    fail_unless (strcmp(msg.peer[PEER_HOSTNAME], "c2811.ttttrnal.lottlloou.nl") == 0,
+    ck_assert_msg(cdp_decode(&msg) == msg.len, "packet length incorrect");
+    ck_assert_msg(msg.proto == PROTO_CDP, "CDP version should be 2");
+    ck_assert_msg(msg.ttl == 180, "ttl should be 180");
+    ck_assert_msg(strcmp(msg.peer[PEER_HOSTNAME], "c2811.ttttrnal.lottlloou.nl") == 0,
 		"system name should be 'c2811.ttttrnal.lottlloou.nl'");
-    fail_unless (strcmp(msg.peer[PEER_PORTNAME], "FastEthernet0/0") == 0,
+    ck_assert_msg(strcmp(msg.peer[PEER_PORTNAME], "FastEthernet0/0") == 0,
 	"port id should be 'FastEthernet0/0' not '%s'",
 	msg.peer[PEER_PORTNAME]);
-    fail_unless (msg.peer[PEER_VLAN_ID] == NULL,
+    ck_assert_msg(msg.peer[PEER_VLAN_ID] == NULL,
 	"vlan id should be empty, not '%s'", msg.peer[PEER_VLAN_ID]);
 
     mark_point();
     read_packet(&msg, "proto/cdp/47.good.vlan");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
-    fail_unless (cdp_decode(&msg) == msg.len, "packet length incorrect");
-    fail_unless (msg.proto == PROTO_CDP, "CDP version should be 2");
-    fail_unless (msg.ttl == 180, "ttl should be 180");
-    fail_unless (strcmp(msg.peer[PEER_HOSTNAME], "sw1.bit-2b.notwork.bot.nl") == 0,
+    ck_assert_msg(cdp_decode(&msg) == msg.len, "packet length incorrect");
+    ck_assert_msg(msg.proto == PROTO_CDP, "CDP version should be 2");
+    ck_assert_msg(msg.ttl == 180, "ttl should be 180");
+    ck_assert_msg(strcmp(msg.peer[PEER_HOSTNAME], "sw1.bit-2b.notwork.bot.nl") == 0,
 		"system name should be 'sw1.bit-2b.notwork.bot.nl'");
-    fail_unless (strcmp(msg.peer[PEER_PORTNAME], "GigabitEthernet0/2") == 0,
+    ck_assert_msg(strcmp(msg.peer[PEER_PORTNAME], "GigabitEthernet0/2") == 0,
 	"port id should be 'GigabitEthernet0/2' not '%s'",
 	msg.peer[PEER_PORTNAME]);
-    fail_unless (strcmp(msg.peer[PEER_VLAN_ID], "30") == 0,
+    ck_assert_msg(strcmp(msg.peer[PEER_VLAN_ID], "30") == 0,
 	"vlan id should be '30' not '%s'", msg.peer[PEER_VLAN_ID]);
 
     mark_point();
     read_packet(&msg, "proto/cdp/48.good.vlan");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
-    fail_unless (cdp_decode(&msg) == msg.len, "packet length incorrect");
-    fail_unless (msg.proto == PROTO_CDP, "CDP version should be 2");
-    fail_unless (msg.ttl == 180, "ttl should be 180");
-    fail_unless (strcmp(msg.peer[PEER_HOSTNAME], "trillian.blinkenlights.nl") == 0,
+    ck_assert_msg(cdp_decode(&msg) == msg.len, "packet length incorrect");
+    ck_assert_msg(msg.proto == PROTO_CDP, "CDP version should be 2");
+    ck_assert_msg(msg.ttl == 180, "ttl should be 180");
+    ck_assert_msg(strcmp(msg.peer[PEER_HOSTNAME], "trillian.blinkenlights.nl") == 0,
 		"system name should be 'trillian.blinkenlights.nl'");
-    fail_unless (strcmp(msg.peer[PEER_PORTNAME], "GigabitEthernet0/1") == 0,
+    ck_assert_msg(strcmp(msg.peer[PEER_PORTNAME], "GigabitEthernet0/1") == 0,
 	"port id should be 'GigabitEthernet0/1' not '%s'",
 	msg.peer[PEER_PORTNAME]);
-    fail_unless (strcmp(msg.peer[PEER_VLAN_ID], "2") == 0,
+    ck_assert_msg(strcmp(msg.peer[PEER_VLAN_ID], "2") == 0,
 	"vlan id should be '2' not '%s'", msg.peer[PEER_VLAN_ID]);
 
     mark_point();
     read_packet(&msg, "proto/cdp/49.good.phone");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
-    fail_unless (cdp_decode(&msg) == msg.len, "packet length incorrect");
-    fail_unless (msg.proto == PROTO_CDP, "CDP version should be 2");
-    fail_unless (msg.ttl == 180, "ttl should be 180");
-    fail_unless (strcmp(msg.peer[PEER_HOSTNAME], "SEP001B53489EE0") == 0,
+    ck_assert_msg(cdp_decode(&msg) == msg.len, "packet length incorrect");
+    ck_assert_msg(msg.proto == PROTO_CDP, "CDP version should be 2");
+    ck_assert_msg(msg.ttl == 180, "ttl should be 180");
+    ck_assert_msg(strcmp(msg.peer[PEER_HOSTNAME], "SEP001B53489EE0") == 0,
 		"system name should be 'SEP001B53489EE0'");
-    fail_unless (strcmp(msg.peer[PEER_PORTNAME], "Port 1") == 0,
+    ck_assert_msg(strcmp(msg.peer[PEER_PORTNAME], "Port 1") == 0,
 	"port id should be 'Port 1' not '%s'",
 	msg.peer[PEER_PORTNAME]);
-    fail_unless (msg.peer[PEER_VLAN_ID] == NULL,
+    ck_assert_msg(msg.peer[PEER_VLAN_ID] == NULL,
 	"vlan id should be empty, not '%s'", msg.peer[PEER_VLAN_ID]);
 
     mark_point();
     read_packet(&msg, "proto/cdp/50.good.mikrotik");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
-    fail_unless (cdp_decode(&msg) == msg.len, "packet length incorrect");
-    fail_unless (msg.proto == PROTO_CDP1, "CDP version should be 1");
-    fail_unless (msg.ttl == 120, "ttl should be 120");
-    fail_unless (strcmp(msg.peer[PEER_HOSTNAME], "MikroTik") == 0,
+    ck_assert_msg(cdp_decode(&msg) == msg.len, "packet length incorrect");
+    ck_assert_msg(msg.proto == PROTO_CDP1, "CDP version should be 1");
+    ck_assert_msg(msg.ttl == 120, "ttl should be 120");
+    ck_assert_msg(strcmp(msg.peer[PEER_HOSTNAME], "MikroTik") == 0,
 		"system name should be 'MikroTik'");
-    fail_unless (strcmp(msg.peer[PEER_PORTNAME], "ether2") == 0,
+    ck_assert_msg(strcmp(msg.peer[PEER_PORTNAME], "ether2") == 0,
 	"port id should be 'ether2' not '%s'",
 	msg.peer[PEER_PORTNAME]);
-    fail_unless (msg.peer[PEER_VLAN_ID] == NULL,
+    ck_assert_msg(msg.peer[PEER_VLAN_ID] == NULL,
 	"vlan id should be empty, not '%s'", msg.peer[PEER_VLAN_ID]);
 
     mark_point();
@@ -1050,11 +1050,11 @@ START_TEST(test_cdp_decode) {
     errstr = "CDP Version: 2";
     memset(sobuf, 0, sizeof(sobuf));
     read_packet(&msg, "proto/cdp/43.good.big");
-    fail_unless (cdp_decode(&msg) == msg.len, "packet length incorrect");
+    ck_assert_msg(cdp_decode(&msg) == msg.len, "packet length incorrect");
     fflush(stdout);
-    fail_if(read(spair[1], sobuf, sizeof(sobuf)) < 0, "read failed");
-    fail_unless(strncmp(sobuf, errstr, strlen(errstr)) == 0, "invalid output: %s", sobuf);
-    fail_unless (strcmp(check_wrap_errstr, "check") == 0,
+    ck_assert_msg(read(spair[1], sobuf, sizeof(sobuf)) >= 0, "read failed");
+    ck_assert_msg(strncmp(sobuf, errstr, strlen(errstr)) == 0, "invalid output: %s", sobuf);
+    ck_assert_msg(strcmp(check_wrap_errstr, "check") == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     close(spair[0]);
@@ -1073,69 +1073,69 @@ START_TEST(test_edp_decode) {
 
     errstr = "missing EDP header";
     read_packet(&msg, "proto/edp/00.empty");
-    fail_unless (edp_decode(&msg) == 0, "empty packets should return 0");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(edp_decode(&msg) == 0, "empty packets should return 0");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     my_log(CRIT, "check");
     read_packet(&msg, "proto/edp/01.header.broken");
-    fail_unless (edp_decode(&msg) == 0, "broken packets should return 0");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(edp_decode(&msg) == 0, "broken packets should return 0");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     errstr = "unsupported EDP version";
     read_packet(&msg, "proto/edp/02.header.invalid");
-    fail_unless (edp_decode(&msg) == 0, "broken packets should return 0");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(edp_decode(&msg) == 0, "broken packets should return 0");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     errstr = "check";
     my_log(CRIT, errstr);
     read_packet(&msg, "proto/edp/03.header.only");
-    fail_unless (edp_decode(&msg) == msg.len, "packet length incorrect");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(edp_decode(&msg) == msg.len, "packet length incorrect");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     errstr = "Corrupt EDP packet: invalid Display TLV";
     read_packet(&msg, "proto/edp/21.display.broken");
-    fail_unless (edp_decode(&msg) == 0, "broken packets should return 0");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(edp_decode(&msg) == 0, "broken packets should return 0");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     errstr = "check";
     my_log(CRIT, errstr);
     read_packet(&msg, "proto/edp/91.tlv.unknown");
-    fail_unless (edp_decode(&msg) == msg.len, "packet length incorrect");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(edp_decode(&msg) == msg.len, "packet length incorrect");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     errstr = "Corrupt EDP packet: invalid TLV";
     read_packet(&msg, "proto/edp/92.tlv.invalid");
-    fail_unless (edp_decode(&msg) == 0, "broken packets should return 0");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(edp_decode(&msg) == 0, "broken packets should return 0");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     errstr = "Corrupt EDP packet: invalid TLV length";
     read_packet(&msg, "proto/edp/93.tlv.long");
-    fail_unless (edp_decode(&msg) == 0, "broken packets should return 0");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(edp_decode(&msg) == 0, "broken packets should return 0");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     errstr = "check";
     my_log(CRIT, errstr);
     read_packet(&msg, "proto/edp/41.good.small");
-    fail_unless (edp_decode(&msg) == msg.len, "packet length incorrect");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(edp_decode(&msg) == msg.len, "packet length incorrect");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
-    fail_unless (msg.ttl == 180, "ttl should be 180");
-    fail_unless (strcmp(msg.peer[PEER_HOSTNAME], "HD000002") == 0,
+    ck_assert_msg(msg.ttl == 180, "ttl should be 180");
+    ck_assert_msg(strcmp(msg.peer[PEER_HOSTNAME], "HD000002") == 0,
 		"system name should be 'HD000002'");
-    fail_unless (msg.peer[PEER_PORTNAME] == NULL,
+    ck_assert_msg(msg.peer[PEER_PORTNAME] == NULL,
 	"port id should be empty, not '%s'", msg.peer[PEER_PORTNAME]);
     read_packet(&msg, "proto/edp/42.good.medium");
-    fail_unless (edp_decode(&msg) == msg.len, "packet length incorrect");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(edp_decode(&msg) == msg.len, "packet length incorrect");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
-    fail_unless (msg.ttl == 180, "ttl should be 180");
-    fail_unless (strcmp(msg.peer[PEER_HOSTNAME], "SW1") == 0,
+    ck_assert_msg(msg.ttl == 180, "ttl should be 180");
+    ck_assert_msg(strcmp(msg.peer[PEER_HOSTNAME], "SW1") == 0,
 	"system name should be 'SW1'");
-    fail_unless (msg.peer[PEER_PORTNAME] == NULL,
+    ck_assert_msg(msg.peer[PEER_PORTNAME] == NULL,
 	"port id should be empty, not '%s'", msg.peer[PEER_PORTNAME]);
 
     peer_free(msg.peer);
@@ -1151,83 +1151,83 @@ START_TEST(test_fdp_decode) {
 
     errstr = "missing FDP header";
     read_packet(&msg, "proto/fdp/00.empty");
-    fail_unless (fdp_decode(&msg) == 0, "empty packets should return 0");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(fdp_decode(&msg) == 0, "empty packets should return 0");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     my_log(CRIT, "check");
     read_packet(&msg, "proto/fdp/01.header.broken");
-    fail_unless (fdp_decode(&msg) == 0, "broken packets should return 0");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(fdp_decode(&msg) == 0, "broken packets should return 0");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     errstr = "unsupported FDP version";
     read_packet(&msg, "proto/fdp/02.header.invalid");
-    fail_unless (fdp_decode(&msg) == 0, "broken packets should return 0");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(fdp_decode(&msg) == 0, "broken packets should return 0");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     errstr = "check";
     my_log(CRIT, errstr);
     read_packet(&msg, "proto/fdp/03.header.only");
-    fail_unless (fdp_decode(&msg) == msg.len, "packet length incorrect");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(fdp_decode(&msg) == msg.len, "packet length incorrect");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     errstr = "Corrupt FDP packet: invalid Device ID TLV";
     read_packet(&msg, "proto/fdp/21.device_id.broken");
-    fail_unless (fdp_decode(&msg) == 0, "broken packets should return 0");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(fdp_decode(&msg) == 0, "broken packets should return 0");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     errstr = "check";
     my_log(CRIT, errstr);
     read_packet(&msg, "proto/fdp/91.tlv.unknown");
-    fail_unless (fdp_decode(&msg) == msg.len, "packet length incorrect");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(fdp_decode(&msg) == msg.len, "packet length incorrect");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     errstr = "Corrupt FDP packet: invalid TLV";
     read_packet(&msg, "proto/fdp/92.tlv.invalid");
-    fail_unless (fdp_decode(&msg) == 0, "broken packets should return 0");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(fdp_decode(&msg) == 0, "broken packets should return 0");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     errstr = "Corrupt FDP packet: invalid TLV length";
     read_packet(&msg, "proto/fdp/93.tlv.long");
-    fail_unless (fdp_decode(&msg) == 0, "broken packets should return 0");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(fdp_decode(&msg) == 0, "broken packets should return 0");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     mark_point();
     errstr = "check";
     my_log(CRIT, errstr);
     read_packet(&msg, "proto/fdp/41.good.bi");
-    fail_unless (fdp_decode(&msg) == msg.len, "packet length incorrect");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(fdp_decode(&msg) == msg.len, "packet length incorrect");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
-    fail_unless (msg.ttl == 10, "ttl should be 10");
-    fail_unless (strcmp(msg.peer[PEER_HOSTNAME], "doetnix") == 0,
+    ck_assert_msg(msg.ttl == 10, "ttl should be 10");
+    ck_assert_msg(strcmp(msg.peer[PEER_HOSTNAME], "doetnix") == 0,
 		"system name should be 'doetnix'");
-    fail_unless (strcmp(msg.peer[PEER_PORTNAME], "ethernet3/1") == 0,
+    ck_assert_msg(strcmp(msg.peer[PEER_PORTNAME], "ethernet3/1") == 0,
 	"port id should be 'ethernet3/1' not '%s'", msg.peer[PEER_PORTNAME]);
 
     mark_point();
     read_packet(&msg, "proto/fdp/42.good.rx");
-    fail_unless (fdp_decode(&msg) == msg.len, "packet length incorrect");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(fdp_decode(&msg) == msg.len, "packet length incorrect");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
-    fail_unless (msg.ttl == 10, "ttl should be 10");
-    fail_unless (strcmp(msg.peer[PEER_HOSTNAME], "erix") == 0,
+    ck_assert_msg(msg.ttl == 10, "ttl should be 10");
+    ck_assert_msg(strcmp(msg.peer[PEER_HOSTNAME], "erix") == 0,
 		"system name should be 'erix'");
-    fail_unless (strcmp(msg.peer[PEER_PORTNAME], "ethernet1/1") == 0,
+    ck_assert_msg(strcmp(msg.peer[PEER_PORTNAME], "ethernet1/1") == 0,
 	"port id should be 'ethernet1/1' not '%s'", msg.peer[PEER_PORTNAME]);
 
     mark_point();
     read_packet(&msg, "proto/fdp/43.good.mlx");
-    fail_unless (fdp_decode(&msg) == msg.len, "packet length incorrect");
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(fdp_decode(&msg) == msg.len, "packet length incorrect");
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
-    fail_unless (msg.ttl == 10, "ttl should be 10");
-    fail_unless (strcmp(msg.peer[PEER_HOSTNAME], "emmerix") == 0,
+    ck_assert_msg(msg.ttl == 10, "ttl should be 10");
+    ck_assert_msg(strcmp(msg.peer[PEER_HOSTNAME], "emmerix") == 0,
 		"system name should be 'emmerix'");
-    fail_unless (strcmp(msg.peer[PEER_PORTNAME], "ethernet1/1") == 0,
+    ck_assert_msg(strcmp(msg.peer[PEER_PORTNAME], "ethernet1/1") == 0,
 	"port id should be 'ethernet1/1' not '%s'", msg.peer[PEER_PORTNAME]);
 
     peer_free(msg.peer);

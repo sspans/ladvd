@@ -67,7 +67,7 @@ START_TEST(test_cli_main) {
     check_wrap_fake = 0;
     now = time(NULL);
 
-    fail_if(socketpair(AF_UNIX, SOCK_STREAM, 0, &spair[0]) == -1,
+    ck_assert_msg(socketpair(AF_UNIX, SOCK_STREAM, 0, &spair[0]) != -1,
 	    "socketpair creation failed");
     setsockopt(spair[0], SOL_SOCKET, SO_RCVBUF, &sobuf, sizeof(sobuf));
     setsockopt(spair[1], SOL_SOCKET, SO_SNDBUF, &sobuf, sizeof(sobuf));
@@ -75,14 +75,14 @@ START_TEST(test_cli_main) {
     dup2(spair[0], STDIN_FILENO);
 
     sobuf = 8192;
-    fail_if(socketpair(AF_UNIX, SOCK_STREAM, 0, &spair[2]) == -1,
+    ck_assert_msg(socketpair(AF_UNIX, SOCK_STREAM, 0, &spair[2]) != -1,
 	    "socketpair creation failed");
     setsockopt(spair[2], SOL_SOCKET, SO_SNDBUF, &sobuf, sizeof(sobuf));
     setsockopt(spair[3], SOL_SOCKET, SO_RCVBUF, &sobuf, sizeof(sobuf));
     ofd[1] = dup(STDOUT_FILENO);
     dup2(spair[2], STDOUT_FILENO);
 
-    fail_if(socketpair(AF_UNIX, SOCK_STREAM, 0, &spair[4]) == -1,
+    ck_assert_msg(socketpair(AF_UNIX, SOCK_STREAM, 0, &spair[4]) != -1,
 	    "socketpair creation failed");
     setsockopt(spair[4], SOL_SOCKET, SO_SNDBUF, &sobuf, sizeof(sobuf));
     setsockopt(spair[5], SOL_SOCKET, SO_RCVBUF, &sobuf, sizeof(sobuf));
@@ -96,9 +96,9 @@ START_TEST(test_cli_main) {
     cli_main(argc, argv);
     WRAP_FATAL_END();
     fflush(stderr);
-    fail_if(read(spair[5], buf, sizeof(buf)) < 0,
+    ck_assert_msg(read(spair[5], buf, sizeof(buf)) >= 0,
 	    "cli_main read failed");
-    fail_if(strstr(buf, "Usage:") == NULL,
+    ck_assert_msg(strstr(buf, "Usage:") != NULL,
     	    "invalid usage output: %s", buf);
 
     mark_point();
@@ -110,9 +110,9 @@ START_TEST(test_cli_main) {
     cli_main(argc, argv);
     WRAP_FATAL_END();
     fflush(stderr);
-    fail_if(read(spair[5], buf, sizeof(buf)) < 0,
+    ck_assert_msg(read(spair[5], buf, sizeof(buf)) >= 0,
 	    "cli_main read failed");
-    fail_if(strstr(buf, "Usage:") == NULL,
+    ck_assert_msg(strstr(buf, "Usage:") != NULL,
     	    "invalid usage output: %s", buf);
 
     // cleanup
@@ -124,7 +124,7 @@ START_TEST(test_cli_main) {
 #endif /* HAVE_EVHTTP_H */
 
     mark_point();
-    fail_unless(ifindex, "missing loopback interface");
+    ck_assert_msg(ifindex, "missing loopback interface");
 
     mark_point();
     memset(buf, 0, sizeof(buf));
@@ -136,9 +136,9 @@ START_TEST(test_cli_main) {
     cli_main(argc, argv);
     WRAP_FATAL_END();
     fflush(stderr);
-    fail_if(read(spair[5], buf, sizeof(buf)) < 0,
+    ck_assert_msg(read(spair[5], buf, sizeof(buf)) >= 0,
 	    "cli_main read failed");
-    fail_unless (strncmp(buf, errstr, strlen(errstr)) == 0,
+    ck_assert_msg(strncmp(buf, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", buf);
 
     // cleanup
@@ -160,9 +160,9 @@ START_TEST(test_cli_main) {
     cli_main(argc, argv);
     WRAP_FATAL_END();
     fflush(stderr);
-    fail_if(read(spair[5], buf, sizeof(buf)) < 0,
+    ck_assert_msg(read(spair[5], buf, sizeof(buf)) >= 0,
 	    "cli_main read failed");
-    fail_unless (strncmp(buf, errstr, strlen(errstr)) == 0,
+    ck_assert_msg (strncmp(buf, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", buf);
 
     // cleanup
@@ -180,42 +180,42 @@ START_TEST(test_cli_main) {
     msg.proto = PROTO_LLDP;
     msg.index = 1;
     strlcpy(msg.name, ifname, IFNAMSIZ);
-    fail_if(write(spair[1], &msg, PARENT_MSG_MAX) < 0,
+    ck_assert_msg(write(spair[1], &msg, PARENT_MSG_MAX) >= 0,
 	    "write failed");
 
     // invalid proto
     mark_point();
     read_packet(&msg, "proto/cdp/43.good.big");
     msg.proto = PROTO_MAX;
-    fail_if(write(spair[1], &msg, PARENT_MSG_MAX) < 0,
+    ck_assert_msg(write(spair[1], &msg, PARENT_MSG_MAX) >= 0,
 	    "write failed");
 
     // invalid len
     mark_point();
     msg.proto = PROTO_CDP;
     msg.len += ETHER_MAX_LEN;
-    fail_if(write(spair[1], &msg, PARENT_MSG_MAX) < 0,
+    ck_assert_msg(write(spair[1], &msg, PARENT_MSG_MAX) >= 0,
 	    "write failed");
 
     // invalid ifindex
     mark_point();
     msg.len -= ETHER_MAX_LEN;
     msg.index = 0;
-    fail_if(write(spair[1], &msg, PARENT_MSG_MAX) < 0,
+    ck_assert_msg(write(spair[1], &msg, PARENT_MSG_MAX) >= 0,
 	    "write failed");
 
     // unwanted proto
     mark_point();
     msg.index = 1;
     msg.proto = PROTO_NDP;
-    fail_if(write(spair[1], &msg, PARENT_MSG_MAX) < 0,
+    ck_assert_msg(write(spair[1], &msg, PARENT_MSG_MAX) >= 0,
 	    "write failed");
 
     // invalid packet
     mark_point();
     msg.proto = PROTO_LLDP;
     read_packet(&msg, "proto/lldp/A3.fuzzer.chassis_id.broken");
-    fail_if(write(spair[1], &msg, PARENT_MSG_MAX) < 0,
+    ck_assert_msg(write(spair[1], &msg, PARENT_MSG_MAX) >= 0,
 	    "write failed");
 
     // old message
@@ -223,14 +223,14 @@ START_TEST(test_cli_main) {
     msg.proto = PROTO_LLDP;
     read_packet(&msg, "proto/lldp/45.good.vlan");
     msg.received = 0;
-    fail_if(write(spair[1], &msg, PARENT_MSG_MAX) < 0,
+    ck_assert_msg(write(spair[1], &msg, PARENT_MSG_MAX) >= 0,
 	    "write failed");
 
     // valid
     mark_point();
     msg.received = now;
     strlcpy(msg.name, ifname, IFNAMSIZ);
-    fail_if(write(spair[1], &msg, PARENT_MSG_MAX) < 0,
+    ck_assert_msg(write(spair[1], &msg, PARENT_MSG_MAX) >= 0,
 	    "write failed");
 
     mark_point();
@@ -246,9 +246,9 @@ START_TEST(test_cli_main) {
     cli_main(argc, argv);
     WRAP_FATAL_END();
     fflush(stderr);
-    fail_if(read(spair[5], buf, sizeof(buf)) < 0,
+    ck_assert_msg(read(spair[5], buf, sizeof(buf)) >= 0,
 	"cli_main read failed");
-    fail_unless (strncmp(buf, errstr, strlen(errstr)) == 0,
+    ck_assert_msg(strncmp(buf, errstr, strlen(errstr)) == 0,
     	"incorrect message logged: %s", buf);
 
     // cleanup
@@ -288,8 +288,8 @@ START_TEST(test_batch_write) {
     int sobuf = 8192;
 
     ostdout = dup(STDOUT_FILENO);
-    fail_if(ostdout == -1, "dup failed: %s", strerror(errno));
-    fail_if(socketpair(AF_UNIX, SOCK_STREAM, 0, spair) == -1,
+    ck_assert_msg(ostdout != -1, "dup failed: %s", strerror(errno));
+    ck_assert_msg(socketpair(AF_UNIX, SOCK_STREAM, 0, spair) != -1,
 	    "socketpair creation failed: %s", strerror(errno));
     setsockopt(spair[0], SOL_SOCKET, SO_SNDBUF, &sobuf, sizeof(sobuf));
     setsockopt(spair[1], SOL_SOCKET, SO_RCVBUF, &sobuf, sizeof(sobuf));
@@ -298,11 +298,11 @@ START_TEST(test_batch_write) {
     mark_point();
     batch_write(&msg, 42);
     fflush(stdout);
-    fail_if(read(spair[1], buf, sizeof(buf)) < 0,
+    ck_assert_msg(read(spair[1], buf, sizeof(buf)) >= 0,
 	"read failed");
-    fail_if(strstr(buf, "INTERFACE_0=") != buf,
+    ck_assert_msg(strstr(buf, "INTERFACE_0=") == buf,
 	    "invalid batch_write output");
-    fail_if(strstr(buf, "HOLDTIME_0=") == NULL,
+    ck_assert_msg(strstr(buf, "HOLDTIME_0=") != NULL,
     	    "invalid batch_write output");
 	
     
@@ -313,11 +313,11 @@ START_TEST(test_batch_write) {
     msg.peer[PEER_PORTNAME] = strdup("Fas'tEthernet42/64");
     batch_write(&msg, 42);
     fflush(stdout);
-    fail_if(read(spair[1], buf, sizeof(buf)) < 0,
+    ck_assert_msg(read(spair[1], buf, sizeof(buf)) >= 0,
 	"read failed");
-    fail_if(strstr(buf, "INTERFACE_1=") != buf,
+    ck_assert_msg(strstr(buf, "INTERFACE_1=") == buf,
 	    "invalid batch_write output");
-    fail_if(strstr(buf, "HOLDTIME_1=") == NULL,
+    ck_assert_msg(strstr(buf, "HOLDTIME_1=") != NULL,
 	    "invalid batch_write output");
 	
     
@@ -336,8 +336,8 @@ START_TEST(test_cli) {
     int sobuf = 2048;
 
     ostdout = dup(STDOUT_FILENO);
-    fail_if(ostdout == -1, "dup failed: %s", strerror(errno));
-    fail_if(socketpair(AF_UNIX, SOCK_STREAM, 0, spair) == -1,
+    ck_assert_msg(ostdout != -1, "dup failed: %s", strerror(errno));
+    ck_assert_msg(socketpair(AF_UNIX, SOCK_STREAM, 0, spair) != -1,
 	    "socketpair creation failed: %s", strerror(errno));
     setsockopt(spair[0], SOL_SOCKET, SO_SNDBUF, &sobuf, sizeof(sobuf));
     setsockopt(spair[1], SOL_SOCKET, SO_RCVBUF, &sobuf, sizeof(sobuf));
@@ -346,11 +346,11 @@ START_TEST(test_cli) {
     mark_point();
     cli_header();
     fflush(stdout);
-    fail_if(read(spair[1], buf, sizeof(buf)) < 0,
+    ck_assert_msg(read(spair[1], buf, sizeof(buf)) >= 0,
 	"read failed");
-    fail_if(strstr(buf, "Capability Codes:") != buf,
+    ck_assert_msg(strstr(buf, "Capability Codes:") == buf,
 	    "invalid cli_header output");
-    fail_if(strstr(buf, "Device ID") == NULL,
+    ck_assert_msg(strstr(buf, "Device ID") != NULL,
 	    "invalid cli_header output");
 	
     mark_point();
@@ -360,11 +360,11 @@ START_TEST(test_cli) {
     msg.peer[PEER_PORTNAME] = strdup("TenGigabitEthernet42/64");
     cli_write(&msg, 42);
     fflush(stdout);
-    fail_if(read(spair[1], buf, sizeof(buf)) < 0,
+    ck_assert_msg(read(spair[1], buf, sizeof(buf)) >= 0,
 	"read failed");
-    fail_if(strstr(buf, "router") != buf,
+    ck_assert_msg(strstr(buf, "router") == buf,
 	    "invalid cli_write output");
-    fail_if(strstr(buf, "Te42/64") == NULL,
+    ck_assert_msg(strstr(buf, "Te42/64") != NULL,
 	    "invalid cli_write output");
 	
     close(spair[0]);
@@ -390,7 +390,7 @@ START_TEST(test_debug) {
 	WRAP_FATAL_START();
 	debug_header();
 	WRAP_FATAL_END();
-	fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+	ck_assert_msg (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	    "incorrect message logged: %s", check_wrap_errstr);
     }
 
@@ -404,26 +404,26 @@ START_TEST(test_debug) {
     mark_point();
     debug_header();
     fflush(stdout);
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+    ck_assert_msg (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
         "incorrect message logged: %s", check_wrap_errstr);
     len = read(spair[1], &pcap_fhdr, sizeof(pcap_fhdr));
-    fail_unless(len == sizeof(pcap_fhdr),
+    ck_assert_msg(len == sizeof(pcap_fhdr),
                 "failed to read pcap header");
-    fail_unless(pcap_fhdr.magic == PCAP_MAGIC,
+    ck_assert_msg(pcap_fhdr.magic == PCAP_MAGIC,
                 "invalid pcap header returned");
-    fail_unless(pcap_fhdr.snaplen == ETHER_MAX_LEN,
+    ck_assert_msg(pcap_fhdr.snaplen == ETHER_MAX_LEN,
                 "invalid pcap header returned");
-    fail_unless(pcap_fhdr.linktype == DLT_EN10MB,
+    ck_assert_msg(pcap_fhdr.linktype == DLT_EN10MB,
                 "invalid pcap header returned");
 
     mark_point();
     msg.len = ETHER_MIN_LEN;
     debug_write(&msg, 0);
     fflush(stdout);
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+    ck_assert_msg (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
         "incorrect message logged: %s", check_wrap_errstr);
     len = read(spair[1], buf, sizeof(buf));
-    fail_unless(len == (PCAP_PKTHDR_SIZ + msg.len),
+    ck_assert_msg(len == (PCAP_PKTHDR_SIZ + msg.len),
                 "failed to read pcap record"); 
 
     close(spair[0]);
@@ -466,7 +466,7 @@ START_TEST(test_http) {
         if (evhttp_bind_socket(httpd, http_host, http_port) != -1)
 	    break;
     }
-    fail_unless (http_port < 8090, "failed to start httpd on %s", http_host);
+    ck_assert_msg (http_port < 8090, "failed to start httpd on %s", http_host);
 
     // If either of these two fail then we're screwed anyway
     mark_point();
@@ -489,13 +489,13 @@ START_TEST(test_http) {
     WRAP_FATAL_START();
     http_reply(lreq, NULL);
     WRAP_FATAL_END();
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+    ck_assert_msg (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     mark_point();
     lreq->response_code = 200;
     http_reply(lreq, NULL);
-    fail_unless (status == EXIT_SUCCESS,
+    ck_assert_msg (status == EXIT_SUCCESS,
 	"incorrect exit status returned: %d", status);
 
     mark_point();
@@ -503,9 +503,9 @@ START_TEST(test_http) {
     errstr = "HTTP error 404 received";
     my_log(CRIT, "check");
     http_reply(lreq, NULL);
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+    ck_assert_msg (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
-    fail_unless (status == EXIT_FAILURE,
+    ck_assert_msg (status == EXIT_FAILURE,
 	"incorrect exit status returned: %d", status);
 
     mark_point();
@@ -520,7 +520,7 @@ START_TEST(test_http) {
     WRAP_FATAL_START();
     http_request(&msg, 0);
     WRAP_FATAL_END();
-    fail_unless (strstr(check_wrap_errstr, errstr) != NULL,
+    ck_assert_msg (strstr(check_wrap_errstr, errstr) != NULL,
 	"incorrect message logged: %s", check_wrap_errstr);
     evhttp_connection_free(evcon);
 
@@ -532,7 +532,7 @@ START_TEST(test_http) {
     http_request(&msg, 0);
     http_dispatch();
     WRAP_FATAL_END();
-    fail_unless (strstr(check_wrap_errstr, errstr) != NULL,
+    ck_assert_msg (strstr(check_wrap_errstr, errstr) != NULL,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     mark_point();

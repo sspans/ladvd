@@ -153,17 +153,17 @@ void read_packet(struct parent_msg *msg, const char *suffix) {
     if ((prefix = getenv("srcdir")) == NULL)
 	prefix = ".";
 
-    fail_if(asprintf(&path, "%s/%s.pcap", prefix, suffix) == -1,
+    ck_assert_msg(asprintf(&path, "%s/%s.pcap", prefix, suffix) != -1,
 	    "asprintf failed");
 
     mark_point();
-    fail_if((p = pcap_open_offline(path, errbuf)) == NULL,
+    ck_assert_msg((p = pcap_open_offline(path, errbuf)) != NULL,
 	"failed to open %s: %s", path, errbuf);
 
-    fail_if((data = pcap_next(p, &p_hdr)) == NULL,
+    ck_assert_msg((data = pcap_next(p, &p_hdr)) != NULL,
 	"failed to read packet");
     msg->len = MIN(ETHER_MAX_LEN, p_hdr.len);
-    fail_if(memcpy(msg->msg, data, msg->len) == NULL,
+    ck_assert_msg(memcpy(msg->msg, data, msg->len) != NULL,
 	"memcpy failed");
 
     pcap_close(p);

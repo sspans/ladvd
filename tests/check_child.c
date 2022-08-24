@@ -78,7 +78,7 @@ START_TEST(test_child_init) {
     WRAP_FATAL_END();
 
     errstr = PACKAGE_STRING " running";
-    fail_unless(strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+    ck_assert_msg(strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     // reset
@@ -169,7 +169,7 @@ START_TEST(test_child_queue) {
     errstr = "receiving message from parent";
     WRAP_WRITE(spair[0], &msg, PARENT_MSG_LEN(msg.len));
     child_queue(spair[1], event);
-    fail_unless(strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+    ck_assert_msg(strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     
     // locally generated packet
@@ -181,7 +181,7 @@ START_TEST(test_child_queue) {
     msg.index = ifindex;
     WRAP_WRITE(spair[0], &msg, PARENT_MSG_LEN(msg.len));
     child_queue(spair[1], event);
-    fail_unless(strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+    ck_assert_msg(strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     // invalid message contents
@@ -193,7 +193,7 @@ START_TEST(test_child_queue) {
     memcpy(msg.msg, &ether, sizeof(ether));
     WRAP_WRITE(spair[0], &msg, PARENT_MSG_LEN(msg.len));
     child_queue(spair[1], event);
-    fail_unless(strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+    ck_assert_msg(strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     // valid shutdown message contents
@@ -258,7 +258,7 @@ START_TEST(test_child_expire) {
     msg.len = ETHER_MIN_LEN;
     msg.proto = PROTO_LLDP;
 
-    fail_unless(TAILQ_EMPTY(&mqueue), "the queue should be empty");
+    ck_assert_msg(TAILQ_EMPTY(&mqueue), "the queue should be empty");
 
     // add an lldp message
     mark_point();
@@ -272,7 +272,7 @@ START_TEST(test_child_expire) {
     TAILQ_FOREACH(dmsg, &mqueue, entries) {
 	count++;
     }
-    fail_unless(count == 1, "invalid message count: %d != 1", count);
+    ck_assert_msg(count == 1, "invalid message count: %d != 1", count);
 
     // add an cdp message
     mark_point();
@@ -291,7 +291,7 @@ START_TEST(test_child_expire) {
     WRAP_FATAL_START();
     child_queue(spair[1], event);
     WRAP_FATAL_END();
-    fail_unless(strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+    ck_assert_msg(strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     options = OPT_DAEMON | OPT_CHECK;
 
@@ -300,7 +300,7 @@ START_TEST(test_child_expire) {
     TAILQ_FOREACH(dmsg, &mqueue, entries) {
 	count++;
     }
-    fail_unless(count == 3, "invalid message count: %d != 3", count);
+    ck_assert_msg(count == 3, "invalid message count: %d != 3", count);
 
     // expire a locked message
     mark_point();
@@ -315,7 +315,7 @@ START_TEST(test_child_expire) {
     TAILQ_FOREACH(dmsg, &mqueue, entries) {
 	count++;
     }
-    fail_unless(count == 3, "invalid message count: %d != 3", count);
+    ck_assert_msg(count == 3, "invalid message count: %d != 3", count);
 
     // expire a message
     mark_point();
@@ -328,7 +328,7 @@ START_TEST(test_child_expire) {
     TAILQ_FOREACH(dmsg, &mqueue, entries) {
 	count++;
     }
-    fail_unless(count == 2, "invalid message count: %d != 2", count);
+    ck_assert_msg(count == 2, "invalid message count: %d != 2", count);
 
     // expire a message
     mark_point();
@@ -342,7 +342,7 @@ START_TEST(test_child_expire) {
     child_expire();
 
     // check the message count
-    fail_unless(TAILQ_EMPTY(&mqueue), "the queue should be empty");
+    ck_assert_msg(TAILQ_EMPTY(&mqueue), "the queue should be empty");
 
     // reset
     options = OPT_DAEMON | OPT_CHECK;
@@ -396,11 +396,11 @@ START_TEST(test_child_cli) {
     sa.sin_port = 0;
 
     mark_point();
-    fail_unless(bind(sock,(struct sockaddr *)&sa, len) == 0,
+    ck_assert_msg(bind(sock,(struct sockaddr *)&sa, len) == 0,
 	"socket bind failed");
-    fail_unless(getsockname(sock, (struct sockaddr *)&sa, &len) == 0,
+    ck_assert_msg(getsockname(sock, (struct sockaddr *)&sa, &len) == 0,
 	"socket getsockname failed");
-    fail_unless(listen(sock, 10) == 0,
+    ck_assert_msg(listen(sock, 10) == 0,
 	"socket listen failed");
 
     // start a dummy reader
@@ -426,7 +426,7 @@ START_TEST(test_child_cli) {
     WRAP_FATAL_START();
     child_cli_accept(-1, 0);
     WRAP_FATAL_END();
-    fail_unless(strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+    ck_assert_msg(strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     // accept the connection

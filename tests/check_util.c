@@ -43,14 +43,14 @@ START_TEST(test_my) {
     errstr = "empty";
     my_log(CRIT, errstr);
     my_log(DEBUG, "0123456789");
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+    ck_assert_msg (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     mark_point();
     loglevel = DEBUG;
     errstr = "0123456789";
     my_log(INFO, errstr);
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0, "message not logged");
+    ck_assert_msg (strcmp(check_wrap_errstr, errstr) == 0, "message not logged");
 
     mark_point();
     s = dup(STDERR_FILENO);
@@ -72,10 +72,10 @@ START_TEST(test_my) {
 	left -= len;
 	bp += len;
     }
-    fail_unless(strcmp(buf, errstr) == 0, "invalid output: %s", buf);
+    ck_assert_msg(strcmp(buf, errstr) == 0, "invalid output: %s", buf);
     options |= OPT_DAEMON;
     close(spair[0]);
-    fail_if(dup(s) != STDERR_FILENO, "dup should re-create stderr");
+    ck_assert_msg(dup(s) == STDERR_FILENO, "dup should re-create stderr");
     close(s);
     close(spair[1]);
 
@@ -83,18 +83,18 @@ START_TEST(test_my) {
     WRAP_FATAL_START();
     my_fatal("error");
     WRAP_FATAL_END();
-    fail_unless (strcmp(check_wrap_errstr, "error") == 0,
+    ck_assert_msg (strcmp(check_wrap_errstr, "error") == 0,
 	"error not logged");
 
     mark_point();
     ptr = my_malloc(100);
-    fail_unless (ptr != NULL, "a valid pointer should be returned");
+    ck_assert_msg (ptr != NULL, "a valid pointer should be returned");
     free(ptr);
     ptr = NULL;
 
     mark_point();
     ptr = my_calloc(10, 10);
-    fail_unless (ptr != NULL, "a valid pointer should be returned");
+    ck_assert_msg (ptr != NULL, "a valid pointer should be returned");
     free(ptr);
     ptr = NULL;
 
@@ -103,12 +103,12 @@ START_TEST(test_my) {
     ptr = my_calloc(10, 10);
     WRAP_FATAL_END();
     check_wrap_fail &= ~FAIL_CALLOC;
-    fail_unless (strcmp(check_wrap_errstr, "calloc failed") == 0,
+    ck_assert_msg (strcmp(check_wrap_errstr, "calloc failed") == 0,
 	"error not logged");
 
     mark_point();
     ptr = my_strdup("foo");
-    fail_unless (ptr != NULL, "a valid pointer should be returned");
+    ck_assert_msg (ptr != NULL, "a valid pointer should be returned");
     free(ptr);
     ptr = NULL;
 
@@ -117,7 +117,7 @@ START_TEST(test_my) {
     ptr = my_strdup("bar");
     WRAP_FATAL_END();
     check_wrap_fail &= ~FAIL_STRDUP;
-    fail_unless (strcmp(check_wrap_errstr, "strdup failed") == 0,
+    ck_assert_msg (strcmp(check_wrap_errstr, "strdup failed") == 0,
 	"error not logged");
 
     // skip the socket tests if there is no networking
@@ -127,7 +127,7 @@ START_TEST(test_my) {
 
     mark_point();
     s = my_socket(AF_INET, SOCK_DGRAM, 0);
-    fail_unless (s != -1, "a valid socket should be returned");
+    ck_assert_msg (s != -1, "a valid socket should be returned");
     close(s);
     s = 0;
 
@@ -135,7 +135,7 @@ START_TEST(test_my) {
     WRAP_FATAL_START();
     s = my_socket(AF_MAX, 0, 0);
     WRAP_FATAL_END();
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+    ck_assert_msg (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 }
 END_TEST
@@ -156,7 +156,7 @@ START_TEST(test_my_mreq) {
     WRAP_FATAL_START();
     my_mreq(&mreq);
     WRAP_FATAL_END();
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+    ck_assert_msg (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     mark_point();
@@ -166,7 +166,7 @@ START_TEST(test_my_mreq) {
     mreq.len = ETHER_MIN_LEN; 
     WRAP_WRITE(spair[0], &mreq, PARENT_REQ_LEN(mreq.len));
     ret = my_mreq(&mreq);
-    fail_unless (ret == ETHER_MIN_LEN,
+    ck_assert_msg (ret == ETHER_MIN_LEN,
 	"incorrect size %lu returned from my_mreq", ret);
 
     mark_point();
@@ -175,7 +175,7 @@ START_TEST(test_my_mreq) {
     WRAP_FATAL_START();
     my_mreq(&mreq);
     WRAP_FATAL_END();
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+    ck_assert_msg (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     close(spair[0]);
@@ -257,25 +257,25 @@ START_TEST(test_netif) {
     // netif_iter checks
     mark_point();
     netif = NULL;
-    fail_unless (netif_iter(netif, NULL) == NULL,
+    ck_assert_msg (netif_iter(netif, NULL) == NULL,
 	"NULL should be returned on invalid netifs");
 
     netif = NULL;
     netif = netif_iter(netif, netifs);
-    fail_unless (netif == &tnetifs[0], "the first netif should be returned");
+    ck_assert_msg (netif == &tnetifs[0], "the first netif should be returned");
     netif = netif_iter(netif, netifs);
-    fail_unless (netif == &tnetifs[5], "the sixth netif should be returned");
+    ck_assert_msg (netif == &tnetifs[5], "the sixth netif should be returned");
     netif = netif_iter(netif, netifs);
-    fail_unless (netif == NULL, "NULL should be returned");
+    ck_assert_msg (netif == NULL, "NULL should be returned");
 
     netif = NULL;
     options |= OPT_ARGV;
     netif = netif_iter(netif, netifs);
-    fail_unless (netif == &tnetifs[1], "the second netif should be returned");
+    ck_assert_msg (netif == &tnetifs[1], "the second netif should be returned");
     netif = netif_iter(netif, netifs);
-    fail_unless (netif == &tnetifs[5], "the sixth netif should be returned");
+    ck_assert_msg (netif == &tnetifs[5], "the sixth netif should be returned");
     netif = netif_iter(netif, netifs);
-    fail_unless (netif == NULL, "NULL should be returned");
+    ck_assert_msg (netif == NULL, "NULL should be returned");
 
 
     // subif_iter checks
@@ -283,57 +283,57 @@ START_TEST(test_netif) {
     netif = &tnetifs[0];
     subif = NULL;
     subif = subif_iter(subif, subif);
-    fail_unless (subif == NULL, "NULL should be returned");
+    ck_assert_msg (subif == NULL, "NULL should be returned");
     subif = subif_iter(subif, netif);
-    fail_unless (subif == &tnetifs[1], "the second netif should be returned");
+    ck_assert_msg (subif == &tnetifs[1], "the second netif should be returned");
     subif = subif_iter(subif, netif);
-    fail_unless (subif == &tnetifs[2], "the third netif should be returned");
+    ck_assert_msg (subif == &tnetifs[2], "the third netif should be returned");
     subif = subif_iter(subif, netif);
-    fail_unless (subif == NULL, "NULL should be returned");
+    ck_assert_msg (subif == NULL, "NULL should be returned");
 
     netif = &tnetifs[3];
     subif = NULL;
     subif = subif_iter(subif, netif);
-    fail_unless (subif == NULL, "NULL should be returned");
+    ck_assert_msg (subif == NULL, "NULL should be returned");
 
     netif = &tnetifs[4];
     subif = NULL;
     subif = subif_iter(subif, netif);
-    fail_unless (subif == NULL, "NULL should be returned");
+    ck_assert_msg (subif == NULL, "NULL should be returned");
 
     netif = &tnetifs[5];
     subif = NULL;
     subif = subif_iter(subif, netif);
-    fail_unless (subif == &tnetifs[5], "the sixth netif should be returned");
+    ck_assert_msg (subif == &tnetifs[5], "the sixth netif should be returned");
     subif = subif_iter(subif, netif);
-    fail_unless (subif == NULL, "NULL should be returned");
+    ck_assert_msg (subif == NULL, "NULL should be returned");
 
 
     // netif_byindex checks
     mark_point();
-    fail_unless (netif_byindex(netifs, 0) == &tnetifs[0],
+    ck_assert_msg (netif_byindex(netifs, 0) == &tnetifs[0],
 	"incorrect netif struct returned");
-    fail_unless (netif_byindex(netifs, 1) == &tnetifs[1],
+    ck_assert_msg (netif_byindex(netifs, 1) == &tnetifs[1],
 	"incorrect netif struct returned");
-    fail_unless (netif_byindex(netifs, 2) == &tnetifs[2],
+    ck_assert_msg (netif_byindex(netifs, 2) == &tnetifs[2],
 	"incorrect netif struct returned");
-    fail_unless (netif_byindex(netifs, 3) == &tnetifs[5],
+    ck_assert_msg (netif_byindex(netifs, 3) == &tnetifs[5],
 	"incorrect netif struct returned");
-    fail_unless (netif_byindex(netifs, 6) == NULL,
+    ck_assert_msg (netif_byindex(netifs, 6) == NULL,
 	"NULL should be returned on not found netif");
 
 
     // netif_byname checks
     mark_point();
-    fail_unless (netif_byname(netifs, "bond0") == &tnetifs[0],
+    ck_assert_msg (netif_byname(netifs, "bond0") == &tnetifs[0],
 	"incorrect netif struct returned");
-    fail_unless (netif_byname(netifs, "eth0") == &tnetifs[1],
+    ck_assert_msg (netif_byname(netifs, "eth0") == &tnetifs[1],
 	"incorrect netif struct returned");
-    fail_unless (netif_byname(netifs, "eth2") == &tnetifs[2],
+    ck_assert_msg (netif_byname(netifs, "eth2") == &tnetifs[2],
 	"incorrect netif struct returned");
-    fail_unless (netif_byname(netifs, "eth1") == &tnetifs[5],
+    ck_assert_msg (netif_byname(netifs, "eth1") == &tnetifs[5],
 	"incorrect netif struct returned");
-    fail_unless (netif_byname(netifs, "eth3") == NULL,
+    ck_assert_msg (netif_byname(netifs, "eth3") == NULL,
 	"NULL should be returned on not found netif");
 
     // XXX: netif_byaddr checks
@@ -393,17 +393,17 @@ START_TEST(test_netif) {
     mark_point();
     netif = netif_byname(netifs, "bond0");
     netif_protos(netif, &mqueue);
-    fail_unless (netif->protos == ((1 << PROTO_LLDP)|(1 << PROTO_CDP)),
+    ck_assert_msg (netif->protos == ((1 << PROTO_LLDP)|(1 << PROTO_CDP)),
 	"incorrect protos calculation");
 
     netif = netif_byname(netifs, "eth1");
     netif_protos(netif, &mqueue);
-    fail_unless (netif->protos == ((1 << PROTO_LLDP)|(1 << PROTO_FDP)),
+    ck_assert_msg (netif->protos == ((1 << PROTO_LLDP)|(1 << PROTO_FDP)),
 	"incorrect protos calculation");
 
     netif = netif_byname(netifs, "lagg0");
     netif_protos(netif, &mqueue);
-    fail_unless (netif->protos == 0, "incorrect protos calculation");
+    ck_assert_msg (netif->protos == 0, "incorrect protos calculation");
 
     // netif_descr checks
     mark_point();
@@ -416,13 +416,13 @@ START_TEST(test_netif) {
     WRAP_WRITE(spair[0], mreq, PARENT_REQ_LEN(mreq->len));
     netif_descr(netif, &mqueue);
     WRAP_REQ_READ(spair[0], mreq, len);
-    fail_unless (mreq->op == PARENT_DESCR,
+    ck_assert_msg (mreq->op == PARENT_DESCR,
 	"incorrect command: %d", mreq->op);
-    fail_unless (mreq->index == netif->index,
+    ck_assert_msg (mreq->index == netif->index,
 	"incorrect interface index: %d", mreq->index);
-    fail_unless (mreq->len == strlen(descr) + 1,
-	"incorrect message length: %d", mreq->len);
-    fail_unless (strncmp(mreq->buf, descr, IFDESCRSIZE) == 0,
+    ck_assert_msg (mreq->len == strlen(descr) + 1,
+	"incorrect message length: %ld", mreq->len);
+    ck_assert_msg (strncmp(mreq->buf, descr, IFDESCRSIZE) == 0,
 	"incorrect interface description: %s", mreq->buf);
 
     netif = netif_byname(netifs, "eth0");
@@ -430,13 +430,13 @@ START_TEST(test_netif) {
     WRAP_WRITE(spair[0], mreq, PARENT_REQ_LEN(mreq->len));
     netif_descr(netif, &mqueue);
     WRAP_REQ_READ(spair[0], mreq, len);
-    fail_unless (mreq->op == PARENT_DESCR,
+    ck_assert_msg (mreq->op == PARENT_DESCR,
 	"incorrect command: %d", mreq->op);
-    fail_unless (mreq->index == netif->index,
+    ck_assert_msg (mreq->index == netif->index,
 	"incorrect interface index: %d", mreq->index);
-    fail_unless (mreq->len == strlen(descr) + 1,
-	"incorrect message length: %d", mreq->len);
-    fail_unless (strncmp(mreq->buf, descr, IFDESCRSIZE) == 0,
+    ck_assert_msg (mreq->len == strlen(descr) + 1,
+	"incorrect message length: %ld", mreq->len);
+    ck_assert_msg (strncmp(mreq->buf, descr, IFDESCRSIZE) == 0,
 	"incorrect interface description: %s", mreq->buf);
 
     netif = netif_byname(netifs, "eth2");
@@ -444,13 +444,13 @@ START_TEST(test_netif) {
     WRAP_WRITE(spair[0], mreq, PARENT_REQ_LEN(mreq->len));
     netif_descr(netif, &mqueue);
     WRAP_REQ_READ(spair[0], mreq, len);
-    fail_unless (mreq->op == PARENT_DESCR,
+    ck_assert_msg (mreq->op == PARENT_DESCR,
 	"incorrect command: %d", mreq->op);
-    fail_unless (mreq->index == netif->index,
+    ck_assert_msg (mreq->index == netif->index,
 	"incorrect interface index: %d", mreq->index);
-    fail_unless (mreq->len == strlen(descr) + 1,
-	"incorrect message length: %d", mreq->len);
-    fail_unless (strncmp(mreq->buf, descr, IFDESCRSIZE) == 0,
+    ck_assert_msg (mreq->len == strlen(descr) + 1,
+	"incorrect message length: %ld", mreq->len);
+    ck_assert_msg (strncmp(mreq->buf, descr, IFDESCRSIZE) == 0,
 	"incorrect interface description: %s", mreq->buf);
 
     netif = netif_byname(netifs, "eth1");
@@ -458,13 +458,13 @@ START_TEST(test_netif) {
     WRAP_WRITE(spair[0], mreq, PARENT_REQ_LEN(mreq->len));
     netif_descr(netif, &mqueue);
     WRAP_REQ_READ(spair[0], mreq, len);
-    fail_unless (mreq->op == PARENT_DESCR,
+    ck_assert_msg (mreq->op == PARENT_DESCR,
 	"incorrect command: %d", mreq->op);
-    fail_unless (mreq->index == netif->index,
+    ck_assert_msg (mreq->index == netif->index,
 	"incorrect interface index: %d", mreq->index);
-    fail_unless (mreq->len == strlen(descr) + 1,
-	"incorrect message length: %d", mreq->len);
-    fail_unless (strncmp(mreq->buf, descr, IFDESCRSIZE) == 0,
+    ck_assert_msg (mreq->len == strlen(descr) + 1,
+	"incorrect message length: %ld", mreq->len);
+    ck_assert_msg (strncmp(mreq->buf, descr, IFDESCRSIZE) == 0,
 	"incorrect interface description: %s", mreq->buf);
 
     netif = netif_byname(netifs, "lagg0");
@@ -472,13 +472,13 @@ START_TEST(test_netif) {
     WRAP_WRITE(spair[0], mreq, PARENT_REQ_LEN(mreq->len));
     netif_descr(netif, &mqueue);
     WRAP_REQ_READ(spair[0], mreq, len);
-    fail_unless (mreq->op == PARENT_DESCR,
+    ck_assert_msg (mreq->op == PARENT_DESCR,
 	"incorrect command: %d", mreq->op);
-    fail_unless (mreq->index == netif->index,
+    ck_assert_msg (mreq->index == netif->index,
 	"incorrect interface index: %d", mreq->index);
-    fail_unless (mreq->len == strlen(descr) + 1,
-	"incorrect message length: %d", mreq->len);
-    fail_unless (strncmp(mreq->buf, descr, IFDESCRSIZE) == 0,
+    ck_assert_msg (mreq->len == strlen(descr) + 1,
+	"incorrect message length: %ld", mreq->len);
+    ck_assert_msg (strncmp(mreq->buf, descr, IFDESCRSIZE) == 0,
 	"incorrect interface description: %s", mreq->buf);
 
     free(mreq);
@@ -506,36 +506,36 @@ START_TEST(test_read_line) {
     if ((prefix = getenv("srcdir")) == NULL)
 	prefix = ".";
 
-    fail_if(asprintf(&path, "%s/%s", prefix, file) == -1, "asprintf failed");
+    ck_assert_msg(asprintf(&path, "%s/%s", prefix, file) != -1, "asprintf failed");
 
-    fail_unless (read_line("non-existant", line, 0) == 0,
+    ck_assert_msg (read_line("non-existant", line, 0) == 0,
 	"0 should be returned on a missing file");
 
-    fail_unless (read_line(null, line, 10) == 0,
+    ck_assert_msg (read_line(null, line, 10) == 0,
 	"0 should be returned on a unreadable file");
 
-    fail_unless (read_line(path, line, 0) == 0,
+    ck_assert_msg (read_line(path, line, 0) == 0,
 	"0 should be returned on zero len request");
 
-    fail_unless (read_line(path, line, 1) == 0,
+    ck_assert_msg (read_line(path, line, 1) == 0,
 	"0 bytes should be returned");
 
-    fail_unless (read_line(path, line, 2) == 1,
+    ck_assert_msg (read_line(path, line, 2) == 1,
 	"1 bytes should be returned");
 
-    fail_unless (read_line(path, line, 10) == 9,
+    ck_assert_msg (read_line(path, line, 10) == 9,
 	"9 bytes should be returned");
 
-    fail_unless (read_line(path, line, 17) == 16,
+    ck_assert_msg (read_line(path, line, 17) == 16,
 	"16 bytes should be returned");
 
-    fail_unless (strncmp(line, data, strlen(data)) == 0,
+    ck_assert_msg (strncmp(line, data, strlen(data)) == 0,
 	"invalid line returned");
 
-    fail_unless (read_line(path, line, 18) == 16,
+    ck_assert_msg (read_line(path, line, 18) == 16,
 	"16 bytes should be returned");
 
-    fail_unless (strncmp(line, data, strlen(data)) == 0,
+    ck_assert_msg (strncmp(line, data, strlen(data)) == 0,
 	"invalid line returned");
 
     free(path);
@@ -549,22 +549,22 @@ START_TEST(test_my_cksum) {
 
     cisco = 0;
     sum = ntohs(my_chksum(data, strlen(data), cisco));
-    fail_unless(sum == 12585,
+    ck_assert_msg(sum == 12585,
 	"IP checksum result should be 12585 not %d", sum);
 
     cisco = 1;
     sum = ntohs(my_chksum(data, strlen(data), cisco));
-    fail_unless(sum == 12585,
+    ck_assert_msg(sum == 12585,
 	"(Cisco) IP checksum result should be 12585 not %d", sum);
 
     cisco = 0;
     sum = ntohs(my_chksum(data, strlen(data) - 1, cisco));
-    fail_unless(sum == 12655,
+    ck_assert_msg(sum == 12655,
 	"IP checksum result should be 12655 not %d", sum);
 
     cisco = 1;
     sum = ntohs(my_chksum(data, strlen(data) - 1, cisco));
-    fail_unless(sum ==  30250,
+    ck_assert_msg(sum ==  30250,
 	"(Cisco) IP checksum result should be 30250 not %d", sum);
 }
 END_TEST
@@ -590,7 +590,7 @@ START_TEST(test_my_priv) {
     my_drop_privs(pwd);
     WRAP_FATAL_END();
     check_wrap_fail &= ~FAIL_SETGRP;
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+    ck_assert_msg (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     mark_point();
@@ -605,7 +605,7 @@ START_TEST(test_my_priv) {
     my_drop_privs(pwd);
     WRAP_FATAL_END();
     check_wrap_fail &= ~FAIL_SETRESGID;
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+    ck_assert_msg (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     mark_point();
@@ -620,7 +620,7 @@ START_TEST(test_my_priv) {
     my_drop_privs(pwd);
     WRAP_FATAL_END();
     check_wrap_fail &= ~FAIL_SETRESUID;
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+    ck_assert_msg (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     mark_point();
@@ -633,7 +633,7 @@ START_TEST(test_my_priv) {
     WRAP_FATAL_END();
     check_wrap_fail = 0;
     check_wrap_fake = 0;
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+    ck_assert_msg (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     mark_point();
@@ -642,7 +642,7 @@ START_TEST(test_my_priv) {
     WRAP_FATAL_START();
     my_chroot(path);
     WRAP_FATAL_END();
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+    ck_assert_msg (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     mark_point();
@@ -651,7 +651,7 @@ START_TEST(test_my_priv) {
     WRAP_FATAL_START();
     my_chroot(path);
     WRAP_FATAL_END();
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+    ck_assert_msg (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     mark_point();
@@ -659,7 +659,7 @@ START_TEST(test_my_priv) {
     WRAP_FATAL_START();
     my_chroot("/inexistant");
     WRAP_FATAL_END();
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+    ck_assert_msg (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     mark_point();
@@ -667,7 +667,7 @@ START_TEST(test_my_priv) {
     WRAP_FATAL_START();
     my_chroot(_PATH_DEVNULL);
     WRAP_FATAL_END();
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+    ck_assert_msg (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     mark_point();
@@ -685,7 +685,7 @@ START_TEST(test_my_priv) {
     WRAP_FATAL_START();
     my_chroot(_PATH_CONSOLE);
     WRAP_FATAL_END();
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+    ck_assert_msg (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     mark_point();
@@ -696,7 +696,7 @@ START_TEST(test_my_priv) {
     my_chroot(path);
     WRAP_FATAL_END();
     check_wrap_fail &= ~FAIL_CHDIR;
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+    ck_assert_msg (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     mark_point();
@@ -707,7 +707,7 @@ START_TEST(test_my_priv) {
     my_chroot(path);
     WRAP_FATAL_END();
     check_wrap_fail &= ~FAIL_CHROOT;
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+    ck_assert_msg (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     mark_point();
@@ -720,7 +720,7 @@ START_TEST(test_my_priv) {
     WRAP_FATAL_END();
     check_wrap_fail = 0;
     check_wrap_fake = 0;
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+    ck_assert_msg (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 }
 END_TEST
@@ -730,31 +730,31 @@ START_TEST(test_portname_abbr) {
 
     portname = my_strdup("FastEthernet42/42");
     portname_abbr(portname);
-    fail_unless(strcmp(portname, "Fa42/42") == 0,
+    ck_assert_msg(strcmp(portname, "Fa42/42") == 0,
 	"unexpected portname: %s", portname);
     free(portname);
 
     portname = my_strdup("GigabitEthernet42");
     portname_abbr(portname);
-    fail_unless(strcmp(portname, "Gi42") == 0,
+    ck_assert_msg(strcmp(portname, "Gi42") == 0,
 	"unexpected portname: %s", portname);
     free(portname);
 
     portname = my_strdup("TenGigabitEthernet0/86");
     portname_abbr(portname);
-    fail_unless(strcmp(portname, "Te0/86") == 0,
+    ck_assert_msg(strcmp(portname, "Te0/86") == 0,
 	"unexpected portname: %s", portname);
     free(portname);
 
     portname = my_strdup("Ethernet0/86");
     portname_abbr(portname);
-    fail_unless(strcmp(portname, "Eth0/86") == 0,
+    ck_assert_msg(strcmp(portname, "Eth0/86") == 0,
 	"unexpected portname: %s", portname);
     free(portname);
 
     portname = my_strdup("eth0");
     portname_abbr(portname);
-    fail_unless(strcmp(portname, "eth0") == 0,
+    ck_assert_msg(strcmp(portname, "eth0") == 0,
 	"unexpected portname: %s", portname);
     free(portname);
 }
@@ -777,19 +777,19 @@ START_TEST(test_pcap) {
     WRAP_FATAL_START();
     my_pcap_init(-1);
     WRAP_FATAL_END();
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+    ck_assert_msg (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     mark_point();
     my_pcap_init(spair[0]);
     len = read(spair[1], &pcap_fhdr, sizeof(pcap_fhdr));
-    fail_unless(len == sizeof(pcap_fhdr),
+    ck_assert_msg(len == sizeof(pcap_fhdr),
 		"failed to read pcap header");
-    fail_unless(pcap_fhdr.magic == PCAP_MAGIC,
+    ck_assert_msg(pcap_fhdr.magic == PCAP_MAGIC,
 		"invalid pcap header returned");
-    fail_unless(pcap_fhdr.snaplen == ETHER_MAX_LEN,
+    ck_assert_msg(pcap_fhdr.snaplen == ETHER_MAX_LEN,
 		"invalid pcap header returned");
-    fail_unless(pcap_fhdr.linktype == DLT_EN10MB,
+    ck_assert_msg(pcap_fhdr.linktype == DLT_EN10MB,
 		"invalid pcap header returned");
 
     mark_point();
@@ -797,19 +797,19 @@ START_TEST(test_pcap) {
     my_log(CRIT, errstr);
     msg.len = 1;
     my_pcap_write(&msg);
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+    ck_assert_msg (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     len = read(spair[1], buf, 1024);
-    fail_unless(len == (PCAP_PKTHDR_SIZ + msg.len),
+    ck_assert_msg(len == (PCAP_PKTHDR_SIZ + msg.len),
 		"failed to read pcap record");
 
     mark_point();
     msg.len = ETHER_MIN_LEN;
     my_pcap_write(&msg);
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+    ck_assert_msg (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     len = read(spair[1], buf, 1024);
-    fail_unless(len == (PCAP_PKTHDR_SIZ + msg.len),
+    ck_assert_msg(len == (PCAP_PKTHDR_SIZ + msg.len),
 		"failed to read pcap record");
 
     close(spair[0]);
