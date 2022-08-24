@@ -47,7 +47,7 @@
 #include <sys/socket.h>
 #include <sys/utsname.h>
 #include <sys/ioctl.h>
-#if HAVE_SYS_SYSCTL_H
+#if defined(HAVE_SYS_SYSCTL_H) && !defined(linux)
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #endif
