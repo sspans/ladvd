@@ -117,7 +117,7 @@ static int netif_type(int sockfd, uint32_t index,
 	    *dunit = '\0';
 
 	// detect tun/tap based on the driver name
-	if ((strcmp(dname, "tun") == 0) || (strcmp(dname, "tap") == 0))
+	if ((strcmp(dname, "tun") == 0) || (strcmp(dname, "tap") == 0) || (strcmp(dname, "vxlan") == 0))
 	    return(NETIF_TAP);
 
 #ifdef __FreeBSD__
