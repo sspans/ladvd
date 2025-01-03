@@ -7,7 +7,7 @@ BASE=$(pwd)
 RELEASE="${BASE}/release"
 
 # prepare
-git pull -u
+git pull
 git log --date=short --pretty=format:'%ad [%h] [%an]: %s' > ${BASE}/doc/ChangeLog
 
 # create release dir
