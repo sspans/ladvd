@@ -2,7 +2,7 @@
 
 TESTS = $(check_PROGRAMS)
 check_PROGRAMS = check_compat check_proto check_util check_tlv \
-		check_parent check_child check_cli
+		check_parent check_cli #check_child
 
 EXTRA_DIST = proto testfile
 

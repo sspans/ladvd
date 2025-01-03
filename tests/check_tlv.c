@@ -41,37 +41,37 @@ START_TEST(test_value_str) {
     type = PEER_ADDR_INET4;
     length = 0;
     tlv_value_str(&msg, type, length, value);
-    fail_unless (msg.peer[type] == NULL, "a NULL pointer should be returned");
+    ck_assert_msg(msg.peer[type] == NULL, "a NULL pointer should be returned");
     length = 5;
     tlv_value_str(&msg, type, length, value);
-    fail_unless (msg.peer[type] == NULL, "a NULL pointer should be returned");
+    ck_assert_msg(msg.peer[type] == NULL, "a NULL pointer should be returned");
     length = 4;
     tlv_value_str(&msg, type, length, value);
-    fail_unless (msg.peer[type] != NULL, "a valid pointer should be returned");
+    ck_assert_msg(msg.peer[type] != NULL, "a valid pointer should be returned");
 
     mark_point();
     type = PEER_ADDR_INET6;
     length = 0;
     tlv_value_str(&msg, type, length, value);
-    fail_unless (msg.peer[type] == NULL, "a NULL pointer should be returned");
+    ck_assert_msg(msg.peer[type] == NULL, "a NULL pointer should be returned");
     length = 17;
     tlv_value_str(&msg, type, length, value);
-    fail_unless (msg.peer[type] == NULL, "a NULL pointer should be returned");
+    ck_assert_msg(msg.peer[type] == NULL, "a NULL pointer should be returned");
     length = 16;
     tlv_value_str(&msg, type, length, value);
-    fail_unless (msg.peer[type] != NULL, "a valid pointer should be returned");
+    ck_assert_msg(msg.peer[type] != NULL, "a valid pointer should be returned");
 
     mark_point();
     type = PEER_ADDR_802;
     length = 0;
     tlv_value_str(&msg, type, length, value);
-    fail_unless (msg.peer[type] == NULL, "a NULL pointer should be returned");
+    ck_assert_msg(msg.peer[type] == NULL, "a NULL pointer should be returned");
     length = 7;
     tlv_value_str(&msg, type, length, value);
-    fail_unless (msg.peer[type] == NULL, "a NULL pointer should be returned");
+    ck_assert_msg(msg.peer[type] == NULL, "a NULL pointer should be returned");
     length = 6;
     tlv_value_str(&msg, type, length, value);
-    fail_unless (msg.peer[type] != NULL, "a valid pointer should be returned");
+    ck_assert_msg(msg.peer[type] != NULL, "a valid pointer should be returned");
 
     mark_point();
     type = PEER_MAX + 1;
@@ -80,7 +80,7 @@ START_TEST(test_value_str) {
     WRAP_FATAL_START();
     tlv_value_str(&msg, type, length, value);
     WRAP_FATAL_END();
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+    ck_assert_msg(strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     peer_free(msg.peer);
@@ -94,44 +94,44 @@ START_TEST(test_str_addr) {
     mark_point();
     pos = "foob";
     str = tlv_str_addr(PEER_ADDR_INET4, pos, 3);
-    fail_unless (str == NULL, "a NULL pointer should be returned");
+    ck_assert_msg(str == NULL, "a NULL pointer should be returned");
 
     str = tlv_str_addr(PEER_ADDR_INET4, pos, 5);
-    fail_unless (str == NULL, "a NULL pointer should be returned");
+    ck_assert_msg(str == NULL, "a NULL pointer should be returned");
 
     str = tlv_str_addr(PEER_ADDR_INET4, pos, 4);
-    fail_unless (str != NULL, "a string pointer should be returned");
+    ck_assert_msg(str != NULL, "a string pointer should be returned");
     free(str);
     str = NULL;
 
     mark_point();
     pos = "foobfoobfoobfoob";
     str = tlv_str_addr(PEER_ADDR_INET6, pos, 3);
-    fail_unless (str == NULL, "a NULL pointer should be returned");
+    ck_assert_msg(str == NULL, "a NULL pointer should be returned");
 
     str = tlv_str_addr(PEER_ADDR_INET6, pos, 17);
-    fail_unless (str == NULL, "a NULL pointer should be returned");
+    ck_assert_msg(str == NULL, "a NULL pointer should be returned");
 
     str = tlv_str_addr(PEER_ADDR_INET6, pos, 16);
-    fail_unless (str != NULL, "a string pointer should be returned");
+    ck_assert_msg(str != NULL, "a string pointer should be returned");
     free(str);
     str = NULL;
 
     mark_point();
     pos = "foobfo";
     str = tlv_str_addr(PEER_ADDR_802, pos, 5);
-    fail_unless (str == NULL, "a NULL pointer should be returned");
+    ck_assert_msg(str == NULL, "a NULL pointer should be returned");
 
     str = tlv_str_addr(PEER_ADDR_802, pos, 7);
-    fail_unless (str == NULL, "a NULL pointer should be returned");
+    ck_assert_msg(str == NULL, "a NULL pointer should be returned");
 
     str = tlv_str_addr(PEER_ADDR_802, pos, 6);
-    fail_unless (str != NULL, "a string pointer should be returned");
+    ck_assert_msg(str != NULL, "a string pointer should be returned");
     free(str);
     str = NULL;
 
     str = tlv_str_addr(PEER_MAX, pos, 9);
-    fail_unless (str == NULL, "a NULL pointer should be returned");
+    ck_assert_msg(str == NULL, "a NULL pointer should be returned");
 }
 END_TEST
 

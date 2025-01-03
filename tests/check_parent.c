@@ -66,7 +66,7 @@ START_TEST(test_parent_init) {
     WRAP_FATAL_START();
     parent_init(0, 0, 0);
     WRAP_FATAL_END();
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     close(spair[0]);
@@ -90,7 +90,7 @@ START_TEST(test_parent_signal) {
     WRAP_FATAL_START();
     parent_signal(sig, event, &pid);
     WRAP_FATAL_END();
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     mark_point();
@@ -100,7 +100,7 @@ START_TEST(test_parent_signal) {
     WRAP_FATAL_START();
     parent_signal(sig, event, &pid);
     WRAP_FATAL_END();
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     mark_point();
@@ -109,7 +109,7 @@ START_TEST(test_parent_signal) {
     WRAP_FATAL_START();
     parent_signal(sig, event, &pid);
     WRAP_FATAL_END();
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     check_wrap_fake &= ~FAKE_KILL;
 
@@ -118,7 +118,7 @@ START_TEST(test_parent_signal) {
     errstr = "check";
     my_log(CRIT, errstr);
     parent_signal(sig, event, NULL);
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     mark_point();
@@ -127,7 +127,7 @@ START_TEST(test_parent_signal) {
     WRAP_FATAL_START();
     parent_signal(sig, event, NULL);
     WRAP_FATAL_END();
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     // reset
@@ -154,7 +154,7 @@ START_TEST(test_parent_req) {
     WRAP_FATAL_START();
     parent_req(fd, event);
     WRAP_FATAL_END();
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     // test a message with an incorrect size
@@ -164,7 +164,7 @@ START_TEST(test_parent_req) {
     WRAP_FATAL_START();
     parent_req(spair[1], event);
     WRAP_FATAL_END();
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     // test a message with incorrect ifindex
@@ -178,7 +178,7 @@ START_TEST(test_parent_req) {
     WRAP_FATAL_START();
     parent_req(spair[1], event);
     WRAP_FATAL_END();
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     // test a correct CLOSE
@@ -198,17 +198,17 @@ START_TEST(test_parent_req) {
     WRAP_FATAL_START();
     parent_req(spair[1], event);
     WRAP_FATAL_END();
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     // test a correct CLOSE
     mark_point();
-    fail_unless (rfd_byindex(&rawfds, ifindex) == NULL,
+    ck_assert_msg(rfd_byindex(&rawfds, ifindex) == NULL,
     	"the queue should be empty");
 
     options |= OPT_DEBUG;
     parent_open(ifindex, ifname);
-    fail_unless (rfd_byindex(&rawfds, ifindex) != NULL,
+    ck_assert_msg(rfd_byindex(&rawfds, ifindex) != NULL,
     	"rfd should be added to the queue");
 
     errstr = "check";
@@ -218,11 +218,11 @@ START_TEST(test_parent_req) {
     strlcpy(mreq.name, ifname, IFNAMSIZ);
     WRAP_WRITE(spair[0], &mreq, PARENT_REQ_LEN(mreq.len));
     parent_req(spair[1], event);
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
-    fail_unless (rfd_byindex(&rawfds, ifindex) == NULL,
+    ck_assert_msg(rfd_byindex(&rawfds, ifindex) == NULL,
     	"rfd should be removed from the queue");
- 
+
 #if defined(SIOCSIFDESCR) || defined(HAVE_SYSFS)
     // test a correct DESCR
     mark_point();
@@ -234,7 +234,7 @@ START_TEST(test_parent_req) {
     errstr = "check";
     my_log(CRIT, errstr);
     parent_req(spair[1], event);
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 #endif
 
@@ -248,7 +248,7 @@ START_TEST(test_parent_req) {
     errstr = "check";
     my_log(CRIT, errstr);
     parent_req(spair[1], event);
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     // test a correct DEVICE
@@ -256,7 +256,7 @@ START_TEST(test_parent_req) {
     mreq.len = 0;
     WRAP_WRITE(spair[0], &mreq, PARENT_REQ_LEN(mreq.len));
     parent_req(spair[1], event);
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 #endif /* HAVE_SYSFS */
 
@@ -264,7 +264,7 @@ START_TEST(test_parent_req) {
     mark_point();
     parent_open(ifindex, ifname);
     rfd = rfd_byindex(&rawfds, ifindex);
-    fail_unless (rfd != NULL, "rfd should be added to the queue");
+    ck_assert_msg(rfd != NULL, "rfd should be added to the queue");
     mreq.op = PARENT_CLOSE;
     close(rfd->fd);
     rfd->fd = dup(spair[1]);
@@ -275,10 +275,10 @@ START_TEST(test_parent_req) {
     WRAP_FATAL_START();
     parent_req(spair[1], event);
     WRAP_FATAL_END();
-    fail_unless (strcmp(check_wrap_errstr, errstr) == 0,
+    ck_assert_msg(strcmp(check_wrap_errstr, errstr) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
-    fail_unless (close(fd) == -1, "rfd->fd should be closed");
-    fail_unless (rfd_byindex(&rawfds, ifindex) == NULL,
+    ck_assert_msg(close(fd) == -1, "rfd->fd should be closed");
+    ck_assert_msg(rfd_byindex(&rawfds, ifindex) == NULL,
     	"rfd should be removed from the queue");
 
     close(spair[1]);
@@ -290,12 +290,12 @@ START_TEST(test_parent_check) {
 
     mark_point();
     mreq.op = PARENT_OPEN;
-    fail_unless(parent_check(&mreq) == EXIT_SUCCESS,
+    ck_assert_msg(parent_check(&mreq) == EXIT_SUCCESS,
 	"PARENT_OPEN check failed");
 
     mark_point();
     mreq.op = PARENT_CLOSE;
-    fail_unless(parent_check(&mreq) == EXIT_SUCCESS,
+    ck_assert_msg(parent_check(&mreq) == EXIT_SUCCESS,
 	"PARENT_CLOSE check failed");
 
 #ifdef HAVE_LINUX_ETHTOOL_H
@@ -303,14 +303,14 @@ START_TEST(test_parent_check) {
     mreq.op = PARENT_ETHTOOL_GSET;
     mreq.index = ifindex;
     mreq.len = sizeof(struct ethtool_cmd);
-    fail_unless(parent_check(&mreq) == EXIT_SUCCESS,
+    ck_assert_msg(parent_check(&mreq) == EXIT_SUCCESS,
 	"PARENT_ETHTOOL_GSET check failed");
 
     mark_point();
     mreq.op = PARENT_ETHTOOL_GDRV;
     mreq.index = ifindex;
     mreq.len = sizeof(struct ethtool_drvinfo);
-    fail_unless(parent_check(&mreq) == EXIT_SUCCESS,
+    ck_assert_msg(parent_check(&mreq) == EXIT_SUCCESS,
 	"PARENT_ETHTOOL_GDRV check failed");
 #endif
 
@@ -319,14 +319,14 @@ START_TEST(test_parent_check) {
     mreq.op = PARENT_DESCR;
     mreq.index = ifindex;
     mreq.len = 0;
-    fail_unless(parent_check(&mreq) == EXIT_SUCCESS,
+    ck_assert_msg(parent_check(&mreq) == EXIT_SUCCESS,
 	"PARENT_DESCR check failed");
 #endif
 
 #ifndef HAVE_LINUX_ETHTOOL_H
     mark_point();
     mreq.op = PARENT_ETHTOOL_GSET;
-    fail_unless(parent_check(&mreq) == EXIT_FAILURE,
+    ck_assert_msg(parent_check(&mreq) == EXIT_FAILURE,
 	"parent_check should fail");
 #endif
 }
@@ -351,7 +351,7 @@ START_TEST(test_parent_send) {
     dfd = spair[1];
     parent_open(ifindex, ifname);
     rfd = rfd_byindex(&rawfds, ifindex);
-    fail_unless (rfd != NULL, "rfd should be added to the queue");
+    ck_assert_msg(rfd != NULL, "rfd should be added to the queue");
 
     // incorrect msend msg.len should be skipped
     mark_point();
@@ -361,7 +361,7 @@ START_TEST(test_parent_send) {
     WRAP_FATAL_START();
     parent_send(spair[1], event);
     WRAP_FATAL_END();
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+    ck_assert_msg(strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     // incorrect msend msg.index should fail
@@ -372,7 +372,7 @@ START_TEST(test_parent_send) {
     WRAP_FATAL_START();
     parent_send(spair[1], event);
     WRAP_FATAL_END();
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+    ck_assert_msg(strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     mark_point();
@@ -387,7 +387,7 @@ START_TEST(test_parent_send) {
     options &= ~OPT_DEBUG;
     WRAP_WRITE(spair[0], &msg, PARENT_MSG_LEN(msg.len));
     parent_send(spair[1], event);
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+    ck_assert_msg(strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     options |= OPT_DEBUG;
@@ -407,25 +407,25 @@ START_TEST(test_parent_open_close) {
     mark_point();
     parent_open(ifindex, ifname);
     rfd = rfd_byindex(&rawfds, ifindex);
-    fail_unless (rfd != NULL,
+    ck_assert_msg(rfd != NULL,
     	"rfd should be added to the queue");
     parent_close(rfd);
-    fail_unless (rfd_byindex(&rawfds, ifindex) == NULL,
+    ck_assert_msg(rfd_byindex(&rawfds, ifindex) == NULL,
     	"rfd should be removed from the queue");
 
     mark_point();
     parent_open(ifindex, ifname);
     rfd = rfd_byindex(&rawfds, ifindex);
-    fail_unless (rfd != NULL,
+    ck_assert_msg(rfd != NULL,
     	"rfd should be added to the queue");
 
     parent_open(2, "lo1");
     rfd = rfd_byindex(&rawfds, 2);
-    fail_unless (rfd != NULL,
+    ck_assert_msg(rfd != NULL,
     	"rfd should be added to the queue");
 
     rfd_closeall(&rawfds);
-    fail_unless (TAILQ_EMPTY(&rawfds),
+    ck_assert_msg(TAILQ_EMPTY(&rawfds),
     	"the queue should be empty");
 }
 END_TEST
@@ -440,7 +440,7 @@ START_TEST(test_parent_socket) {
     mark_point();
     parent_open(ifindex, ifname);
     rfd = rfd_byindex(&rawfds, ifindex);
-    fail_unless (rfd != NULL, "rfd should be added to the queue");
+    ck_assert_msg(rfd != NULL, "rfd should be added to the queue");
 
     mark_point();
     // only run this as a regular user
@@ -452,14 +452,14 @@ START_TEST(test_parent_socket) {
     WRAP_FATAL_START();
     parent_socket(rfd);
     WRAP_FATAL_END();
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+    ck_assert_msg(strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     rfd = rfd_byindex(&rawfds, ifindex);
-    fail_unless (rfd != NULL,
+    ck_assert_msg(rfd != NULL,
     	"rfd not found");
     parent_close(rfd);
-    fail_unless (TAILQ_EMPTY(&rawfds),
+    ck_assert_msg(TAILQ_EMPTY(&rawfds),
     	"the queue should be empty");
 }
 END_TEST
@@ -482,7 +482,7 @@ START_TEST(test_parent_multi) {
     errstr = "check";
     my_log(CRIT, errstr);
     parent_multi(&rfd, protos, 0);
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+    ck_assert_msg(strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     mark_point();
@@ -491,7 +491,7 @@ START_TEST(test_parent_multi) {
     WRAP_FATAL_START();
     parent_multi(&rfd, protos, 1);
     WRAP_FATAL_END();
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+    ck_assert_msg(strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     mark_point();
@@ -500,7 +500,7 @@ START_TEST(test_parent_multi) {
     my_log(CRIT, errstr);
     parent_multi(&rfd, protos, 1);
     check_wrap_fake = 0;
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+    ck_assert_msg(strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     // reset
@@ -527,16 +527,16 @@ START_TEST(test_parent_recv) {
     mark_point();
     parent_open(ifindex, ifname);
     rfd = rfd_byindex(&rawfds, ifindex);
-    fail_unless (rfd != NULL, "rfd should be added to the queue");
+    ck_assert_msg(rfd != NULL, "rfd should be added to the queue");
 
     if ((prefix = getenv("srcdir")) == NULL)
         prefix = ".";
 
     mark_point();
     suffix = "proto/broken/00.unknown";
-    fail_if(asprintf(&path, "%s/%s.pcap", prefix, suffix) == -1,
+    ck_assert_msg(asprintf(&path, "%s/%s.pcap", prefix, suffix) != -1,
             "asprintf failed");
-    fail_if((rfd->p_handle = pcap_open_offline(path, errbuf)) == NULL,
+    ck_assert_msg((rfd->p_handle = pcap_open_offline(path, errbuf)) != NULL,
         "failed to open %s: %s", path, errbuf);
 
     errstr = "unknown message type received";
@@ -544,7 +544,7 @@ START_TEST(test_parent_recv) {
     WRAP_FATAL_START();
     parent_recv(rfd->fd, event, rfd);
     WRAP_FATAL_END();
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+    ck_assert_msg(strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     pcap_close(rfd->p_handle);
@@ -553,9 +553,9 @@ START_TEST(test_parent_recv) {
 
     mark_point();
     suffix = "proto/broken/01.empty";
-    fail_if(asprintf(&path, "%s/%s.pcap", prefix, suffix) == -1,
+    ck_assert_msg(asprintf(&path, "%s/%s.pcap", prefix, suffix) != -1,
             "asprintf failed");
-    fail_if((rfd->p_handle = pcap_open_offline(path, errbuf)) == NULL,
+    ck_assert_msg((rfd->p_handle = pcap_open_offline(path, errbuf)) != NULL,
         "failed to open %s: %s", path, errbuf);
 
     errstr = "test";
@@ -563,7 +563,7 @@ START_TEST(test_parent_recv) {
     WRAP_FATAL_START();
     parent_recv(rfd->fd, event, rfd);
     WRAP_FATAL_END();
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+    ck_assert_msg(strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     pcap_close(rfd->p_handle);
@@ -572,9 +572,9 @@ START_TEST(test_parent_recv) {
 
     mark_point();
     suffix = "proto/cdp/43.good.big";
-    fail_if(asprintf(&path, "%s/%s.pcap", prefix, suffix) == -1,
+    ck_assert_msg(asprintf(&path, "%s/%s.pcap", prefix, suffix) != -1,
             "asprintf failed");
-    fail_if((rfd->p_handle = pcap_open_offline(path, errbuf)) == NULL,
+    ck_assert_msg((rfd->p_handle = pcap_open_offline(path, errbuf)) != NULL,
         "failed to open %s: %s", path, errbuf);
 
     // closed child socket
@@ -584,7 +584,7 @@ START_TEST(test_parent_recv) {
     WRAP_FATAL_START();
     parent_recv(rfd->fd, event, rfd);
     WRAP_FATAL_END();
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+    ck_assert_msg(strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
     pcap_close(rfd->p_handle);
     rfd->p_handle = NULL;
@@ -593,7 +593,7 @@ START_TEST(test_parent_recv) {
     mark_point();
     mfd = spair[0];
 
-    fail_if((rfd->p_handle = pcap_open_offline(path, errbuf)) == NULL,
+    ck_assert_msg((rfd->p_handle = pcap_open_offline(path, errbuf)) != NULL,
         "failed to open %s: %s", path, errbuf);
 
     errstr = "received CDP message (422 bytes)";
@@ -601,7 +601,7 @@ START_TEST(test_parent_recv) {
     WRAP_FATAL_START();
     parent_recv(rfd->fd, event, rfd);
     WRAP_FATAL_END();
-    fail_unless (strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
+    ck_assert_msg(strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
 	"incorrect message logged: %s", check_wrap_errstr);
 
     pcap_close(rfd->p_handle);
