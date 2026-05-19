@@ -42,6 +42,7 @@ char *my_strdup(const char *str);
 int my_socket(int af, int type, int proto);
 void my_socketpair(int spair[]);
 int my_nonblock(int s);
+int my_ipc_write(int fd, const void *buf, size_t len);
 
 void my_chroot(const char *path) __nonnull();
 void my_drop_privs(struct passwd *pwd) __nonnull();

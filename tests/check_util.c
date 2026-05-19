@@ -58,7 +58,7 @@ START_TEST(test_my) {
     my_socketpair(spair);
     my_nonblock(spair[1]);
     options &= ~OPT_DAEMON;
-    errstr = "test_my_fn: debug\n";
+    errstr = "test_my: debug\n";
     memset(buf, 0, 1024);
     my_log(INFO, "debug");
     fflush(stderr);
@@ -72,7 +72,12 @@ START_TEST(test_my) {
 	left -= len;
 	bp += len;
     }
-    ck_assert_msg(strcmp(buf, errstr) == 0, "invalid output: %s", buf);
+    /* Check framework creates different wrapper function names across versions:
+     * EL7: "test_my", EL9: "test_my_fn". Accept either pattern. */
+    ck_assert_msg(strstr(buf, ": debug\n") != NULL &&
+                  (strstr(buf, "test_my: debug\n") != NULL ||
+                   strstr(buf, "test_my_fn: debug\n") != NULL),
+                  "invalid output: %s", buf);
     options |= OPT_DAEMON;
     close(spair[0]);
     ck_assert_msg(dup(s) == STDERR_FILENO, "dup should re-create stderr");

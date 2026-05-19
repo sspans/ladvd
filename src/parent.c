@@ -193,9 +193,14 @@ void parent_req(int reqfd, short event) {
     struct parent_req mreq = {};
     struct rawfd *rfd;
     ssize_t len;
+    int rc;
 
     // receive request
     len = read(reqfd, &mreq, PARENT_REQ_MAX);
+
+    // handle non-blocking socket: return if no data available
+    if (len < 0 && (errno == EAGAIN || errno == EWOULDBLOCK))
+	return;
 
     // check request size
     if (len < PARENT_REQ_MIN || len != PARENT_REQ_LEN(mreq.len))
@@ -255,9 +260,11 @@ void parent_req(int reqfd, short event) {
     }
 
 out:
-    len = write(reqfd, &mreq, PARENT_REQ_LEN(mreq.len));
-    if (len != PARENT_REQ_LEN(mreq.len))
-	    my_fatal("failed to return request to child");
+    rc = my_ipc_write(reqfd, &mreq, PARENT_REQ_LEN(mreq.len));
+    if (rc < 0)
+	my_fatal("failed to return request to child");
+    if (rc == 1)
+	my_log(WARN, "dropping request reply to child (IPC backpressure)");
 }
 
 
@@ -313,6 +320,10 @@ void parent_send(int msgfd, short event) {
 
     // receive request
     len = read(msgfd, &msend, PARENT_MSG_MAX);
+
+    // handle non-blocking socket: return if no data available
+    if (len < 0 && (errno == EAGAIN || errno == EWOULDBLOCK))
+	return;
 
     // check request size
     if (len < PARENT_MSG_MIN || len != PARENT_MSG_LEN(msend.len))
@@ -636,22 +647,34 @@ int parent_socket(struct rawfd *rfd) {
     // so we use pcap_create/pcap_activate to set this up
 #if defined(HAVE_PCAP_CREATE)
     p_handle = pcap_create(rfd->name, p_errbuf);
-    if (!p_handle)
-	my_fatal("pcap_open for %s failed: %s", rfd->name, p_errbuf);
+    if (!p_handle) {
+	my_log(INFO, "pcap_create for %s failed: %s", rfd->name, p_errbuf);
+	return(-1);
+    }
 
-    if (pcap_set_timeout(p_handle, 0) != 0)
-	my_fatal("unable to timeout for %s", rfd->name);
+    if (pcap_set_timeout(p_handle, 0) != 0) {
+	my_log(INFO, "unable to set timeout for %s", rfd->name);
+	goto failed;
+    }
 
-    if (pcap_set_snaplen(p_handle, ETHER_MAX_LEN) != 0)
-	my_fatal("unable to configure snaplen for %s", rfd->name);
+    if (pcap_set_snaplen(p_handle, ETHER_MAX_LEN) != 0) {
+	my_log(INFO, "unable to configure snaplen for %s", rfd->name);
+	goto failed;
+    }
 
 #if defined(HAVE_PCAP_IMMEDIATE_MODE)
-    if (pcap_set_immediate_mode(p_handle, 1) != 0)
-	my_fatal("pcap_set_immediate_mode for %s failed", rfd->name);
+    if (pcap_set_immediate_mode(p_handle, 1) != 0) {
+	my_log(INFO, "pcap_set_immediate_mode for %s failed", rfd->name);
+	goto failed;
+    }
 #endif
 
     if (pcap_activate(p_handle) != 0) {
-	my_log(CRIT, "pcap_activate for %s failed", rfd->name);
+	/* Interface may have disappeared during Docker/Podman container operations.
+	 * This is expected behavior with veth churn and not critical.
+	 * See: https://github.com/sspans/ladvd/issues/52
+	 */
+	my_log(INFO, "pcap_activate for %s failed (interface may be gone)", rfd->name);
 	goto failed;
     }
 
@@ -735,9 +758,14 @@ void parent_multi(struct rawfd *rfd, struct proto *protos, int op) {
 
 	op = (op) ? PACKET_ADD_MEMBERSHIP:PACKET_DROP_MEMBERSHIP;
 
-	if (setsockopt(rfd->fd, SOL_PACKET, op, &mreq, sizeof(mreq)) < 0)
-	    my_loge(CRIT, "unable to change %s multicast on %s",
-		     protos[p].name, rfd->name);
+	if (setsockopt(rfd->fd, SOL_PACKET, op, &mreq, sizeof(mreq)) < 0) {
+	    /* ENODEV = interface disappeared, common with Docker/Podman veth churn */
+	    if (errno == ENODEV)
+		my_log(INFO, "interface %s disappeared during multicast setup", rfd->name);
+	    else
+		my_loge(CRIT, "unable to change %s multicast on %s",
+			 protos[p].name, rfd->name);
+	}
 
 #elif defined AF_LINK
 	// too bad for EDP
@@ -758,9 +786,14 @@ void parent_multi(struct rawfd *rfd, struct proto *protos, int op) {
 	memcpy(ifr.ifr_addr.sa_data, protos[p].dst_addr, ETHER_ADDR_LEN);
 #endif
 	if ((ioctl(sock, (op) ? SIOCADDMULTI: SIOCDELMULTI, &ifr) < 0) &&
-	    (errno != EADDRINUSE) && (p != PROTO_CDP1))
-	    my_loge(CRIT, "unable to change %s multicast on %s",
-		     protos[p].name, rfd->name);
+	    (errno != EADDRINUSE) && (p != PROTO_CDP1)) {
+	    /* ENODEV/ENXIO = interface disappeared */
+	    if (errno == ENODEV || errno == ENXIO)
+		my_log(INFO, "interface %s disappeared during multicast setup", rfd->name);
+	    else
+		my_loge(CRIT, "unable to change %s multicast on %s",
+			 protos[p].name, rfd->name);
+	}
 #endif
     }
 }
@@ -774,7 +807,7 @@ void parent_recv(int fd, short event, struct rawfd *rfd) {
     struct ether_hdr *ether;
     static unsigned int rcount = 0;
     int p;
-    ssize_t len = 0;
+    int rc;
 
     assert(rfd);
     assert(rfd->p_handle);
@@ -813,9 +846,11 @@ void parent_recv(int fd, short event, struct rawfd *rfd) {
 	my_log(INFO, "received %s message (%zu bytes)",
 		protos[p].name, mrecv.len);
 
-	len = write(mfd, &mrecv, PARENT_MSG_LEN(mrecv.len));
-	if (len != PARENT_MSG_LEN(mrecv.len))
+	rc = my_ipc_write(mfd, &mrecv, PARENT_MSG_LEN(mrecv.len));
+	if (rc < 0)
 	    my_fatal("failed to send message to child");
+	if (rc == 1)
+	    my_log(WARN, "dropping message to child (IPC backpressure)");
 	rcount++;
     }
 }

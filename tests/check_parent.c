@@ -432,7 +432,6 @@ END_TEST
 
 START_TEST(test_parent_socket) {
     struct rawfd *rfd;
-    const char *errstr;
 
     options |= OPT_DEBUG;
     dfd = STDOUT_FILENO;
@@ -447,13 +446,15 @@ START_TEST(test_parent_socket) {
     if (!geteuid())
 	return;
 
+    /* Test that parent_socket fails gracefully when pcap_activate fails.
+     * With veth interface churn (issue #52), pcap_activate failures are
+     * expected and non-critical, so we just verify graceful failure.
+     */
     options &= ~OPT_DEBUG;
-    errstr = "pcap_";
-    WRAP_FATAL_START();
-    parent_socket(rfd);
-    WRAP_FATAL_END();
-    ck_assert_msg(strncmp(check_wrap_errstr, errstr, strlen(errstr)) == 0,
-	"incorrect message logged: %s", check_wrap_errstr);
+    mark_point();
+    int result = parent_socket(rfd);
+    ck_assert_msg(result == -1,
+	"parent_socket should fail gracefully when interface is unavailable");
 
     rfd = rfd_byindex(&rawfds, ifindex);
     ck_assert_msg(rfd != NULL,

@@ -163,7 +163,7 @@ void child_init(int reqfd, int msgfd, int ifc, char *ifl[],
 void child_send(int fd, short event, struct child_send_args *args) {
     struct parent_msg msg;
     struct netif *netif = NULL, *subif = NULL, *linkif = NULL;
-    ssize_t len;
+    int rc;
 
     // bail early on known flapping interfaces
     if (args->index != NETIF_INDEX_MAX) {
@@ -275,9 +275,11 @@ void child_send(int fd, short event, struct child_send_args *args) {
 		// write it to the wire.
 		my_log(INFO, "sending %s packet (%zu bytes) on %s",
 			    protos[p].name, msg.len, subif->name);
-		len = write(fd, &msg, PARENT_MSG_LEN(msg.len));
-		if (len < PARENT_MSG_MIN || len != PARENT_MSG_LEN(msg.len))
-		    my_fatale("only %zi bytes written", len);
+		rc = my_ipc_write(fd, &msg, PARENT_MSG_LEN(msg.len));
+		if (rc < 0)
+		    my_fatale("failed to send message to parent");
+		if (rc == 1)
+		    my_log(WARN, "dropping message to parent (IPC backpressure)");
 	    }
 	}
     }
@@ -575,13 +577,30 @@ static int child_link_cb(const struct nlmsghdr *nlh, void *msgfd) {
     struct ifinfomsg *ifm = mnl_nlmsg_get_payload(nlh);
     int ifi_flags = IFF_RUNNING|IFF_LOWER_UP;
     struct child_send_args args = {};
+    char ifname[IFNAMSIZ];
 
     if (ifm->ifi_type != ARPHRD_ETHER)
         goto out;
+
+    /* Skip virtual interfaces (veth/vxlan/tun/tap) unless explicitly enabled.
+     * Prevents spam and hangs from high-churn Docker/Podman veth pairs.
+     * See: https://github.com/sspans/ladvd/issues/52
+     */
+    if (if_indextoname(ifm->ifi_index, ifname) != NULL) {
+        if (!(options & OPT_TAP) &&
+            (strncmp(ifname, "veth", 4) == 0 ||
+             strncmp(ifname, "vxlan", 5) == 0 ||
+             strncmp(ifname, "tun", 3) == 0 ||
+             strncmp(ifname, "tap", 3) == 0)) {
+            my_log(DEBUG, "skipping virtual interface %s", ifname);
+            goto out;
+        }
+    }
+
     if ((ifm->ifi_flags & ifi_flags) != ifi_flags)
         goto out;
 
-    my_log(INFO, "invoking child_send");
+    my_log(INFO, "invoking child_send for %s", ifname);
     args.index = ifm->ifi_index;
     child_send(*(int*)msgfd, 0, &args);
 

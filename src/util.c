@@ -115,13 +115,31 @@ int my_socket(int af, int type, int proto) {
 
 void my_socketpair(int spair[]) {
     int rbuf = PARENT_MSG_MAX * 10;
+    int i, fl, fdfl;
 
     assert(spair != NULL);
 
     if (socketpair(AF_UNIX, SOCK_DGRAM, 0, spair) == -1)
 	my_fatale("socketpair creation failed");
 
-    for (int i = 0; i<2; i++) {
+    /* Make IPC non-blocking to prevent deadlock under memory pressure.
+     * Without O_NONBLOCK, write() can block in sock_alloc_send_pskb()
+     * while the peer is blocked in recvmsg(), causing permanent wedge.
+     * Skip in test mode to maintain synchronous test behavior.
+     */
+    for (i = 0; i < 2; i++) {
+	if (!(options & OPT_CHECK)) {
+	    fl = fcntl(spair[i], F_GETFL, 0);
+	    if (fl != -1)
+		(void)fcntl(spair[i], F_SETFL, fl | O_NONBLOCK);
+	}
+
+	fdfl = fcntl(spair[i], F_GETFD, 0);
+	if (fdfl != -1)
+	    (void)fcntl(spair[i], F_SETFD, fdfl | FD_CLOEXEC);
+    }
+
+    for (i = 0; i<2; i++) {
 	if (setsockopt(spair[i], SOL_SOCKET, SO_RCVBUF,
 		       &rbuf, sizeof(rbuf)) == -1)
 	    my_fatale("failed to set rcvbuf");
@@ -130,6 +148,38 @@ void my_socketpair(int spair[]) {
 		       &rbuf, sizeof(rbuf)) == -1)
 	    my_fatale("failed to set sndbuf");
     }
+}
+
+/* Write to parent/child IPC sockets without blocking.
+ *
+ * Returns:
+ *   0  -> successfully sent
+ *   1  -> dropped due to backpressure or memory pressure
+ *  -1  -> unexpected error (caller should fatal)
+ *
+ * IPC uses UNIX datagram sockets, so partial writes should not occur.
+ */
+int my_ipc_write(int fd, const void *buf, size_t len)
+{
+    ssize_t r = write(fd, buf, len);
+
+    if (r == (ssize_t)len)
+	return 0;
+
+    if (r < 0) {
+	if (errno == EAGAIN || errno == EWOULDBLOCK ||
+	    errno == ENOBUFS || errno == ENOMEM)
+	    return 1;
+	/* Unexpected error - log details before caller fatals */
+	my_loge(CRIT, "IPC write failed: fd=%d, len=%zu, result=%zd",
+		fd, len, r);
+	return -1;
+    }
+
+    /* Partial write on SOCK_DGRAM - should never happen, log if it does */
+    my_log(CRIT, "partial IPC write: fd=%d, wrote %zd of %zu bytes",
+	   fd, r, len);
+    return -1;
 }
 
 int my_nonblock(int s) {
@@ -283,19 +333,45 @@ uint16_t my_chksum(const void *data, size_t length, int cisco) {
 
 ssize_t my_mreq(struct parent_req *mreq) {
     ssize_t len = 0;
+    int retries = 0;
+    const int max_retries = 100;  /* max ~1 second for response */
+    struct timespec ts = { .tv_sec = 0, .tv_nsec = 10000000 };  /* 10ms */
 
     assert(mreq != NULL);
 
-    len = write(msock, mreq, PARENT_REQ_LEN(mreq->len));
-    if (len < PARENT_REQ_MIN || len != PARENT_REQ_LEN(mreq->len))
+    /* Write with retry on EAGAIN - under memory pressure the socket may be full */
+    while (retries < max_retries) {
+	len = write(msock, mreq, PARENT_REQ_LEN(mreq->len));
+	if (len == PARENT_REQ_LEN(mreq->len))
+	    break;
+	if (len < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+	    nanosleep(&ts, NULL);
+	    retries++;
+	    continue;
+	}
 	my_fatale("only %zi bytes written", len);
+    }
+    if (retries >= max_retries)
+	my_fatal("request write timed out (IPC backpressure)");
 
+    /* Read response with retry on EAGAIN - parent may be processing */
     memset(mreq, 0, PARENT_REQ_MAX);
-    len = read(msock, mreq, PARENT_REQ_MAX);
-    if (len < PARENT_REQ_MIN || len != PARENT_REQ_LEN(mreq->len))
-	my_fatal("invalid reply received from parent");
-
-    return(mreq->len);
+    retries = 0;
+    while (retries < max_retries) {
+	len = read(msock, mreq, PARENT_REQ_MAX);
+	if (len >= PARENT_REQ_MIN && len == PARENT_REQ_LEN(mreq->len))
+	    return(mreq->len);
+	if (len < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+	    nanosleep(&ts, NULL);
+	    retries++;
+	    continue;
+	}
+	if (len >= 0)
+	    my_fatal("invalid reply received from parent (len=%zi)", len);
+	my_fatale("read failed");
+    }
+    my_fatal("request read timed out waiting for parent response");
+    return 0;  /* not reached */
 };
 
 struct netif *netif_iter(struct netif *netif, struct nhead *netifs) {
