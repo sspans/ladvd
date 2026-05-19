@@ -382,7 +382,7 @@ void child_queue(int fd, short __unused(event)) {
 	hostname = msg->peer[PEER_HOSTNAME];
 	if (hostname)
 	    my_log(CRIT, "new peer %s (%s) on interface %s",
-		    hostname, protos[msg->proto].name, netif->name);
+		    hostname, protos[msg->proto].name, subif->name);
     }
 
     // handle shutdowns via child_expire
