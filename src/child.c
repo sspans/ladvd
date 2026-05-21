@@ -163,7 +163,7 @@ void child_init(int reqfd, int msgfd, int ifc, char *ifl[],
 void child_send(int fd, short event, struct child_send_args *args) {
     struct parent_msg msg;
     struct netif *netif = NULL, *subif = NULL, *linkif = NULL;
-    ssize_t len;
+    int rc, p;
 
     // bail early on known flapping interfaces
     if (args->index != NETIF_INDEX_MAX) {
@@ -233,7 +233,8 @@ void child_send(int fd, short event, struct child_send_args *args) {
 		struct parent_req mreq = {};
 		mreq.op = PARENT_OPEN;
 		mreq.index = subif->index;
-		my_mreq(&mreq);
+		if (!my_mreq(&mreq))
+		    my_log(WARN, "failed to open socket for %s", subif->name);
 	    }
 
 	    // fetch interface media status
@@ -246,7 +247,7 @@ void child_send(int fd, short event, struct child_send_args *args) {
 		continue;
 
 	    // generate and send packets
-	    for (int p = 0; protos[p].name != NULL; p++) {
+	    for (p = 0; protos[p].name != NULL; p++) {
 
 		// only enabled protos
 		if (!(protos[p].enabled) && !(netif->protos & (1 << p)))
@@ -275,9 +276,11 @@ void child_send(int fd, short event, struct child_send_args *args) {
 		// write it to the wire.
 		my_log(INFO, "sending %s packet (%zu bytes) on %s",
 			    protos[p].name, msg.len, subif->name);
-		len = write(fd, &msg, PARENT_MSG_LEN(msg.len));
-		if (len < PARENT_MSG_MIN || len != PARENT_MSG_LEN(msg.len))
-		    my_fatale("only %zi bytes written", len);
+		rc = my_ipc_write(fd, &msg, PARENT_MSG_LEN(msg.len));
+		if (rc < 0)
+		    my_fatale("failed to send message to parent");
+		if (rc == 1)
+		    my_log(WARN, "dropping message to parent (IPC backpressure)");
 	    }
 	}
     }
@@ -380,7 +383,7 @@ void child_queue(int fd, short __unused(event)) {
 	hostname = msg->peer[PEER_HOSTNAME];
 	if (hostname)
 	    my_log(CRIT, "new peer %s (%s) on interface %s",
-		    hostname, protos[msg->proto].name, netif->name);
+		    hostname, protos[msg->proto].name, subif->name);
     }
 
     // handle shutdowns via child_expire
@@ -507,6 +510,10 @@ void child_cli_write(int fd, short event, struct child_session *sess) {
     else
 	msg->lock--;
 
+    // If queue is empty, send EOF immediately to unblock client
+    if (msg == NULL)
+	goto cleanup;
+
     for (; msg != NULL; msg = TAILQ_NEXT(msg, entries)) {
 	if (write(fd, msg, PARENT_MSG_MAX) != -1)
 	    continue;
@@ -575,13 +582,35 @@ static int child_link_cb(const struct nlmsghdr *nlh, void *msgfd) {
     struct ifinfomsg *ifm = mnl_nlmsg_get_payload(nlh);
     int ifi_flags = IFF_RUNNING|IFF_LOWER_UP;
     struct child_send_args args = {};
+    char ifname[IFNAMSIZ];
 
     if (ifm->ifi_type != ARPHRD_ETHER)
         goto out;
+
+    /* Skip virtual interfaces (veth/vxlan/tun/tap/lxc/cilium/calico) unless explicitly enabled.
+     * Prevents spam and hangs from high-churn Docker/Podman veth pairs and
+     * Kubernetes/LXC health check probes.
+     * See: https://github.com/sspans/ladvd/issues/52
+     */
+    if (if_indextoname(ifm->ifi_index, ifname) != NULL) {
+        if (!(options & OPT_TAP) && is_virtual_interface(ifname)) {
+            my_log(DEBUG, "skipping virtual interface %s", ifname);
+            goto out;
+        }
+    } else {
+        /* Interface name lookup failed (ENODEV) - likely a transient virtual interface
+         * that was deleted before we could query it. Skip it to avoid processing overhead.
+         */
+        if (!(options & OPT_TAP)) {
+            my_log(DEBUG, "skipping interface %u (name lookup failed, likely transient)", ifm->ifi_index);
+            goto out;
+        }
+    }
+
     if ((ifm->ifi_flags & ifi_flags) != ifi_flags)
         goto out;
 
-    my_log(INFO, "invoking child_send");
+    my_log(INFO, "invoking child_send for %s", ifname);
     args.index = ifm->ifi_index;
     child_send(*(int*)msgfd, 0, &args);
 

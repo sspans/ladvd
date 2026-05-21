@@ -125,6 +125,15 @@ uint16_t netif_fetch(int ifc, char *ifl[], struct my_sysinfo *sysinfo,
 	if (ifaddr->ifa_addr->sa_family != NETIF_AF)
 	    continue;
 
+	/* Skip virtual interfaces (veth/vxlan/tun/tap/lxc/cilium/calico) unless explicitly enabled.
+	 * Avoids expensive ioctl/ethtool operations on transient Kubernetes/Docker interfaces.
+	 * See: https://github.com/sspans/ladvd/issues/52
+	 */
+	if (!(options & OPT_TAP) && is_virtual_interface(ifaddr->ifa_name)) {
+	    my_log(DEBUG, "skipping virtual interface %s", ifaddr->ifa_name);
+	    continue;
+	}
+
 	// prepare ifr struct
 	memset(&ifr, 0, sizeof(ifr));
 	strlcpy(ifr.ifr_name, ifaddr->ifa_name, sizeof(ifr.ifr_name));
