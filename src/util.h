@@ -27,6 +27,14 @@
 #define INFO	2
 #define DEBUG	3
 
+/* IPC retry parameters for non-blocking socketpair communication */
+/* IPC retry parameters for non-blocking parent writes under memory pressure.
+ * Total timeout = IPC_MAX_RETRIES × IPC_RETRY_DELAY_MS = 2 seconds.
+ * Conservative values prevent false timeouts on heavily loaded systems.
+ */
+#define IPC_MAX_RETRIES 20
+#define IPC_RETRY_DELAY_MS 100  /* milliseconds */
+
 extern int8_t loglevel;
 
 #define my_log(p, ...)	    __my_log(__func__, p, 0, __VA_ARGS__)
@@ -42,6 +50,7 @@ char *my_strdup(const char *str);
 int my_socket(int af, int type, int proto);
 void my_socketpair(int spair[]);
 int my_nonblock(int s);
+int my_ipc_write(int fd, const void *buf, size_t len);
 
 void my_chroot(const char *path) __nonnull();
 void my_drop_privs(struct passwd *pwd) __nonnull();
@@ -56,6 +65,7 @@ ssize_t my_mreq(struct parent_req *mreq);
 struct netif *netif_iter(struct netif *netif, struct nhead *);
 struct netif *subif_iter(struct netif *subif, struct netif *netif);
 int netif_excluded(struct netif *netif, struct ehead *);
+int is_virtual_interface(const char *ifname) __nonnull();
 void netif_protos(struct netif *netif, struct mhead *mqueue);
 void netif_descr(struct netif *netif, struct mhead *mqueue);
 void portname_abbr(char *);

@@ -115,13 +115,25 @@ int my_socket(int af, int type, int proto) {
 
 void my_socketpair(int spair[]) {
     int rbuf = PARENT_MSG_MAX * 10;
+    int i, fl, fdfl;
 
     assert(spair != NULL);
 
     if (socketpair(AF_UNIX, SOCK_DGRAM, 0, spair) == -1)
 	my_fatale("socketpair creation failed");
 
-    for (int i = 0; i<2; i++) {
+    /* Set close-on-exec for both ends.
+     * Non-blocking mode will be set per-process after fork:
+     * - Parent needs O_NONBLOCK to prevent deadlock under memory pressure
+     * - Child keeps blocking mode for synchronous my_mreq() request-response
+     */
+    for (i = 0; i < 2; i++) {
+	fdfl = fcntl(spair[i], F_GETFD, 0);
+	if (fdfl != -1)
+	    (void)fcntl(spair[i], F_SETFD, fdfl | FD_CLOEXEC);
+    }
+
+    for (i = 0; i<2; i++) {
 	if (setsockopt(spair[i], SOL_SOCKET, SO_RCVBUF,
 		       &rbuf, sizeof(rbuf)) == -1)
 	    my_fatale("failed to set rcvbuf");
@@ -130,6 +142,41 @@ void my_socketpair(int spair[]) {
 		       &rbuf, sizeof(rbuf)) == -1)
 	    my_fatale("failed to set sndbuf");
     }
+}
+
+/* Write to parent/child IPC sockets without blocking.
+ *
+ * Returns:
+ *   0  -> successfully sent
+ *   1  -> dropped due to backpressure or memory pressure
+ *  -1  -> unexpected error (caller should fatal)
+ *
+ * IPC uses UNIX datagram sockets, so partial writes should not occur.
+ */
+int my_ipc_write(int fd, const void *buf, size_t len)
+{
+    ssize_t r = write(fd, buf, len);
+    int saved_errno;
+
+    if (r == (ssize_t)len)
+	return 0;
+
+    if (r < 0) {
+	saved_errno = errno;
+	if (saved_errno == EAGAIN || saved_errno == EWOULDBLOCK ||
+	    saved_errno == ENOBUFS || saved_errno == ENOMEM)
+	    return 1;
+	my_loge(CRIT, "IPC write failed: fd=%d, len=%zu, result=%zd",
+		fd, len, r);
+	errno = saved_errno;
+	return -1;
+    }
+
+    saved_errno = errno;
+    my_log(CRIT, "partial IPC write: fd=%d, wrote %zd of %zu bytes",
+	   fd, r, len);
+    errno = saved_errno;
+    return -1;
 }
 
 int my_nonblock(int s) {
@@ -283,20 +330,66 @@ uint16_t my_chksum(const void *data, size_t length, int cisco) {
 
 ssize_t my_mreq(struct parent_req *mreq) {
     ssize_t len = 0;
+    int retries = 0;
+    struct timespec ts = { .tv_sec = 0, .tv_nsec = IPC_RETRY_DELAY_MS * 1000000 };
 
     assert(mreq != NULL);
 
-    len = write(msock, mreq, PARENT_REQ_LEN(mreq->len));
-    if (len < PARENT_REQ_MIN || len != PARENT_REQ_LEN(mreq->len))
-	my_fatale("only %zi bytes written", len);
+    /* Write with retry on EAGAIN - under memory pressure the socket may be full */
+    while (retries < IPC_MAX_RETRIES) {
+	len = write(msock, mreq, PARENT_REQ_LEN(mreq->len));
+	if (len == PARENT_REQ_LEN(mreq->len))
+	    break;
+	if (len < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+	    nanosleep(&ts, NULL);
+	    retries++;
+	    continue;
+	}
+	my_loge(CRIT, "IPC request write failed: only %zi bytes written", len);
+	return 0;
+    }
+    if (retries >= IPC_MAX_RETRIES) {
+	my_log(CRIT, "request write timed out (IPC backpressure)");
+	return 0;
+    }
 
+    /* Read response with retry on EAGAIN - parent may be processing */
     memset(mreq, 0, PARENT_REQ_MAX);
-    len = read(msock, mreq, PARENT_REQ_MAX);
-    if (len < PARENT_REQ_MIN || len != PARENT_REQ_LEN(mreq->len))
-	my_fatal("invalid reply received from parent");
-
-    return(mreq->len);
+    retries = 0;
+    while (retries < IPC_MAX_RETRIES) {
+	len = read(msock, mreq, PARENT_REQ_MAX);
+	if (len >= PARENT_REQ_MIN && len == PARENT_REQ_LEN(mreq->len))
+	    return(mreq->len);
+	if (len < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+	    nanosleep(&ts, NULL);
+	    retries++;
+	    continue;
+	}
+	if (len >= 0) {
+	    my_log(CRIT, "invalid reply received from parent (len=%zi)", len);
+	    return 0;
+	}
+	my_loge(CRIT, "IPC request read failed");
+	return 0;
+    }
+    my_log(CRIT, "request read timed out waiting for parent response");
+    return 0;
 };
+
+/* Check if interface name matches virtual interface patterns.
+ * Returns 1 if virtual (should be filtered), 0 if physical.
+ */
+int is_virtual_interface(const char *ifname) {
+    assert(ifname != NULL);
+
+    return (strncmp(ifname, "veth", 4) == 0 ||
+            strncmp(ifname, "vxlan", 5) == 0 ||
+            strncmp(ifname, "tun", 3) == 0 ||
+            strncmp(ifname, "tap", 3) == 0 ||
+            strncmp(ifname, "lxc", 3) == 0 ||
+            strncmp(ifname, "cilium_", 7) == 0 ||
+            strncmp(ifname, "cali", 4) == 0);
+}
 
 struct netif *netif_iter(struct netif *netif, struct nhead *netifs) {
 
@@ -443,10 +536,11 @@ void portname_abbr(char *portname) {
     size_t len;
     char *media_types[] = { "FastEthernet", "GigabitEthernet",
 			    "TenGigabitEthernet", NULL};
+    int m;
 
     assert(portname);
 
-    for (int m = 0; media_types[m] != NULL; m++) {
+    for (m = 0; media_types[m] != NULL; m++) {
 	if (strstr(portname, media_types[m]) != portname)
 	    continue;
 	len = strlen(media_types[m]);
